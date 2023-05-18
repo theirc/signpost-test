@@ -4,7 +4,7 @@ import { LatLngExpression } from 'leaflet';
 export const SITE_TITLE = 'TODO';
 
 // TODO: add the country id of the instance to fetch the data from the cms for the service-map;
-export const COUNTRY_ID = 123;
+export const COUNTRY_ID = 9;
 
 // TODO: add the default coords for the center of the map
 export const MAP_DEFAULT_COORDS: LatLngExpression = [

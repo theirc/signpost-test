@@ -10,6 +10,9 @@ import {
   fetchServices,
   fetchServicesCategories,
 } from '@ircsignpost/signpost-base/dist/src/service-map-common';
+import TreeSelect, {
+  MenuItem,
+} from '@ircsignpost/signpost-base/dist/src/tree-select';
 import {
   CategoryWithSections,
   ZendeskCategory,
@@ -70,6 +73,7 @@ interface HomeProps {
   // The HTML text of the About Us category shown on the home page.
   aboutUsTextHtml: string;
   categories: ZendeskCategory[] | CategoryWithSections[];
+  mapDataTreeSelect: MenuItem[];
 }
 
 const Home: NextPage<HomeProps> = ({
@@ -81,33 +85,47 @@ const Home: NextPage<HomeProps> = ({
   serviceMapProps,
   aboutUsTextHtml,
   categories,
+  mapDataTreeSelect,
 }) => {
   const { publicRuntimeConfig } = getConfig();
+  const handleTreeSelectChange = async (value: any) => {};
 
   return (
-    <HomePage
-      title={SITE_TITLE}
-      currentLocale={currentLocale}
-      locales={LOCALES}
-      strings={strings}
-      menuOverlayItems={menuOverlayItems}
-      headerBannerProps={{
-        ...headerBannerStrings,
-        socialMediaData: getSocialMediaProps(socialMediaLinks),
-      }}
-      headerLogoProps={getHeaderLogoProps(currentLocale)}
-      searchBarIndex={SEARCH_BAR_INDEX}
-      serviceMapProps={serviceMapProps}
-      aboutUsTextHtml={aboutUsTextHtml}
-      categories={categories}
-      signpostVersion={publicRuntimeConfig?.version}
-      cookieBanner={
-        <CookieBanner
-          strings={strings.cookieBannerStrings}
-          googleAnalyticsIds={GOOGLE_ANALYTICS_IDS}
-        />
-      }
-    />
+    <>
+      <TreeSelect
+        label={'Test'}
+        items={mapDataTreeSelect}
+        tagItems={mapDataTreeSelect}
+        onChange={handleTreeSelectChange}
+        size="large"
+        shrinkOnTablet={false}
+        className="select-menu"
+        showTags
+      />
+      <HomePage
+        title={SITE_TITLE}
+        currentLocale={currentLocale}
+        locales={LOCALES}
+        strings={strings}
+        menuOverlayItems={menuOverlayItems}
+        headerBannerProps={{
+          ...headerBannerStrings,
+          socialMediaData: getSocialMediaProps(socialMediaLinks),
+        }}
+        headerLogoProps={getHeaderLogoProps(currentLocale)}
+        searchBarIndex={SEARCH_BAR_INDEX}
+        serviceMapProps={serviceMapProps}
+        aboutUsTextHtml={aboutUsTextHtml}
+        categories={categories}
+        signpostVersion={publicRuntimeConfig?.version}
+        cookieBanner={
+          <CookieBanner
+            strings={strings.cookieBannerStrings}
+            googleAnalyticsIds={GOOGLE_ANALYTICS_IDS}
+          />
+        }
+      />
+    </>
   );
 };
 
@@ -173,6 +191,13 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
   const services = await fetchServices(COUNTRY_ID, currentLocale.url);
   services.sort((a, b) => a.name.normalize().localeCompare(b.name.normalize()));
 
+  const mapDataTreeSelect = regions.map((x) => {
+    return {
+      name: x.name,
+      value: x.id,
+    } as MenuItem;
+  });
+
   return {
     props: {
       currentLocale,
@@ -189,6 +214,7 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
       },
       categories,
       aboutUsTextHtml,
+      mapDataTreeSelect,
     },
     revalidate: REVALIDATION_TIMEOUT_SECONDS,
   };
