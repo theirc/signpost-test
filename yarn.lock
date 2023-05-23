@@ -805,9 +805,9 @@
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
 "@ircsignpost/signpost-base@^14.41.0":
-  version "14.41.0"
-  resolved "https://registry.yarnpkg.com/@ircsignpost/signpost-base/-/signpost-base-14.41.0.tgz#f5012a4f457862fdaa50e5a5323e5c3933e82904"
-  integrity sha512-og3kqIzKOO103O6LDaqc2CRUAwJPLvUSUWje60q6iaUSiAF18Cmmaab2EJl5v18EFyJsWAflZC9xLUfjf0a5Jw==
+  version "14.49.0"
+  resolved "https://registry.yarnpkg.com/@ircsignpost/signpost-base/-/signpost-base-14.49.0.tgz#fc48c45acf04c2490a22018bb620032e61b8d158"
+  integrity sha512-+Gtobfepq8i+9hxnfo+sAuD8QlLC5PEFimDXVuhJxDhw3G6OyMTAjrsPEgZGgp5QyurM/G9Bpce9iq6qLXlc8w==
 
 "@jridgewell/gen-mapping@^0.1.0":
   version "0.1.1"

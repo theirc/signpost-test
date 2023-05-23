@@ -1,4 +1,5 @@
 import CookieBanner from '@ircsignpost/signpost-base/dist/src/cookie-banner';
+import DistanceAway from '@ircsignpost/signpost-base/dist/src/distance-away';
 import { HeaderBannerStrings } from '@ircsignpost/signpost-base/dist/src/header-banner';
 import HomePage, {
   HomePageStrings,
@@ -14,9 +15,11 @@ import {
   CategoryWithSections,
   ZendeskCategory,
 } from '@ircsignpost/signpost-base/dist/src/zendesk';
+import { Button } from 'antd';
 import type { NextPage } from 'next';
 import { GetStaticProps } from 'next';
 import getConfig from 'next/config';
+import React, { useState } from 'react';
 
 import {
   ABOUT_US_ARTICLE_ID,
@@ -84,30 +87,41 @@ const Home: NextPage<HomeProps> = ({
 }) => {
   const { publicRuntimeConfig } = getConfig();
 
+  const [distance, setDistance] = useState<number>(50);
+
+  const handleDistanceChange = (value: number) => {
+    setDistance(value);
+    // Additional logic to handle the distance change
+  };
   return (
-    <HomePage
-      title={SITE_TITLE}
-      currentLocale={currentLocale}
-      locales={LOCALES}
-      strings={strings}
-      menuOverlayItems={menuOverlayItems}
-      headerBannerProps={{
-        ...headerBannerStrings,
-        socialMediaData: getSocialMediaProps(socialMediaLinks),
-      }}
-      headerLogoProps={getHeaderLogoProps(currentLocale)}
-      searchBarIndex={SEARCH_BAR_INDEX}
-      serviceMapProps={serviceMapProps}
-      aboutUsTextHtml={aboutUsTextHtml}
-      categories={categories}
-      signpostVersion={publicRuntimeConfig?.version}
-      cookieBanner={
-        <CookieBanner
-          strings={strings.cookieBannerStrings}
-          googleAnalyticsIds={GOOGLE_ANALYTICS_IDS}
-        />
-      }
-    />
+    <>
+      <HomePage
+        title={SITE_TITLE}
+        currentLocale={currentLocale}
+        locales={LOCALES}
+        strings={strings}
+        menuOverlayItems={menuOverlayItems}
+        headerBannerProps={{
+          ...headerBannerStrings,
+          socialMediaData: getSocialMediaProps(socialMediaLinks),
+        }}
+        headerLogoProps={getHeaderLogoProps(currentLocale)}
+        searchBarIndex={SEARCH_BAR_INDEX}
+        serviceMapProps={serviceMapProps}
+        aboutUsTextHtml={aboutUsTextHtml}
+        categories={categories}
+        signpostVersion={publicRuntimeConfig?.version}
+        cookieBanner={
+          <CookieBanner
+            strings={strings.cookieBannerStrings}
+            googleAnalyticsIds={GOOGLE_ANALYTICS_IDS}
+          />
+        }
+      />
+      <DistanceAway distance={distance} onChange={handleDistanceChange}>
+        <Button>Distance</Button>
+      </DistanceAway>
+    </>
   );
 };
 
