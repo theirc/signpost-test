@@ -11,7 +11,7 @@ import {
   fetchServicesCategories,
 } from '@ircsignpost/signpost-base/dist/src/service-map-common';
 import TreeSelect, {
-  Option,
+  MenuItem,
 } from '@ircsignpost/signpost-base/dist/src/tree-select';
 import {
   CategoryWithSections,
@@ -73,7 +73,7 @@ interface HomeProps {
   // The HTML text of the About Us category shown on the home page.
   aboutUsTextHtml: string;
   categories: ZendeskCategory[] | CategoryWithSections[];
-  mapDataTreeSelect: Option[];
+  mapDataTreeSelect: MenuItem[];
 }
 
 const Home: NextPage<HomeProps> = ({
@@ -90,48 +90,20 @@ const Home: NextPage<HomeProps> = ({
   const { publicRuntimeConfig } = getConfig();
   const handleTreeSelectChange = async (value: any) => {};
 
-  const treeData = [
-    {
-      title: 'Node1',
-      value: '0-0',
-      key: '0-0',
-      children: [
-        {
-          title: 'Child Node1',
-          value: '0-0-0',
-          key: '0-0-0',
-        },
-      ],
-    },
-    {
-      title: 'Node2',
-      value: '0-1',
-      key: '0-1',
-      children: [
-        {
-          title: 'Child Node3',
-          value: '0-1-0',
-          key: '0-1-0',
-        },
-        {
-          title: 'Child Node4',
-          value: '0-1-1',
-          key: '0-1-1',
-        },
-        {
-          title: 'Child Node5',
-          value: '0-1-2',
-          key: '0-1-2',
-        },
-      ],
-    },
-  ];
-
   return (
     <>
       <TreeSelect
-        label={'Test'}
-        items={treeData}
+        label={'Population Selector'}
+        items={mapDataTreeSelect}
+        tagItems={mapDataTreeSelect}
+        onChange={handleTreeSelectChange}
+        size="large"
+        shrinkOnTablet={false}
+        className="select-menu"
+      />
+      <TreeSelect
+        label={'Dropdown TreeSelect'}
+        items={mapDataTreeSelect}
         tagItems={mapDataTreeSelect}
         onChange={handleTreeSelectChange}
         size="large"
@@ -230,10 +202,9 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
 
   const mapDataTreeSelect = regions.map((x) => {
     return {
-      title: x.name,
-      value: x.id,
-      key: x.id,
-    } as Option;
+      label: x.name,
+      value: x.id.toString(),
+    } as MenuItem;
   });
 
   return {

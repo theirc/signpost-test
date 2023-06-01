@@ -4,7 +4,7 @@ const pack = require('./package.json');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  swcMinify: false,
   // Keep in sync with locales configured in /lib/locale.ts.
   i18n: {
     locales: ['default', 'en-us' /* TODO */],
