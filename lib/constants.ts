@@ -4,7 +4,7 @@ import { LatLngExpression } from 'leaflet';
 export const SITE_TITLE = 'Signpost Test';
 
 // TODO: add the country id of the instance to fetch the data from the cms for the service-map;
-export const COUNTRY_ID = 40;
+export const COUNTRY_ID = 9;
 
 // TODO: add the default coords for the center of the map
 export const MAP_DEFAULT_COORDS: LatLngExpression = [47.4979, 19.0402];
@@ -52,6 +52,10 @@ export const DYNAMIC_CONTENT_LOCALES: { [key: string]: number } = {
 export const ZENDESK_AUTH_HEADER = {
   Authorization: 'Bearer ' + process.env.ZENDESK_OAUTH_TOKEN,
 };
+
+export const DIRECTUS_AUTH_TOKEN = process.env.DIRECTUS_TOKEN ?? '';
+export const DIRECTUS_COUNTRY_ID = 2;
+export const DIRECUTUS_INSTANCE = 'https://directus-qa.azurewebsites.net/';
 
 // TODO: Add your app's google analytics ids as local and server environment variables,
 // and then add to this list. You may have two IDs, for example, during the migration
