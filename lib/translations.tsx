@@ -154,6 +154,13 @@ export function populateServiceMapStrings(dynamicContent: {
     allCategoriesOption:
       dynamicContent['DEFAULT_SERVICE_MAP_ALL_CATEGORIES_OPTION'],
     myLocationOption: dynamicContent['default_service_map_my_location_option'],
+    allServicesTypeOption: 'All services',
+    allProvidersOption: 'All providers',
+    allPopulationsOption: 'All populations',
+    allAccessibilitiesOption: 'All accessibilities',
+    distanceAwayStrings: {
+      informationTooltip: 'Filter by distance from your current location',
+    },
   };
 }
 
