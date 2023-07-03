@@ -24,6 +24,8 @@ import '@ircsignpost/signpost-base/styles/cookie-banner.less';
 import '@ircsignpost/signpost-base/styles/article-content.less';
 import '@ircsignpost/signpost-base/styles/distance-away.less';
 import '@ircsignpost/signpost-base/styles/search-input.less';
+import '@ircsignpost/signpost-base/styles/distance-away.less';
+import '@ircsignpost/signpost-base/styles/search-input.less';
 import Analytics from '@ircsignpost/signpost-base/dist/src/analytics';
 import { GOOGLE_ANALYTICS_IDS } from '../lib/constants';
 
