@@ -10,6 +10,7 @@ import CookieBanner from '@ircsignpost/signpost-base/dist/src/cookie-banner';
 import Footer from '@ircsignpost/signpost-base/dist/src/footer';
 import { MenuOverlayItem } from '@ircsignpost/signpost-base/dist/src/menu-overlay';
 import { createDefaultSearchBarProps } from '@ircsignpost/signpost-base/dist/src/search-bar';
+import { ServiceDetail, Service } from '@ircsignpost/signpost-base/dist/src/service-detail';
 import {
   CategoryWithSections,
   ZendeskCategory,
@@ -28,8 +29,12 @@ import {
   ABOUT_US_ARTICLE_ID,
   CATEGORIES_TO_HIDE,
   CATEGORY_ICON_NAMES,
+  COUNTRY_ID,
   GOOGLE_ANALYTICS_IDS,
   SEARCH_BAR_INDEX,
+  DIRECTUS_AUTH_TOKEN,
+  DIRECTUS_COUNTRY_ID,
+  DIRECUTUS_INSTANCE,
   SECTION_ICON_NAMES,
   SITE_TITLE,
   USE_CAT_SEC_ART_CONTENT_STRUCTURE,
@@ -64,6 +69,7 @@ interface ArticleProps {
   locale: Locale;
   pageUnderConstruction?: boolean;
   preview: boolean;
+  service: Service;
   strings: ArticlePageStrings;
   // A list of |MenuOverlayItem|s to be displayed in the header and side menu.
   menuOverlayItems: MenuOverlayItem[];
@@ -82,11 +88,14 @@ export default function Article({
   pageUnderConstruction,
   preview,
   strings,
+  service,
   menuOverlayItems,
   footerLinks,
 }: ArticleProps) {
   const router = useRouter();
   const { publicRuntimeConfig } = getConfig();
+
+
 
   return (
     <ArticlePage
@@ -130,6 +139,10 @@ export default function Article({
         children: [],
       }}
     >
+       
+    
+       <ServiceDetail service={service} />
+
       <MountArticle
         articleProps={{
           title: articleTitle,
@@ -142,6 +155,7 @@ export default function Article({
           strings: strings.articleContentStrings,
         }}
       />
+
     </ArticlePage>
   );
 }
@@ -190,6 +204,7 @@ export const getStaticProps: GetStaticProps = async ({
   preview,
 }) => {
   const currentLocale = getLocaleFromCode(locale ?? '');
+
   let dynamicContent = await getTranslationsFromDynamicContent(
     getZendeskLocaleId(currentLocale),
     [
@@ -199,7 +214,7 @@ export const getStaticProps: GetStaticProps = async ({
     getZendeskUrl(),
     ZENDESK_AUTH_HEADER
   );
-
+ 
   let categories: ZendeskCategory[] | CategoryWithSections[];
   if (USE_CAT_SEC_ART_CONTENT_STRUCTURE) {
     categories = await getCategoriesWithSections(
