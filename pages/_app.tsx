@@ -1,3 +1,6 @@
+import React, {useState} from 'react';
+import { ServiceContext, ServiceType } from '../context/context';
+import {DirectusArticle} from '@ircsignpost/signpost-base/dist/src/directus'
 import 'antd/dist/antd.less';
 import '../styles/globals.css';
 import 'leaflet/dist/leaflet.css';
@@ -30,10 +33,13 @@ import { GOOGLE_ANALYTICS_IDS } from '../lib/constants';
 import type { AppProps } from 'next/app';
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const [services, setServices] = useState<ServiceType[]>([]);
   return (
     <>
+     <ServiceContext.Provider value={{ services, setServices }}>
       <Analytics googleAnalyticsIds={GOOGLE_ANALYTICS_IDS}/>
       <Component {...pageProps} />
+      </ServiceContext.Provider>
     </>
   );
 }
