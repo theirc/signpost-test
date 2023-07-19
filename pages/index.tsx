@@ -29,7 +29,9 @@ import {
 import type { NextPage } from 'next';
 import { GetStaticProps } from 'next';
 import getConfig from 'next/config';
+import { useContext, useEffect } from 'react';
 
+import { ServiceContext } from '../context/context';
 import {
   ABOUT_US_ARTICLE_ID,
   CATEGORIES_TO_HIDE,
@@ -95,6 +97,13 @@ const Home: NextPage<HomeProps> = ({
   footerLinks,
 }) => {
   const { publicRuntimeConfig } = getConfig();
+  const { setServices } = useContext(ServiceContext);
+
+  useEffect(() => {
+    if (serviceMapProps.services) {
+      setServices(serviceMapProps.services);
+    }
+  }, [serviceMapProps.services, setServices]);
 
   return (
     <HomePage
