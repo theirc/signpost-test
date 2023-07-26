@@ -811,13 +811,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@ircsignpost/signpost-base@../signpost-base":
-  version "15.12.0"
-
-"@ircsignpost/signpost-base@15.10.0":
-  version "15.10.0"
-  resolved "https://registry.yarnpkg.com/@ircsignpost/signpost-base/-/signpost-base-15.10.0.tgz#740b92aadce271ecb345af8ff5e45663a5fcc113"
-  integrity sha512-KauZI057wWWgtMxxUq0j3JO0UV4bKv94rGDe/82nWcfgu1OjvkJ9xsahba3XiqrGBJHlzCNpf1kMTamO5mKwCA==
+"@ircsignpost/signpost-base@15.18.0":
+  version "15.18.0"
+  resolved "https://registry.yarnpkg.com/@ircsignpost/signpost-base/-/signpost-base-15.18.0.tgz#369dd7af168dd9aeae4b0ccf397130ae234bc295"
+  integrity sha512-aSOQnb40Ykz1A2DwO1KbLPa2uWfC9OHRTlxS1uOKd22lszNEc2DW7UnwwCRsP7nYeoJUiWaGzipQxQKsUFkoZg==
 
 "@jridgewell/gen-mapping@^0.1.0":
   version "0.1.1"

@@ -2,10 +2,12 @@ import { Directus } from '@directus/sdk';
 import CookieBanner from '@ircsignpost/signpost-base/dist/src/cookie-banner';
 import {
   getDirectusAccessibility,
+  getDirectusArticle,
   getDirectusArticles,
   getDirectusPopulationsServed,
   getDirectusProviders,
   getDirectusServiceCategories,
+  isSignpostService,
 } from '@ircsignpost/signpost-base/dist/src/directus';
 import { HeaderBannerStrings } from '@ircsignpost/signpost-base/dist/src/header-banner';
 import HomePage, {
@@ -29,9 +31,8 @@ import {
 import type { NextPage } from 'next';
 import { GetStaticProps } from 'next';
 import getConfig from 'next/config';
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 
-import { ServiceContext } from '../context/context';
 import {
   ABOUT_US_ARTICLE_ID,
   CATEGORIES_TO_HIDE,
@@ -97,13 +98,10 @@ const Home: NextPage<HomeProps> = ({
   footerLinks,
 }) => {
   const { publicRuntimeConfig } = getConfig();
-  const { setServices } = useContext(ServiceContext);
 
   useEffect(() => {
-    if (serviceMapProps.services) {
-      setServices(serviceMapProps.services);
-    }
-  }, [serviceMapProps.services, setServices]);
+    console.log('AAAA ', serviceMapProps);
+  }, [serviceMapProps]);
 
   return (
     <HomePage
@@ -201,7 +199,11 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
   await directus.auth.static(DIRECTUS_AUTH_TOKEN);
 
   // const services = await fetchServices(COUNTRY_ID, currentLocale.url);
-  const services = await getDirectusArticles(DIRECTUS_COUNTRY_ID, directus);
+  const services = await getDirectusArticles(
+    DIRECTUS_COUNTRY_ID,
+    directus,
+    currentLocale.directus
+  );
   services.sort((a, b) => a.name.normalize().localeCompare(b.name.normalize()));
 
   const serviceTypes = await getDirectusServiceCategories(directus);
@@ -227,6 +229,7 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
         populations,
         accessibility,
         showDirectus: true,
+        currentLocale,
       },
       categories,
       aboutUsTextHtml,
