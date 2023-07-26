@@ -13,6 +13,7 @@ import { SearchResultsPageStrings } from '@ircsignpost/signpost-base/dist/src/se
 import { SearchResultsStrings } from '@ircsignpost/signpost-base/dist/src/search-results-page-content';
 import { SectionStrings } from '@ircsignpost/signpost-base/dist/src/section-page';
 import { ServiceMapStrings } from '@ircsignpost/signpost-base/dist/src/service-map';
+import { ServicePageStrings } from '@ircsignpost/signpost-base/dist/src/service-page';
 import { ShareButtonStrings } from '@ircsignpost/signpost-base/dist/src/share-button';
 
 import { CustomMenuOverlayStrings } from './menu';
@@ -154,6 +155,13 @@ export function populateServiceMapStrings(dynamicContent: {
     allCategoriesOption:
       dynamicContent['DEFAULT_SERVICE_MAP_ALL_CATEGORIES_OPTION'],
     myLocationOption: dynamicContent['default_service_map_my_location_option'],
+    allServicesTypeOption: 'All services',
+    allProvidersOption: 'All providers',
+    allPopulationsOption: 'All populations',
+    allAccessibilitiesOption: 'All accessibilities',
+    distanceAwayStrings: {
+      informationTooltip: 'Filter by distance from your current location',
+    },
   };
 }
 
@@ -333,6 +341,19 @@ export function populateArticlePageStrings(dynamicContent: {
     searchBarStrings: populateSearchBarStrings(dynamicContent),
     cookieBannerStrings: populateCookieBannerStrings(dynamicContent),
     articleErrorStrings: generateArticleErrorProps(dynamicContent),
+    lastUpdatedLabel: getLastUpdatedLabel(dynamicContent),
+    footerStrings: populateFooterStrings(dynamicContent),
+  };
+}
+
+export function populateServicePageStrings(dynamicContent: {
+  [key: string]: string;
+}): ServicePageStrings {
+  return {
+    serviceContentStrings: populateArticleContentStrings(dynamicContent),
+    searchBarStrings: populateSearchBarStrings(dynamicContent),
+    cookieBannerStrings: populateCookieBannerStrings(dynamicContent),
+    serviceErrorStrings: generateArticleErrorProps(dynamicContent),
     lastUpdatedLabel: getLastUpdatedLabel(dynamicContent),
     footerStrings: populateFooterStrings(dynamicContent),
   };
