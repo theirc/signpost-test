@@ -2,10 +2,12 @@ import { Directus } from '@directus/sdk';
 import CookieBanner from '@ircsignpost/signpost-base/dist/src/cookie-banner';
 import {
   getDirectusAccessibility,
+  getDirectusArticle,
   getDirectusArticles,
   getDirectusPopulationsServed,
   getDirectusProviders,
   getDirectusServiceCategories,
+  isSignpostService,
 } from '@ircsignpost/signpost-base/dist/src/directus';
 import { HeaderBannerStrings } from '@ircsignpost/signpost-base/dist/src/header-banner';
 import HomePage, {
@@ -29,6 +31,7 @@ import {
 import type { NextPage } from 'next';
 import { GetStaticProps } from 'next';
 import getConfig from 'next/config';
+import { useEffect } from 'react';
 
 import {
   ABOUT_US_ARTICLE_ID,
@@ -96,6 +99,9 @@ const Home: NextPage<HomeProps> = ({
 }) => {
   const { publicRuntimeConfig } = getConfig();
 
+  useEffect(() => {
+    console.log('AAAA ', serviceMapProps);
+  }, [serviceMapProps]);
   return (
     <HomePage
       title={SITE_TITLE}
