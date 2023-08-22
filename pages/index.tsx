@@ -224,6 +224,7 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
         populations,
         accessibility,
         showDirectus: true,
+        currentLocale,
       },
       categories,
       aboutUsTextHtml,
