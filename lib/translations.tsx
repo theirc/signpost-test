@@ -8,6 +8,7 @@ import { FooterStrings } from '@ircsignpost/signpost-base/dist/src/footer';
 import { HeaderBannerStrings } from '@ircsignpost/signpost-base/dist/src/header-banner';
 import { HomePageStrings } from '@ircsignpost/signpost-base/dist/src/home-page';
 import { CardsListStrings } from '@ircsignpost/signpost-base/dist/src/home-page-cards-list';
+import { PopupStrings } from '@ircsignpost/signpost-base/dist/src/map';
 import { SearchBarStrings } from '@ircsignpost/signpost-base/dist/src/search-bar';
 import { SearchResultsPageStrings } from '@ircsignpost/signpost-base/dist/src/search-results-page';
 import { SearchResultsStrings } from '@ircsignpost/signpost-base/dist/src/search-results-page-content';
@@ -77,6 +78,8 @@ export const HOME_PAGE_DYNAMIC_CONTENT_PLACEHOLDERS = [
   'DEFAULT_SERVICE_MAP_ALL_CITIES_OPTION',
   'DEFAULT_SERVICE_MAP_ALL_CATEGORIES_OPTION',
   'default_service_map_my_location_option',
+  'default_contact_button_label',
+  'default_view_service_label',
 ];
 
 export const CATEGORY_PLACEHOLDERS = [
@@ -161,6 +164,10 @@ export function populateServiceMapStrings(dynamicContent: {
     allAccessibilitiesOption: 'All accessibilities',
     distanceAwayStrings: {
       informationTooltip: 'Filter by distance from your current location',
+    },
+    popupStrings: {
+      contactButtonLabel: dynamicContent['default_contact_button_label'],
+      viewServiceLabel: dynamicContent['default_view_service_label'],
     },
   };
 }
