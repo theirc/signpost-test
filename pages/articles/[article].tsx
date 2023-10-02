@@ -29,6 +29,7 @@ import {
   CATEGORIES_TO_HIDE,
   CATEGORY_ICON_NAMES,
   GOOGLE_ANALYTICS_IDS,
+  REVALIDATION_TIMEOUT_SECONDS,
   SEARCH_BAR_INDEX,
   SECTION_ICON_NAMES,
   SITE_TITLE,
@@ -303,5 +304,6 @@ export const getStaticProps: GetStaticProps = async ({
       menuOverlayItems,
       footerLinks,
     },
+    revalidate: REVALIDATION_TIMEOUT_SECONDS,
   };
 };
