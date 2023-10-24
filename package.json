@@ -20,7 +20,7 @@
     "@algolia/client-search": "^4.14.2",
     "@changey/react-leaflet-markercluster": "^4.0.0-rc1",
     "@directus/sdk": "^10.3.3",
-    "@ircsignpost/signpost-base": "15.35.0",
+    "@ircsignpost/signpost-base": "15.36.0",
     "@next/env": "^12.2.4",
     "@react-spring/web": "^9.5.4",
     "algoliasearch": "^4.14.2",
