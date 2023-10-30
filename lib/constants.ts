@@ -54,11 +54,8 @@ export const ZENDESK_AUTH_HEADER = {
 }
 
 export const DIRECTUS_AUTH_TOKEN = process.env.DIRECTUS_TOKEN ?? ''
-export const DIRECTUS_COUNTRY_ID = 1
-export const DIRECUTUS_INSTANCE = 'https://directus-qa.azurewebsites.net'
-
-// export const DIRECTUS_COUNTRY_ID = 2
-// export const DIRECUTUS_INSTANCE = 'https://directus-irc.azurewebsites.net/'
+export const DIRECTUS_COUNTRY_ID = 2
+export const DIRECUTUS_INSTANCE = 'https://directus-irc.azurewebsites.net/'
 
 
 // TODO: Add your app's google analytics ids as local and server environment variables,
