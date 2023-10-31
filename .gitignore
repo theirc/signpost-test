@@ -40,3 +40,4 @@ next-env.d.ts
 # Built files for robots
 public/sitemap.xml
 public/robots.txt
+.env
