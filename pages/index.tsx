@@ -2,12 +2,10 @@ import { Directus } from '@directus/sdk';
 import CookieBanner from '@ircsignpost/signpost-base/dist/src/cookie-banner';
 import {
   getDirectusAccessibility,
-  getDirectusArticle,
   getDirectusArticles,
   getDirectusPopulationsServed,
   getDirectusProviders,
   getDirectusServiceCategories,
-  isSignpostService,
 } from '@ircsignpost/signpost-base/dist/src/directus';
 import { HeaderBannerStrings } from '@ircsignpost/signpost-base/dist/src/header-banner';
 import HomePage, {
@@ -15,11 +13,6 @@ import HomePage, {
 } from '@ircsignpost/signpost-base/dist/src/home-page';
 import { MenuOverlayItem } from '@ircsignpost/signpost-base/dist/src/menu-overlay';
 import { ServiceMapProps } from '@ircsignpost/signpost-base/dist/src/service-map';
-import {
-  fetchRegions,
-  fetchServices,
-  fetchServicesCategories,
-} from '@ircsignpost/signpost-base/dist/src/service-map-common';
 import {
   CategoryWithSections,
   ZendeskCategory,
@@ -37,10 +30,9 @@ import {
   ABOUT_US_ARTICLE_ID,
   CATEGORIES_TO_HIDE,
   CATEGORY_ICON_NAMES,
-  COUNTRY_ID,
   DIRECTUS_AUTH_TOKEN,
   DIRECTUS_COUNTRY_ID,
-  DIRECUTUS_INSTANCE,
+  DIRECTUS_INSTANCE,
   GOOGLE_ANALYTICS_IDS,
   MAP_DEFAULT_COORDS,
   REVALIDATION_TIMEOUT_SECONDS,
@@ -184,21 +176,9 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
 
   const strings = populateHomePageStrings(dynamicContent);
 
-  // let regions = await fetchRegions(COUNTRY_ID, currentLocale.url);
-  // regions.sort((a, b) => a.name.normalize().localeCompare(b.name.normalize()));
-
-  // const serviceCategories = await fetchServicesCategories(
-  //   COUNTRY_ID,
-  //   currentLocale.url
-  // );
-  // serviceCategories.sort((a, b) =>
-  //   a.name.normalize().localeCompare(b.name.normalize())
-  // );
-
-  const directus = new Directus(DIRECUTUS_INSTANCE);
+  const directus = new Directus(DIRECTUS_INSTANCE);
   await directus.auth.static(DIRECTUS_AUTH_TOKEN);
 
-  // const services = await fetchServices(COUNTRY_ID, currentLocale.url);
   const services = await getDirectusArticles(
     DIRECTUS_COUNTRY_ID,
     directus,
@@ -221,8 +201,6 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
       headerBannerStrings: populateHeaderBannerStrings(dynamicContent),
       socialMediaLinks: populateSocialMediaLinks(dynamicContent),
       serviceMapProps: {
-        // regions,
-        // serviceCategories,
         services,
         defaultCoords: MAP_DEFAULT_COORDS,
         shareButton: getShareButtonStrings(dynamicContent),
@@ -230,7 +208,6 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => {
         providers,
         populations,
         accessibility,
-        showDirectus: true,
         currentLocale,
       },
       categories,

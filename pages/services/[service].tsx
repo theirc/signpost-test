@@ -1,4 +1,3 @@
-// import {PartialDirectusArticle} from '@ircsignpost/signpost-base/dist/src/service-content'
 import { Directus } from '@directus/sdk';
 import { extractMetaTags } from '@ircsignpost/signpost-base/dist/src/article-content';
 import { getErrorResponseProps } from '@ircsignpost/signpost-base/dist/src/article-page';
@@ -8,17 +7,10 @@ import {
   getDirectusArticle,
   getDirectusArticles,
 } from '@ircsignpost/signpost-base/dist/src/directus';
-import { ErrorProps } from '@ircsignpost/signpost-base/dist/src/error';
 import Footer from '@ircsignpost/signpost-base/dist/src/footer';
-import LayoutWithMenu, {
-  LayoutWithMenuProps,
-} from '@ircsignpost/signpost-base/dist/src/layout-with-menu';
 import { MenuOverlayItem } from '@ircsignpost/signpost-base/dist/src/menu-overlay';
 import { createDefaultSearchBarProps } from '@ircsignpost/signpost-base/dist/src/search-bar';
-import {
-  ServicePageProps,
-  ServicePageStrings,
-} from '@ircsignpost/signpost-base/dist/src/service-page';
+import { ServicePageStrings } from '@ircsignpost/signpost-base/dist/src/service-page';
 import ServicePage, {
   MountService,
 } from '@ircsignpost/signpost-base/dist/src/service-page';
@@ -41,7 +33,7 @@ import {
   CATEGORY_ICON_NAMES,
   DIRECTUS_AUTH_TOKEN,
   DIRECTUS_COUNTRY_ID,
-  DIRECUTUS_INSTANCE,
+  DIRECTUS_INSTANCE,
   GOOGLE_ANALYTICS_IDS,
   REVALIDATION_TIMEOUT_SECONDS,
   SEARCH_BAR_INDEX,
@@ -159,14 +151,14 @@ export default function Service({
 }
 
 async function getStaticParams() {
-  const directus = new Directus(DIRECUTUS_INSTANCE);
+  const directus = new Directus(DIRECTUS_INSTANCE);
   await directus.auth.static(DIRECTUS_AUTH_TOKEN);
   const services = await getDirectusArticles(DIRECTUS_COUNTRY_ID, directus);
   const allowedLanguageCodes = Object.values(LOCALES).map(
     (locale) => locale.directus
   );
 
-  const servicesFiltered = services.filter((service) => {
+  const servicesFiltered = services?.filter((service) => {
     const translation = service.translations.find((translation) =>
       allowedLanguageCodes.includes(translation.languages_id.code)
     );
@@ -174,7 +166,7 @@ async function getStaticParams() {
   });
 
   return servicesFiltered.flatMap((service) =>
-    service.translations.map((translation) => {
+    service?.translations?.map((translation) => {
       const locale = Object.values(LOCALES).find(
         (x) => x.directus === translation.languages_id.code
       );
@@ -265,17 +257,23 @@ export const getStaticProps: GetStaticProps = async ({
     categories
   );
 
-  const directus = new Directus(DIRECUTUS_INSTANCE);
+  const directus = new Directus(DIRECTUS_INSTANCE);
   await directus.auth.static(DIRECTUS_AUTH_TOKEN);
 
-  const article = await getDirectusArticle(Number(params?.service), directus);
+  const service = await getDirectusArticle(Number(params?.service), directus);
 
-  const articleTranslated = article.translations.filter(
+  const serviceTranslated = service.translations.filter(
     (x) => x.languages_id.code === currentLocale.directus
   );
 
+  service.translations = serviceTranslated;
+
   // If article does not exist, return an error.
-  if (!articleTranslated.length) {
+  if (
+    !service ||
+    !service?.translations.length ||
+    service?.country !== DIRECTUS_COUNTRY_ID
+  ) {
     const errorProps = await getErrorResponseProps(
       Number(params?.article),
       currentLocale,
@@ -310,23 +308,26 @@ export const getStaticProps: GetStaticProps = async ({
         };
   }
 
-  const [metaTagAttributes, content] = articleTranslated[0].description
-    ? extractMetaTags(articleTranslated[0].description)
-    : [[], articleTranslated[0].description];
+  service.description = serviceTranslated[0].description;
+  service.name = serviceTranslated[0].name;
+
+  const [metaTagAttributes, content] = serviceTranslated[0].description
+    ? extractMetaTags(serviceTranslated[0].description)
+    : [[], serviceTranslated[0].description];
 
   return {
     props: {
-      pageTitle: `${articleTranslated[0].name} - ${SITE_TITLE}`,
-      serviceId: article.id,
+      pageTitle: `${serviceTranslated[0].name} - ${SITE_TITLE}`,
+      serviceId: service.id,
       siteUrl: getSiteUrl(),
       preview: preview ?? false,
       metaTagAttributes,
-      lastEditedValue: article.date_updated,
+      lastEditedValue: service.date_updated,
       locale: currentLocale,
       strings,
       menuOverlayItems,
       footerLinks,
-      service: article,
+      service,
     },
     revalidate: REVALIDATION_TIMEOUT_SECONDS,
   };
