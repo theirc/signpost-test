@@ -25,6 +25,7 @@ import { SocialMediaLinks } from './social-media';
 export const COMMON_DYNAMIC_CONTENT_PLACEHOLDERS = [
   // Header strings.
   'default_menu_home_title',
+  'default_service_map_title',
   'default_information_title',
   'default_menu_about_title',
   // Cookie banner strings.
@@ -56,6 +57,7 @@ export const COMMON_DYNAMIC_CONTENT_PLACEHOLDERS = [
   'default_banner_tiktok_title',
   'default_banner_twitter_title',
   'default_banner_viber_title',
+  'default_banner_website_title',
   'default_skype_label',
   'default_signal_label',
   'default_banner_telephone_title',
@@ -71,38 +73,30 @@ export const COMMON_DYNAMIC_CONTENT_PLACEHOLDERS = [
 
 export const HOME_PAGE_DYNAMIC_CONTENT_PLACEHOLDERS = [
   // Header banner and social media strings.
-
-  'signpost_test_mission_statement',
+  'ri_greece_mission_statement',
   'default_banner_social_media_title',
   'default_banner_social_media_description',
+  'ri_greece_banner_social_media_description',
   'default_banner_facebook_title',
   'default_banner_messenger_title',
+  'default_banner_whatsapp_title',
   'default_banner_telegram_title',
-  'signpost_test_facebook_link',
-  'signpost_test_telegram_link',
-  'signpost_test_messenger_link',
+  'ri_greece_facebook_link',
+  'ri_greece_messenger_link',
+  'ri_greece_whatsapp_link',
+  'ri_greece_telegram_link',
   // Main body strings.
   'default_information_title',
-
-  //TODO: Replace and create customized dynamic content for information description.
-  'signpost_test_information_description',
-  'default_information_description',
-  'default_service_map_title',
-  'default_service_map_description',
-  'default_service_map_select_region',
-  'default_service_map_all_regions',
-  'default_service_map_select_city',
-  'default_service_map_all_cities',
-  'default_service_map_select_services',
+  'ri_greece_information_description',
+  'ri_greece_service_map_description',
   'default_services_list_count_of',
   'default_services_list_count_services',
   'default_service_map_map_tab',
   'default_service_map_list_tab',
-  'default_service_map_all_services',
-  'DEFAULT_SERVICE_MAP_ALL_REGIONS_OPTION',
-  'DEFAULT_SERVICE_MAP_ALL_CITIES_OPTION',
-  'DEFAULT_SERVICE_MAP_ALL_CATEGORIES_OPTION',
-  'default_service_map_my_location_option',
+  'default_service_map_all_regions_option',
+  'default_service_map_all_cities_option',
+  'default_service_map_all_categories_option',
+  'HC_RI_GREECE_WELCOME_BANNER_TEXT_UCL',
   'default_all_services_type_option',
   'default_all_providers_option',
   'default_all_populations_option',
@@ -111,6 +105,10 @@ export const HOME_PAGE_DYNAMIC_CONTENT_PLACEHOLDERS = [
   'default_seach_input_text',
   'default_contact_button_label',
   'default_view_service_label',
+  'default_service_type_label',
+  'default_providers_label',
+  'default_accessibility_label',
+  'default_populations_label',
 ];
 
 export const CATEGORY_PLACEHOLDERS = [
@@ -135,22 +133,21 @@ export const ERROR_DYNAMIC_CONTENT_PLACEHOLDERS = [
   'default_error_home_button_title',
 ];
 
-// TODO: Ask your Product manager to get Social media links.
 export function populateSocialMediaLinks(dynamicContent: {
   [key: string]: string;
 }): SocialMediaLinks {
   return {
     facebookLink: {
       title: dynamicContent['default_banner_facebook_title'],
-      href: dynamicContent['signpost_test_facebook_link'],
+      href: dynamicContent['ri_greece_facebook_link'],
     },
     messengerLink: {
       title: dynamicContent['default_banner_messenger_title'],
-      href: dynamicContent['signpost_test_messenger_link'],
+      href: dynamicContent['ri_greece_messenger_link'],
     },
     telegramLink: {
       title: dynamicContent['default_banner_telegram_title'],
-      href: dynamicContent['signpost_test_telegram_link'],
+      href: dynamicContent['ri_greece_telegram_link'],
     },
   };
 }
@@ -159,8 +156,7 @@ export function populateHeaderBannerStrings(dynamicContent: {
   [key: string]: string;
 }): HeaderBannerStrings {
   return {
-    // TODO: replace welcomeTitle with website-specific Dynamic content ID.
-    welcomeTitle: dynamicContent['signpost_test_mission_statement'],
+    welcomeTitle: dynamicContent['ri_greece_mission_statement'],
     socialMediaTitle: dynamicContent['default_banner_social_media_title'],
     socialMediaDescription:
       dynamicContent['default_banner_social_media_description'],
@@ -172,33 +168,24 @@ export function populateServiceMapStrings(dynamicContent: {
 }): ServiceMapStrings {
   return {
     title: dynamicContent['default_service_map_title'],
-    description: dynamicContent['default_service_map_description'],
-    selectRegionTitle: dynamicContent['default_service_map_select_region'],
-    regionDefaultValue: dynamicContent['default_service_map_all_regions'],
-    selectCityTitle: dynamicContent['default_service_map_select_city'],
-    cityDefaultValue: dynamicContent['default_service_map_all_cities'],
-    selectServiceTitle: dynamicContent['default_service_map_all_services'],
-    serviceDefaultValue: dynamicContent['default_service_map_select_services'],
+    description: dynamicContent['ri_greece_service_map_description'],
     serviceListStringOf: dynamicContent['default_services_list_count_of'],
     serviceListStringServices:
       dynamicContent['default_services_list_count_services'],
     mapTab: dynamicContent['default_service_map_map_tab'],
     listTab: dynamicContent['default_service_map_list_tab'],
-    allRegionsOption: dynamicContent['DEFAULT_SERVICE_MAP_ALL_REGIONS_OPTION'],
-    allCitiesOption: dynamicContent['DEFAULT_SERVICE_MAP_ALL_CITIES_OPTION'],
-    allCategoriesOption:
-      dynamicContent['DEFAULT_SERVICE_MAP_ALL_CATEGORIES_OPTION'],
-    myLocationOption: dynamicContent['default_service_map_my_location_option'],
     allServicesTypeOption: dynamicContent['default_all_services_type_option'],
     allProvidersOption: dynamicContent['default_all_providers_option'],
     allPopulationsOption: dynamicContent['default_all_populations_option'],
     allAccessibilitiesOption:
       dynamicContent['default_all_accessibilities_option'],
-    distanceAwayStrings: {
-      informationTooltip: dynamicContent['default_distance_away_tooltip'],
-    },
     popupStrings: populatePopupStrings(dynamicContent),
+    distanceAwayStrings: { informationTooltip: '' },
     labelSearchInput: { label: dynamicContent['default_seach_input_text'] },
+    labelAccessibility: dynamicContent['default_accessibility_label'],
+    labelPopulations: dynamicContent['default_populations_label'],
+    labelProvider: dynamicContent['default_providers_label'],
+    labelServicesTypes: dynamicContent['default_service_type_label'],
   };
 }
 
@@ -208,7 +195,7 @@ export function populateCategoriesSectionStrings(dynamicContent: {
 }): CardsListStrings {
   return {
     title: dynamicContent['default_information_title'],
-    description: dynamicContent['signpost_test_information_description'],
+    description: dynamicContent['ri_greece_information_description'],
   };
 }
 
@@ -281,14 +268,47 @@ export function getSelectTopicLabel(dynamicContent: {
   return dynamicContent['default_select_topic'];
 }
 
-// TODO(annkats): add populateServiceMapStrings() once Service map becomes a Shared component.
-
 export function populateArticleContentStrings(dynamicContent: {
   [key: string]: string;
 }): ArticleContentStrings {
   return {
     textReaderTitle: dynamicContent['default_article_reader_title'],
     shareButtonStrings: getShareButtonStrings(dynamicContent),
+  };
+}
+
+export function populateServiceContentStrings(dynamicContent: {
+  [key: string]: string;
+}): ServiceContentStrings {
+  return {
+    commonStrings: populateArticleContentStrings(dynamicContent),
+    openingHoursLabelStrings: dynamicContent['default_opening_hours_label'],
+    addressString: dynamicContent['default_address_label'],
+    descriptionString: dynamicContent['default_description_label'],
+    publicContactInformationStrings: {
+      Email: dynamicContent['default_banner_email_title'],
+      Facebook: dynamicContent['default_banner_facebook_title'],
+      Instagram: dynamicContent['default_banner_instagram_title'],
+      LinkedIn: dynamicContent['default_linkedin_label'],
+      Phone: dynamicContent['default_banner_telephone_title'],
+      Signal: dynamicContent['default_signal_label'],
+      Skype: dynamicContent['default_skype_label'],
+      Telegram: dynamicContent['default_banner_telegram_title'],
+      TikTok: dynamicContent['default_banner_tiktok_title'],
+      Twitter: dynamicContent['default_banner_twitter_title'],
+      Viber: dynamicContent['default_banner_viber_title'],
+      Whatsapp: dynamicContent['default_banner_whatsapp_title'],
+      Website: dynamicContent['default_banner_website_title'],
+    },
+    openingHoursStrings: {
+      Monday: dynamicContent['default_monday_label'],
+      Tuesday: dynamicContent['default_tuesday_label'],
+      Wednesday: dynamicContent['default_wednesday_label'],
+      Thursday: dynamicContent['default_thursday_label'],
+      Friday: dynamicContent['default_friday_label'],
+      Saturday: dynamicContent['default_saturday_label'],
+      Sunday: dynamicContent['default_sunday_label'],
+    },
   };
 }
 
@@ -310,6 +330,7 @@ export function populateHomePageStrings(dynamicContent: {
     cookieBannerStrings: populateCookieBannerStrings(dynamicContent),
     serviceMapStrings: populateServiceMapStrings(dynamicContent),
     searchBarStrings: populateSearchBarStrings(dynamicContent),
+    topBannerString: dynamicContent['HC_RI_GREECE_WELCOME_BANNER_TEXT_UCL'],
     footerStrings: populateFooterStrings(dynamicContent),
   };
 }
@@ -319,6 +340,16 @@ export function populateSearchBarStrings(dynamicContent: {
 }): SearchBarStrings {
   return {
     searchHint: dynamicContent['default_search_hint'],
+  };
+}
+
+export function populateFilterSelectStrings(dynamicContent: {
+  [key: string]: string;
+}) {
+  return {
+    filterLabel: dynamicContent['default_filter_label'],
+    mostRecent: dynamicContent['default_most_recent_filter_option'],
+    mostPopular: dynamicContent['default_most_popular_filter_option'],
   };
 }
 
@@ -383,34 +414,11 @@ export function populateArticlePageStrings(dynamicContent: {
   };
 }
 
-export function populateServicePageStrings(dynamicContent: {
-  [key: string]: string;
-}): ServicePageStrings {
-  return {
-    serviceContentStrings: populateServiceContentStrings(dynamicContent),
-    searchBarStrings: populateSearchBarStrings(dynamicContent),
-    cookieBannerStrings: populateCookieBannerStrings(dynamicContent),
-    serviceErrorStrings: generateArticleErrorProps(dynamicContent),
-    lastUpdatedLabel: getLastUpdatedLabel(dynamicContent),
-    footerStrings: populateFooterStrings(dynamicContent),
-  };
-}
-
 export function populateFooterStrings(dynamicContent: {
   [key: string]: string;
 }): FooterStrings {
   return {
     disclaimerSummary: dynamicContent['default_home_disclaimer'],
-  };
-}
-
-export function populateFilterSelectStrings(dynamicContent: {
-  [key: string]: string;
-}) {
-  return {
-    filterLabel: dynamicContent['default_filter_label'],
-    mostRecent: dynamicContent['default_most_recent_filter_option'],
-    mostPopular: dynamicContent['default_most_popular_filter_option'],
   };
 }
 
@@ -423,36 +431,15 @@ export function populatePopupStrings(dynamicContent: {
   };
 }
 
-export function populateServiceContentStrings(dynamicContent: {
+export function populateServicePageStrings(dynamicContent: {
   [key: string]: string;
-}): ServiceContentStrings {
+}): ServicePageStrings {
   return {
-    commonStrings: populateArticleContentStrings(dynamicContent),
-    openingHoursLabelStrings: dynamicContent['default_opening_hours_label'],
-    addressString: dynamicContent['default_address_label'],
-    descriptionString: dynamicContent['default_description_label'],
-    publicContactInformationStrings: {
-      Email: dynamicContent['default_banner_email_title'],
-      Facebook: dynamicContent['default_banner_facebook_title'],
-      Instagram: dynamicContent['default_banner_instagram_title'],
-      LinkedIn: dynamicContent['default_linkedin_label'],
-      Telephone: dynamicContent['default_banner_telephone_title'],
-      Signal: dynamicContent['default_signal_label'],
-      Skype: dynamicContent['default_skype_label'],
-      Telegram: dynamicContent['default_banner_telegram_title'],
-      TikTok: dynamicContent['default_banner_tiktok_title'],
-      Twitter: dynamicContent['default_banner_twitter_title'],
-      Viber: dynamicContent['default_banner_viber_title'],
-      Whatsapp: dynamicContent['default_banner_whatsapp_title'],
-    },
-    openingHoursStrings: {
-      Monday: dynamicContent['default_monday_label'],
-      Tuesday: dynamicContent['default_tuesday_label'],
-      Wednesday: dynamicContent['default_wednesday_label'],
-      Thursday: dynamicContent['default_thursday_label'],
-      Friday: dynamicContent['default_friday_label'],
-      Saturday: dynamicContent['default_saturday_label'],
-      Sunday: dynamicContent['default_sunday_label'],
-    },
+    serviceContentStrings: populateServiceContentStrings(dynamicContent),
+    searchBarStrings: populateSearchBarStrings(dynamicContent),
+    cookieBannerStrings: populateCookieBannerStrings(dynamicContent),
+    serviceErrorStrings: generateArticleErrorProps(dynamicContent),
+    lastUpdatedLabel: getLastUpdatedLabel(dynamicContent),
+    footerStrings: populateFooterStrings(dynamicContent),
   };
 }

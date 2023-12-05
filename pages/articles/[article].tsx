@@ -13,6 +13,8 @@ import { createDefaultSearchBarProps } from '@ircsignpost/signpost-base/dist/src
 import {
   CategoryWithSections,
   ZendeskCategory,
+} from '@ircsignpost/signpost-base/dist/src/zendesk';
+import {
   getArticle,
   getArticles,
   getCategories,
@@ -154,12 +156,15 @@ async function getStaticParams() {
     )
   );
 
-  return articles.flat().map((article) => {
-    return {
-      article: article.id.toString(),
-      locale: article.locale,
-    };
-  });
+  return articles
+    .flat()
+    .filter((x) => x?.author_id !== 423757401494)
+    .map((article) => {
+      return {
+        article: article.id.toString(),
+        locale: article.locale,
+      };
+    });
 }
 
 export async function getStaticPaths() {
@@ -172,7 +177,7 @@ export async function getStaticPaths() {
         locale,
       };
     }),
-    fallback: true,
+    fallback: 'blocking',
   };
 }
 
@@ -220,6 +225,7 @@ export const getStaticProps: GetStaticProps = async ({
       (c) => (c.icon = CATEGORY_ICON_NAMES[c.id] || 'help_outline')
     );
   }
+
   const aboutUsArticle = await getArticle(
     currentLocale,
     ABOUT_US_ARTICLE_ID,
@@ -227,18 +233,19 @@ export const getStaticProps: GetStaticProps = async ({
     getZendeskMappedUrl(),
     ZENDESK_AUTH_HEADER
   );
+
   const menuOverlayItems = getMenuItems(
     populateMenuOverlayStrings(dynamicContent),
     categories,
     !!aboutUsArticle
   );
 
-  const strings = populateArticlePageStrings(dynamicContent);
-
   const footerLinks = getFooterItems(
     populateMenuOverlayStrings(dynamicContent),
     categories
   );
+
+  const strings = populateArticlePageStrings(dynamicContent);
 
   const article = await getArticle(
     currentLocale,

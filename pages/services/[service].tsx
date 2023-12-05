@@ -1,4 +1,3 @@
-// import {PartialDirectusArticle} from '@ircsignpost/signpost-base/dist/src/service-content'
 import { Directus } from '@directus/sdk';
 import { extractMetaTags } from '@ircsignpost/signpost-base/dist/src/article-content';
 import { getErrorResponseProps } from '@ircsignpost/signpost-base/dist/src/article-page';
@@ -8,17 +7,10 @@ import {
   getDirectusArticle,
   getDirectusArticles,
 } from '@ircsignpost/signpost-base/dist/src/directus';
-import { ErrorProps } from '@ircsignpost/signpost-base/dist/src/error';
 import Footer from '@ircsignpost/signpost-base/dist/src/footer';
-import LayoutWithMenu, {
-  LayoutWithMenuProps,
-} from '@ircsignpost/signpost-base/dist/src/layout-with-menu';
 import { MenuOverlayItem } from '@ircsignpost/signpost-base/dist/src/menu-overlay';
 import { createDefaultSearchBarProps } from '@ircsignpost/signpost-base/dist/src/search-bar';
-import {
-  ServicePageProps,
-  ServicePageStrings,
-} from '@ircsignpost/signpost-base/dist/src/service-page';
+import { ServicePageStrings } from '@ircsignpost/signpost-base/dist/src/service-page';
 import ServicePage, {
   MountService,
 } from '@ircsignpost/signpost-base/dist/src/service-page';
@@ -30,6 +22,7 @@ import {
   getCategoriesWithSections,
   getTranslationsFromDynamicContent,
 } from '@ircsignpost/signpost-base/dist/src/zendesk';
+import algoliasearch from 'algoliasearch/lite';
 import { GetStaticProps } from 'next';
 import getConfig from 'next/config';
 import { useRouter } from 'next/router';
@@ -37,11 +30,15 @@ import React from 'react';
 
 import {
   ABOUT_US_ARTICLE_ID,
+  ALGOLIA_ARTICLE_INDEX_NAME,
+  ALGOLIA_QUERY_INDEX_NAME,
+  ALGOLIA_SEARCH_API_KEY_WRITE,
+  ALGOLIA_SEARCH_APP_ID,
   CATEGORIES_TO_HIDE,
   CATEGORY_ICON_NAMES,
   DIRECTUS_AUTH_TOKEN,
   DIRECTUS_COUNTRY_ID,
-  DIRECUTUS_INSTANCE,
+  DIRECTUS_INSTANCE,
   GOOGLE_ANALYTICS_IDS,
   REVALIDATION_TIMEOUT_SECONDS,
   SEARCH_BAR_INDEX,
@@ -159,14 +156,14 @@ export default function Service({
 }
 
 async function getStaticParams() {
-  const directus = new Directus(DIRECUTUS_INSTANCE);
+  const directus = new Directus(DIRECTUS_INSTANCE);
   await directus.auth.static(DIRECTUS_AUTH_TOKEN);
   const services = await getDirectusArticles(DIRECTUS_COUNTRY_ID, directus);
   const allowedLanguageCodes = Object.values(LOCALES).map(
     (locale) => locale.directus
   );
 
-  const servicesFiltered = services.filter((service) => {
+  const servicesFiltered = services?.filter((service) => {
     const translation = service.translations.find((translation) =>
       allowedLanguageCodes.includes(translation.languages_id.code)
     );
@@ -174,7 +171,7 @@ async function getStaticParams() {
   });
 
   return servicesFiltered.flatMap((service) =>
-    service.translations.map((translation) => {
+    service?.translations?.map((translation) => {
       const locale = Object.values(LOCALES).find(
         (x) => x.directus === translation.languages_id.code
       );
@@ -245,6 +242,7 @@ export const getStaticProps: GetStaticProps = async ({
       (c) => (c.icon = CATEGORY_ICON_NAMES[c.id] || 'help_outline')
     );
   }
+
   const aboutUsArticle = await getArticle(
     currentLocale,
     ABOUT_US_ARTICLE_ID,
@@ -252,6 +250,7 @@ export const getStaticProps: GetStaticProps = async ({
     getZendeskMappedUrl(),
     ZENDESK_AUTH_HEADER
   );
+
   const menuOverlayItems = getMenuItems(
     populateMenuOverlayStrings(dynamicContent),
     categories,
@@ -265,17 +264,23 @@ export const getStaticProps: GetStaticProps = async ({
     categories
   );
 
-  const directus = new Directus(DIRECUTUS_INSTANCE);
+  const directus = new Directus(DIRECTUS_INSTANCE);
   await directus.auth.static(DIRECTUS_AUTH_TOKEN);
 
-  const article = await getDirectusArticle(Number(params?.service), directus);
+  const service = await getDirectusArticle(Number(params?.service), directus);
 
-  const articleTranslated = article.translations.filter(
+  const serviceTranslated = service.translations.filter(
     (x) => x.languages_id.code === currentLocale.directus
   );
 
+  service.translations = serviceTranslated;
+
   // If article does not exist, return an error.
-  if (!articleTranslated.length) {
+  if (
+    !service ||
+    !service.translations.length ||
+    service?.country !== DIRECTUS_COUNTRY_ID
+  ) {
     const errorProps = await getErrorResponseProps(
       Number(params?.article),
       currentLocale,
@@ -310,24 +315,84 @@ export const getStaticProps: GetStaticProps = async ({
         };
   }
 
-  const [metaTagAttributes, content] = articleTranslated[0].description
-    ? extractMetaTags(articleTranslated[0].description)
-    : [[], articleTranslated[0].description];
+  if (service) {
+    await Promise.allSettled(
+      service.translations?.map(async (x) => {
+        const body_safe = stripHtmlTags(x?.description || '');
+        const title = x.name || '';
+        const query = title;
+        const id = x.id;
+        const locale = currentLocale;
+        const updated_at_iso = service.date_updated;
+        const translations = service.translations;
+        const category = { id: '1', title: 'Services' };
+        try {
+          const client = algoliasearch(
+            ALGOLIA_SEARCH_APP_ID,
+            ALGOLIA_SEARCH_API_KEY_WRITE
+          );
+          const record = {
+            objectID: id,
+            id,
+            title,
+            body_safe,
+            locale,
+            category,
+            updated_at_iso,
+            translations,
+          };
+          const index: any = client.initIndex(ALGOLIA_ARTICLE_INDEX_NAME);
+          await index.saveObject(record);
+          const indexquery: any = client.initIndex(ALGOLIA_QUERY_INDEX_NAME);
+          await indexquery.saveObject({
+            objectID: id,
+            id,
+            title,
+            body_safe,
+            locale,
+            category,
+            updated_at_iso,
+            translations,
+            query,
+          });
+        } catch (error) {
+          console.error(
+            `Error creating algolia index: ${
+              error?.toString() ?? 'Uknown error'
+            }`
+          );
+        }
+      })
+    );
+  }
+
+  service.description = serviceTranslated[0].description;
+  service.name = serviceTranslated[0].name;
+
+  const [metaTagAttributes, content] = serviceTranslated[0].description
+    ? extractMetaTags(serviceTranslated[0].description)
+    : [[], serviceTranslated[0].description];
 
   return {
     props: {
-      pageTitle: `${articleTranslated[0].name} - ${SITE_TITLE}`,
-      serviceId: article.id,
+      pageTitle: `${serviceTranslated[0].name} - ${SITE_TITLE}`,
+      serviceId: service.id,
       siteUrl: getSiteUrl(),
       preview: preview ?? false,
       metaTagAttributes,
-      lastEditedValue: article.date_updated,
+      lastEditedValue: service.date_updated,
       locale: currentLocale,
       strings,
       menuOverlayItems,
       footerLinks,
-      service: article,
+      service,
     },
     revalidate: REVALIDATION_TIMEOUT_SECONDS,
   };
 };
+
+function stripHtmlTags(html: string): string {
+  const regex =
+    /<[^>]*>|&[^;]+;|<img\s+.*?>|<span\s+style="[^"]*">.*?<\/span>|&[A-Za-z]+;/g;
+  return html.replace(regex, '');
+}
