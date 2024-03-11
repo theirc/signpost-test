@@ -22,9 +22,15 @@ declare global {
     type?: "human" | "bot"
     id?: number
     message?: string
+    botName?: string
+    isAnswer?: boolean
+    messages?: ChatMessage[]
     docs?: Doc[]
     error?: string
     command?: "rebuild" | null
+    needsRebuild?: boolean
+    rebuild?(): void
+    question?: string
   }
 
 }
@@ -60,18 +66,6 @@ export const api = {
     return c
   },
 
-  async getProviders(id:number): Promise<Provider[]> {
-    let c: Provider[] = null
-
-    try {
-      c = await fetch(`${serverurl}/providers/${id}`).then(r => r.json())
-    } catch (error) {
-      console.log("Error Loading Providers", error)
-    }
-
-    return c
-  },
-
   async getCategories() {
 
     let cats: Categories = null
@@ -85,31 +79,86 @@ export const api = {
     return cats
   },
 
-  async askbot(req: ChatMessage) {
+  async getBots(): Promise<{ [index: number]: string }> {
 
-    let a: ChatMessage = {} as any
+    let bots = {}
 
+    try {
+      bots = await fetch(`${serverurl}/bots`).then(r => r.json())
+    } catch (error) {
+      console.log("Error Loading Bots", error)
+    }
+
+    return bots
+
+  },
+
+  async askbot(req: ChatMessage, bots: { label: string, value: number }[]) {
+
+    let answer: ChatMessage = {
+      type: "bot",
+      messages: [],
+      question: req.message
+    }
+
+    if (!bots.length) return answer
+
+    for (const b of bots) {
+
+      let a: ChatMessage = {}
+
+      const breq = { ...req, id: b.value }
+
+      let options = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(breq)
+      }
+
+      try {
+        a = await fetch(`${serverurl}/ai/`, options).then(r => r.json())
+      } catch (error) {
+        a.error = error?.toString() ?? "Error"
+        console.log("Error Contacting Bot", error)
+      }
+
+      if (a.error) a.message = a.error
+      a.type = "bot"
+      a.id = b.value
+      a.botName = b.label
+      a.question = req.message
+      answer.messages.push(a)
+
+    }
+
+    return answer
+  },
+
+  async qualifyBot(id: number, positive: boolean, reporter: string, result: string, question: string, answer: string) {
+
+    const r = {
+      id,
+      positive,
+      reporter,
+      result,
+      question,
+      answer,
+    }
 
     let options = {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(req)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(r)
     }
 
     try {
-      a = await fetch(`${serverurl}/ai/`, options).then(r => r.json())
+      console.log(r)
+
+      await fetch(`${serverurl}/qualifybot/`, options).then(r => r.json())
     } catch (error) {
-      a.error = error?.toString() ?? "Error"
-      console.log("Error Contacting Bot", error)
+      console.log("Error Scoring Bot", error)
     }
 
-    if (a.error) a.message = a.error
-
-    a.type = "bot"
-
-    return a
   },
 
 

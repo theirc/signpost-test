@@ -3,6 +3,25 @@ import { api } from "./api"
 import { DB } from "./db"
 import isEqual from "lodash/isEqual"
 
+type Statuses = "initializing" | "ready"
+
+declare global {
+
+  type Services = { [index: number]: Service }
+
+  interface Country {
+    id?: number
+    name?: string
+    locale?: string
+    content: Blocks[]
+    pagecolor?: string
+    pagebgcolor?: string
+    headercolor?: string
+    headerbgcolor?: string
+  }
+
+}
+
 
 export const app = {
 
@@ -30,8 +49,8 @@ export const app = {
     app.update()
   },
 
-  color: "#000000" as string,
-  bgcolor: "#ffffff" as string,
+  color: "#000000",
+  bgcolor: "#ffffff",
 
   header: {
     color: null as string,
@@ -57,12 +76,13 @@ export const app = {
 
   services: {} as Services,
 
+
+  reactUpdate: null as Function,
   update() {
     console.log("Update App: ", app)
     if (app.reactUpdate) app.reactUpdate()
   },
 
-  reactUpdate: null as Function,
 
   async initialize() {
     if (app.boot) return
@@ -107,7 +127,6 @@ export const app = {
         app.status = "ready"
 
         const sc = await app.db.loadLocalServices()
-        const pc = await app.db.loadLocalProviders()
 
         if (sc > 0) {
           console.log(`${sc} Services Cached`)
@@ -115,13 +134,7 @@ export const app = {
           app.update()
         }
 
-        if (pc > 0) {
-          console.log(`${pc} Services Cached`);
-          app.update()
-        }
 
-
-        await app.db.updateProviders()
         await app.db.updateServices()
         app.state.servicesLoaded = true
 
@@ -188,23 +201,3 @@ export async function sleep(ms = 1000) {
 }
 
 
-declare global {
-
-  type Services = { [index: number]: Service }
-
-  interface Country {
-    id?: number
-    name?: string
-    locale?: string
-    content: Blocks[]
-
-    pagecolor?: string
-    pagebgcolor?: string
-
-    headercolor?: string
-    headerbgcolor?: string
-  }
-
-}
-
-type Statuses = "initializing" | "ready"
