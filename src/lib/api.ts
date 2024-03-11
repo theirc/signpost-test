@@ -66,6 +66,18 @@ export const api = {
     return c
   },
 
+  async getProviders(id:number): Promise<Provider[]> {
+    let c: Provider[] = null
+
+    try {
+      c = await fetch(`${serverurl}/providers/${id}`).then(r => r.json())
+    } catch (error) {
+      console.log("Error Loading Providers", error)
+    }
+
+    return c
+  },
+
   async getCategories() {
 
     let cats: Categories = null

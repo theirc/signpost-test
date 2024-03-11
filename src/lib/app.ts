@@ -127,6 +127,7 @@ export const app = {
         app.status = "ready"
 
         const sc = await app.db.loadLocalServices()
+        const pc = await app.db.loadLocalProviders()
 
         if (sc > 0) {
           console.log(`${sc} Services Cached`)
@@ -134,6 +135,12 @@ export const app = {
           app.update()
         }
 
+        if (pc > 0) {
+          console.log(`${pc} Services Cached`);
+          app.update()
+        }
+
+        await app.db.updateProviders()
 
         await app.db.updateServices()
         app.state.servicesLoaded = true

@@ -29,11 +29,23 @@ export class DB extends Dexie {
 
   }
 
+  async loadLocalProviders(): Promise<number> {
+    const dbs = (await this.providers.toArray()) || []
+
+    if (dbs.length > 0) {
+      const r = dbs.reduce((a, b) => { a[b.id] = b; return a }, {})
+      app.categories.providers = r as any
+      console.log("Local Providers: ", r)
+    }
+    return dbs.length
+
+  }
+
   async updateServices() {
     console.log("Updating Database...")
 
-    // const services = await api.getServices(app.country)
-    const services = await api.getServices(2)
+    const services = await api.getServices(app.country)
+    // const services = await api.getServices(2)
 
     if (services) {
       console.log(`Saving ${services.length} Services`)
@@ -43,6 +55,22 @@ export class DB extends Dexie {
     }
 
     console.log("Database Updated!")
+  }
+
+  async updateProviders() {
+    console.log("Updating Providers Database...")
+
+    const providers = await api.getProviders(app.country)
+    // const services = await api.getServices(2)
+
+    if (providers) {
+      console.log(`Saving ${providers.length} Providers`)
+      for (const provider of providers) {
+        await this.providers.put(provider, provider.id)
+      }
+    }
+
+    console.log("Providers Database Updated!")
   }
 
 }
@@ -103,6 +131,7 @@ declare global {
     description?: LocalizableText
     icon?: string
     color?: string
+    parent?: number[]
   }
 
   interface Categories {
