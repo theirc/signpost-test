@@ -42,8 +42,26 @@ export function BlockServices(props: { block: BlockServices }) {
           .localeCompare(translate(b.name).normalize())
       ) || []
 
+  const usedCategoryIdsSet = new Set<number>();
+  const usedSubcategoryIds = new Set<number>();
+  services.forEach((service) => {
+    service.subcategories.forEach((subcategory) => {
+      usedSubcategoryIds.add(subcategory);
+    });
+    service.categories.forEach((category) => {
+      usedCategoryIdsSet.add(category);
+    });
+  });
+  const categories = Object.values(app.data.categories.categories || []).filter(
+    (category) => usedCategoryIdsSet.has(category.id)
+  );
+  const subcategories = Object.values(
+    app.data.categories.subCategories || []
+  ).filter((subcat) => usedSubcategoryIds.has(subcat.id));
+
   const [state, setState] = useMultiState({
     filteredServices: services,
+    filteredProviders: providers,
   })
 
   const accessibilities = Object.values(app.data.categories.accesibility) || []
@@ -58,18 +76,38 @@ export function BlockServices(props: { block: BlockServices }) {
     {
       key: "list",
       label: "List View",
-      children: <ServicesList />,
+      children: <ServicesList services={state.filteredServices} />,
     },
   ]
 
-  const mapProviderData = (): MenuItem[] => {
-    return providers.map((x) => {
+  const combineCategoriesWithSubcategories = (categories, subcategories) => {
+    const combinedData = categories.map((category) => {
+      const subcategoriesForCategory = subcategories
+        .filter((subcategory) => subcategory.parent.includes(category.id))
+        .map((subcategory) => ({
+          value: subcategory.id,
+          label: translate(subcategory.name),
+        }));
+      return {
+        value: category.id,
+        label: translate(category.name),
+        children: subcategoriesForCategory,
+      };
+    });
+    combinedData.unshift({ value: -1, label: "All services types" });
+    return combinedData;
+  };
+
+  const mapProviderData = (providers: Provider[]): MenuItem[] => {
+    const filterProviders = providers.map((x) => {
       return {
         value: x.id,
         label: translate(x.name),
-      }
-    })
-  }
+      };
+    });
+    filterProviders.unshift({ value: -1, label: "All providers" });
+    return filterProviders;
+  };
 
   const filterFirstSubArray = (arrayOfArrays: number[][]): number[][] => {
     const firstSubArray = arrayOfArrays[0]
@@ -83,8 +121,8 @@ export function BlockServices(props: { block: BlockServices }) {
     if (!value.length || value.flat()[value.flat().length - 1] === -1) {
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
-        [filter]: [[]],
-      }))
+        [filter]: [[-1]],
+      }));
     } else {
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
@@ -99,7 +137,7 @@ export function BlockServices(props: { block: BlockServices }) {
         return services
       }
 
-      const providerIDs = new Set(value.flat())
+      const providerIDs = new Set(value.flat());
       services2 = services2.filter(
         (x) => !!x.provider && providerIDs.has(x?.provider)
       )
@@ -140,8 +178,69 @@ export function BlockServices(props: { block: BlockServices }) {
     []
   )
 
+  const handleServiceTypeChange = useCallback(
+    (value: number[][], services: Service[]) => {
+      const categoryMap = new Map<number, boolean>();
+      const subcategoryMap = new Map<number, boolean>();
+
+      if (!value.length || value.flat()[value.flat().length - 1] === -1) {
+        filterProviders(services);
+        return services;
+      }
+
+      for (const criteria of value) {
+        const [categoryId, ...subcategoryIds] = criteria;
+        for (const subcategoryId of subcategoryIds) {
+          subcategoryMap.set(subcategoryId, true);
+        }
+        if (!subcategoryMap.size) {
+          categoryMap.set(categoryId, true);
+        }
+      }
+
+      services = services.filter((data) => {
+        return (
+          data.categories.some((category) => categoryMap.has(category)) ||
+          data.subcategories.some((subcategory) =>
+            subcategoryMap.has(subcategory)
+          )
+        );
+      });
+      filterProviders(services);
+
+      return services;
+    },
+    []
+  );
+
+  const filterProviders = (services: Service[]) => {
+    const uniqueProvidersIdsSet = new Set(services.flatMap((x) => x.provider));
+    const uniqueProvidersArray = providers
+      ?.filter((x) => Array.from(uniqueProvidersIdsSet).includes(x.id))
+      .sort((a, b) =>
+        translate(a.name)
+          .normalize()
+          .localeCompare(translate(b.name).normalize())
+      );
+
+    setState({ filteredProviders: uniqueProvidersArray });
+  };
+
+  const handleDropdownVisibleChange = (open: boolean) => {
+    if (open === false) {
+      Object.entries(selectedFilterValues).forEach(([key, value]) => {
+        if (
+          key === filterType.serviceTypes &&
+          JSON.stringify(value) === JSON.stringify([[-1]])
+        ) {
+          filterProviders(services);
+        }
+      });
+    }
+  };
+
   useEffect(() => {
-    let filteredData = [...services]
+    let filteredData = [...services];
 
     Object.entries(selectedFilterValues).forEach(([key, value]) => {
       if (
@@ -163,7 +262,7 @@ export function BlockServices(props: { block: BlockServices }) {
         key === filterType.serviceTypes &&
         JSON.stringify(value) !== JSON.stringify([[-1]])
       ) {
-        // filteredData = handleServiceTypeChange(value, filteredData); TODO: SERVICE TYPE CHANGE
+        filteredData = handleServiceTypeChange(value, filteredData);
       }
     })
 
@@ -182,10 +281,22 @@ export function BlockServices(props: { block: BlockServices }) {
       <div className="text-2xl mt-4 opacity-50">
         {translate(props.block.subtitle)}
       </div>
-      <div>
+      <div className="flex">
+        <TreeSelect
+          label="Service Types"
+          items={combineCategoriesWithSubcategories(categories, subcategories)}
+          className="w-full overflow-hidden px-2 sm:w-1/2 mt-4"
+          onChange={(value) =>
+            handleSelectedFilters(value, filterType.serviceTypes)
+          }
+          onClear={() => filterProviders(services)}
+          onDropdownVisibleChange={handleDropdownVisibleChange}
+          value={selectedFilterValues.serviceTypes}
+          defaultValue={[[-1]]}
+        />
         <TreeSelect
           label="Provider"
-          items={mapProviderData()}
+          items={mapProviderData(state.filteredProviders)}
           className="w-full overflow-hidden px-2 sm:w-1/2 mt-4"
           onChange={(value) => {
             handleSelectedFilters(value, filterType.provider)

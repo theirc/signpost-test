@@ -5,15 +5,14 @@ import {
   Marker,
   NavigationControl,
   Popup,
-} from "react-map-gl"
-import { app, translate } from "../app"
-import mapboxgl from "mapbox-gl"
-import supercluster, { ClusterFeature, PointFeature } from "supercluster"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import GeocoderControl from "./geocoder-control"
-import { ContactDropdown } from "./contact-dropdown"
-import React from "react"
-import { useMultiState } from "./hooks"
+} from "react-map-gl";
+import { app, translate } from "../app";
+import mapboxgl from "mapbox-gl";
+import supercluster, { ClusterFeature, PointFeature } from "supercluster";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import GeocoderControl from "./geocoder-control";
+import { ContactDropdown } from "./contact-dropdown";
+import { useMultiState } from "./hooks";
 
 const getBoundsForFeatures = (services: Service[]) => {
   const bounds = new mapboxgl.LngLatBounds()
@@ -79,7 +78,7 @@ export function Maps({ services }: mapProps) {
     if (!categorySelected.length) {
       return (
         <i
-          className={`rounded-full shadow border-4 border-black h-40 w-40 bg-white p-8 text-center text-2xl flex items-center`}
+          className={`rounded-full shadow border-4 border-black h-6 w-6 bg-white p-3 text-center text-2xl flex items-center`}
           style={{ color: "#FFFFFF" }}
         />
       )
@@ -180,8 +179,8 @@ export function Maps({ services }: mapProps) {
         map.off("load", onMapLoad)
         map.off("move", updateClusters)
       }
-    }
-  }, [isMapReady])
+    };
+  }, [isMapReady, loadAndUpdateClusters, updateClusters]);
 
   useEffect(() => {
     const map = mapRef.current?.getMap()
@@ -194,9 +193,6 @@ export function Maps({ services }: mapProps) {
       })
     }
   }, [bounds])
-
-  useEffect(() => {
-  }, [services])
 
   const handleViewportChange = () => {
     updateClusters()
