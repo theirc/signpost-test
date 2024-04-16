@@ -7,7 +7,9 @@ export function Categories() {
 
   let { id } = useParams();
 
-  const categories: ZendeskCategory[] = Object.values(app.data.zendesk.categories)
+  const categories: ZendeskCategory[] = Object.values(
+    app.data.zendesk.categories
+  );
   const c: ZendeskCategory = app.data.zendesk.categories[id];
 
   if (!c) {
@@ -15,16 +17,16 @@ export function Categories() {
   }
 
   const s: ZendeskSection[] = Object.values(app.data.zendesk.sections).filter(
-    (x) => x.category_id === c.id
+    (x) => x.category === c.id
   );
   const a: ZendeskArticle[] = Object.values(app.data.zendesk.articles);
   const sections = s.map((section) => {
     const articles = a
-      .filter((x) => x.section_id === section.id)
+      .filter((x) => x.section === section.id)
       .map((x) => {
         return {
           id: x.id,
-          title: x.title,
+          title: translate(x.name),
           lastEdit: {
             label: "lastupdatedLabel",
             value: x.updated_at,
@@ -32,12 +34,12 @@ export function Categories() {
         };
       });
 
-    return { id: section.id, name: section.name, articles };
+    return { id: section.id, name: translate(section.name), articles };
   });
 
   const categoryItems = Object.values(categories)?.map((category) => {
     return {
-      name: category.name,
+      name: translate(category.name),
       value: category.id,
       iconName: "help_outline",
       link: `/categories/${category.id}`,

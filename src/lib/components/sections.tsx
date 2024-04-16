@@ -15,28 +15,27 @@ export function Sections() {
   }
   const a: ZendeskArticle[] = Object.values(app.data.zendesk.articles);
   const articles = a
-    .filter((x) => x.section_id === s.id)
+    .filter((x) => x.section === s.id)
     .map((x) => {
       return {
         id: x.id,
-        title: x.title,
+        title: translate(x.name),
         lastEdit: {
           label: "lastupdatedLabel",
           value: x.updated_at,
         },
       };
     });
-  const section = { id: s.id, name: s.name, articles };
+  const section = { id: s.id, name: translate(s.name), articles };
 
   const sectionItems = Object.values(sections)?.map((section) => {
     return {
-      name: section.name,
+      name: translate(section.name),
       value: section.id,
       iconName: "help_outline",
       link: `/sections/${section.id}`,
     };
   });
-
 
   return (
     <div

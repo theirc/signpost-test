@@ -13,8 +13,8 @@ export function Article() {
   }
 
 
-  const title = translate(a.title)
-  const body = translate(a.body)
+  const title = translate(a.name)
+  const body = translate(a.description)
 
   return <div className={`py-16 w-full flex justify-center text-black bg-white h-full overflow-y-auto`}>
     <div className="sm:w-full px-4 md:w-2/3">
