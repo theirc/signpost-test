@@ -7,8 +7,8 @@ interface Footerlinks {
 
 declare global {
 
-  type BlockTypes = "text" | "channels" | "info" | "services" | "image" | "richtext" | "footer"
-  type Blocks = Block | BlockText | BlockChannels | BlockRichText | BlockInfo | BlockServices | BlockImage | BlockFooter
+  type BlockTypes = "text" | "channels" | "info" | "services" | "image" | "richtext" | "footer" | "categories"
+  type Blocks = Block | BlockText | BlockChannels | BlockRichText | BlockInfo | BlockServices | BlockImage | BlockFooter | BlockCategories
 
   interface Block {
     type: BlockTypes
@@ -83,6 +83,12 @@ declare global {
     whatsappc_link?: string
     tiktok?: LocalizableText
     tiktok_link?: string
+  }
+
+  interface BlockCategories extends Block {
+    type: "info"
+    title?: LocalizableText
+    subtitle?: LocalizableText
   }
 
 }

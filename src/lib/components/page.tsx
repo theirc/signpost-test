@@ -2,6 +2,9 @@ import { CSSProperties } from "react"
 import { AIBot, Blocks, Footer, Header, app } from ".."
 import { BrowserRouter, createBrowserRouter, Link, Route, RouterProvider, Routes } from "react-router-dom"
 import { Service } from "./service"
+import { Categories } from "./categories"
+import { Article } from "./article"
+import { Sections } from "./sections"
 
 
 export function Page() {
@@ -20,6 +23,9 @@ export function Page() {
       <Routes>
         <Route path="/" element={<Blocks />} />
         <Route path="/service/:id?" element={<Service />} />
+        <Route path="/article/:id?" element={<Article />} />
+        <Route path="/sections/:id?" element={<Sections />} />
+        <Route path="/categories/:id?" element={<Categories />} />
         <Route path="/signpostbot" element={<AIBot />} />
       </Routes>
     </BrowserRouter>

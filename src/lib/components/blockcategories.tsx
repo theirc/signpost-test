@@ -2,7 +2,7 @@
 import { translate } from "../app"
 import { Container } from "./container"
 
-export function BlockInfo(props: { block: BlockInfo }) {
+export function BlockCategories(props: { block: BlockCategories }) {
   const { block } = props
 
   return <Container block={block}>

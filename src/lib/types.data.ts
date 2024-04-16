@@ -115,5 +115,43 @@ declare global {
     accesibility: { [index: number]: Category }
   }
 
+  interface ZendeskCategory {
+    id: number;
+    name: string;
+    description: string;
+    icon?: string;
+  }
 
+  interface ZendeskSection {
+    description: string;
+    id: number;
+    name: string;
+    category_id: number;
+    icon?: string;
+  }
+
+  interface Attachment {
+    fileName: string;
+    url: string;
+  }
+
+  interface ZendeskArticle {
+    body: string;
+    edited_at: string;
+    id: number;
+    section_id: number;
+    title: string;
+    updated_at: string;
+    draft: boolean;
+    icon?: string;
+    category_id?: number;
+    author_id?: number;
+    attachments?: Attachment[];
+  }
+
+  interface ZendeskData {
+    categories: { [index:number]: ZendeskCategory }
+    sections: { [index:number]: ZendeskSection }
+    articles: { [index:number]: ZendeskArticle }
+  }
 }
