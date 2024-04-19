@@ -41,6 +41,7 @@ export class DB extends Dexie {
   }
 
   async loadLocalProviders(): Promise<number> {
+    console.log("Loading providers...");
     const dbs = (await this.providers.toArray()) || []
     if (dbs.length > 0) {
       const r = dbs.reduce((a, b) => { a[b.id] = b; return a }, {})
@@ -101,6 +102,7 @@ export class DB extends Dexie {
     if (providers) {
       console.log(`Saving ${providers.length} Providers`)
       for (const provider of providers) {
+        console.log(`Saving provider: ${provider.id}, Name: ${JSON.stringify(provider.name)}`);
         await this.providers.put(provider, provider.id)
       }
     }

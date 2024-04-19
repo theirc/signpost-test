@@ -87,28 +87,39 @@ function getContactDetailLink(info: {
 export function Service() {
   let { id } = useParams();
   const [service, setService] = useState(null);
+  const [providerName, setProviderName] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      const s = app.data.services[id];
-      console.log("Fetched service:", s);
-      setService(s);
-      setLoading(false);
-    };
-
+      const fetchedService = app.data.services[id];
+      console.log("Fetched service:", service);
+      if(!fetchedService) {
+        setLoading(false);
+        return
+      }
+     setService(fetchedService);
+     
+     //Fetching provider data from provider id 
+     if(fetchedService.provider) {
+      const providerData = app.data.categories.providers[fetchedService.provider];
+      if(providerData && providerData.name ){
+        setProviderName(translate(providerData.name));
+      } else {
+        setProviderName(null)
+      }
+    
+     }
+     setLoading(false);
+    }
     fetchData();
   }, [id]);
-
   if (loading) {
-    return <div>Loading...</div>;
-  }
-
+    return <div>Loading ....</div>
+  } 
   if (!service) {
-    return <div>Service {id} not found</div>;
+    return <div>Service {id} not found</div>
   }
- 
-
   function ContactDetails({ contactInfo }) {
     return (
       <div className="space-y-4">
@@ -157,9 +168,7 @@ export function Service() {
   const title = translate(service.name);
   const location = translate(service.address);
   const description = translate(service.description);
-  const providerName = translate(app.data.categories.providers[service.provider].name);
-  console.log('Provider:',providerName)
-
+  const providerInfo = translate(providerName)
 
   return (
     <div className="py-30 mb-20 w-full flex flex-col items-center text-black bg-white overflow-auto">
@@ -167,7 +176,7 @@ export function Service() {
         <h1 className="text-3xl font-bold">{title}</h1>
         <p>Last Updated: {formatDate(service.date_updated)}</p>
         <h2 className="text-xl">{location}</h2>
-        <p>{providerName}</p>
+        {providerName && <p>{providerInfo}</p>}
 
         <div
           className="service mt-10"
