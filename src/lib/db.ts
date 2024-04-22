@@ -102,7 +102,6 @@ export class DB extends Dexie {
     if (providers) {
       console.log(`Saving ${providers.length} Providers`)
       for (const provider of providers) {
-        console.log(`Saving provider: ${provider.id}, Name: ${JSON.stringify(provider.name)}`);
         await this.providers.put(provider, provider.id)
       }
     }
