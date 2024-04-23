@@ -13,4 +13,6 @@ export * from "./blockinfo"
 export * from "./blockimage"
 export * from "./blocks"
 export * from "../bot/bot"
+export * from "./blockcategories"
+export * from "./blocksections"
 

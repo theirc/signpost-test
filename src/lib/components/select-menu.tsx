@@ -177,14 +177,12 @@ export default function SelectMenu({
             }
           >
             {menuItem.link ? (
-              <Link to={menuItem.link}>
-                <a className="select__option--verticalCenter">
+              <Link to={menuItem.link} className='select__option--verticalCenter'>
                   <OptionLabel
                     item={menuItem}
                     showIcon={showIcon}
                     iconType={iconType}
                   />
-                </a>
               </Link>
             ) : (
               <OptionLabel

@@ -143,7 +143,7 @@ export const app = {
 
         const sc = await app.db.loadLocalServices()
         await app.db.loadLocalProviders()
-        await app.db.loadLocalProviders()
+        await app.db.loadZendeskContent()
 
         app.state.servicesLoaded = sc > 0
         app.update()

@@ -2,6 +2,8 @@ import { CSSProperties, Children } from "react"
 import { app } from "../app"
 import { BlockChannels, BlockImage, BlockInfo, BlockRichText, BlockServices, BlockText, Footer } from "."
 import { Link } from "react-router-dom"
+import { BlockCategories } from "./blockcategories"
+import { BlockSections } from "./blocksections"
 
 export function Blocks() {
 
@@ -14,6 +16,8 @@ export function Blocks() {
     if (b.type === "channels") return <BlockChannels key={b.sort} block={b as BlockChannels} />
     if (b.type === "image") return <BlockImage key={b.sort} block={b as BlockImage} />
     if (b.type === "info") return <BlockInfo key={b.sort} block={b as BlockInfo} />
+    if (b.type === "categories") return <BlockCategories key={b.sort} block={b as BlockCategories} />
+    if (b.type === "sections") return <BlockSections key={b.sort} block={b as BlockSections} />
     return null
   })
 

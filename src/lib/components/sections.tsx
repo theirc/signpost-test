@@ -20,10 +20,6 @@ export function Sections() {
       return {
         id: x.id,
         title: translate(x.name),
-        lastEdit: {
-          label: "lastupdatedLabel",
-          value: x.updated_at,
-        },
       };
     });
   const section = { id: s.id, name: translate(s.name), articles };

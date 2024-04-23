@@ -60,7 +60,6 @@ declare global {
     description?: LocalizableText
     section?: number
     category?: number
-    updated_at?: string
   }
 
   interface ZendeskSection {

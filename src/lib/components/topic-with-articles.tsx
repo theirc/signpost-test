@@ -15,7 +15,6 @@ export interface Section {
 export interface Article {
   id: number;
   title: string;
-  lastEdit: { value: string; label: string };
 }
 
 interface SectionContentProps {
@@ -29,6 +28,7 @@ export const getDateString = (value: string, label: string): string => {
 };
 
 export function SectionWithArticles({ section }: SectionContentProps) {
+  console.log('SECTION ', section);
   return (
     <List
       itemLayout="horizontal"
@@ -49,13 +49,8 @@ export function SectionWithArticles({ section }: SectionContentProps) {
           <List.Item.Meta
             title={
               <Link to={`/article/${item.id}`}>
-                <a style={{ fontSize: 16 }}>{item.title}</a>
+                <span style={{ fontSize: 16 }}>{item.title}</span>
               </Link>
-            }
-            description={
-              <Text type="secondary" style={{ fontSize: "0.85rem" }}>
-                {getDateString(item.lastEdit.value, item.lastEdit.label)}
-              </Text>
             }
           />
         </List.Item>
@@ -85,6 +80,7 @@ export default function TopicWithArticles({
   selectTopicLabel,
   onSelectChange,
 }: TopicWithArticlesProps) {
+  console.log('DADSAD ', sections, topicItems);
   const [sectionFilterValue, setSectionFilterValue] = useState<
     number | undefined
   >(undefined);

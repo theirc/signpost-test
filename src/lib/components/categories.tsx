@@ -16,28 +16,21 @@ export function Categories() {
     return <div>Category {id} not found</div>;
   }
 
-  const s: ZendeskSection[] = Object.values(app.data.zendesk.sections).filter(
-    (x) => x.category === c.id
-  );
   const a: ZendeskArticle[] = Object.values(app.data.zendesk.articles);
-  const sections = s.map((section) => {
+  const sections = Object.values(c.sections)?.map((section) => {
     const articles = a
       .filter((x) => x.section === section.id)
       .map((x) => {
         return {
           id: x.id,
           title: translate(x.name),
-          lastEdit: {
-            label: "lastupdatedLabel",
-            value: x.updated_at,
-          },
         };
       });
 
     return { id: section.id, name: translate(section.name), articles };
   });
 
-  const categoryItems = Object.values(categories)?.map((category) => {
+  const categoryItems = categories?.map((category) => {
     return {
       name: translate(category.name),
       value: category.id,

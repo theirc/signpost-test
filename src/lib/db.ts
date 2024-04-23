@@ -13,7 +13,7 @@ export class DB extends Dexie {
 
   constructor() {
     super("db")
-    this.version(1).stores({
+    this.version(2).stores({
       zendeskCategories: 'id',
       zendeskSections: 'id',
       articles: 'id',
