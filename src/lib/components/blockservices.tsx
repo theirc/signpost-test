@@ -8,6 +8,7 @@ import { ServicesList } from "./services"
 import React, { useCallback, useEffect, useState } from "react"
 import TreeSelect, { MenuItem } from "./tree-select"
 import { useMultiState } from "./hooks"
+import ReactGA from "react-ga4";
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -31,6 +32,7 @@ export function BlockServices(props: { block: BlockServices }) {
   const services = Object.values(app.data.services).filter(
     (x) => x.status !== "archived"
   )
+  ReactGA.initialize('G-31W3P2WWYQ')
 
   const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider))
   const providers =
@@ -207,6 +209,12 @@ export function BlockServices(props: { block: BlockServices }) {
         );
       });
       filterProviders(services);
+
+      ReactGA.event({
+        category: 'TreeSelect',
+        action: 'Service Type Change',
+        label: value.join(', '),
+      });
 
       return services;
     },
