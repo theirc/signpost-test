@@ -285,7 +285,7 @@ export function BlockServices(props: { block: BlockServices }) {
         <TreeSelect
           label="Service Types"
           items={combineCategoriesWithSubcategories(categories, subcategories)}
-          className="w-full overflow-hidden px-2 sm:w-1/2 mt-4"
+          className="w-full overflow-hidden px-2 sm:w-1/2 mt-4 service-types-select"
           onChange={(value) =>
             handleSelectedFilters(value, filterType.serviceTypes)
           }
