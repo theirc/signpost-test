@@ -210,10 +210,11 @@ export function BlockServices(props: { block: BlockServices }) {
       });
       filterProviders(services);
 
-      ReactGA.event({
+      ReactGA.event('dropdownChanged', {
         category: 'TreeSelect',
         action: 'Service Type Change',
         label: value.join(', '),
+        fieldValue: value.join(', '),
       });
 
       return services;
