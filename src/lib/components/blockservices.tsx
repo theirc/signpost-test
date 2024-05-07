@@ -1,13 +1,13 @@
-import { app, translate } from "../app"
-import { Container } from "./container"
-import { Loader } from "./loader"
-import { Maps } from "./map"
-import { Tabs } from "antd"
-import type { TabsProps } from "antd"
-import { ServicesList } from "./services"
-import React, { useCallback, useEffect, useState } from "react"
-import TreeSelect, { MenuItem } from "./tree-select"
-import { useMultiState } from "./hooks"
+import { app, translate } from "../app";
+import { Container } from "./container";
+import { Loader } from "./loader";
+import { Maps } from "./map";
+import { Tabs } from "antd";
+import type { TabsProps } from "antd";
+import { ServicesList } from "./services";
+import React, { useCallback, useEffect, useState } from "react";
+import TreeSelect, { MenuItem } from "./tree-select";
+import { useMultiState } from "./hooks";
 import ReactGA from "react-ga4";
 
 enum filterType {
@@ -18,23 +18,23 @@ enum filterType {
 }
 
 export function BlockServices(props: { block: BlockServices }) {
-  const { block } = props
+  const { block } = props;
 
   const {
     state: { servicesLoaded },
-  } = app
+  } = app;
   const [selectedFilterValues, setSelectedFilterValues] = useState({
     serviceTypes: [[-1]],
     provider: [[-1]],
     populations: [[-1]],
     accessibility: [[-1]],
-  })
+  });
   const services = Object.values(app.data.services).filter(
     (x) => x.status !== "archived"
-  )
-  ReactGA.initialize('G-31W3P2WWYQ')
+  );
+  ReactGA.initialize("G-31W3P2WWYQ");
 
-  const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider))
+  const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider));
   const providers =
     Object.values(app.data.categories.providers)
       .filter((x) => Array.from(uniqueProvidersSet).includes(x.id))
@@ -42,7 +42,7 @@ export function BlockServices(props: { block: BlockServices }) {
         translate(a.name)
           .normalize()
           .localeCompare(translate(b.name).normalize())
-      ) || []
+      ) || [];
 
   const usedCategoryIdsSet = new Set<number>();
   const usedSubcategoryIds = new Set<number>();
@@ -64,10 +64,10 @@ export function BlockServices(props: { block: BlockServices }) {
   const [state, setState] = useMultiState({
     filteredServices: services,
     filteredProviders: providers,
-  })
+  });
 
-  const accessibilities = Object.values(app.data.categories.accesibility) || []
-  const populations = Object.values(app.data.categories.populations) || []
+  const accessibilities = Object.values(app.data.categories.accesibility) || [];
+  const populations = Object.values(app.data.categories.populations) || [];
 
   const items: TabsProps["items"] = [
     {
@@ -80,7 +80,7 @@ export function BlockServices(props: { block: BlockServices }) {
       label: "List View",
       children: <ServicesList services={state.filteredServices} />,
     },
-  ]
+  ];
 
   const combineCategoriesWithSubcategories = (categories, subcategories) => {
     const combinedData = categories.map((category) => {
@@ -112,12 +112,12 @@ export function BlockServices(props: { block: BlockServices }) {
   };
 
   const filterFirstSubArray = (arrayOfArrays: number[][]): number[][] => {
-    const firstSubArray = arrayOfArrays[0]
+    const firstSubArray = arrayOfArrays[0];
 
-    const filteredFirstSubArray = firstSubArray.filter((num) => num !== -1)
+    const filteredFirstSubArray = firstSubArray.filter((num) => num !== -1);
 
-    return [filteredFirstSubArray, ...arrayOfArrays.slice(1)]
-  }
+    return [filteredFirstSubArray, ...arrayOfArrays.slice(1)];
+  };
 
   const handleSelectedFilters = (value: number[][], filter: filterType) => {
     if (!value.length || value.flat()[value.flat().length - 1] === -1) {
@@ -129,56 +129,56 @@ export function BlockServices(props: { block: BlockServices }) {
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
         [filter]: filterFirstSubArray(value),
-      }))
+      }));
     }
-  }
+  };
 
   const handleProviderChange = useCallback(
     (value: number[][], services2: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1) {
-        return services
+        return services;
       }
 
       const providerIDs = new Set(value.flat());
       services2 = services2.filter(
         (x) => !!x.provider && providerIDs.has(x?.provider)
-      )
+      );
 
-      return services2
+      return services2;
     },
     []
-  )
+  );
 
   const handleAccessibilityChange = useCallback(
     (value: number[][], services: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1)
-        return services
+        return services;
 
-      const accessibilityIDs = new Set(value.flat())
+      const accessibilityIDs = new Set(value.flat());
       services = services.filter((x) => {
         return (
           x.Accessibility &&
           x.Accessibility.some((a) => accessibilityIDs.has(a))
-        )
-      })
-      return services
+        );
+      });
+      return services;
     },
     []
-  )
+  );
 
   const handlePopulationsChange = useCallback(
     (value: number[][], services: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1)
-        return services
+        return services;
 
-      const populationsId = new Set(value.flat())
+      const populationsId = new Set(value.flat());
       services = services.filter((x) => {
-        return x.Populations && x.Populations.some((a) => populationsId.has(a))
-      })
-      return services
+        return x.Populations && x.Populations.some((a) => populationsId.has(a));
+      });
+      return services;
     },
     []
-  )
+  );
 
   const handleServiceTypeChange = useCallback(
     (value: number[][], services: Service[]) => {
@@ -210,21 +210,22 @@ export function BlockServices(props: { block: BlockServices }) {
       });
       filterProviders(services);
 
-      let gtvalues = []
-      const categoryArray = Array.from(categoryMap)
+      let gtvalues = [];
+      const categoryArray = Array.from(categoryMap);
       const subcategoryArray = Array.from(subcategoryMap);
+      const cat = Object.values(app.data.categories.categories);
+      const sub = Object.values(app.data.categories.subCategories);
 
       for (let category of categoryArray) {
-        console.log('AAA ', category[0]);
-        gtvalues.push(translate(categories.find(x => x.id === category[0])?.name))
+        gtvalues.push(translate(cat.find((x) => x.id === category[0])?.name));
       }
       for (let subcat of subcategoryArray) {
-        gtvalues.push(translate(subcategories.find(x => x.id === subcat[0])?.name))
+        gtvalues.push(translate(sub.find((x) => x.id === subcat[0])?.name));
       }
 
-      ReactGA.event('dropdownChanged', {
-        category: 'TreeSelect',
-        action: 'Service Type Change',
+      ReactGA.event("dropdownChanged", {
+        category: "TreeSelect",
+        action: "Service Type Change",
         label: gtvalues,
         fieldValue: gtvalues,
       });
@@ -268,33 +269,33 @@ export function BlockServices(props: { block: BlockServices }) {
         key === filterType.provider &&
         JSON.stringify(value) !== JSON.stringify([[-1]])
       ) {
-        filteredData = handleProviderChange(value, filteredData)
+        filteredData = handleProviderChange(value, filteredData);
       } else if (
         key === filterType.accessibility &&
         JSON.stringify(value) !== JSON.stringify([[-1]])
       ) {
-        filteredData = handleAccessibilityChange(value, filteredData)
+        filteredData = handleAccessibilityChange(value, filteredData);
       } else if (
         key === filterType.populations &&
         JSON.stringify(value) !== JSON.stringify([[-1]])
       ) {
-        filteredData = handlePopulationsChange(value, filteredData)
+        filteredData = handlePopulationsChange(value, filteredData);
       } else if (
         key === filterType.serviceTypes &&
         JSON.stringify(value) !== JSON.stringify([[-1]])
       ) {
         filteredData = handleServiceTypeChange(value, filteredData);
       }
-    })
+    });
 
-    setState({ filteredServices: filteredData })
-  }, [selectedFilterValues, app.data.services])
+    setState({ filteredServices: filteredData });
+  }, [selectedFilterValues, app.data.services]);
 
   useEffect(() => {
     setState({
       filteredServices: services,
-    })
-  }, [app.data.services, app.data.categories.providers])
+    });
+  }, [app.data.services, app.data.categories.providers]);
 
   return (
     <Container block={block} className="transition-all">
@@ -320,7 +321,7 @@ export function BlockServices(props: { block: BlockServices }) {
           items={mapProviderData(state.filteredProviders)}
           className="w-full overflow-hidden px-2 sm:w-1/2 mt-4"
           onChange={(value) => {
-            handleSelectedFilters(value, filterType.provider)
+            handleSelectedFilters(value, filterType.provider);
           }}
           value={selectedFilterValues.provider}
           defaultValue={[[-1]]}
@@ -333,5 +334,5 @@ export function BlockServices(props: { block: BlockServices }) {
         </div>
       )}
     </Container>
-  )
+  );
 }
