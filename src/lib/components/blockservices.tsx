@@ -225,8 +225,8 @@ export function BlockServices(props: { block: BlockServices }) {
       ReactGA.event('dropdownChanged', {
         category: 'TreeSelect',
         action: 'Service Type Change',
-        label: gtvalues.join(', '),
-        fieldValue: gtvalues.join(', '),
+        label: gtvalues,
+        fieldValue: gtvalues,
       });
 
       return services;
