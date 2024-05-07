@@ -29,6 +29,7 @@ export function BlockServices(props: { block: BlockServices }) {
     populations: [[-1]],
     accessibility: [[-1]],
   });
+  const [lastValue, setLastValue] = useState<number[][]>([[-1]]);
   const services = Object.values(app.data.services).filter(
     (x) => x.status !== "archived"
   );
@@ -126,6 +127,21 @@ export function BlockServices(props: { block: BlockServices }) {
         [filter]: [[-1]],
       }));
     } else {
+      let changedValues: number[][] = [];
+      if (filter === filterType.serviceTypes) {
+        let prevValue = { ...selectedFilterValues };
+
+        for (let v of value) {
+          if (
+            !prevValue.serviceTypes.some(
+              (pv) => JSON.stringify(pv) === JSON.stringify(v)
+            )
+          ) {
+            changedValues.push(v);
+          }
+        }
+      }
+      setLastValue(changedValues);
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
         [filter]: filterFirstSubArray(value),
@@ -210,29 +226,34 @@ export function BlockServices(props: { block: BlockServices }) {
       });
       filterProviders(services);
 
-      let gtvalues = [];
       const categoryArray = Array.from(categoryMap);
       const subcategoryArray = Array.from(subcategoryMap);
       const cat = Object.values(app.data.categories.categories);
       const sub = Object.values(app.data.categories.subCategories);
 
-      for (let category of categoryArray) {
-        gtvalues.push(translate(cat.find((x) => x.id === category[0])?.name));
-      }
-      for (let subcat of subcategoryArray) {
-        gtvalues.push(translate(sub.find((x) => x.id === subcat[0])?.name));
+      let testValue = null;
+      if (lastValue?.length && lastValue[0].length === 1) {
+        for (let category of categoryArray) {
+          testValue = cat.find((x) => x.id === category[0])?.name["en-US"];
+        }
+      } else if (lastValue?.length && lastValue[0].length > 1) {
+        for (let subcat of subcategoryArray) {
+          testValue = sub.find((x) => x.id === subcat[0])?.name["en-US"];
+        }
       }
 
-      ReactGA.event("dropdownChanged", {
-        category: "TreeSelect",
-        action: "Service Type Change",
-        label: gtvalues,
-        fieldValue: gtvalues,
-      });
+      if (!!testValue) {
+        ReactGA.event("dropdownChanged", {
+          category: "TreeSelect",
+          action: "Service Type Change",
+          label: testValue,
+          fieldValue: testValue,
+        });
+      }
 
       return services;
     },
-    []
+    [lastValue]
   );
 
   const filterProviders = (services: Service[]) => {
