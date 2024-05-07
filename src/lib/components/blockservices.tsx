@@ -210,11 +210,23 @@ export function BlockServices(props: { block: BlockServices }) {
       });
       filterProviders(services);
 
+      let gtvalues = []
+      const categoryArray = Array.from(categoryMap)
+      const subcategoryArray = Array.from(subcategoryMap);
+
+      for (let category of categoryArray) {
+        console.log('AAA ', category[0]);
+        gtvalues.push(translate(categories.find(x => x.id === category[0])?.name))
+      }
+      for (let subcat of subcategoryArray) {
+        gtvalues.push(translate(subcategories.find(x => x.id === subcat[0])?.name))
+      }
+
       ReactGA.event('dropdownChanged', {
         category: 'TreeSelect',
         action: 'Service Type Change',
-        label: value.join(', '),
-        fieldValue: value.join(', '),
+        label: gtvalues.join(', '),
+        fieldValue: gtvalues.join(', '),
       });
 
       return services;
