@@ -33,7 +33,7 @@ export function BlockServices(props: { block: BlockServices }) {
   const services = Object.values(app.data.services).filter(
     (x) => x.status !== "archived"
   );
-  ReactGA.initialize("G-31W3P2WWYQ");
+  ReactGA.initialize("G-H6VQ1Y6EX9");
 
   const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider));
   const providers =
