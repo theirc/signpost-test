@@ -199,7 +199,7 @@ export function Maps({ services }: mapProps) {
   }
 
   return (
-    <div>
+    <div id="service-map">
       <div className="w-full h-[960px] bg-indigo-200 map-container">
         <Map
           mapboxAccessToken="pk.eyJ1Ijoic2lnbnBvc3RnbG9iYWwiLCJhIjoiY2w1dmVwYnVxMDkxbjNjbW96NXkybHZyZCJ9.cYedHq58Ur6PKXkEnwYCzQ"
