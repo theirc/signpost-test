@@ -105,6 +105,11 @@ export function Header() {
       <div className="flex gap-4">
         {renderMenuItems(app.page.header.menu)}
       </div>
+      <div className="px-2">
+        <Link to={"/signpostbot"}>
+          <div className="text-white no-underline">Bot</div>
+        </Link>
+      </div>
     </div>
   );
 }
