@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { app, translate } from "../app";
+import { translate } from "../app";
 import { Pagination, Select } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 

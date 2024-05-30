@@ -104,6 +104,9 @@ export function Header() {
       <div className="flex-grow" />
       <div className="flex gap-4">
         {renderMenuItems(app.page.header.menu)}
+        <Link key='search' to='/search-results' className="mx-1">
+            <div className="no-underline">Search</div>
+          </Link>
       </div>
       <div className="px-2">
         <Link to={"/signpostbot"}>
