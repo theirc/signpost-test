@@ -5,14 +5,14 @@ import {
   Marker,
   NavigationControl,
   Popup,
-} from "react-map-gl";
-import { app, translate } from "../app";
-import mapboxgl from "mapbox-gl";
-import supercluster, { ClusterFeature, PointFeature } from "supercluster";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import GeocoderControl from "./geocoder-control";
-import { ContactDropdown } from "./contact-dropdown";
-import { useMultiState } from "./hooks";
+} from "react-map-gl"
+import { app, translate } from "../app"
+import mapboxgl, { RasterLayer, Style } from "mapbox-gl"
+import supercluster, { ClusterFeature, PointFeature } from "supercluster"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import GeocoderControl from "./geocoder-control"
+import { ContactDropdown } from "./contact-dropdown"
+import { Button, Popover } from "antd"
 
 const getBoundsForFeatures = (services: Service[]) => {
   const bounds = new mapboxgl.LngLatBounds()
@@ -27,13 +27,109 @@ const getBoundsForFeatures = (services: Service[]) => {
 
 const stripHtmlTags = (html: string): string => {
   const regex =
-    /<[^>]*>|&[^;]+;|<img\s+.*?>|<span\s+style="[^"]*">.*?<\/span>|&[A-Za-z]+;/g
+    /<[^>]*>|&[^ ]+ |<img\s+.*?>|<span\s+style="[^"]*">.*?<\/span>|&[A-Za-z]+ /g
   return html.replace(regex, "")
 }
 
 interface mapProps {
   services: Service[]
 }
+
+const MAP_STYLES: { [key: string]: Style | string } = {
+  mapbox: 'mapbox://styles/mapbox/streets-v12',
+  osm: {
+    version: 8,
+    sources: {
+      'raster-tiles': {
+        type: 'raster',
+        tiles: [
+          'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        ],
+        tileSize: 256,
+      },
+    },
+    layers: [
+      {
+        id: 'osm-tiles',
+        type: 'raster',
+        source: 'raster-tiles',
+        minzoom: 0,
+        maxzoom: 19,
+      } as RasterLayer,
+    ],
+  },
+  satellite: 'mapbox://styles/mapbox/satellite-streets-v12',
+  dark: 'mapbox://styles/mapbox/dark-v11',
+};
+
+class MapStyleControl implements mapboxgl.IControl {
+  private container: HTMLDivElement;
+  private setMapStyle: React.Dispatch<React.SetStateAction<Style | string>>;
+
+  constructor(setMapStyle: React.Dispatch<React.SetStateAction<Style | string>>) {
+    this.container = document.createElement('div');
+    this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+    this.setMapStyle = setMapStyle;
+    this.createButtons();
+  }
+
+  private createButtons() {
+    const styles = [
+      { id: 'mapbox', label: 'Mapbox' },
+      { id: 'osm', label: 'OSM' },
+      { id: 'satellite', label: 'Satellite' },
+      { id: 'dark', label: 'Dark' },
+    ];
+
+    styles.forEach((style) => {
+      const button = document.createElement('button');
+      button.className = 'm-2';
+      button.textContent = style.label;
+      button.onclick = () => this.setMapStyle(MAP_STYLES[style.id]);
+      this.container.appendChild(button);
+    });
+  }
+
+  onAdd(map: mapboxgl.Map) {
+    return this.container;
+  }
+
+  onRemove() {
+    this.container.parentNode?.removeChild(this.container);
+  }
+}
+
+const MapStyleControlComponent = ({ setMapStyle, currentMapStyle }) => {
+  const handleMapStyleChange = (style) => {
+    setMapStyle(style);
+  };
+
+  const popoverContent = (
+    <div>
+      <Button onClick={() => handleMapStyleChange(MAP_STYLES.mapbox)}>Mapbox</Button>
+      <Button onClick={() => handleMapStyleChange(MAP_STYLES.osm)}>OSM</Button>
+      <Button onClick={() => handleMapStyleChange(MAP_STYLES.satellite)}>Satellite</Button>
+      <Button onClick={() => handleMapStyleChange(MAP_STYLES.dark)}>Dark</Button>
+    </div>
+  );
+
+  let style = ''
+  if (typeof currentMapStyle === 'string') {
+    style = currentMapStyle.includes('dark') ? 'Dark' : currentMapStyle.includes('satellite') ? 'Satellite' : 'Mapbox'
+  } else {
+    style = 'OSM'
+  }
+
+  return (
+    <div className="absolute bottom-4 left-4">
+      <Popover content={popoverContent} placement="right">
+        <Button>{style}</Button>
+      </Popover>
+    </div>
+  );
+};
 
 export function Maps({ services }: mapProps) {
   const categories = Object.values(app.data.categories.categories) || []
@@ -43,31 +139,8 @@ export function Maps({ services }: mapProps) {
   const [popupInfo, setPopupInfo] = useState<Service | null>(null)
   const [clusters, setClusters] = useState<ClusterOrPoint[]>([])
   const [isMapReady, setIsMapReady] = useState(false)
+  const [mapStyle, setMapStyle] = useState<Style | string>(MAP_STYLES.mapbox)
   const mapRef = useRef<MapRef>(null)
-
-  const STYLE: mapboxgl.Style = {
-    version: 8,
-    sources: {
-      "raster-tiles": {
-        type: "raster",
-        tiles: [
-          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        ],
-        tileSize: 256,
-      },
-    },
-    layers: [
-      {
-        id: "osm-tiles",
-        type: "raster",
-        source: "raster-tiles",
-        minzoom: 0,
-        maxzoom: 19,
-      },
-    ],
-  }
 
   const bounds = useMemo(() => {
     return getBoundsForFeatures(services)
@@ -179,8 +252,8 @@ export function Maps({ services }: mapProps) {
         map.off("load", onMapLoad)
         map.off("move", updateClusters)
       }
-    };
-  }, [isMapReady, loadAndUpdateClusters, updateClusters]);
+    }
+  }, [isMapReady, loadAndUpdateClusters, updateClusters])
 
   useEffect(() => {
     const map = mapRef.current?.getMap()
@@ -203,7 +276,7 @@ export function Maps({ services }: mapProps) {
       <div className="w-full h-[960px] bg-indigo-200 map-container">
         <Map
           mapboxAccessToken="pk.eyJ1Ijoic2lnbnBvc3RnbG9iYWwiLCJhIjoiY2w1dmVwYnVxMDkxbjNjbW96NXkybHZyZCJ9.cYedHq58Ur6PKXkEnwYCzQ"
-          mapStyle={STYLE}
+          mapStyle={mapStyle}
           maxZoom={20}
           minZoom={3}
           onMove={handleViewportChange}
@@ -218,6 +291,7 @@ export function Maps({ services }: mapProps) {
           />
           <GeolocateControl position="top-left" />
           <NavigationControl position="top-left" />
+          <MapStyleControlComponent setMapStyle={setMapStyle} currentMapStyle={mapStyle} />
           {clusters.map((cluster: ClusterOrPoint) => {
             const [longitude, latitude] = cluster.geometry.coordinates
             const {
