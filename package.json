@@ -20,6 +20,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-ga4": "^2.1.0",
+    "react-helmet": "^6.1.0",
     "react-hook-form": "^7.51.0",
     "react-icons": "^5.0.1",
     "react-map-gl": "^7.1.7",
@@ -30,6 +31,7 @@
   "devDependencies": {
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
+    "@types/react-helmet": "^6.1.11",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.55.0",
