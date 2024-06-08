@@ -74,11 +74,29 @@ html {
   }
 }
 
-.map-container .mapboxgl-popup-content {
+.service-map .mapboxgl-popup-content {
   display: flex;
   flex-direction: column;
   width: 300px;
-  padding: 16px;
+  padding: 32px;
+  border-radius: 0 0 60px 0
+}
+
+@media (max-width: 767px) {
+  .service-map .mapboxgl-popup-content {
+    width: 250px;
+    padding: 25px;
+  }
+}
+
+.service-map .mapboxgl-popup-content .contact-detail {
+  color: black;
+  text-decoration: underline;
+}
+
+.service-map .mapboxgl-popup-content .contact-detail a {
+  color: black;
+  text-decoration: underline;
 }
 
 .map-container .contact-button {

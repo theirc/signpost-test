@@ -11,8 +11,11 @@ import mapboxgl, { RasterLayer, Style } from "mapbox-gl"
 import supercluster, { ClusterFeature, PointFeature } from "supercluster"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import GeocoderControl from "./geocoder-control"
-import { ContactDropdown } from "./contact-dropdown"
-import { Button, Popover } from "antd"
+import { Button, Popover, Typography } from "antd"
+import { GetIconForChannel, getContactDetailLink } from "./service"
+import { RightOutlined } from "@ant-design/icons"
+
+const { Title, Text, Link } = Typography;
 
 const getBoundsForFeatures = (services: Service[]) => {
   const bounds = new mapboxgl.LngLatBounds()
@@ -168,6 +171,7 @@ export function Maps({ services }: mapProps) {
   }
 
   const cluster = useMemo(() => {
+    console.log('AAA ', services);
     const newCluster = new supercluster({
       radius: 40,
       maxZoom: 16,
@@ -272,8 +276,8 @@ export function Maps({ services }: mapProps) {
   }
 
   return (
-    <div id="service-map">
-      <div className="w-full h-[960px] bg-indigo-200 map-container">
+    <div id="service-map" className="service-map">
+      <div className="w-full h-[650px] md:h-[960px] bg-indigo-200 map-container rounded-2xl">
         <Map
           mapboxAccessToken="pk.eyJ1Ijoic2lnbnBvc3RnbG9iYWwiLCJhIjoiY2w1dmVwYnVxMDkxbjNjbW96NXkybHZyZCJ9.cYedHq58Ur6PKXkEnwYCzQ"
           mapStyle={mapStyle}
@@ -284,6 +288,7 @@ export function Maps({ services }: mapProps) {
           onLoad={() => {
             setIsMapReady(true)
           }}
+          style={{ borderRadius: '1rem' }}
         >
           <GeocoderControl
             mapboxAccessToken="pk.eyJ1Ijoic2lnbnBvc3RnbG9iYWwiLCJhIjoiY2w1dmVwYnVxMDkxbjNjbW96NXkybHZyZCJ9.cYedHq58Ur6PKXkEnwYCzQ"
@@ -350,38 +355,57 @@ export function Maps({ services }: mapProps) {
               longitude={+popupInfo.location[1]}
               latitude={+popupInfo.location[0]}
               onClose={() => setPopupInfo(null)}
-              maxWidth="300px"
+              maxWidth="417px"
               anchor="bottom"
               offset={20}
             >
               <div className="popup-content">
                 <div className="text-xl mb-2">
-                  <strong> {translate(popupInfo.name)}</strong>
+                  <Title level={3}>
+                    {translate(popupInfo.name)}
+                  </Title>
                 </div>
-                <div className="text-sm mb-2">
-                  {stripHtmlTags(translate(popupInfo.description) || "")?.slice(
-                    0,
-                    100
-                  )}
-                  ...
-                </div>
+                {popupInfo.address &&
+                  <Text type="secondary" className="text-sm mb-2 text-gray-400 flex items-center">
+                    <span className="material-symbols-outlined material-icons">
+                      pin_drop
+                    </span>
+                    {popupInfo.address}
+                  </Text>}
                 <div className="text-sm mb-2 text-gray-400">
-                  {popupInfo.address}
+                  <Text type="secondary">
+                    {stripHtmlTags(translate(popupInfo.description) || "")?.slice(
+                      0,
+                      100
+                    )}
+                    ...
+                  </Text>
                 </div>
-                <div className="flex justify-between items-center mt-4">
-                  <a
-                    href={`/services/${popupInfo.id}`}
-                    className="ant-btn ant-btn-round ant-btn-default ant-btn-sm text-white bg-blue-500 border-none"
-                    target="_blank"
-                  >
-                    VIEW SERVICE
-                  </a>
+                <div className="md:grid grid-cols-2 gap-4 mt-4 mb-4 flex flex-col">
+                  {popupInfo?.contactInfo?.map(info => {
+                    if (!info.contact_details) return null;
 
-                  <ContactDropdown
-                    serviceId={popupInfo.id}
-                    contactInfo={popupInfo.contactInfo as []}
-                    strings="strings"
-                  />
+                    const icon = <GetIconForChannel channel={info.channel} />;
+                    const contactDetail = getContactDetailLink({
+                      channel: info.channel,
+                      contactDetails: info.contact_details,
+                    });
+                    return (
+                      <div className="truncate flex items-center gap-2">
+                        <Text>{icon}</Text>
+                        <Link className="truncate contact-detail">{contactDetail}</Link>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="flex justify-end">
+                  <Link
+                    href={`/service/${popupInfo.id}`}
+                    target="_blank"
+                    className="contact-detail"
+                  >
+                    <strong>See more details {<RightOutlined />}</strong>
+                  </Link>
                 </div>
               </div>
             </Popup>

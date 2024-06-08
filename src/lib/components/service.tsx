@@ -20,7 +20,7 @@ function formatDate(timestamp) {
   return moment(timestamp).format("MM/DD/YYYY, h:mm a");
 }
 
-function GetIconForChannel({ channel }: { channel: string }) {
+export function GetIconForChannel({ channel }: { channel: string }) {
   const icons = {
     phone: FaPhoneAlt,
     email: FaMailBulk,
@@ -38,7 +38,7 @@ function GetIconForChannel({ channel }: { channel: string }) {
   return <IconComponent className="aligned-icon" />;
 }
 
-function getContactDetailLink(info: {
+export function getContactDetailLink(info: {
   channel: string;
   contactDetails: string;
 }) {

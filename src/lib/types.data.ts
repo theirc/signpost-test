@@ -42,7 +42,7 @@ declare global {
     secondaryEmail?: string
     secondaryPhone?: string
     address?: string
-    contactInfo?: unknown
+    contactInfo?: {channel: string, contact_details: string}[]
     form?: unknown
     headerimage?: string
     addHours?: unknown
