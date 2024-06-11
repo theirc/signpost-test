@@ -14,94 +14,108 @@ import {
 export function BlockChannels(props: { block: BlockChannels }) {
   const { block } = props;
 
+  const socialIconClass = "flex flex-col items-center p-6 gap-4 flex-1 rounded-lg bg-white shadow-lg"
+  const iconStyle = "text-gray-700 hover:text-gray-900"
+  const textStyle = "mt-2 text-gray-800 text-center font-inter font-medium text-sm md:text-base leading-tight no-underline"
+
   return (
     <Container block={block}>
       {block.title && (
-        <div className="text-2xl">{translate(props.block.title)} </div>
+        <div className="mx-auto text-center text-xl  md:text-2xl font-bold">{translate(props.block.title)} </div>
       )}
       {block.subtitle && (
-        <div className="mt-4 mb-5">{translate(props.block.subtitle)} </div>
+        <div className="mx-auto text-center px-4 md:px-6 mt-4 mb-10 text-base md:text-lg">{translate(props.block.subtitle)} </div>
       )}
+      <div className="flex flex-wrap gap-4 justify-center">
       {block.fb_link && (
         <a
           href={translate(props.block.fb_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="Facebook"
         >
-          <FaFacebook size={40} className="mr-2" />
+          <FaFacebook size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.fb)}</div>
         </a>
       )}
       {block.fbmess_link && (
         <a
           href={translate(block.fbmess_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="Facebook Messenger"
         >
-          <FaFacebookMessenger size={40} className="mr-2" />
+          <FaFacebookMessenger size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.fbmess)}</div>
         </a>
       )}
       {block.whatsapp_link && (
         <a
           href={translate(block.whatsapp_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="Whatsapp"
         >
-          <FaWhatsapp size={40} className="mr-2" />
+          <FaWhatsapp size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.whatsapp)}</div>
         </a>
       )}
       {block.email_link && (
         <a
           href={`mailto:${translate(block.email_link)}`}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="Email"
         >
-          <FaEnvelope size={40} className="mr-2" />
+          <FaEnvelope size={40} className={iconStyle}/>
+          <div className={textStyle} no-underline>{translate(block.email)}</div>
         </a>
       )}
       {block.instagram_link && (
         <a
           href={translate(block.instagram_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="Instagram"
         >
-          <FaInstagram size={40} className="mr-2" />
+          <FaInstagram size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.instagram)}</div>
         </a>
       )}
       {block.tiktok_link && (
         <a
           href={translate(block.tiktok_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="TikTok"
         >
-          <FaTiktok size={40} className="mr-2" />
+          <FaTiktok size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.tiktok)}</div>
         </a>
       )}
       {block.telegram_link && (
         <a
           href={translate(props.block.telegram_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="Telegram"
         >
-          <FaTelegram size={40} className="inline mr-2" />
+          <FaTelegram size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.telegram)}</div>
         </a>
       )}
       {block.whatsappc_link && (
         <a
           href={translate(block.whatsappc_link)}
-          className="inline-block"
+          className={socialIconClass}
           target="_blank"
           aria-label="WhatsApp Channel"
         >
-          <FaWhatsappSquare size={40} className="mr-2" />
+          <FaWhatsappSquare size={40} className={iconStyle} />
+          <div className={textStyle}>{translate(block.whatsappc)}</div>
         </a>
       )}
+      </div>
     </Container>
   );
 }
