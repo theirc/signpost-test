@@ -90,9 +90,6 @@ export function Service() {
   //ToDo: update the content in useEffect
   const service: Service = app.data.services[id];
   console.log(service, "Service Detail:");
-  const providerName = translate(
-    app.data.categories.providers[service?.provider]?.name
-  );
 
   if (!service) {
     return <div>Service {id} not found</div>;
@@ -153,20 +150,27 @@ export function Service() {
   const title = translate(service.name);
   const location = translate(service.address);
   const description = translate(service.description);
-  const providerInfo = translate(providerName);
-
+  const providerName = translate(
+    app.data.categories.providers[service?.provider]?.name
+  );
+console.log(providerName, 'provider:')
   return (
     <div className="py-30 mb-20 w-full flex flex-col items-center text-black bg-white overflow-auto">
       <div className="container max-w-4xl px-4">
         <h1 className="text-3xl font-bold">{title}</h1>
+        <p>{providerName}</p>
         <p>Last Updated: {formatDate(service.date_updated)}</p>
-        <h2 className="text-xl">{location}</h2>
-        {providerName && <p>{providerInfo}</p>}
-
         <div
           className="service mt-10"
           dangerouslySetInnerHTML={{ __html: description }}
         />
+        <h2 className="text-xl">{location}</h2>
+
+        <div className="bg-white shadow-lg rounded-lg p-6 mt-4 mb-4">
+          <h2 className="text-xl font-bold mb-3">Contact Information</h2>
+          <ContactDetails contactInfo={service.contactInfo} />
+        </div>
+      
         {hourDisplay && (
           <div className="bg-white shadow-lg rounded-lg p-6 mt-4 mb-4">
             <h2 className="text-xl font-bold mb-3">
@@ -178,10 +182,7 @@ export function Service() {
 
         {/* 
         {service.contactInfo && service.contactInfo.length > 0 && ( */}
-        <div className="bg-white shadow-lg rounded-lg p-6 mt-4 mb-4">
-          <h2 className="text-xl font-bold mb-3">Contact Information</h2>
-          <ContactDetails contactInfo={service.contactInfo} />
-        </div>
+    
         {/* )} */}
       </div>
     </div>
