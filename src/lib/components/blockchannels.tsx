@@ -14,9 +14,9 @@ import {
 export function BlockChannels(props: { block: BlockChannels }) {
   const { block } = props;
 
-  const socialIconClass = "flex flex-col items-center p-6 gap-4 flex-1 rounded-lg bg-white shadow-lg"
+  const socialIconClass = "flex flex-col items-center p-4 md:p-4 gap-4 md:g-2 flex-1 rounded-lg bg-white shadow-lg"
   const iconStyle = "text-gray-700 hover:text-gray-900"
-  const textStyle = "mt-2 text-gray-800 text-center font-inter font-medium text-sm md:text-base leading-tight no-underline"
+  const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base leading-tight no-underline"
 
   return (
     <Container block={block}>
@@ -26,11 +26,11 @@ export function BlockChannels(props: { block: BlockChannels }) {
       {block.subtitle && (
         <div className="mx-auto text-center px-4 md:px-6 mt-4 mb-10 text-base md:text-lg">{translate(props.block.subtitle)} </div>
       )}
-      <div className="flex flex-wrap gap-4 justify-center">
+      <div className="flex flex-col md:flex-row flex-wrap gap-2 md:gap-4 justify-center md:justify-between max-w-sm md:max-w-full mx-auto md:p-4">
       {block.fb_link && (
         <a
           href={translate(props.block.fb_link)}
-          className={socialIconClass}
+          className={socialIconClass} 
           target="_blank"
           aria-label="Facebook"
         >
@@ -85,7 +85,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
       {block.tiktok_link && (
         <a
           href={translate(block.tiktok_link)}
-          className={socialIconClass}
+          className={socialIconClass} 
           target="_blank"
           aria-label="TikTok"
         >
@@ -96,7 +96,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
       {block.telegram_link && (
         <a
           href={translate(props.block.telegram_link)}
-          className={socialIconClass}
+          className={socialIconClass} 
           target="_blank"
           aria-label="Telegram"
         >
