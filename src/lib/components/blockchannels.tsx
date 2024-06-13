@@ -16,7 +16,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
 
   const socialIconClass = "flex flex-col items-center p-4 md:p-4 gap-4 md:g-2 flex-1 rounded-lg bg-white shadow-lg"
   const iconStyle = "text-gray-700 hover:text-gray-900"
-  const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base leading-tight no-underline"
+  const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base no-underline"
 
   return (
     <Container block={block}>
