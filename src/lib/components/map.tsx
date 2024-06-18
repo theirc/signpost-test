@@ -171,7 +171,6 @@ export function Maps({ services }: mapProps) {
   }
 
   const cluster = useMemo(() => {
-    console.log('AAA ', services);
     const newCluster = new supercluster({
       radius: 40,
       maxZoom: 16,
