@@ -26,12 +26,12 @@ export function BlockServices(props: { block: BlockServices }) {
     state: { servicesLoaded },
   } = app;
   const [selectedFilterValues, setSelectedFilterValues] = useState({
-    serviceTypes: [[-1]],
-    provider: [[-1]],
-    populations: [[-1]],
-    accessibility: [[-1]],
+    serviceTypes: [-1],
+    provider: [-1],
+    populations: [-1],
+    accessibility: [-1],
   });
-  const [lastValue, setLastValue] = useState<number[][]>([[-1]]);
+  const [lastValue, setLastValue] = useState<number[]>([-1]);
   const [view, setView] = useState<number>(0)
 
   const services = Object.values(app.data.services).filter(
@@ -92,6 +92,7 @@ export function BlockServices(props: { block: BlockServices }) {
     return combinedData;
   };
 
+
   const mapProviderData = (providers: Provider[]): MenuItem[] => {
     const filterProviders = providers.map((x) => {
       return {
@@ -103,22 +104,22 @@ export function BlockServices(props: { block: BlockServices }) {
     return filterProviders;
   };
 
-  const filterFirstSubArray = (arrayOfArrays: number[][]): number[][] => {
-    const firstSubArray = arrayOfArrays[0];
-
-    const filteredFirstSubArray = firstSubArray.filter((num) => num !== -1);
-
-    return [filteredFirstSubArray, ...arrayOfArrays.slice(1)];
+  const filterFirstSubArray = (valuesArray: number[]): number[] => {
+    if (valuesArray[0] === -1) {
+      return [...valuesArray.slice(1)];
+    } else {
+      return valuesArray
+    }
   };
 
-  const handleSelectedFilters = (value: number[][], filter: filterType) => {
+  const handleSelectedFilters = (value: number[], filter: filterType) => {
     if (!value.length || value.flat()[value.flat().length - 1] === -1) {
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
-        [filter]: [[-1]],
+        [filter]: [-1],
       }));
     } else {
-      let changedValues: number[][] = [];
+      let changedValues: number[] = [];
       if (filter === filterType.serviceTypes) {
         let prevValue = { ...selectedFilterValues };
 
@@ -140,8 +141,10 @@ export function BlockServices(props: { block: BlockServices }) {
     }
   };
 
+
+
   const handleProviderChange = useCallback(
-    (value: number[][], services2: Service[]) => {
+    (value: number[], services2: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1) {
         return services;
       }
@@ -157,7 +160,7 @@ export function BlockServices(props: { block: BlockServices }) {
   );
 
   const handleAccessibilityChange = useCallback(
-    (value: number[][], services: Service[]) => {
+    (value: number[], services: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1)
         return services;
 
@@ -174,7 +177,7 @@ export function BlockServices(props: { block: BlockServices }) {
   );
 
   const handlePopulationsChange = useCallback(
-    (value: number[][], services: Service[]) => {
+    (value: number[], services: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1)
         return services;
 
@@ -188,7 +191,7 @@ export function BlockServices(props: { block: BlockServices }) {
   );
 
   const handleServiceTypeChange = useCallback(
-    (value: number[][], services: Service[]) => {
+    (value: number[] | string[], services: Service[]) => {
       const categoryMap = new Map<number, boolean>();
       const subcategoryMap = new Map<number, boolean>();
 
@@ -198,12 +201,10 @@ export function BlockServices(props: { block: BlockServices }) {
       }
 
       for (const criteria of value) {
-        const [categoryId, ...subcategoryIds] = criteria;
-        for (const subcategoryId of subcategoryIds) {
-          subcategoryMap.set(subcategoryId, true);
-        }
-        if (!subcategoryMap.size) {
-          categoryMap.set(categoryId, true);
+        if (typeof criteria === "number") {
+          categoryMap.set(criteria, true);
+        } else {
+          subcategoryMap.set(+criteria.split('-')[1], true);
         }
       }
 
@@ -223,11 +224,11 @@ export function BlockServices(props: { block: BlockServices }) {
       const sub = Object.values(app.data.categories.subCategories);
 
       let testValue = null;
-      if (lastValue?.length && lastValue[0].length === 1) {
+      if (lastValue?.length && lastValue.length === 1) {
         for (let category of categoryArray) {
           testValue = cat.find((x) => x.id === category[0])?.name["en-US"];
         }
-      } else if (lastValue?.length && lastValue[0].length > 1) {
+      } else if (lastValue?.length && lastValue.length > 1) {
         for (let subcat of subcategoryArray) {
           testValue = sub.find((x) => x.id === subcat[0])?.name["en-US"];
         }
@@ -246,6 +247,8 @@ export function BlockServices(props: { block: BlockServices }) {
     },
     [lastValue]
   );
+
+
 
   const filterProviders = (services: Service[]) => {
     const uniqueProvidersIdsSet = new Set(services.flatMap((x) => x.provider));
@@ -279,22 +282,26 @@ export function BlockServices(props: { block: BlockServices }) {
     Object.entries(selectedFilterValues).forEach(([key, value]) => {
       if (
         key === filterType.provider &&
-        JSON.stringify(value) !== JSON.stringify([[-1]])
+        value.length &&
+        value[0] !== -1
       ) {
         filteredData = handleProviderChange(value, filteredData);
       } else if (
         key === filterType.accessibility &&
-        JSON.stringify(value) !== JSON.stringify([[-1]])
+        value.length &&
+        value[0] !== -1
       ) {
         filteredData = handleAccessibilityChange(value, filteredData);
       } else if (
         key === filterType.populations &&
-        JSON.stringify(value) !== JSON.stringify([[-1]])
+        value.length &&
+        value[0] !== -1
       ) {
         filteredData = handlePopulationsChange(value, filteredData);
       } else if (
         key === filterType.serviceTypes &&
-        JSON.stringify(value) !== JSON.stringify([[-1]])
+        value.length &&
+        value[0] !== -1
       ) {
         filteredData = handleServiceTypeChange(value, filteredData);
       }
@@ -334,7 +341,7 @@ export function BlockServices(props: { block: BlockServices }) {
                       onClear={() => filterProviders(services)}
                       onDropdownVisibleChange={handleDropdownVisibleChange}
                       value={selectedFilterValues.serviceTypes}
-                      defaultValue={[[-1]]}
+                      defaultValue={[-1]}
                     />
                     <TreeSelect
                       label="Provider"
@@ -342,7 +349,7 @@ export function BlockServices(props: { block: BlockServices }) {
                       className="w-full overflow-hidden"
                       onChange={(value) => handleSelectedFilters(value, filterType.provider)}
                       value={selectedFilterValues.provider}
-                      defaultValue={[[-1]]}
+                      defaultValue={[-1]}
                     />
                   </div>
                 </div>
@@ -358,7 +365,7 @@ export function BlockServices(props: { block: BlockServices }) {
                 onClear={() => filterProviders(services)}
                 onDropdownVisibleChange={handleDropdownVisibleChange}
                 value={selectedFilterValues.serviceTypes}
-                defaultValue={[[-1]]}
+                defaultValue={[-1]}
               />
               <TreeSelect
                 label="Provider"
@@ -366,7 +373,7 @@ export function BlockServices(props: { block: BlockServices }) {
                 className="w-full overflow-hidden"
                 onChange={(value) => handleSelectedFilters(value, filterType.provider)}
                 value={selectedFilterValues.provider}
-                defaultValue={[[-1]]}
+                defaultValue={[-1]}
               />
             </div>
             <div className="grow-[3] flex-1 relative">
