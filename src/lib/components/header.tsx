@@ -1,9 +1,32 @@
-import { CSSProperties } from "react";
+import { CSSProperties, useRef, useState } from "react";
 import { app, translate } from "../app";
 import { Link } from "react-router-dom";
+import MegaMenu from './megamenu';
+import MobileNavigationDrawer from './mobilenavigationdrawer';
+import Container from "./menucontainer";
+import { MenuOutlined } from "@ant-design/icons";
+
+interface SubmenuItemChildren {
+  label: string;
+  href: string;
+}
+interface SubmenuItem {
+  label: string;
+  href: string;
+  children?: SubmenuItemChildren[]
+}
+
+export interface MenuCategory {
+  label: string;
+  href: string;
+  children: SubmenuItem[];
+}
 
 export function Header() {
   const styles: CSSProperties = {};
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const drawerButtonRef = useRef(null);
 
   if (app.page.header.color) styles.color = app.page.header.color;
   if (app.page.header.bgcolor) styles.backgroundColor = app.page.header.bgcolor;
@@ -13,6 +36,36 @@ export function Header() {
 
   const infoMenus = app.page.header.menu.filter((item) => item.type === "info");
   const aboutMenu = app.page.header.menu.find((item) => item.type === "about");
+  let menu: MenuCategory[] = []
+  let infoMenu: MenuCategory = null
+
+  for (let info of infoMenus) {
+    let infoCategories: string[] = []
+    let infoSections: string[] = []
+    for (let content of info.content) {
+      const parts = content.link.split('/')
+      if (parts[1] === 'categories') {
+        infoCategories.push(parts[2])
+      } else if (parts[1] === 'sections') {
+        infoSections.push(parts[2])
+      }
+    }
+    let categoriesItems: SubmenuItem[] = []
+    for (let cat of categories) {
+      let subcatItems: SubmenuItemChildren[] = []
+      if (infoCategories.some(x => x === cat.id.toString())) {
+        const catSection = Object.values(cat.sections)
+        for (let section of catSection) {
+          if (infoSections.some(x => x === section.id.toString())) {
+            subcatItems.push({ label: translate(section.name), href: `/sections/${section.id}` })
+          }
+        }
+        categoriesItems.push({ label: translate(cat.name), href: `/categories/${cat.id}`, children: subcatItems })
+      }
+    }
+    infoMenu = { label: 'Resource Center', href: '', children: categoriesItems }
+    menu.push(infoMenu)
+  }
 
   infoMenus.forEach((infoMenu) => {
     if (!infoMenu.content) {
@@ -66,7 +119,7 @@ export function Header() {
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
       const title = item.title ? translate(item.title) : "";
-      if (item.content && item.content.length > 0) {
+      if (item.content && item.content.length > 0 && item.type === 'about') {
         return (
           <div className="relative group" key={title}>
             <div className="cursor-pointer">
@@ -95,24 +148,48 @@ export function Header() {
   };
 
   return (
-    <div className="h-10 flex p-4 uppercase text-sm tracking-wide" style={styles}>
+    <div className="h-10 flex p-4 text-sm tracking-wide" style={styles}>
       <div>
         <Link to="/">
           <img src={app.logo} height={40} alt="Logo" />
         </Link>
       </div>
-      <div className="flex-grow" />
-      <div className="flex gap-4">
-        {renderMenuItems(app.page.header.menu)}
-        <Link key='search' to='/search-results' className="mx-1">
-            <div className="no-underline">Search</div>
-          </Link>
-      </div>
-      <div className="px-2">
-        <Link to={"/signpostbot"}>
-          <div className="text-white no-underline">Bot</div>
-        </Link>
-      </div>
+      <Container>
+        <div className="toolbar">
+          <button
+            ref={drawerButtonRef}
+            className="menu_icon md:hidden"
+            aria-haspopup="true"
+            onClick={() => setIsDrawerOpen(true)}
+          >
+            {/* Mobile Hamburger menu */}
+            <MenuOutlined />
+          </button>
+
+          <div className="hidden md:block">
+            <div className="flex-grow" />
+            <div className="flex gap-4 items-center">
+              {renderMenuItems(app.page.header.menu)}
+              <MegaMenu menuData={menu} />
+              <Link key='search' to='/search-results' className="mx-1">
+                <div className="no-underline">Search</div>
+              </Link>
+            </div>
+            <div className="px-2">
+              <Link to={"/signpostbot"}>
+                <div className="text-white no-underline">Bot</div>
+              </Link>
+            </div>
+          </div>
+
+          {/* Mobile navigation drawer */}
+          <div className="md:hidden absolute">
+            <MobileNavigationDrawer
+              menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
+            />
+          </div>
+        </div>
+      </Container>
     </div>
   );
 }
