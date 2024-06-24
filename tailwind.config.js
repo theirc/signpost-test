@@ -7,13 +7,14 @@ export default {
   theme: {
     extend: {
       fontFamily:{
-        'libre-caslon': ['"Libre Caslon Text"', 'serif'],
+        // 'libre-caslon': ['"Libre Caslon Text"', 'serif'],
         'inter': ['Inter', 'sans-serif'],
       },
       colors: {
         'neutral-field-background': '#FFFFFF',
         'neutral-text': '#000000',
         'neutral-icon': '#575757',
+        'neutral-container-bg': 'var(--Color-Neutral-container-background, #F7F7F7)',
       },
       boxShadow: {
         'lg': '0px 4px 31.4px 16px rgba(0, 0, 0, 0.14)',

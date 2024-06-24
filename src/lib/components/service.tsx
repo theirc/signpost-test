@@ -1,3 +1,4 @@
+import { Container } from "./container";
 import moment from "moment";
 import {
   FaTiktok,
@@ -15,6 +16,7 @@ import {
 import { useParams } from "react-router-dom";
 import { app, translate } from "../app";
 import React from "react";
+import { Footer } from ".";
 
 function formatDate(timestamp) {
   return moment(timestamp).format("MM/DD/YYYY, h:mm a");
@@ -49,7 +51,7 @@ function getContactDetailLink(info: {
       return (
         <span
           onClick={() => (window.location.href = `mailto:${contactDetails}`)}
-          className="hover-blue cursor-pointer"
+          className="hover:text-blue-600 cursor-pointer"
         >
           {contactDetails}
         </span>
@@ -84,46 +86,44 @@ function getContactDetailLink(info: {
   }
 }
 
+
+function ContactDetails({ contactInfo }) {
+  return (
+    <div className="flex flex-wrap items-start gap-6">
+      {contactInfo.map((info, index) => {
+        if (!info.contact_details) return null;
+
+        const Icon = <GetIconForChannel channel={info.channel} />;
+        const ContactDetail = getContactDetailLink({
+          channel: info.channel,
+          contactDetails: info.contact_details,
+        });
+
+        return (
+          <div key={index} className="w-full flex flex-row items-center space-x-3">
+            {/* Icon and Channel Name */}
+            <div className="text-md text-gray-600">
+              {Icon}
+              {/* <h1 className="text-sm font-bold">{info.channel}</h1> */}
+            </div>
+            {/* Contact Details */}
+            <div className="text-sm">{ContactDetail}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Service() {
   let { id } = useParams();
 
   //ToDo: update the content in useEffect
   const service: Service = app.data.services[id];
   console.log(service, "Service Detail:");
-  const providerName = translate(
-    app.data.categories.providers[service?.provider]?.name
-  );
 
   if (!service) {
     return <div>Service {id} not found</div>;
-  }
-
-  function ContactDetails({ contactInfo }) {
-    return (
-      <div className="space-y-4">
-        {contactInfo.map((info, index) => {
-          if (!info.contact_details) return null;
-
-          const Icon = <GetIconForChannel channel={info.channel} />;
-          const ContactDetail = getContactDetailLink({
-            channel: info.channel,
-            contactDetails: info.contact_details,
-          });
-
-          return (
-            <div key={index} className="flex flex-row items-start p-2">
-              {/* Icon and Channel Name */}
-              <div className="flex items-center space-x-2 mr-4">
-                {Icon}
-                {/* <h1 className="text-sm font-bold">{info.channel}</h1> */}
-              </div>
-              {/* Contact Details */}
-              <div className="text-md text-gray-600">{ContactDetail}</div>
-            </div>
-          );
-        })}
-      </div>
-    );
   }
 
   function renderHours(hours: unknown): JSX.Element[] | null {
@@ -153,37 +153,39 @@ export function Service() {
   const title = translate(service.name);
   const location = translate(service.address);
   const description = translate(service.description);
-  const providerInfo = translate(providerName);
+  const providerName = translate(
+    app.data.categories.providers[service?.provider]?.name
+  );
 
   return (
-    <div className="py-30 mb-20 w-full flex flex-col items-center text-black bg-white overflow-auto">
-      <div className="container max-w-4xl px-4">
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p>Last Updated: {formatDate(service.date_updated)}</p>
-        <h2 className="text-xl">{location}</h2>
-        {providerName && <p>{providerInfo}</p>}
+    <div className="py-16 text-black text-base bg-white overflow-y-auto flex justify-center w-screen mb-10">
+    <div className="text-black mx-auto max-w-[90rem] px-4 sm:px-8 pb-20">
+    <h1 className="font-inter text-3xl whitespace-normal">{title}</h1>
+    {providerName && <h2 className="font-inter text-2xl font-normal">{providerName}</h2>}
+    <h3 className="font-inter text-gray-600 text-sm font-normal leading-[1.375rem]">
+      Last Updated: {formatDate(service.date_updated)}
+    </h3>
 
-        <div
-          className="service mt-10"
-          dangerouslySetInnerHTML={{ __html: description }}
-        />
-        {hourDisplay && (
-          <div className="bg-white shadow-lg rounded-lg p-6 mt-4 mb-4">
-            <h2 className="text-xl font-bold mb-3">
-              {translate("Service Hours")}
-            </h2>
-            <div className="space-y-2">{hourDisplay}</div>
-          </div>
-        )}
-
-        {/* 
-        {service.contactInfo && service.contactInfo.length > 0 && ( */}
-        <div className="bg-white shadow-lg rounded-lg p-6 mt-4 mb-4">
-          <h2 className="text-xl font-bold mb-3">Contact Information</h2>
-          <ContactDetails contactInfo={service.contactInfo} />
-        </div>
-        {/* )} */}
-      </div>
+  <div className="bg-neutral-container-bg rounded p-6 mb-4">
+    <div className="service mt-6" dangerouslySetInnerHTML={{ __html: description }} />
     </div>
-  );
+
+    {location && (
+      <div className="bg-neutral-container-bg rounded p-6 mb-4">
+    <h4 className="text-lg md:text-xl mb-4 mt-6">{location}</h4>
+    </div>
+    )}
+    
+    <div className="bg-neutral-container-bg rounded p-6 mb-4">
+    <ContactDetails contactInfo={service.contactInfo} />
+    </div>
+    {hourDisplay && hourDisplay.length > 0 && (
+      <div className="bg-neutral-container-bg rounded p-6 mb-4">
+              <h2 className="mb-2">{translate('Opening hours')}</h2>
+              <div className="space-y-2">{hourDisplay}</div>
+              </div>
+    )}
+  </div>
+  </div>
+);
 }
