@@ -100,7 +100,7 @@ function ContactDetails({ contactInfo }) {
         });
 
         return (
-          <div key={index} className="w-full flex flex-row items-center space-x-3">
+          <div key={index} className="flex w-full md:w-auto md:flex-row items-center space-x-3">
             {/* Icon and Channel Name */}
             <div className="text-md text-gray-600">
               {Icon}
@@ -161,18 +161,18 @@ export function Service() {
     <div className="py-16 text-black text-base bg-white overflow-y-auto flex justify-center w-screen mb-10">
     <div className="text-black mx-auto max-w-[90rem] px-4 sm:px-8 pb-20">
     <h1 className="font-inter text-3xl whitespace-normal">{title}</h1>
-    {providerName && <h2 className="font-inter text-2xl font-normal">{providerName}</h2>}
+     <h2 className="font-inter text-2xl font-normal">{providerName}</h2>
     <h3 className="font-inter text-gray-600 text-sm font-normal leading-[1.375rem]">
       Last Updated: {formatDate(service.date_updated)}
     </h3>
 
   <div className="bg-neutral-container-bg rounded p-6 mb-4">
-    <div className="service mt-6" dangerouslySetInnerHTML={{ __html: description }} />
+    <div dangerouslySetInnerHTML={{ __html: description }} />
     </div>
 
     {location && (
       <div className="bg-neutral-container-bg rounded p-6 mb-4">
-    <h4 className="text-lg md:text-xl mb-4 mt-6">{location}</h4>
+    <h4 className="mb-4 mt-6">{location}</h4>
     </div>
     )}
     
