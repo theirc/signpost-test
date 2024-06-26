@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import Container from './menucontainer';
 import DropdownContent from './dropdowncontent';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
+import { useState } from 'react';
 
 const MenuItem = ({
     label,
@@ -11,17 +12,20 @@ const MenuItem = ({
     active,
     setIsDrawerOpen,
 }) => {
+    const [visible, setVisible] = useState(false)
     const handleClick = () => {
-        const activeElement = document.activeElement;
+        setVisible(false)
     };
 
     return (
-        <li>
+        <li onMouseLeave={() => setVisible(false)}>
             <div className="nav_item_content py-4">
                 <NavLink
                     to={''}
                     className={({ isActive }) => (isActive ? 'active no-underline' : 'no-underline')}
                     onClick={onToggle}
+                    onMouseEnter={() => setVisible(true)}
+                    onFocus={() => setVisible(true)}
                 >
                     {setIsDrawerOpen && <h2>{label}</h2>}{!setIsDrawerOpen && (<>{label}<DownOutlined className='pl-2' /></>)}
                 </NavLink>
@@ -45,7 +49,8 @@ const MenuItem = ({
                 <div
                     role="menu"
                     className={`dropdown ${active ? 'h-auto' : 'h-0 overflow-hidden md:h-auto'
-                        }`}
+                        } ${visible ? 'visible' : 'md:invisible'}`}
+                    onMouseLeave={handleClick}
                 >
                     <Container>
                         <DropdownContent
