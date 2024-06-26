@@ -42,22 +42,10 @@ const MobileNavigationDrawer = ({
       tabIndex={isDrawerOpen ? 0 : -1}
       onKeyDown={handleKeyDown}
     >
-      {isDrawerOpen && (
-        <div
-          className="backdrop"
-          onClick={() => {
-            setIsDrawerOpen(false);
-            if (drawerButtonRef.current) {
-              drawerButtonRef.current.focus();
-            }
-          }}
-        ></div>
-      )}
-
       <div
         className={`drawer_content ${isDrawerOpen ? 'active' : ''}`}
       >
-        <div className="close_drawer">
+        <div className="close_drawer py-2">
           <button
             onClick={() => {
               setIsDrawerOpen(false);
@@ -66,7 +54,7 @@ const MobileNavigationDrawer = ({
               }
             }}
           >
-            <CloseOutlined size={30} />
+            <CloseOutlined className='text-2xl' />
           </button>
         </div>
         <div>

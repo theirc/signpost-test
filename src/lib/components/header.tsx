@@ -118,6 +118,7 @@ export function Header() {
 
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
+      if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return
       const title = item.title ? translate(item.title) : "";
       if (item.content && item.content.length > 0 && item.type === 'about') {
         return (

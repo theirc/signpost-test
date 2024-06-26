@@ -318,7 +318,7 @@ export function BlockServices(props: { block: BlockServices }) {
 
   return (
     <div className="transition-all md:py-16 w-full flex items-center md:justify-center">
-      <div className="sm:w-full px-4 md:w-2/3 w-screen">
+      <div className="sm:w-full px-8 lg:w-4/5 w-screen">
         <div className="text-4xl">{translate(props.block.title)}</div>
         <div className="text-2xl mt-4 opacity-50">
           {translate(props.block.subtitle)}
@@ -376,10 +376,11 @@ export function BlockServices(props: { block: BlockServices }) {
                 defaultValue={[-1]}
               />
             </div>
-            <div className="grow-[3] flex-1 relative">
-              <div className="flex mt-3.5 mb-3.5">
-                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden">Filters</Button>
-                <Space className="flex ml-auto">
+            <div className="grow-[4] flex-1 relative">
+              <div className="flex mt-3.5 mb-3.5 items-center">
+                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">Filters</Button>
+                <span className="hidden md:inline text-black">Showing {state.filteredServices.length} of {services.length} </span>
+                <Space className="flex ml-auto z-10">
                   <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex">
                     <Radio.Button value={0}>
                       <div className="flex gap-2 items-center">
@@ -400,6 +401,8 @@ export function BlockServices(props: { block: BlockServices }) {
                   </Radio.Group>
                 </Space>
               </div>
+
+              {view === 0 && <div className="md:hidden text-black my-4">Showing {state.filteredServices.length} of {services.length} </div>}
               <div>
                 {view === 0 && <Maps services={state.filteredServices} />}
                 {view === 1 && <ServicesList services={state.filteredServices} />}

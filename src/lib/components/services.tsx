@@ -109,27 +109,30 @@ export function ServicesList({ services }: ServiceListProps) {
 
   return (
     <div>
-      <Select
-        className="w-full md:absolute top-3.5 md:w-7/12"
-        options={mapAutocompleteOptions}
-        placeholder="Search"
-        onSelect={onSelect}
-        listHeight={100}
-        showSearch
-        allowClear
-        labelInValue={true}
-        onClear={() => {
-          setFilteredServices(services);
-        }}
-        filterOption={(inputValue, option) =>
-          option && option.label
-            ? option!.label
-              .toString()
-              .toUpperCase()
-              .indexOf(inputValue.toUpperCase()) !== -1
-            : false
-        }
-      />
+      <div className="w-full md:absolute top-3.5 flex md:items-center flex-col md:flex-row gap-4">
+        <span className="text-black lg:mr-4">Showing {filteredServices.length} of {services.length} </span>
+        <Select
+          className="md:w-4/12 lg:w-6/12"
+          options={mapAutocompleteOptions}
+          placeholder="Search"
+          onSelect={onSelect}
+          listHeight={100}
+          showSearch
+          allowClear
+          labelInValue={true}
+          onClear={() => {
+            setFilteredServices(services);
+          }}
+          filterOption={(inputValue, option) =>
+            option && option.label
+              ? option!.label
+                .toString()
+                .toUpperCase()
+                .indexOf(inputValue.toUpperCase()) !== -1
+              : false
+          }
+        />
+      </div>
       <div className="md:grid grid-cols-2 gap-4 mt-4 mb-4 flex flex-col">
         {servicesList.map((s) => (
           <Service key={s.id} service={s} />

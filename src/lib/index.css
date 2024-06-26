@@ -342,7 +342,6 @@ html {
   top: 0;
   left: 0;
   width: 100%;
-  max-width: 320px;
   height: 100vh;
   z-index: 99;
   overflow-y: auto;
@@ -357,7 +356,7 @@ html {
 
 .close_drawer {
   text-align: end;
-  border-bottom: 1px solid var(--borderColor);
+  border-bottom: 1px solid #DDDDDD;
 }
 .close_drawer button {
   padding: 12px;
@@ -374,13 +373,6 @@ html {
   .container {
     max-width: 768px;
   }
-}
-
-@media (min-width: 996px) {
-  .container {
-    max-width: 996px;
-  }
-
   .md\:h-auto {
     height: auto;
   }
@@ -453,6 +445,7 @@ html {
     grid-template-columns: 18% 52% 18%;
     color: black;
     grid-column-gap: 6%;
+    font-size: 0.595rem;
   }
 
   .dropdown_content h4 {
@@ -462,6 +455,16 @@ html {
 
   .hero_title {
     font-size: 56px;
+  }
+}
+
+@media (min-width: 996px) {
+  .container {
+    max-width: 996px;
+  }
+
+  .dropdown_content {
+    font-size: 0.875rem;
   }
 }
 

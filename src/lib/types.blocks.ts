@@ -98,7 +98,7 @@ declare global {
   }
 
   interface Menu {
-    type?: "services" | "info" | "info" | "about" | "language" | "menu"
+    type?: "services" | "info" | "info" | "about" | "language" | "menu" | "link"
     title?: LocalizableText
     link?: string
     content?: Menu[],
