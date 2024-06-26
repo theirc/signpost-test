@@ -167,15 +167,12 @@ export function Header() {
           </button>
 
           <div className="hidden md:block">
-            <div className="flex-grow" />
             <div className="flex gap-4 items-center">
               {renderMenuItems(app.page.header.menu)}
               <MegaMenu menuData={menu} />
               <Link key='search' to='/search-results' className="mx-1">
                 <div className="no-underline">Search</div>
               </Link>
-            </div>
-            <div className="px-2">
               <Link to={"/signpostbot"}>
                 <div className="text-white no-underline">Bot</div>
               </Link>
