@@ -422,7 +422,7 @@ html {
     padding-top: 2rem;
     padding-bottom: 2rem;
     visibility: hidden;
-    z-index: 10;
+    z-index: 11;
   }
 
   .nav__container ul li:focus-within .dropdown,
