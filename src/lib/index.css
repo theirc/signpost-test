@@ -472,3 +472,25 @@ html {
   display: grid;
   grid-template-columns: 50% 50%;
 }
+
+.article img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.menu-item-button button {
+  background-color: transparent;
+  padding: 0px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  border: none;
+}
+
+.menu-item-button button .menu-item-icon {
+  margin-inline-end: 10px;
+  width: 20px;
+  height: 20px;
+}
