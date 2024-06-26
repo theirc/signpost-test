@@ -421,13 +421,7 @@ html {
     border-bottom: 1px solid var(--borderColor);
     padding-top: 2rem;
     padding-bottom: 2rem;
-    visibility: hidden;
-    z-index: 11;
-  }
-
-  .nav__container ul li:focus-within .dropdown,
-  .nav__container ul li:hover .dropdown {
-    visibility: visible;
+    z-index: 10;
   }
 
   .nav_item_content:hover a:before,
