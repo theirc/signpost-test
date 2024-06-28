@@ -494,3 +494,21 @@ html {
   width: 20px;
   height: 20px;
 }
+
+.map-buttons-container .ant-radio-button-wrapper {
+  background: #80C2C2;
+  border: none;
+  color: black;
+  padding: 4px 1rem;
+  box-sizing: content-box;
+}
+
+.map-buttons-container .ant-radio-button-wrapper.ant-radio-button-wrapper-checked {
+  background: #609292;
+  border: none;
+  color: black;
+}
+
+:where(.css-dev-only-do-not-override-1xg9z9n).ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before {
+  background-color: #609292;
+}
