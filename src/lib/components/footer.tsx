@@ -5,24 +5,23 @@ import { Container } from "./container";
 export function Footer() {
 
   const categories: { [index: number]: ZendeskCategory } = app.data.zendesk.categories;
-  const sections: { [index: number]: ZendeskSection } = app.data.zendesk.sections;
 
-  // const footerMenu: Menu[] = app.page.header.menu.filter((item: Menu) => 
-  //   ["services", "language"].includes(item.type)
-  // );
+  const footerMenu: Menu[] = app.page.header.menu.filter((item: Menu) => 
+    ["services", "language"].includes(item.type)
+  );
 
   const renderFooterItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
       const title = item.title ? translate(item.title) : "";
       if (item.type === "services") {
         return (
-          <a href="#service-map" key={title} className="block mb-2 text-gray-300 hover:text-white">
+          <a href="#service-map" key={title} className="text-white hover:text-gray-800 mr-8 mb-2">
             {title}
           </a>
         );
       } else {
         return (
-          <Link key={title} to={item.link || "#"} className="block mb-2 text-gray-300 hover:text-white">
+          <Link key={title} to={item.link || "#"} className="text-white hover:text-gray-800 mr-8 mb-2">
             {title}
           </Link>
         );
@@ -35,63 +34,41 @@ export function Footer() {
       <Link 
         key={category.id} 
         to={`/categories/${category.id}`} 
-        className="block mb-2 text-gray-300 hover:text-white"
+        className="text-white hover:text-gray-800 mr-8 mb-2"
       >
         {translate(category.name)}
       </Link>
     ));
   };
 
-  const renderSections = () => {
-    return Object.values(sections).map((section) => (
-      <Link 
-        key={section.id} 
-        to={`/sections/${section.id}`} 
-        className="block mb-2 text-gray-300 hover:text-white"
-      >
-        {translate(section.name)}
-      </Link>
-    ));
-  };
-
   return (
+    <footer className="border-t border-gray-200 py-4">
     <Container block={app.page.footer}>
-      <div className="w-full">
-        <Link to="/" className="block mb-8">
+      <div className="flex flex-col md:flex-row md:items-center mb-4">
+        <Link to="/" className="mb-14 pr-10 md:mb-0 md:mr-20">
           <img src={app.logo} height={30} alt="Logo" />
         </Link>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          {/* <div>
-            <h3 className="text-white font-bold mb-4">Main Menu</h3>
-            {renderFooterItems(footerMenu)}
-          </div> */}
-          <div>
-            <h3 className="text-white font-bold mb-4">About</h3>
-            {renderCategories()}
+        <div className="flex flex-col md:flex-row md:flex-wrap">
+          <Link to="/" className="text-white mr-8 mb-2">Home</Link>
+          {renderCategories()}
+          {renderFooterItems(footerMenu)}
           </div>
-          <div>
-            <h3 className="text-white font-bold mb-4">Resource Center</h3>
-            {renderSections()}
-          </div>
-          <div>
-            <h3 className="text-white font-bold mb-4">Additional Links</h3>
+        </div>
+        <div className="flex flex-wrap mt-20">
             {app.page.footer?.footerlinks.map((link) => (
               <Link 
                 key={`${link.title}-${link.url}`} 
                 to={link.url} 
-                className="block mb-2 text-gray-300 hover:text-white"
+                className="mr-4 mb-10 text-white"
               >
                 {translate(link.title)}
               </Link>
             ))}
           </div>
-        </div>
-
-        <div className="border-gray-700 pt-8 text-gray-400">
-          {translate(app.page.footer.text)}
-        </div>
-      </div>
+          <div className="text-white">
+            {translate(app.page.footer.text)}
+          </div>
     </Container>
+    </footer>
   );
 }
