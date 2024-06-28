@@ -15,13 +15,13 @@ export function Footer() {
       const title = item.title ? translate(item.title) : "";
       if (item.type === "services") {
         return (
-          <a href="#service-map" key={title} className="text-white hover:text-gray-800 mr-8 mb-2">
+          <a href="#service-map" key={title} className="text-white hover:text-gray-800 mr-8 mb-5">
             {title}
           </a>
         );
       } else {
         return (
-          <Link key={title} to={item.link || "#"} className="text-white hover:text-gray-800 mr-8 mb-2">
+          <Link key={title} to={item.link || "#"} className="text-white hover:text-gray-800 mr-8 mb-5">
             {title}
           </Link>
         );
@@ -34,7 +34,7 @@ export function Footer() {
       <Link 
         key={category.id} 
         to={`/categories/${category.id}`} 
-        className="text-white hover:text-gray-800 mr-8 mb-2"
+        className="text-white hover:text-gray-800 mr-8 mb-5"
       >
         {translate(category.name)}
       </Link>
@@ -49,17 +49,17 @@ export function Footer() {
           <img src={app.logo} height={30} alt="Logo" />
         </Link>
         <div className="flex flex-col md:flex-row md:flex-wrap">
-          <Link to="/" className="text-white mr-8 mb-2">Home</Link>
+          <Link to="/" className="text-white mr-8 mb-5">Home</Link>
           {renderCategories()}
           {renderFooterItems(footerMenu)}
           </div>
         </div>
-        <div className="flex flex-wrap mt-20">
+        <div className="flex flex-wrap mt-8">
             {app.page.footer?.footerlinks.map((link) => (
               <Link 
                 key={`${link.title}-${link.url}`} 
                 to={link.url} 
-                className="mr-4 mb-10 text-white"
+                className="mr-4 mb-4 text-white"
               >
                 {translate(link.title)}
               </Link>
