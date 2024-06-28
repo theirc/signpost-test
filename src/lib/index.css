@@ -512,3 +512,30 @@ html {
 :where(.css-dev-only-do-not-override-1xg9z9n).ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before {
   background-color: #609292;
 }
+
+.category-filter-button {
+  background-color: #80C2C2;
+  font-weight: 600;
+}
+
+.category-filter-button:hover {
+  border-color: #609292 !important;
+  color: black !important;
+  background-color: #609292 !important;
+}
+
+.category-filter-button:active {
+  border-color: #609292 !important;
+  color: black !important;
+  background-color: #609292 !important;
+}
+
+.category-filter-button.active {
+  background-color: #609292;
+}
+
+.articles-card {
+  box-shadow: -1px 1px 24px -9px rgba(0,0,0,0.75);
+  -webkit-box-shadow: -1px 1px 24px -9px rgba(0,0,0,0.75);
+  -moz-box-shadow: -1px 1px 24px -9px rgba(0,0,0,0.75);
+}

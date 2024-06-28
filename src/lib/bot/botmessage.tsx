@@ -107,7 +107,7 @@ type Inputs = {
   moderatorresponse: string
   traumametrics: number
   clientmetrics: number
-  safetymetric: number
+  safetymetric: string
 }
 
 const failOptions: SelectProps["options"] = [
@@ -168,6 +168,11 @@ const rating: SelectProps["options"] = [
   { value: 1, label: "1" },
   { value: 2, label: "2" },
   { value: 3, label: "3" },
+]
+
+const yesno: SelectProps["options"] = [
+  { value: "yes", label: "yes" },
+  { value: "no", label: "no" },
 ]
 
 const prompttype: SelectProps["options"] = [
@@ -402,7 +407,7 @@ function BotScoreModal(props: {
                 name="safetymetric"
                 control={control}
                 rules={{ required: metricType == "qmf" }}
-                render={({ field }) => <Select className="w-full" placeholder="Select Rating" options={rating} {...field} />}
+                render={({ field }) => <Select className="w-full" placeholder="Select Rating" options={yesno} {...field} />}
               />
               {errors.safetymetric && metricType == "qmf" && (<span className="text-red-500">This field is required</span>)}
             </div>

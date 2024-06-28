@@ -44,8 +44,9 @@ export function Article() {
   return <div className="overflow-y-auto">
     <div className='py-16 w-full flex justify-center text-black bg-white h-auto' ref={refScrollUp}>
       <div className="sm:w-full px-8 lg:w-4/5 w-screen">
-        <div className="flex flex-col md:mx-20">
+        <div className="flex flex-col">
           <h1>{title}</h1>
+          <p>{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
           <div className="flex items-center">
             <TextReader />
             <ShareButton />

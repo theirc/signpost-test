@@ -53,7 +53,7 @@ declare global {
 
     traumametrics?: number
     clientmetrics?: number
-    safetymetric?: number
+    safetymetric?: string
   }
 
 
