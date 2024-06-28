@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import Container from './menucontainer';
 import DropdownContent from './dropdowncontent';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
@@ -13,6 +13,7 @@ const MenuItem = ({
     setIsDrawerOpen,
 }) => {
     const [visible, setVisible] = useState(false)
+    const location = useLocation()
     const handleClick = () => {
         setVisible(false)
     };
@@ -21,7 +22,7 @@ const MenuItem = ({
         <li onMouseLeave={() => setVisible(false)}>
             <div className="nav_item_content py-4">
                 <NavLink
-                    to={''}
+                    to={location.pathname}
                     className={({ isActive }) => (isActive ? 'active no-underline' : 'no-underline')}
                     onClick={onToggle}
                     onMouseEnter={() => setVisible(true)}

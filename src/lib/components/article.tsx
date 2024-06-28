@@ -46,6 +46,7 @@ export function Article() {
       <div className="sm:w-full px-8 lg:w-4/5 w-screen">
         <div className="flex flex-col md:mx-20">
           <h1>{title}</h1>
+          <p>{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
           <div className="flex items-center">
             <TextReader />
             <ShareButton />
