@@ -4,13 +4,30 @@ const serverurl = "https://directus-qa-support.azurewebsites.net"
 
 export const api = {
 
-  getCountry: (country: number) => getFromServer<Country>(`${serverurl}/country/${country}`),
+  // getCountry: (country: number) => getFromServer<Country>(`${serverurl}/country/${country}`),
   getServices: (country: number, since = 0) => getFromServer<Service[]>(`${serverurl}/services/${country}/${since}`),
   getProviders: (country: number) => getFromServer<Provider[]>(`${serverurl}/providers/${country}`),
   getCategories: () => getFromServer<Categories>(`${serverurl}/categories`),
   getBots: () => getFromServer<{ [index: number]: string }>(`${serverurl}/bots`),
   getArticles: (country: number) => getFromServer<{ [index: string]: ZendeskCategory }>(`${serverurl}/articles/${country}`),
   getAttachments: (country: number, article: number) => getFromServer<ZendeskArticleAttachment[]>(`${serverurl}/attachments/${country}/${article}`),
+
+
+
+  getCountry(country: number) {
+
+    let preview = ""
+
+    try {
+      let params = new URL(document.location.toString()).searchParams
+      let name = params.get("preview")
+      preview = name ? "/preview" : ""
+    } catch (error) { }
+
+    return getFromServer<Country>(`${serverurl}/country/${country}${preview}`)
+
+
+  },
 
   async askbot(req: ChatMessage, bots: { label: string, value: number, history: BotHistory[] }[]) {
 

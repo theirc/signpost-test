@@ -360,8 +360,18 @@ function BotScoreModal(props: {
 
         {metricType == "qmf" && (
           <div>
+
             <div className="font-medium mb-1">
               {isFail ? "Quality Metric Flag" : "Quality Team Objective"}
+            </div>
+            <div className="mb-2">
+              <Controller
+                name="qmf"
+                control={control}
+                rules={{ required: metricType == "qmf" }}
+                render={({ field }) => <Select mode="multiple" className="w-full" placeholder="Select Metric" options={qmf} {...field} />}
+              />
+              {errors.qmf && metricType == "qmf" && (<span className="text-red-500">This field is required</span>)}
             </div>
 
             <div className="mb-2">

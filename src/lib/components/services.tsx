@@ -1,8 +1,11 @@
-import { Link } from "react-router-dom";
+import { Link as Link2 } from "react-router-dom";
 import { translate } from "../app";
-import { Pagination, Select } from "antd";
+import { Pagination, Select, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GetIconForChannel, getContactDetailLink } from "./service";
+import { RightOutlined } from "@ant-design/icons";
 
+const { Text, Title, Link } = Typography
 interface ServiceListProps {
   services: Service[];
 }
@@ -106,30 +109,35 @@ export function ServicesList({ services }: ServiceListProps) {
 
   return (
     <div>
-      <Select
-        className="w-full"
-        options={mapAutocompleteOptions}
-        placeholder="Search"
-        onSelect={onSelect}
-        listHeight={100}
-        showSearch
-        allowClear
-        labelInValue={true}
-        onClear={() => {
-          setFilteredServices(services);
-        }}
-        filterOption={(inputValue, option) =>
-          option && option.label
-            ? option!.label
+      <div className="w-full md:absolute top-3.5 flex md:items-center flex-col md:flex-row gap-4">
+        <span className="text-black lg:mr-4">Showing {filteredServices.length} of {services.length} </span>
+        <Select
+          className="md:w-4/12 lg:w-6/12"
+          options={mapAutocompleteOptions}
+          placeholder="Search"
+          onSelect={onSelect}
+          listHeight={100}
+          showSearch
+          allowClear
+          labelInValue={true}
+          onClear={() => {
+            setFilteredServices(services);
+          }}
+          filterOption={(inputValue, option) =>
+            option && option.label
+              ? option!.label
                 .toString()
                 .toUpperCase()
                 .indexOf(inputValue.toUpperCase()) !== -1
-            : false
-        }
-      />
-      {servicesList.map((s) => (
-        <Service key={s.id} service={s} />
-      ))}
+              : false
+          }
+        />
+      </div>
+      <div className="md:grid grid-cols-2 gap-4 mt-4 mb-4 flex flex-col">
+        {servicesList.map((s) => (
+          <Service key={s.id} service={s} />
+        ))}
+      </div>
       <Pagination
         className="mt-8"
         size="small"
@@ -148,12 +156,37 @@ function Service(props: { service: Service }) {
   const description = `${html2text.textContent.substring(0, 200)}...`;
 
   return (
-    <Link key={s.id} to={`/service/${s.id}`}>
-      <div className="text-black mb-6 hover:text-blue-500 transition-all">
-        <h2>{translate(s.name)}</h2>
-        <div className="-mt-4 opacity-60">{description}</div>
-        <div className="w-full border border-solid border-gray-300 mt-2"></div>
+    <Link2 key={s.id} to={`/service/${s.id}`} className="no-underline flex items-center h-full flex-grow border-2 border-solid border-gray-300 px-5">
+      <div className="flex flex-col text-black hover:text-blue-500 transition-all h-full justify-between mb-6">
+        <div>
+          <Title level={3}>{translate(s.name)}</Title>
+          {s.address && <Text className="text-sm mb-2 flex items-center opacity-80">
+            <span className="material-symbols-outlined material-icons">
+              pin_drop
+            </span>
+            {s.address}
+          </Text>}
+        </div>
+        <Text className="mt-4 opacity-80">{description}</Text>
+        <div className="grid grid-cols-2 gap-4 mt-4 mb-4">
+          {s?.contactInfo?.map(info => {
+            if (!info.contact_details) return null;
+
+            const icon = <GetIconForChannel channel={info.channel} />;
+            const contactDetail = getContactDetailLink({
+              channel: info.channel,
+              contactDetails: info.contact_details,
+            });
+            return (
+              <div className="truncate flex items-center gap-2">
+                <Text>{icon}</Text>
+                <Link className="truncate text-black" >{contactDetail}</Link>
+              </div>
+            )
+          })}
+        </div>
+        <Link className="flex justify-end">See more details {<RightOutlined />}</Link>
       </div>
-    </Link>
+    </Link2>
   );
 }

@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.3.7",
     "@mapbox/mapbox-gl-geocoder": "^5.0.2",
     "@types/lodash": "^4.14.202",
     "antd": "^5.13.3",

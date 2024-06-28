@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily:{
-        // 'libre-caslon': ['"Libre Caslon Text"', 'serif'],
+        'libre-caslon': ['"Libre Caslon Text"', 'serif'],
         'inter': ['Inter', 'sans-serif'],
       },
       colors: {
