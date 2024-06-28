@@ -1,9 +1,7 @@
 import { app, translate } from "../app";
-import { Container } from "./container";
 import { Loader } from "./loader";
 import { Maps } from "./map";
-import { Button, Radio, Space, Tabs } from "antd";
-import type { TabsProps } from "antd";
+import { Button, Radio, Space } from "antd";
 import { ServicesList } from "./services";
 import React, { useCallback, useEffect, useState } from "react";
 import TreeSelect, { MenuItem } from "./tree-select";
@@ -379,9 +377,9 @@ export function BlockServices(props: { block: BlockServices }) {
             <div className="grow-[4] flex-1 relative">
               <div className="flex mt-3.5 mb-3.5 items-center">
                 <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">Filters</Button>
-                <span className="hidden md:inline text-black">Showing {state.filteredServices.length} of {services.length} </span>
+                {view === 0 && <span className="hidden md:inline text-black">Showing {state.filteredServices.length} of {services.length} </span>}
                 <Space className="flex ml-auto z-10">
-                  <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex">
+                  <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
                     <Radio.Button value={0}>
                       <div className="flex gap-2 items-center">
                         <span className="material-symbols-outlined material-icons">
@@ -405,7 +403,7 @@ export function BlockServices(props: { block: BlockServices }) {
               {view === 0 && <div className="md:hidden text-black my-4">Showing {state.filteredServices.length} of {services.length} </div>}
               <div>
                 {view === 0 && <Maps services={state.filteredServices} />}
-                {view === 1 && <ServicesList services={state.filteredServices} />}
+                {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
               </div>
             </div>
           </div>}
