@@ -29,7 +29,13 @@ const DropdownContent = ({
                             className='parent-section flex justify-between cursor-pointer'
                             onMouseEnter={() => handleSectionClick(index, item)}
                         >
-                            <Link className={`${index === activeIndex ? 'text-zinc-500' : 'text-black'} ${setIsDrawerOpen ? 'my-2' : 'no-underline'}`} to={item.href}>
+                            <Link
+                                className={`${index === activeIndex ? 'text-zinc-500' : 'text-black'} ${setIsDrawerOpen ? 'my-2' : 'no-underline'}`}
+                                to={item.href}
+                                onClick={() => {
+                                    setIsDrawerOpen && setIsDrawerOpen(false);
+                                    handleClick()
+                                }}>
                                 {item.children && <h2 className='m-0'>{item.label}</h2>}
                                 {!item.children && <span>{item.label}</span>}
                             </Link>
