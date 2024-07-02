@@ -116,9 +116,16 @@ export const app = {
 
     if (cats) app.data.categories = cats
 
+    const sc = await app.db.loadLocalServices()
+    await app.db.loadLocalProviders()
+    await app.db.loadZendeskContent()
+    app.state.servicesLoaded = sc > 0
+
+
     if (c) {
       loadCountry(c)
       app.state.status = "ready"
+      app.update()
     }
 
     setTimeout(async () => {
@@ -142,12 +149,6 @@ export const app = {
         }
 
         app.state.status = "ready"
-
-        const sc = await app.db.loadLocalServices()
-        await app.db.loadLocalProviders()
-        await app.db.loadZendeskContent()
-
-        app.state.servicesLoaded = sc > 0
         app.update()
 
         await app.db.updateProviders()
@@ -171,6 +172,7 @@ export const app = {
           }
         }
 
+        app.update()
         console.log("Initialized")
 
       }
@@ -209,7 +211,7 @@ function loadCountry(c: Country) {
 export function translate(t: LocalizableContent): string {
   if (!t) return ""
   if (typeof t === "string") return t
-  if (typeof t === "object") return t[app.locale] || t["en-US"] || ""
+  if (typeof t === "object") return t[app.locale] || t[app.defaultLocale] || ""
   return ""
 }
 
