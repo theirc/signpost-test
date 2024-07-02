@@ -8,6 +8,7 @@ import { RightOutlined } from "@ant-design/icons";
 const { Text, Title, Link } = Typography
 interface ServiceListProps {
   services: Service[];
+  serviceCount: number
 }
 
 const count = 10;
@@ -15,7 +16,7 @@ const count = 10;
 const html2text = document.createElement("div");
 html2text.hidden = true;
 
-export function ServicesList({ services }: ServiceListProps) {
+export function ServicesList({ services, serviceCount }: ServiceListProps) {
   const orderedServices = services.sort((a, b) => {
     const labelA = translate(a.name).toUpperCase();
     const labelB = translate(b.name).toUpperCase();
@@ -110,7 +111,7 @@ export function ServicesList({ services }: ServiceListProps) {
   return (
     <div>
       <div className="w-full md:absolute top-3.5 flex md:items-center flex-col md:flex-row gap-4">
-        <span className="text-black lg:mr-4">Showing {filteredServices.length} of {services.length} </span>
+        <span className="text-black lg:mr-4">Showing {filteredServices.length} of {serviceCount} </span>
         <Select
           className="md:w-4/12 lg:w-6/12"
           options={mapAutocompleteOptions}

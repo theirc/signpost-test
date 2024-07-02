@@ -57,7 +57,7 @@ export function Header() {
         const catSection = Object.values(cat.sections)
         for (let section of catSection) {
           if (infoSections.some(x => x === section.id.toString())) {
-            subcatItems.push({ label: translate(section.name), href: `/sections/${section.id}` })
+            subcatItems.push({ label: translate(section.name), href: `/categories/${cat.id}/${section.id}` })
           }
         }
         categoriesItems.push({ label: translate(cat.name), href: `/categories/${cat.id}`, children: subcatItems })
