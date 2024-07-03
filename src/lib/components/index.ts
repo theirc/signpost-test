@@ -15,4 +15,5 @@ export * from "./blocks"
 export * from "../bot/bot"
 export * from "./blockcategories"
 export * from "./blocksections"
+export * from "./blockmission"
 
