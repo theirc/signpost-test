@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { app, translate } from "../app";
-import { Button, Input, Pagination, Tag, Card, Empty } from "antd";
+import { Button, Input, Pagination, Tag, Card, Empty, Breadcrumb } from "antd";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { RightOutlined } from "@ant-design/icons";
 import Fuse from "fuse.js";
@@ -148,6 +148,7 @@ export function Categories() {
       </div>
       <div className="py-16 w-full flex justify-center text-black bg-white h-auto">
         <div className="sm:w-full px-4 md:w-4/5 h-fit">
+        <Breadcrumb separator=">" items={[{title: <a href="/">Home</a>}, {title: "Resource Center"}]} />
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px] mb-4">
             <h1>Category</h1>
             <div className="flex gap-4 flex-wrap">

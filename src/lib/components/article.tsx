@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { useRef } from "react";
 import { ArrowUpOutlined } from "@ant-design/icons";
+import { Breadcrumb } from "antd";
 
 
 export function Article() {
@@ -32,6 +33,9 @@ export function Article() {
     return <div>Article {id} not found</div>
   }
 
+  const category = app.data.zendesk.categories[a.category]
+  const section = app.data.zendesk.sections[a.section]
+
   const title = translate(a.name)
   const body = translate(a.description)
 
@@ -44,6 +48,7 @@ export function Article() {
   return <div className="overflow-y-auto">
     <div className='py-16 w-full flex justify-center text-black bg-white h-auto' ref={refScrollUp}>
       <div className="sm:w-full px-8 lg:w-4/5 w-screen">
+      <Breadcrumb separator=">" items={[{title: <a href="/">Home</a>}, {title: <a href={`/categories/${category.id}`}>{translate(category.name)}</a>}, {title: <a href={`/categories/${category.id}/${section.id}`}>{translate(section.name)}</a>}, {title: translate(a.name)}]} />
         <div className="flex flex-col">
           <h1>{title}</h1>
           <p>{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>

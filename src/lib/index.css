@@ -539,3 +539,7 @@ html {
   -webkit-box-shadow: -1px 1px 24px -9px rgba(0,0,0,0.75);
   -moz-box-shadow: -1px 1px 24px -9px rgba(0,0,0,0.75);
 }
+
+.ant-breadcrumb-link a {
+  text-decoration: underline;
+}
