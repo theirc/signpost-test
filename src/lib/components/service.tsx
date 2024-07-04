@@ -17,6 +17,7 @@ import { useParams } from "react-router-dom";
 import { app, translate } from "../app";
 import React from "react";
 import { Footer } from ".";
+import { Breadcrumb } from "antd";
 
 function formatDate(timestamp) {
   return moment(timestamp).format("MM/DD/YYYY, h:mm a");
@@ -159,33 +160,34 @@ export function Service() {
 
   return (
     <div className="py-16 text-black text-base bg-white overflow-y-auto flex justify-center w-screen mb-10">
-    <div className="text-black mx-auto max-w-[90rem] px-4 sm:px-8 pb-20">
-    <h1 className="font-inter text-3xl whitespace-normal">{title}</h1>
-     <h2 className="font-inter text-2xl font-normal">{providerName}</h2>
-    <h3 className="font-inter text-gray-600 text-sm font-normal leading-[1.375rem]">
-      Last Updated: {formatDate(service.date_updated)}
-    </h3>
+      <div className="text-black mx-auto max-w-[90rem] px-4 sm:px-8 pb-20">
+        <Breadcrumb separator=">" items={[{ title: <a href="/">Home</a> }, { title: "Services" }]} />
+        <h1 className="font-inter text-3xl whitespace-normal">{title}</h1>
+        <h2 className="font-inter text-2xl font-normal">{providerName}</h2>
+        <h3 className="font-inter text-gray-600 text-sm font-normal leading-[1.375rem]">
+          Last Updated: {formatDate(service.date_updated)}
+        </h3>
 
-  <div className="bg-neutral-container-bg rounded p-6 mb-4">
-    <div dangerouslySetInnerHTML={{ __html: description }} />
-    </div>
+        <div className="bg-neutral-container-bg rounded p-6 mb-4">
+          <div dangerouslySetInnerHTML={{ __html: description }} />
+        </div>
 
-    {location && (
-      <div className="bg-neutral-container-bg rounded p-6 mb-4">
-    <h4 className="mb-4 mt-6">{location}</h4>
+        {location && (
+          <div className="bg-neutral-container-bg rounded p-6 mb-4">
+            <h4 className="mb-4 mt-6">{location}</h4>
+          </div>
+        )}
+
+        <div className="bg-neutral-container-bg rounded p-6 mb-4">
+          <ContactDetails contactInfo={service.contactInfo} />
+        </div>
+        {hourDisplay && hourDisplay.length > 0 && (
+          <div className="bg-neutral-container-bg rounded p-6 mb-4">
+            <h2 className="mb-2">{translate('Opening hours')}</h2>
+            <div className="space-y-2">{hourDisplay}</div>
+          </div>
+        )}
+      </div>
     </div>
-    )}
-    
-    <div className="bg-neutral-container-bg rounded p-6 mb-4">
-    <ContactDetails contactInfo={service.contactInfo} />
-    </div>
-    {hourDisplay && hourDisplay.length > 0 && (
-      <div className="bg-neutral-container-bg rounded p-6 mb-4">
-              <h2 className="mb-2">{translate('Opening hours')}</h2>
-              <div className="space-y-2">{hourDisplay}</div>
-              </div>
-    )}
-  </div>
-  </div>
-);
+  );
 }
