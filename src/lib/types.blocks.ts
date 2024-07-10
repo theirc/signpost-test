@@ -7,8 +7,8 @@ interface Footerlinks {
 
 declare global {
 
-  type BlockTypes = "text" | "channels" | "info" | "services" | "image" | "richtext" | "footer" | "categories" | "sections" | "mission"
-  type Blocks = Block | BlockText | BlockChannels | BlockRichText | BlockInfo | BlockServices | BlockImage | BlockFooter | BlockCategories | BlockMission
+  type BlockTypes = "text" | "channels" | "info" | "services" | "image" | "richtext" | "footer" | "categories" | "sections" | "mission" | "about"
+  type Blocks = Block | BlockText | BlockChannels | BlockRichText | BlockInfo | BlockServices | BlockImage | BlockFooter | BlockCategories | BlockMission | BlockAbout
 
   interface Block {
     type: BlockTypes
@@ -100,6 +100,13 @@ declare global {
   interface BlockMission extends Block {
     type: "mission"
     title?: LocalizableText
+  }
+
+  interface BlockAbout extends Block {
+    type: "about"
+    image?: string
+    title?: LocalizableText
+    subtitle?: LocalizableText
   }
 
   interface Menu {

@@ -567,3 +567,15 @@ audio {
 .read-time-bold {
   font-weight: bold;
 }
+.about-content h1 {
+  font-size: 44px;
+}
+
+.about-content h2 {
+  font-size: 20px;
+}
+
+.about-content p {
+  color: rgba(87, 87, 87, 1);
+  line-height: 25px;
+}
