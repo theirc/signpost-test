@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { app, translate } from "../app";
+import { ReadTime } from "./readingtime";
 import { Button, Input, Pagination, Tag, Card, Empty, Breadcrumb } from "antd";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { RightOutlined } from "@ant-design/icons";
@@ -190,6 +191,7 @@ export function Categories() {
             {paginatedArticles?.length ? paginatedArticles.map(article => (
               <Card key={article.id} className="articles-card">
                 <Tag color="green">{translate(categories.find(category => category.id === article.category)?.name)}</Tag>
+                <ReadTime content={translate(article.description)}/>
                 <h3>{translate(article.name)}</h3>
                 <p>{`${stripHtmlTags(translate(article.description))?.slice(0, 100)}...`}</p>
                 <p>{new Date(article.updated_at).toLocaleDateString('en-GB')}</p>

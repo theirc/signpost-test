@@ -543,3 +543,20 @@ html {
 .ant-breadcrumb-link a {
   text-decoration: underline;
 }
+.container-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 40vh;
+  padding-bottom: 70px;
+  box-sizing: border-box;
+}
+
+.header-search-input {
+  width: 100%;
+  margin-top: 30px;
+}
+.read-time-bold {
+  font-weight: bold;
+}
