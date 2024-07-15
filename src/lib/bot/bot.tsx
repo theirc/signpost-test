@@ -188,6 +188,17 @@ function SearchInput(props: { onSearch: (message: string) => void, disabled: boo
     setValue("")
   }
 
+  const handleSendRecording = async () => {
+    if(mediaBlobUrl) {
+      const response = await fetch(mediaBlobUrl);
+      const blob = await response.blob()
+      console.log("Sending audio blob to server:", blob)
+
+      clearBlobUrl()
+      setRecordingComplete(false)
+    }
+  }
+
   // const onChange = (e: any) => {
   //   setValue(e.target.value)
   // }
@@ -199,7 +210,7 @@ function SearchInput(props: { onSearch: (message: string) => void, disabled: boo
   return (
     <div>
     <div className="mb-4 flex justify-between">
-      <Button onClick={handleModeToggle} type="primary">
+      <Button onClick={handleModeToggle} type="primary" className="w-40">
         {isVoiceMode ? "Switch to Text" : "Switch to Voice"}
       </Button>
     </div>
@@ -216,25 +227,36 @@ function SearchInput(props: { onSearch: (message: string) => void, disabled: boo
         onSearch={handleSearch}
       />
     ) : (
-      <div className="flex flex-col items-center pb-4">
-        <div>
-          <p className="text-sm font-medium leading-none p-2">
+      <div className="flex flex-col items-center">
+        <div className="text-center mb-4">
+          <p className="text-lg font-medium">
             {status === "recording" ? "Recording" : "Ready to Record"}
           </p>
-          <p className="text-sm">
+          <p className="text-sm ml-4">
             {status === "recording" ? "Start speaking..." : ""}
           </p>
           </div>
 
           <Button
           onClick={handleToggleRecording}
-          icon={status === "recording" ? <MdStop /> : <MdMic />}
+          icon={status === "recording" ? <MdStop className="text-xl"/> : <MdMic className="text-xl" />}
           type="primary"
           shape="circle"
           size="large"
+          className="flex items-center justify-center"
         />
         { recordingComplete && mediaBlobUrl && (
+          <div className="mt-4 flex items-center">
           <audio controls src={mediaBlobUrl} className="mt-4" />
+          <Button 
+          onClick={handleSendRecording}
+          icon={<MdSend/>}
+          type="primary"
+          shape="circle"
+          size="large"
+          className="h-10 ml-6"
+          />
+          </div>
         )}
       </div>
     )}
