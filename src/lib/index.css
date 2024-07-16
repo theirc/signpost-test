@@ -543,6 +543,13 @@ html {
 .ant-breadcrumb-link a {
   text-decoration: underline;
 }
+
+audio {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .container-center {
   display: flex;
   flex-direction: column;

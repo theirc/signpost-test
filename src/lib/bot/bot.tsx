@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react"
 import { Button, Input, Modal, Select, SelectProps, Tabs } from "antd"
 const { Search } = Input
+import { MdMic, MdStop } from "react-icons/md";
 import { MdSend } from "react-icons/md"
 import { BsRobot } from "react-icons/bs"
 import { FaThumbsUp } from "react-icons/fa"
 import { FaThumbsDown } from "react-icons/fa"
 import { BsEmojiSmile } from "react-icons/bs"
+import {useReactMediaRecorder} from "react-media-recorder"
 import { api } from "../api"
 import { useForceUpdate, useMultiState } from "../components"
 import { BotChatMessage } from './botmessage'
@@ -150,29 +152,117 @@ export function AIBot() {
 function SearchInput(props: { onSearch: (message: string) => void, disabled: boolean }) {
 
   const [value, setValue] = useState("")
+  const [isVoiceMode, setIsVoiceMode] = useState<boolean>(false)
+  const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
 
-  const onChange = (e: any) => {
+  const {
+    status,
+    startRecording,
+    stopRecording,
+    mediaBlobUrl,
+    clearBlobUrl,
+  } = useReactMediaRecorder({audio: true})
+
+    const handleToggleRecording = () => {
+       if(status === "recording") {
+        stopRecording();
+        setRecordingComplete(true)
+       } else {
+        clearBlobUrl();
+        startRecording();
+        setRecordingComplete(false)
+       }
+    }
+
+  const handleModeToggle = () => {
+      setIsVoiceMode(!isVoiceMode);
+  }
+
+  const handleSearchChange = (e: React.ChangeEvent <HTMLInputElement>) => {
     setValue(e.target.value)
   }
-  const onSearch = (v) => {
-    props.onSearch(v)
+
+  const handleSearch = (v:string) => {
+    props.onSearch(v);
     setValue("")
   }
 
-  return <Search
-    value={value}
-    onChange={onChange}
-    className="w-full"
-    size="large"
-    disabled={props.disabled}
-    placeholder="Ask me anything"
-    enterButton={<MdSend className="mt-1" />}
-    onSearch={onSearch}
-  />
+  const handleSendRecording = async () => {
+    if(mediaBlobUrl) {
+      const response = await fetch(mediaBlobUrl);
+      const blob = await response.blob()
+      console.log("Sending audio blob to server:", blob)
 
+      clearBlobUrl()
+      setRecordingComplete(false)
+    }
+  }
+
+  // const onChange = (e: any) => {
+  //   setValue(e.target.value)
+  // }
+  // const onSearch = (v) => {
+  //   props.onSearch(v)
+  //   setValue("")
+  // }
+
+  return (
+    <div>
+    <div className="mb-4 flex justify-between">
+      <Button onClick={handleModeToggle} type="primary" className="w-40">
+        {isVoiceMode ? "Switch to Text" : "Switch to Voice"}
+      </Button>
+    </div>
+
+    {!isVoiceMode ? (
+      <Search
+        value={value}
+        onChange={handleSearchChange}
+        className="w-full"
+        size="large"
+        disabled={props.disabled}
+        placeholder="Ask me anything"
+        enterButton={<MdSend className="mt-1" />}
+        onSearch={handleSearch}
+      />
+    ) : (
+      <div className="flex flex-col items-center">
+        <div className="text-center mb-2">
+          <p>
+            {status === "recording" ? "Recording" : "Ready to Record"}
+          </p>
+          <p className="text-sm ml-4">
+            {status === "recording" ? "Start speaking..." : ""}
+          </p>
+          </div>
+
+          <Button
+          onClick={handleToggleRecording}
+          icon={status === "recording" ? <MdStop className="text-xl"/> : <MdMic className="text-xl" />}
+          type="primary"
+          shape="circle"
+          size="large"
+          className="flex items-center justify-center"
+        />
+        { recordingComplete && mediaBlobUrl && (
+          <div className="mt-4 flex items-center">
+          <audio controls src={mediaBlobUrl} className="mt-4" />
+          <Button 
+          onClick={handleSendRecording}
+          icon={<MdSend/>}
+          type="primary"
+          shape="circle"
+          size="large"
+          className="h-10 ml-6"
+          />
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+);
 }
-
-
+  
 interface MessageProps {
   message: ChatMessage
   isWaiting?: boolean
