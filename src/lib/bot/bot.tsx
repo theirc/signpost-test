@@ -228,8 +228,8 @@ function SearchInput(props: { onSearch: (message: string) => void, disabled: boo
       />
     ) : (
       <div className="flex flex-col items-center">
-        <div className="text-center mb-4">
-          <p className="text-lg font-medium">
+        <div className="text-center mb-2">
+          <p>
             {status === "recording" ? "Recording" : "Ready to Record"}
           </p>
           <p className="text-sm ml-4">
