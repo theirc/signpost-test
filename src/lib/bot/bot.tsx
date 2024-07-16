@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Button, Input, Modal, Select, SelectProps, Tabs } from "antd"
+const { Search } = Input
 import { MdMic, MdStop } from "react-icons/md";
 import { MdSend } from "react-icons/md"
 import { BsRobot } from "react-icons/bs"
@@ -11,8 +12,6 @@ import { api } from "../api"
 import { useForceUpdate, useMultiState } from "../components"
 import { BotChatMessage } from './botmessage'
 import type { TabsProps } from 'antd'
-
-const { Search } = Input
 
 interface Bots {
   [index: number]: {
