@@ -208,7 +208,7 @@ export function Maps({ services }: mapProps) {
 
     const newClusters = cluster.getClusters(bbox, Math.floor(map.getZoom()))
     setClusters(newClusters)
-  }, [cluster, mapRef])
+  }, [cluster, mapRef, services])
 
   const loadAndUpdateClusters = useCallback(() => {
     const features = services
@@ -256,7 +256,7 @@ export function Maps({ services }: mapProps) {
         map.off("move", updateClusters)
       }
     }
-  }, [isMapReady, loadAndUpdateClusters, updateClusters])
+  }, [isMapReady, loadAndUpdateClusters, updateClusters, services])
 
   useEffect(() => {
     const map = mapRef.current?.getMap()
@@ -268,7 +268,7 @@ export function Maps({ services }: mapProps) {
         })
       })
     }
-  }, [bounds])
+  }, [bounds, services])
 
   const handleViewportChange = () => {
     updateClusters()

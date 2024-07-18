@@ -21,7 +21,7 @@ interface TreeSelectProps {
   className?: string;
   style?: CSSProperties;
   defaultValue?: number[];
-  value?: number[];
+  value?: number[] | (string | number)[];
   onClear?: () => void;
   onDropdownVisibleChange?: (open: boolean) => void;
 }

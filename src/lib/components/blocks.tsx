@@ -4,6 +4,7 @@ import { BlockChannels, BlockImage, BlockInfo, BlockRichText, BlockServices, Blo
 import { Link } from "react-router-dom"
 import { BlockCategories } from "./blockcategories"
 import { BlockSections } from "./blocksections"
+import { BlockAbout } from "./blockabout"
 
 
 export function Blocks() {
@@ -20,6 +21,7 @@ export function Blocks() {
     if (b.type === "categories") return <BlockCategories key={b.sort} block={b as BlockCategories} />
     if (b.type === "sections") return <BlockSections key={b.sort} block={b as BlockSections} />
     if(b.type === "mission") return <BlockMission key={b.sort} block={b as BlockMission} />
+    if(b.type === "about") return <BlockAbout key={b.sort} block={b as BlockAbout} />
     return null
   })
 

@@ -8,6 +8,8 @@ import TreeSelect, { MenuItem } from "./tree-select";
 import { useMultiState } from "./hooks";
 import ReactGA from "react-ga4";
 import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
+import { useSearchParams } from "react-router-dom";
+import { Blocks } from "./blocks";
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -16,14 +18,23 @@ enum filterType {
   accessibility = "accessibility",
 }
 
+type FilterValues = {
+  serviceTypes: (string | number)[],
+  provider: (string | number)[],
+  populations: (string | number)[],
+  accessibility: (string | number)[],
+}
+
 export function BlockServices(props: { block: BlockServices }) {
-  const { block } = props;
+  const { block } = props
+  const styles = Blocks.buildStyle(block)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const {
     state: { servicesLoaded },
   } = app;
-  const [selectedFilterValues, setSelectedFilterValues] = useState({
+  const [selectedFilterValues, setSelectedFilterValues] = useState<FilterValues>({
     serviceTypes: [-1],
     provider: [-1],
     populations: [-1],
@@ -37,15 +48,14 @@ export function BlockServices(props: { block: BlockServices }) {
   );
   ReactGA.initialize("G-H6VQ1Y6EX9");
 
-  const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider));
-  const providers =
-    Object.values(app.data.categories.providers)
-      .filter((x) => Array.from(uniqueProvidersSet).includes(x.id))
-      .sort((a, b) =>
-        translate(a.name)
-          .normalize()
-          .localeCompare(translate(b.name).normalize())
-      ) || [];
+  const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider))
+  const providers = Object.values(app.data.categories.providers)
+  const uniqueProviders = providers.filter((x) => Array.from(uniqueProvidersSet).includes(x.id))
+  .sort((a, b) =>
+    translate(a.name)
+      .normalize()
+      .localeCompare(translate(b.name).normalize())
+  )
 
   const usedCategoryIdsSet = new Set<number>();
   const usedSubcategoryIds = new Set<number>();
@@ -66,7 +76,7 @@ export function BlockServices(props: { block: BlockServices }) {
 
   const [state, setState] = useMultiState({
     filteredServices: services,
-    filteredProviders: providers,
+    filteredProviders: uniqueProviders,
   });
 
   const accessibilities = Object.values(app.data.categories.accesibility) || [];
@@ -116,6 +126,7 @@ export function BlockServices(props: { block: BlockServices }) {
         ...prevValues,
         [filter]: [-1],
       }));
+      searchParams.delete(filter)
     } else {
       let changedValues: number[] = [];
       if (filter === filterType.serviceTypes) {
@@ -136,13 +147,19 @@ export function BlockServices(props: { block: BlockServices }) {
         ...prevValues,
         [filter]: filterFirstSubArray(value),
       }));
+      searchParams.delete(filter)
+
+      filterFirstSubArray(value).forEach(x => {
+        searchParams.append(filter, x.toString())
+      })
     }
+    setSearchParams(new URLSearchParams(searchParams))
   };
 
 
 
   const handleProviderChange = useCallback(
-    (value: number[], services2: Service[]) => {
+    (value: number[] | (string | number)[], services2: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1) {
         return services;
       }
@@ -154,11 +171,11 @@ export function BlockServices(props: { block: BlockServices }) {
 
       return services2;
     },
-    []
+    [lastValue]
   );
 
   const handleAccessibilityChange = useCallback(
-    (value: number[], services: Service[]) => {
+    (value: number[] | (string | number)[], services: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1)
         return services;
 
@@ -175,7 +192,7 @@ export function BlockServices(props: { block: BlockServices }) {
   );
 
   const handlePopulationsChange = useCallback(
-    (value: number[], services: Service[]) => {
+    (value: number[] | (string | number)[], services: Service[]) => {
       if (!value.length || value.flat()[value.flat().length - 1] === -1)
         return services;
 
@@ -189,7 +206,7 @@ export function BlockServices(props: { block: BlockServices }) {
   );
 
   const handleServiceTypeChange = useCallback(
-    (value: number[] | string[], services: Service[]) => {
+    (value: number[] | (string | number)[], services: Service[]) => {
       const categoryMap = new Map<number, boolean>();
       const subcategoryMap = new Map<number, boolean>();
 
@@ -298,8 +315,7 @@ export function BlockServices(props: { block: BlockServices }) {
         filteredData = handlePopulationsChange(value, filteredData);
       } else if (
         key === filterType.serviceTypes &&
-        value.length &&
-        value[0] !== -1
+        value.length
       ) {
         filteredData = handleServiceTypeChange(value, filteredData);
       }
@@ -312,10 +328,41 @@ export function BlockServices(props: { block: BlockServices }) {
     setState({
       filteredServices: services,
     });
-  }, [app.data.services, app.data.categories.providers]);
+  }, [app.data.services])
+
+  useEffect(() => {
+    const categoriesParams = searchParams.getAll('serviceTypes')
+    const paramsCategories = categoriesParams.map(cat => {
+      if (cat.indexOf('-') !== -1) {
+        return cat;
+      } else {
+        return +cat;
+      }
+    })
+    const providersParams = searchParams.getAll('provider').map(provider => {
+      return +provider
+    })
+    const populationsParams = searchParams.getAll('populations')
+    const accessibilityParams = searchParams.getAll('accessibility')
+
+    if (categoriesParams.length || providersParams.length || populationsParams.length || accessibilityParams.length) {
+      const element = document.getElementById('service-map')
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+
+    setSelectedFilterValues({
+      serviceTypes: paramsCategories.length ? paramsCategories : [-1],
+      provider: providersParams.length ? providersParams : [-1],
+      populations: populationsParams.length ? populationsParams : [-1],
+      accessibility: accessibilityParams.length ? accessibilityParams : [-1],
+    });
+  }, []);
+
 
   return (
-    <div className="transition-all md:py-16 w-full flex items-center md:justify-center">
+    <div className="transition-all md:py-16 w-full flex items-center md:justify-center" style={styles}>
       <div className="sm:w-full px-8 lg:w-4/5 w-screen">
         <div className="text-4xl">{translate(props.block.title)}</div>
         <div className="text-2xl mt-4 opacity-50">
@@ -377,7 +424,7 @@ export function BlockServices(props: { block: BlockServices }) {
             <div className="grow-[4] flex-1 relative">
               <div className="flex mt-3.5 mb-3.5 items-center">
                 <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">Filters</Button>
-                {view === 0 && <span className="hidden md:inline text-black">Showing {state.filteredServices.length} of {services.length} </span>}
+                {view === 0 && <span className="hidden md:inline">Showing {state.filteredServices.length} of {services.length} </span>}
                 <Space className="flex ml-auto z-10">
                   <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
                     <Radio.Button value={0}>
@@ -400,7 +447,7 @@ export function BlockServices(props: { block: BlockServices }) {
                 </Space>
               </div>
 
-              {view === 0 && <div className="md:hidden text-black my-4">Showing {state.filteredServices.length} of {services.length} </div>}
+              {view === 0 && <div className="md:hidden my-4">Showing {state.filteredServices.length} of {services.length} </div>}
               <div>
                 {view === 0 && <Maps services={state.filteredServices} />}
                 {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
