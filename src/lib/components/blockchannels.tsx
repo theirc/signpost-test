@@ -68,7 +68,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
           aria-label="Email"
         >
           <FaEnvelope size={40} className={iconStyle}/>
-          <div className={textStyle} no-underline>{translate(block.email)}</div>
+          <div className={textStyle}>{translate(block.email)}</div>
         </a>
       )}
       {block.instagram_link && (
