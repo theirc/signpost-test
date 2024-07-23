@@ -2,6 +2,7 @@ import { CSSProperties, useRef, useState } from "react";
 import { app, translate } from "../app";
 import { Link } from "react-router-dom";
 import MegaMenu from './megamenu';
+import LanguageDropdown from "./languagedropdown";
 import MobileNavigationDrawer from './mobilenavigationdrawer';
 import Container from "./menucontainer";
 import { MenuOutlined } from "@ant-design/icons";
@@ -120,43 +121,36 @@ export function Header() {
     return menuItems.map((item) => {
       if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return
       const title = item.title ? translate(item.title) : "";
-      if (item.content && item.content.length > 0 && item.type === 'about') {
+      if (item.type === 'about') {
         return (
-          <div className="relative group" key={title}>
-            <div className="cursor-pointer">
-              {title}
-              <span className="text-[0.60rem]">▼</span>
-            </div>
-            <div className="absolute hidden group-hover:block bg-white shadow-lg overflow-auto max-h-96">
-              {renderMenuItems(item.content)}
-            </div>
-          </div>
-        );
+         <a href="#about-section" key={title} className="mx-8">
+          <div className="text-white no-underline">{title}</div>
+         </a>        
+         );
       } else if (item.type === "services") {
         return (
-          <a href="#service-map" key={title} className="mx-1">
-            <div className="no-underline">{title}</div>
+          <a href="#service-map" key={title} className="mx-8">
+            <div className="text-white no-underline">{title}</div>
           </a>
         );
       } else {
         return (
-          <Link key={title} to={item.link || "#"} className="mx-1">
-            <div className="no-underline">{title}</div>
+          <Link key={title} to={item.link || "#"} className="mx-8">
+            <div className="text-white no-underline">{title}</div>
           </Link>
         );
       }
     });
   };
-
   return (
-    <div className="h-10 flex p-4 text-sm tracking-wide" style={styles}>
-      <div>
+    <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-[106px] py-4 tracking-wide" style={styles}>
+        <div>
         <Link to="/">
           <img src={app.logo} height={40} alt="Logo" />
         </Link>
       </div>
-      <Container>
-        <div className="toolbar">
+        <Container>
+          <div className="toolbar">
           <button
             ref={drawerButtonRef}
             className="menu_icon md:hidden"
@@ -169,25 +163,33 @@ export function Header() {
 
           <div className="hidden md:block">
             <div className="flex gap-4 items-center">
-              {renderMenuItems(app.page.header.menu)}
-              <MegaMenu menuData={menu} />
-              <Link key='search' to='/search-results' className="mx-1">
-                <div className="no-underline">Search</div>
-              </Link>
-              <Link to={"/signpostbot"}>
-                <div className="text-white no-underline">Bot</div>
-              </Link>
-            </div>
-          </div>
+          {renderMenuItems(app.page.header.menu)}
+          <MegaMenu menuData={menu} />
+          <Link to={"/signpostbot"} className="mx-8">
+            <div className="text-white no-underline">Bot</div>
+          </Link>
+        </div>
+      </div>
+      <div className="hidden md:flex items-center space-x-6">
+        <Link key='search' to='/search-results' className="mx-8">
+          <div className="text-white no-underline">Search</div>
+        </Link>
+        <LanguageDropdown isMobile={false} />
+      </div>
+      </div>
 
-          {/* Mobile navigation drawer */}
-          <div className="md:hidden absolute">
+        {/* Mobile navigation drawer */}
+        <div className="md:hidden absolute">
             <MobileNavigationDrawer
               menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
             />
+        {isDrawerOpen && (
+          <div className="p-4">
+            <LanguageDropdown isMobile={true} />
           </div>
+        )}
         </div>
-      </Container>
-    </div>
+        </Container>
+    </nav>
   );
 }

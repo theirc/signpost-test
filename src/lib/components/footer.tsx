@@ -7,7 +7,7 @@ export function Footer() {
   const categories: { [index: number]: ZendeskCategory } = app.data.zendesk.categories;
 
   const footerMenu: Menu[] = app.page.header.menu.filter((item: Menu) => 
-    ["services", "language"].includes(item.type)
+    ["services"].includes(item.type)
   );
 
   const renderFooterItems = (menuItems: Menu[]) => {
