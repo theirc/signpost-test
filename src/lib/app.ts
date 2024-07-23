@@ -22,7 +22,7 @@ const defaultBlocks: Block[] = [
 
 export const app = {
 
-  country: 0,
+  country: 2,
   logo: null as any,
   locale: "en-US", //current locale
   name: "Country Name",
@@ -214,6 +214,7 @@ export function translate(t: LocalizableContent): string {
   if (typeof t === "object") return t[app.locale] || t[app.defaultLocale] || ""
   return ""
 }
+
 
 export async function sleep(ms = 1000) {
   return new Promise(a => setTimeout(a, ms))
