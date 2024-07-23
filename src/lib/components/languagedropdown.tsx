@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import React from 'react';
 import { Dropdown, Divider, Space, Button } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import { langauages } from "../locale";
+import { languages } from "../locale";
 import { app } from "../app";
 
 interface LanguageDropdownProps {
@@ -12,7 +12,7 @@ interface LanguageDropdownProps {
 
 export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
 
-  const supportedLocales = React.useMemo(() => {
+  const supportedLocales = useMemo(() => {
     const locales = new Set<string>([app.defaultLocale]);
     app.page.content.forEach(contentItem => {
       if (contentItem.text && typeof contentItem.text === 'object') {
@@ -29,19 +29,23 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
     app.update();
   };
 
+  const getLanguageName = (localeCode: string, currentLocale: string) => {
+    return languages[localeCode]?.[currentLocale] || languages[localeCode]?.en || localeCode;
+  };
+
   const items = supportedLocales.map((localeCode) => ({
     key: localeCode,
-    label: langauages[localeCode as keyof typeof langauages]?.name || localeCode,
+    label: getLanguageName(localeCode, app.locale),
     onClick: () => handleLanguageChange(localeCode),
   }));
 
   return (
     <Dropdown menu={{ items }} trigger={['click']} >
       <a onClick={(e) => e.preventDefault()} className={`language-dropdown text-white font-inter ${isMobile ? "w-full" : ""}`}>
-          {langauages[app.locale as keyof typeof langauages]?.name || app.locale}
-          <Space>
+        {getLanguageName(app.locale, app.locale)}
+        <Space>
           <DownOutlined />
-          </Space>
+        </Space>
       </a>
     </Dropdown>
   );
