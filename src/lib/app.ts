@@ -22,7 +22,7 @@ const defaultBlocks: Block[] = [
 
 export const app = {
 
-  country: 2,
+  country: 0,
   logo: null as any,
   locale: "en-US", //current locale
   name: "Country Name",
