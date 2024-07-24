@@ -1,7 +1,5 @@
-
 import { useMemo } from 'react';
-import React from 'react';
-import { Dropdown, Divider, Space, Button } from "antd";
+import { Dropdown, Space } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { languages } from "../locale";
 import { app } from "../app";
@@ -11,7 +9,6 @@ interface LanguageDropdownProps {
 }
 
 export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
-
   const supportedLocales = useMemo(() => {
     const locales = new Set<string>([app.defaultLocale]);
     app.page.content.forEach(contentItem => {
@@ -21,28 +18,38 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
         });
       }
     });
-    return Array.from(locales).filter(locale => locale !== app.locale);
-  }, [app.page.content, app.defaultLocale, app.locale]);
+    return Array.from(locales);
+  }, [app.page.content, app.defaultLocale]);
 
   const handleLanguageChange = (lang: string) => {
+    if (lang === app.locale) return;
+
     app.locale = lang;
     app.update();
+
+    const shortCode = lang.split('-')[0];
+    const newPath = `/${shortCode}`;
+    window.history.pushState(null, '', newPath);
   };
 
-  const getLanguageName = (localeCode: string, currentLocale: string) => {
-    return languages[localeCode]?.[currentLocale] || languages[localeCode]?.en || localeCode;
+  const getLanguageName = (localeCode: string) => {
+    return languages[localeCode]?.[localeCode] || languages[localeCode]?.en || localeCode;
   };
 
-  const items = supportedLocales.map((localeCode) => ({
-    key: localeCode,
-    label: getLanguageName(localeCode, app.locale),
-    onClick: () => handleLanguageChange(localeCode),
-  }));
+  const getShortCode = (localeCode: string) => localeCode.split('-')[0];
+
+  const items = supportedLocales
+    .filter(localeCode => localeCode !== app.locale) 
+    .map((localeCode) => ({
+      key: localeCode,
+      label: getLanguageName(localeCode),
+      onClick: () => handleLanguageChange(localeCode),
+    }));
 
   return (
-    <Dropdown menu={{ items }} trigger={['click']} >
+    <Dropdown menu={{ items }} trigger={['click']} className='nav-dropdown'>
       <a onClick={(e) => e.preventDefault()} className={`language-dropdown text-white font-inter ${isMobile ? "w-full" : ""}`}>
-        {getLanguageName(app.locale, app.locale)}
+        {getLanguageName(app.locale)}
         <Space>
           <DownOutlined />
         </Space>

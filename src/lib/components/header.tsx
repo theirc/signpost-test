@@ -119,27 +119,29 @@ export function Header() {
 
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
-      if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return
+      if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return null;
       const title = item.title ? translate(item.title) : "";
+      let content;
       if (item.type === 'about') {
-        return (
-          <a href="#about-section" key={title} className="mx-8">
-            <div className="text-white no-underline">{title}</div>
+        content = (
+          <a href="#about-section" className="text-white no-underline">
+            {title}
           </a>
         );
       } else if (item.type === "services") {
-        return (
-          <a href="#service-map" key={title} className="mx-8">
-            <div className="text-white no-underline">{title}</div>
+        content = (
+          <a href="#service-map" className="text-white no-underline">
+            {title}
           </a>
         );
       } else {
-        return (
-          <Link key={title} to={item.link || "#"} className="mx-8">
-            <div className="text-white no-underline">{title}</div>
+        content = (
+          <Link to={item.link || "#"} className="text-white no-underline">
+            {title}
           </Link>
         );
       }
+      return <li key={title} className="mx-8">{content}</li>;
     });
   };
 
@@ -150,7 +152,7 @@ export function Header() {
           <img src={app.logo} height={40} alt="Logo" />
         </Link>
       </div>
-        <Container>
+      <Container>
         <div className="toolbar">
           <button
             ref={drawerButtonRef}
@@ -162,20 +164,23 @@ export function Header() {
             <MenuOutlined />
           </button>
 
-          <div className="hidden md:block">
-            <div className="flex gap-4 items-center">
+          <div className="hidden md:flex items-center justify-between w-full">
+            <ul className="flex list-none space-x-2">
               {renderMenuItems(app.page.header.menu)}
-              <MegaMenu menuData={menu} />
-              <Link to={"/signpostbot"} className="mx-8">
-                <div className="text-white no-underline">Bot</div>
-              </Link>
-            </div>
-          </div>
-          <div className="hidden md:flex items-center space-x-6">
-            <Link key='search' to='/search-results' className="mx-8">
-              <div className="text-white no-underline">Search</div>
-            </Link>
-            <LanguageDropdown isMobile={false} />
+              <li><MegaMenu menuData={menu} /></li>
+            </ul>
+
+            <ul className="flex items-center list-none">
+              <li className="mr-2">
+                <Link to="/signpostbot" className="text-white no-underline">Bot</Link>
+              </li>
+              <li className="mr-2">
+                <Link to='/search-results' className="text-white no-underline">Search</Link>
+              </li>
+              <li>
+                <LanguageDropdown isMobile={false} />
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -192,5 +197,5 @@ export function Header() {
         </div>
       </Container>
     </nav>
-    );
+  );
 }
