@@ -50,7 +50,13 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
       <div className="flex">
         {/* {!m.isContacts && <div className="">{m.message}</div>} */}
         {!m.isContacts && <div className="">
-          <Markdown>
+          <Markdown components={{
+            a: ({ node, ...props }) => (
+              <a {...props} target="_blank" rel="noopener noreferrer">
+                {props.children}
+              </a>
+            ),
+          }}>
             {m.message}
           </Markdown>
         </div>}
