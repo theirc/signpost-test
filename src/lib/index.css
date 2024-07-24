@@ -594,18 +594,18 @@ audio {
   border: 1px solid transparent;
   border-radius: 4px;
   transition: all 0.3s;
-  font-size: 14px; 
   max-width: 200px; 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 1rem;
 }
 .language-dropdown:hover {
   color: #1890ff;
   border-color: #1890ff;
 }
 .language-dropdown .ant-space {
-  margin-left: 8px;
+  margin-left: 6px;
 }
 
 @media (max-width: 768px) {
@@ -621,10 +621,6 @@ audio {
   
 }
 
-.nav-block {
-margin-left: 8rem;
-}
-
 nav .flex {
   display: flex;
   align-items: center;
@@ -638,9 +634,6 @@ nav .toolbar {
 
 nav .toolbar a {
   text-decoration: none;
-  margin: 0 10px;
+  margin: 0 8px;
 }
 
-.nav-dropdown{
-  font-size: 1rem;
-}
