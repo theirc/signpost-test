@@ -169,6 +169,17 @@ export function Header() {
               {renderMenuItems(app.page.header.menu)}
               <li><MegaMenu menuData={menu} /></li>
             </ul>
+            {/* Mobile navigation drawer */}
+            <div className="md:hidden absolute">
+              <MobileNavigationDrawer
+                menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
+              />
+              {isDrawerOpen && (
+                <div className="p-4">
+                  <LanguageDropdown isMobile={true} />
+                </div>
+              )}
+            </div>
 
             <ul className="flex items-center list-none">
               <li className="mr-2">
@@ -182,18 +193,6 @@ export function Header() {
               </li>
             </ul>
           </div>
-        </div>
-
-        {/* Mobile navigation drawer */}
-        <div className="md:hidden absolute">
-          <MobileNavigationDrawer
-            menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
-          />
-          {isDrawerOpen && (
-            <div className="p-4">
-              <LanguageDropdown isMobile={true} />
-            </div>
-          )}
         </div>
       </Container>
     </nav>
