@@ -217,6 +217,10 @@ html {
   margin-left: 4rem;
 }
 
+.toolbar ul li {
+  white-space: nowrap;
+}
+
 .logo__link {
   display: flex;
   align-items: center;
@@ -635,4 +639,8 @@ nav .toolbar {
 nav .toolbar a {
   text-decoration: none;
   margin: 0 10px;
+}
+
+.nav-dropdown{
+  font-size: 1rem;
 }
