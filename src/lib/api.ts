@@ -1,5 +1,5 @@
-// const serverurl = "http://localhost:3000"
-const serverurl = "https://directus-qa-support.azurewebsites.net"
+// export const serverurl = "http://localhost:3000"
+export const serverurl = "https://directus-qa-support.azurewebsites.net"
 
 
 export const api = {

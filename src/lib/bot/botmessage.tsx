@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { FaThumbsDown, FaThumbsUp, FaFlag } from "react-icons/fa"
 import { useMultiState } from ".."
-import { api } from "../api"
+import { api, serverurl } from "../api"
 import Markdown from "react-markdown"
 const { TextArea } = Input
 
@@ -262,6 +262,7 @@ function BotScoreModal(props: {
       clientmetrics: data.clientmetrics,
       safetymetric: data.safetymetric,
       traumametrics: data.traumametrics,
+      logid: `${serverurl}/admin/content/${m.logID}`
     })
   }
 
