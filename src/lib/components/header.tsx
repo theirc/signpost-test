@@ -1,13 +1,11 @@
 import { CSSProperties, useRef, useState } from "react";
 import { app, translate } from "../app";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import MegaMenu from './megamenu';
+import LanguageDropdown from "./languagedropdown";
 import MobileNavigationDrawer from './mobilenavigationdrawer';
 import Container from "./menucontainer";
-import { CloseOutlined, MenuOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Input } from "antd";
-
-const { Search } = Input;
+import { MenuOutlined } from "@ant-design/icons";
 
 interface SubmenuItemChildren {
   label: string;
@@ -27,9 +25,7 @@ export interface MenuCategory {
 
 export function Header() {
   const styles: CSSProperties = {};
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isSearchActive, setIsSearchActive] = useState(false)
-  const navigate = useNavigate()
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const drawerButtonRef = useRef(null);
 
@@ -123,137 +119,82 @@ export function Header() {
 
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
-      if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return
+      if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return null;
       const title = item.title ? translate(item.title) : "";
-      if (item.content && item.content.length > 0 && item.type === 'about') {
-        return (
-          <div className="relative group" key={title}>
-            <div className="cursor-pointer">
-              {title}
-              <span className="text-[0.60rem]">▼</span>
-            </div>
-            <div className="absolute hidden group-hover:block bg-white shadow-lg overflow-auto max-h-96">
-              {renderMenuItems(item.content)}
-            </div>
-          </div>
+      let content;
+      if (item.type === 'about') {
+        content = (
+          <a href="#about-section" className="text-white no-underline">
+            {title}
+          </a>
         );
       } else if (item.type === "services") {
-        return (
-          <a href="#service-map" key={title} className="mx-1">
-            <div className="no-underline">{title}</div>
+        content = (
+          <a href="#service-map" className="text-white no-underline">
+            {title}
           </a>
         );
       } else {
-        return (
-          <Link key={title} to={item.link || "#"} className="mx-1">
-            <div className="no-underline">{title}</div>
+        content = (
+          <Link to={item.link || "#"} className="text-white no-underline">
+            {title}
           </Link>
         );
       }
+      return <li key={title} className="mx-8">{content}</li>;
     });
   };
 
-  const handleSearch = (value: string) => {
-    setIsSearchActive(false)
-    navigate(`/search-results?query=${value}`)
-  }
-
   return (
-    <div className="h-10 flex p-4 text-sm tracking-wide" style={styles}>
-      <div className="hidden md:block">
+    <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-[106px] py-4 tracking-wide" style={styles}>
+      <div>
         <Link to="/">
           <img src={app.logo} height={40} alt="Logo" />
         </Link>
       </div>
       <Container>
         <div className="toolbar">
-          {!isSearchActive && <>
-            <Link to="/" className='md:hidden bg-transparent shadow-none'>
-              <img src={app.logo} height={40} alt="Logo" />
-            </Link>
-            <Button
-              type="primary"
-              className='md:hidden bg-transparent shadow-none'
-              icon={<SearchOutlined />}
-              onClick={() => {
-                setIsSearchActive(true);
-              }}
-            />
-            <button
-              ref={drawerButtonRef}
-              className="menu_icon md:hidden"
-              aria-haspopup="true"
-              onClick={() => setIsDrawerOpen(true)}
-            >
-              {/* Mobile Hamburger menu */}
-              <MenuOutlined />
-            </button>
-          </>}
-          {isSearchActive && <>
-            <Search
-              placeholder="input search text"
-              allowClear
-              enterButton="Search"
-              size="large"
-              onSearch={handleSearch}
-              className="md:hidden"
-            />
-            <Button
-              type="primary"
-              className='md:hidden bg-transparent shadow-none'
-              icon={<CloseOutlined />}
-              onClick={() => {
-                setIsSearchActive(false);
-              }}
-            />
-          </>}
+          <button
+            ref={drawerButtonRef}
+            className="menu_icon md:hidden"
+            aria-haspopup="true"
+            onClick={() => setIsDrawerOpen(true)}
+          >
+            {/* Mobile Hamburger menu */}
+            <MenuOutlined />
+          </button>
 
-          <div className="hidden md:block md:w-[490px]">
-            {!isSearchActive && <div className="flex gap-4 items-center">
+          <div className="hidden md:flex items-center justify-between w-full">
+            <ul className="flex list-none space-x-2">
               {renderMenuItems(app.page.header.menu)}
-              <MegaMenu menuData={menu} />
-              <Link key='search' to='/search-results' className="mx-1">
-                <div className="no-underline">Search</div>
-              </Link>
-              <Link to={"/signpostbot"}>
-                <div className="text-white no-underline">Bot</div>
-              </Link>
-              <Button
-                type="primary"
-                className='bg-transparent shadow-none'
-                icon={<SearchOutlined />}
-                onClick={() => {
-                  setIsSearchActive(true);
-                }}
+              <li><MegaMenu menuData={menu} /></li>
+            </ul>
+            {/* Mobile navigation drawer */}
+            <div className="md:hidden absolute">
+              <MobileNavigationDrawer
+                menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
               />
-            </div>}
-            {isSearchActive && <div className="flex gap-4 items-center">
-              <Search
-                placeholder="input search text"
-                allowClear
-                enterButton="Search"
-                size="large"
-                onSearch={handleSearch}
-              />
-              <Button
-                type="primary"
-                className='bg-transparent shadow-none'
-                icon={<CloseOutlined />}
-                onClick={() => {
-                  setIsSearchActive(false);
-                }}
-              />
-            </div>}
-          </div>
+              {isDrawerOpen && (
+                <div className="p-4">
+                  <LanguageDropdown isMobile={true} />
+                </div>
+              )}
+            </div>
 
-          {/* Mobile navigation drawer */}
-          <div className="md:hidden absolute">
-            <MobileNavigationDrawer
-              menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
-            />
+            <ul className="flex items-center list-none">
+              <li className="mr-2">
+                <Link to="/signpostbot" className="text-white no-underline">Bot</Link>
+              </li>
+              <li className="mr-2">
+                <Link to='/search-results' className="text-white no-underline">Search</Link>
+              </li>
+              <li>
+                <LanguageDropdown isMobile={false} />
+              </li>
+            </ul>
           </div>
         </div>
       </Container>
-    </div>
+    </nav>
   );
 }

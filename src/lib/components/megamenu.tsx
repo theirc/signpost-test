@@ -1,5 +1,6 @@
 import { MenuCategory } from './header';
 import MenuItem from './menuitem';
+import LanguageDropdown from './languagedropdown';
 
 interface MegaMenuProps {
     handleToggle?: (index: number) => void;
@@ -49,6 +50,11 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
                         );
                     })}
                 </ul>
+                {setIsDrawerOpen && (
+                    <div className='mt-4 px-4'>
+                        <LanguageDropdown isMobile={true} />
+                    </div>
+                )}
             </nav>
         </div>
     );
