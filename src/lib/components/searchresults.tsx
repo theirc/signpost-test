@@ -1,4 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import Fuse from "fuse.js";
 import { Input, Pagination, Tabs, Typography, type TabsProps } from 'antd';
 import { app, translate } from "../app";
@@ -12,6 +13,9 @@ export function SearchResults() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const navigate = useNavigate()
+
+    const { t } = useTranslation();
+
 
     const paramValue = searchParams.get('query');
     const articles: ZendeskArticle[] = Object.values(app.data.zendesk.articles);
@@ -146,7 +150,7 @@ export function SearchResults() {
                     {hits.length > 0 ? <Text type="secondary">
                         {hits.length} results for {paramValue}
                     </Text> : <Text type="secondary">
-                        No results to display
+                       {t('no results to display')} 
                     </Text>}
                 </Paragraph>
                 <div>
@@ -182,17 +186,17 @@ export function SearchResults() {
     const items: TabsProps['items'] = [
         {
             key: '1',
-            label: 'All search results',
+            label: t('all search results'),
             children: getTabItem([...aggregatedArticlesResults, ...aggregatedServicesResults]),
         },
         {
             key: '2',
-            label: 'Information results',
+            label: t('information results'),
             children: getTabItem(aggregatedArticlesResults),
         },
         {
             key: '3',
-            label: 'Service results',
+            label: t('service results'),
             children: getTabItem(aggregatedServicesResults),
         },
     ];
@@ -209,7 +213,7 @@ export function SearchResults() {
                     <Search
                         placeholder="input search text"
                         allowClear
-                        enterButton="Search"
+                        enterButton={t('search')}
                         size="large"
                         onSearch={handleSearch}
                         defaultValue={paramValue}

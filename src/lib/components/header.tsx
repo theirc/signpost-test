@@ -1,4 +1,5 @@
 import { CSSProperties, useRef, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { app, translate } from "../app";
 import { Link } from "react-router-dom";
 import MegaMenu from './megamenu';
@@ -26,6 +27,7 @@ export interface MenuCategory {
 export function Header() {
   const styles: CSSProperties = {};
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { t } = useTranslation();
 
   const drawerButtonRef = useRef(null);
 
@@ -64,7 +66,7 @@ export function Header() {
         categoriesItems.push({ label: translate(cat.name), href: `/categories/${cat.id}`, children: subcatItems })
       }
     }
-    infoMenu = { label: 'Resource Center', href: '', children: categoriesItems }
+    infoMenu = { label: t('resource center'), href: '', children: categoriesItems }
     menu.push(infoMenu)
   }
 
@@ -186,7 +188,7 @@ export function Header() {
                 <Link to="/signpostbot" className="text-white no-underline">Bot</Link>
               </li>
               <li className="mr-2">
-                <Link to='/search-results' className="text-white no-underline">Search</Link>
+                <Link to='/search-results' className="text-white no-underline">{t('search')}</Link>
               </li>
               <li>
                 <LanguageDropdown isMobile={false} />

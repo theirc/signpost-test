@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { app, translate } from "../app";
 import { ReadTime } from "./readingtime";
 import { Button, Input, Pagination, Tag, Card, Empty, Breadcrumb } from "antd";
@@ -22,6 +23,7 @@ const allOption = {
 export function Categories() {
   const navigate = useNavigate();
   const { id, sectionid } = useParams();
+  const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,9 +151,9 @@ export function Categories() {
       </div>
       <div className="py-16 w-full flex justify-center text-black bg-white h-auto">
         <div className="sm:w-full px-4 md:w-4/5 h-fit">
-        <Breadcrumb className="mb-8" separator=">" items={[{title: <a href="/">Home</a>}, {title: "Resource Center"}]} />
+        <Breadcrumb className="mb-8" separator=">" items={[{title: <a href="/">{t('home')}</a>}, {title: "Resource Center"}]} />
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px] mb-4">
-            <h1>Category</h1>
+            <h1>{t('category')}</h1>
             <div className="flex gap-4 flex-wrap">
               {categories.map(category => (
                 <Button
@@ -165,7 +167,7 @@ export function Categories() {
             </div>
           </div>
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
-            <h1>Topic</h1>
+            <h1>{t('topic')}</h1>
             <div className="flex gap-4 flex-wrap">
               {categorySections.map(section => (
                 <Button
@@ -180,7 +182,7 @@ export function Categories() {
           </div>
           <div className="my-12">
             <Search
-              placeholder="Search for information"
+              placeholder={t('search for information')}
               allowClear
               size="large"
               className="lg:w-2/5"
@@ -196,7 +198,7 @@ export function Categories() {
                 <p>{`${stripHtmlTags(translate(article.description))?.slice(0, 100)}...`}</p>
                 <p>{new Date(article.updated_at).toLocaleDateString('en-GB')}</p>
                 <Link to={`/article/${article.id}`} className="text-black underline hover:underline">
-                  <strong>Read more <RightOutlined /></strong>
+                  <strong>{t('read more')} <RightOutlined /></strong>
                 </Link>
               </Card>
             )) : <Empty />}

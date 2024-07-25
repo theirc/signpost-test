@@ -9,6 +9,7 @@ import { useMultiState } from "./hooks";
 import ReactGA from "react-ga4";
 import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { Blocks } from "./blocks";
 
 enum filterType {
@@ -28,6 +29,7 @@ type FilterValues = {
 export function BlockServices(props: { block: BlockServices }) {
   const { block } = props
   const styles = Blocks.buildStyle(block)
+  const { t } = useTranslation();
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -96,7 +98,7 @@ export function BlockServices(props: { block: BlockServices }) {
         children: subcategoriesForCategory,
       };
     });
-    combinedData.unshift({ value: -1, label: "All services types" });
+    combinedData.unshift({ value: -1, label: t('all services types') });
     return combinedData;
   };
 
@@ -108,7 +110,7 @@ export function BlockServices(props: { block: BlockServices }) {
         label: translate(x.name),
       };
     });
-    filterProviders.unshift({ value: -1, label: "All providers" });
+    filterProviders.unshift({ value: -1, label: t('all providers') });
     return filterProviders;
   };
 
@@ -377,9 +379,9 @@ export function BlockServices(props: { block: BlockServices }) {
                 </div>
                 <div className="flex flex-col md:flex-row gap-10 flex-grow">
                   <div className="md:flex flex-col flex-1">
-                    <h2>Filters</h2>
+                    <h2>{t('filters')}</h2>
                     <TreeSelect
-                      label="Service Types"
+                      label={t('service types')}
                       items={combineCategoriesWithSubcategories(categories, subcategories)}
                       className="w-full overflow-hidden service-types-select"
                       onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
@@ -389,7 +391,7 @@ export function BlockServices(props: { block: BlockServices }) {
                       defaultValue={[-1]}
                     />
                     <TreeSelect
-                      label="Provider"
+                      label={t('provider')}
                       items={mapProviderData(state.filteredProviders)}
                       className="w-full overflow-hidden"
                       onChange={(value) => handleSelectedFilters(value, filterType.provider)}
@@ -401,9 +403,9 @@ export function BlockServices(props: { block: BlockServices }) {
               </div>
             )}
             <div className="hidden md:flex flex-col flex-1">
-              <h2>Filters</h2>
+            <h2>{t('filters')}</h2>
               <TreeSelect
-                label="Service Types"
+                label={t("service types")}
                 items={combineCategoriesWithSubcategories(categories, subcategories)}
                 className="w-full overflow-hidden service-types-select"
                 onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
@@ -413,7 +415,7 @@ export function BlockServices(props: { block: BlockServices }) {
                 defaultValue={[-1]}
               />
               <TreeSelect
-                label="Provider"
+                label={t("provider")}
                 items={mapProviderData(state.filteredProviders)}
                 className="w-full overflow-hidden"
                 onChange={(value) => handleSelectedFilters(value, filterType.provider)}
@@ -424,7 +426,7 @@ export function BlockServices(props: { block: BlockServices }) {
             <div className="grow-[4] flex-1 relative">
               <div className="flex mt-3.5 mb-3.5 items-center">
                 <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">Filters</Button>
-                {view === 0 && <span className="hidden md:inline">Showing {state.filteredServices.length} of {services.length} </span>}
+                {view === 0 && <span className="hidden md:inline">{t("showing")} {state.filteredServices.length} {t("of")} {services.length} </span>}
                 <Space className="flex ml-auto z-10">
                   <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
                     <Radio.Button value={0}>
@@ -432,7 +434,7 @@ export function BlockServices(props: { block: BlockServices }) {
                         <span className="material-symbols-outlined material-icons">
                           map
                         </span>
-                        Map
+                        {t('map')}
                       </div>
                     </Radio.Button>
                     <Radio.Button value={1}>
@@ -440,14 +442,14 @@ export function BlockServices(props: { block: BlockServices }) {
                         <span className="material-symbols-outlined material-icons">
                           list_alt
                         </span>
-                        List
+                        {t('list')}
                       </div>
                     </Radio.Button>
                   </Radio.Group>
                 </Space>
               </div>
 
-              {view === 0 && <div className="md:hidden my-4">Showing {state.filteredServices.length} of {services.length} </div>}
+              {view === 0 && <div className="md:hidden my-4">{t("showing")} {state.filteredServices.length} of {services.length} </div>}
               <div>
                 {view === 0 && <Maps services={state.filteredServices} />}
                 {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
