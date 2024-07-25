@@ -1,10 +1,10 @@
 
 declare global {
   type Langauages = {
-    [P in keyof typeof languages]?: LocaleDeclaration
+    [P in keyof typeof langauages]?: LocaleDeclaration
   }
   type LocalizableText = {
-    [P in keyof typeof languages]?: string
+    [P in keyof typeof langauages]?: string
   }
   type LocalizableContent = string | LocalizableText
 }
@@ -13,238 +13,85 @@ interface LocaleDeclaration {
   rtl?: boolean
   name: string
 }
-export const languages = {
+export const langauages = {
   "ar-SA": {
-    en: "Arabic",
-    es: "Árabe",
-    ar: "العربية",
-    so: "Carabi"
+    rtl: true,
+    name: "Arabic"
   },
   bn: {
-    en: "Bengali",
-    es: "Bengalí",
-    ar: "البنغالية",
-    so: "Bangaali"
+    name: "Bengali"
   },
   my: {
-    en: "Burmese",
-    es: "Birmano",
-    ar: "البورمية",
-    so: "Burmeese"
+    name: "Burmese"
   },
   cs: {
-    en: "Czech",
-    es: "Checo",
-    ar: "التشيكية",
-    so: "Jeeg"
+    name: "Czech"
   },
   "fa-AF": {
-    en: "Dari",
-    es: "Dari",
-    ar: "داري",
-    so: "Daari"
+    rtl: true,
+    name: "Dari"
   },
   "en-US": {
-    en: "English",
-    es: "Inglés",
-    ar: "الإنجليزية",
-    so: "Ingiriis"
+    name: "English"
   },
-  "fa-IR": { 
-    en: "Farsi",
-    es: "Persa",
-    ar: "الفارسية",
-    so: "Faarsi"
+  "fa-FA": {
+    rtl: true,
+    name: "Farsi"
   },
   "fr-FR": {
-    en: "French",
-    es: "Francés",
-    ar: "الفرنسية",
-    so: "Faransiis"
+    name: "French"
   },
   "de-DE": {
-    en: "German",
-    es: "Alemán",
-    ar: "الألمانية",
-    so: "Jarmal"
+    name: "German"
   },
   el: {
-    en: "Greek",
-    es: "Griego",
-    ar: "اليونانية",
-    so: "Giriig"
+    name: "Greek"
   },
   ht: {
-    en: "Haitian Creole",
-    es: "Criollo haitiano",
-    ar: "الكريولية الهايتية",
-    so: "Kiriilada Haytiyaan"
+    name: "Haitian Creole"
   },
   "ha-HA": {
-    en: "Hausa",
-    es: "Hausa",
-    ar: "الهوسا",
-    so: "Hawsa"
+    name: "Hausa"
   },
   "hu-HU": {
-    en: "Hungarian",
-    es: "Húngaro",
-    ar: "الهنغارية",
-    so: "Hangari"
+    name: "Hungarian"
   },
   "it-IT": {
-    en: "Italian",
-    es: "Italiano",
-    ar: "الإيطالية",
-    so: "Talyaani"
+    name: "Italian"
   },
   KAU: {
-    en: "Kanuri",
-    es: "Kanuri",
-    ar: "الكنورية",
-    so: "Kanuuri"
+    name: "Kanuri"
   },
   "ki-KI": {
-    en: "Kirundi",
-    es: "Kirundi",
-    ar: "الكيروندية",
-    so: "Kirundi"
+    name: "Kirundi"
   },
   "ln-LN": {
-    en: "Lingala",
-    es: "Lingala",
-    ar: "اللينغالا",
-    so: "Lingaala"
+    name: "Lingala"
   },
-  "ps-AF": {
-    en: "Pashto",
-    es: "Pastún",
-    ar: "البشتو",
-    so: "Baxto"
+  "ps-PS": {
+    name: "Pashto"
   },
   "ru-RU": {
-    en: "Russian",
-    es: "Ruso",
-    ar: "الروسية",
-    so: "Ruush"
+    name: "Russian"
   },
   "so-SO": {
-    en: "Somali",
-    es: "Somalí",
-    ar: "الصومالية",
-    so: "Soomaali"
+    name: "Somali"
   },
   "es-ES": {
-    en: "Spanish",
-    es: "Español",
-    ar: "الإسبانية",
-    so: "Isbaanish"
+    name: "Spanish"
   },
   "sw-SW": {
-    en: "Swahili",
-    es: "Swahili",
-    ar: "السواحلية",
-    so: "Sawaaxili"
+    name: "Swahili"
   },
   th: {
-    en: "Thai",
-    es: "Tailandés",
-    ar: "التايلاندية",
-    so: "Taay"
+    name: "Thai"
   },
-  "uk-UA": { 
-    en: "Ukrainian",
-    es: "Ucraniano",
-    ar: "الأوكرانية",
-    so: "Yukreeniyaan"
+  "uk-UK": {
+    name: "Ukrainian"
   },
-  "ur-PK": {
-    en: "Urdu",
-    es: "Urdú",
-    ar: "الأردية",
-    so: "Urdu"
+  "ur-UR": {
+    name: "Urdu"
   }
-};
-
-// export const langauages = {
-//   "ar-SA": {
-//     rtl: true,
-//     name: "Arabic"
-//   },
-//   bn: {
-//     name: "Bengali"
-//   },
-//   my: {
-//     name: "Burmese"
-//   },
-//   cs: {
-//     name: "Czech"
-//   },
-//   "fa-AF": {
-//     rtl: true,
-//     name: "Dari"
-//   },
-//   "en-US": {
-//     name: "English"
-//   },
-//   "fa-FA": {
-//     rtl: true,
-//     name: "Farsi"
-//   },
-//   "fr-FR": {
-//     name: "French"
-//   },
-//   "de-DE": {
-//     name: "German"
-//   },
-//   el: {
-//     name: "Greek"
-//   },
-//   ht: {
-//     name: "Haitian Creole"
-//   },
-//   "ha-HA": {
-//     name: "Hausa"
-//   },
-//   "hu-HU": {
-//     name: "Hungarian"
-//   },
-//   "it-IT": {
-//     name: "Italian"
-//   },
-//   KAU: {
-//     name: "Kanuri"
-//   },
-//   "ki-KI": {
-//     name: "Kirundi"
-//   },
-//   "ln-LN": {
-//     name: "Lingala"
-//   },
-//   "ps-PS": {
-//     name: "Pashto"
-//   },
-//   "ru-RU": {
-//     name: "Russian"
-//   },
-//   "so-SO": {
-//     name: "Somali"
-//   },
-//   "es-ES": {
-//     name: "Spanish"
-//   },
-//   "sw-SW": {
-//     name: "Swahili"
-//   },
-//   th: {
-//     name: "Thai"
-//   },
-//   "uk-UK": {
-//     name: "Ukrainian"
-//   },
-//   "ur-UR": {
-//     name: "Urdu"
-//   }
-// }
+}
 
 

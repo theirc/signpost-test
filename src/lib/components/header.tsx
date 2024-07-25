@@ -1,4 +1,5 @@
 import { CSSProperties, useRef, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { app, translate } from "../app";
 import { Link } from "react-router-dom";
 import MegaMenu from './megamenu';
@@ -25,7 +26,8 @@ export interface MenuCategory {
 
 export function Header() {
   const styles: CSSProperties = {};
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const { t } = useTranslation();
 
   const drawerButtonRef = useRef(null);
 
@@ -64,7 +66,7 @@ export function Header() {
         categoriesItems.push({ label: translate(cat.name), href: `/categories/${cat.id}`, children: subcatItems })
       }
     }
-    infoMenu = { label: 'Resource Center', href: '', children: categoriesItems }
+    infoMenu = { label: t('resource center'), href: '', children: categoriesItems }
     menu.push(infoMenu)
   }
 
@@ -116,12 +118,12 @@ export function Header() {
       }
     });
   }
-
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
       if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return null;
       const title = item.title ? translate(item.title) : "";
       let content;
+  
       if (item.type === 'about') {
         content = (
           <a href="#about-section" className="text-white no-underline">
@@ -141,6 +143,7 @@ export function Header() {
           </Link>
         );
       }
+      
       return <li key={title} className="mx-8">{content}</li>;
     });
   };
@@ -163,7 +166,6 @@ export function Header() {
             {/* Mobile Hamburger menu */}
             <MenuOutlined />
           </button>
-
           <div className="hidden md:flex items-center justify-between w-full">
             <ul className="flex list-none space-x-2">
               {renderMenuItems(app.page.header.menu)}
@@ -180,20 +182,19 @@ export function Header() {
                 </div>
               )}
             </div>
-
             <ul className="flex items-center list-none">
               <li className="mr-2">
                 <Link to="/signpostbot" className="text-white no-underline">Bot</Link>
               </li>
               <li className="mr-2">
-                <Link to='/search-results' className="text-white no-underline">Search</Link>
+                <Link to='/search-results' className="text-white no-underline">{t('search')}</Link>
               </li>
               <li>
                 <LanguageDropdown isMobile={false} />
               </li>
             </ul>
           </div>
-        </div>
+        </div>     
       </Container>
     </nav>
   );

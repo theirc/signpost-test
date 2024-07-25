@@ -1,9 +1,11 @@
 import { Link as Link2 } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { translate } from "../app";
 import { Pagination, Select, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GetIconForChannel, getContactDetailLink } from "./service";
 import { RightOutlined } from "@ant-design/icons";
+
 
 const { Text, Title, Link } = Typography
 interface ServiceListProps {
@@ -17,6 +19,8 @@ const html2text = document.createElement("div");
 html2text.hidden = true;
 
 export function ServicesList({ services, serviceCount }: ServiceListProps) {
+  const { t } = useTranslation();
+
   const orderedServices = services.sort((a, b) => {
     const labelA = translate(a.name).toUpperCase();
     const labelB = translate(b.name).toUpperCase();
@@ -111,7 +115,7 @@ export function ServicesList({ services, serviceCount }: ServiceListProps) {
   return (
     <div>
       <div className="w-full md:absolute top-3.5 flex md:items-center flex-col md:flex-row gap-4">
-        <span className="text-black lg:mr-4">Showing {filteredServices.length} of {serviceCount} </span>
+        <span className="text-black lg:mr-4">{t("showing")} {filteredServices.length} {t("of")} {serviceCount} </span>
         <Select
           className="md:w-4/12 lg:w-6/12"
           options={mapAutocompleteOptions}
@@ -152,6 +156,7 @@ export function ServicesList({ services, serviceCount }: ServiceListProps) {
 
 function Service(props: { service: Service }) {
   const { service: s } = props;
+  const { t } = useTranslation();
 
   html2text.innerHTML = translate(s.description);
   const description = `${html2text.textContent.substring(0, 200)}...`;
@@ -186,7 +191,7 @@ function Service(props: { service: Service }) {
             )
           })}
         </div>
-        <Link className="flex justify-end">See more details {<RightOutlined />}</Link>
+        <Link className="flex justify-end">{t('see more details')}  {<RightOutlined />}</Link>
       </div>
     </Link2>
   );
