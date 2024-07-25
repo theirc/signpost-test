@@ -7,10 +7,10 @@ import {
   Popup,
 } from "react-map-gl"
 import { app, translate } from "../app"
+import { translations } from "../../translations"
 import mapboxgl, { RasterLayer, Style } from "mapbox-gl"
 import supercluster, { ClusterFeature, PointFeature } from "supercluster"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useTranslation } from 'react-i18next';
 import GeocoderControl from "./geocoder-control"
 import { Button, Popover, Typography } from "antd"
 import { GetIconForChannel, getContactDetailLink } from "./service"
@@ -145,7 +145,6 @@ export function Maps({ services }: mapProps) {
   const [isMapReady, setIsMapReady] = useState(false)
   const [mapStyle, setMapStyle] = useState<Style | string>(MAP_STYLES.mapbox)
   const mapRef = useRef<MapRef>(null)
-  const { t } = useTranslation();
 
   const bounds = useMemo(() => {
     return getBoundsForFeatures(services)
@@ -405,7 +404,7 @@ export function Maps({ services }: mapProps) {
                     target="_blank"
                     className="contact-detail"
                   >
-                    <strong>{t('see more details')} {<RightOutlined />}</strong>
+                    <strong>{translate(translations.seeMoreDetails)} {<RightOutlined />}</strong>
                   </Link>
                 </div>
               </div>

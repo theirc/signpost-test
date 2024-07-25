@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
+import { translations } from "../../translations";
 import { app, translate } from "../app";
 import { Container } from "./container";
 
 export function Footer() {
-  const { t } = useTranslation();
 
   const categories: { [index: number]: ZendeskCategory } = app.data.zendesk.categories;
 
@@ -51,7 +50,7 @@ export function Footer() {
           <img src={app.logo} height={30} alt="Logo" />
         </Link>
         <div className="flex flex-col md:flex-row md:flex-wrap">
-          <Link to="/" className="text-white mr-8 mb-5">{t('home')}</Link>
+          <Link to="/" className="text-white mr-8 mb-5">{translate(translations.home)}</Link>
           {renderCategories()}
           {renderFooterItems(footerMenu)}
           </div>

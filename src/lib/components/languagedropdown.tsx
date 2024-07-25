@@ -24,7 +24,10 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
   }, [app.page.content, app.defaultLocale, app.locale]);
 
   const handleLanguageChange = (lang: string) => {
-    app.changeLanguage(lang)
+    if (app.locale === lang) return;
+    app.locale = lang;
+    localStorage.setItem('preferredLanguage', lang);
+    app.update();  
   };
 
   const getLanguageName = (localeCode: keyof typeof langauages) => {

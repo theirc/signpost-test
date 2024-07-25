@@ -1,16 +1,15 @@
 import { CSSProperties } from "react"
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
 import { Button} from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 import { translate } from "../app"
 import { Container } from "./container"
 import Search from "antd/es/input/Search";
+import { translations } from "../../translations";
 
 export function BlockMission(props: { block: BlockMission}) {
   const { block } = props
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const handleSearch = (value: string) => {
       navigate(`/search-results?query=${value}`);
@@ -21,8 +20,8 @@ export function BlockMission(props: { block: BlockMission}) {
     <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center max-w-xl">{translate(block.title)}</h1>
    
    <Search
-   placeholder= {t('search for information')}
-   enterButton={<Button type="primary" icon={<SearchOutlined />}>{t('search')}</Button>}
+   placeholder= {translate(translations.searchForInformation)}
+   enterButton={<Button type="primary" icon={<SearchOutlined />}>{translate(translations.search)}</Button>}
    size="large"
    onSearch={handleSearch}
    className="header-search-input"

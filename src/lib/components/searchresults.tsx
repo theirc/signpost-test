@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
+import { translations } from "../../translations";
 import Fuse from "fuse.js";
 import { Input, Pagination, Tabs, Typography, type TabsProps } from 'antd';
 import { app, translate } from "../app";
@@ -13,9 +13,6 @@ export function SearchResults() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const navigate = useNavigate()
-
-    const { t } = useTranslation();
-
 
     const paramValue = searchParams.get('query');
     const articles: ZendeskArticle[] = Object.values(app.data.zendesk.articles);
@@ -150,7 +147,7 @@ export function SearchResults() {
                     {hits.length > 0 ? <Text type="secondary">
                         {hits.length} results for {paramValue}
                     </Text> : <Text type="secondary">
-                       {t('no results to display')} 
+                       {translate(translations.noResultsToDisplay)} 
                     </Text>}
                 </Paragraph>
                 <div>
@@ -186,17 +183,17 @@ export function SearchResults() {
     const items: TabsProps['items'] = [
         {
             key: '1',
-            label: t('all search results'),
+            label: translate(translations.allSearchResults),
             children: getTabItem([...aggregatedArticlesResults, ...aggregatedServicesResults]),
         },
         {
             key: '2',
-            label: t('information results'),
+            label: translate(translations.informationResults),
             children: getTabItem(aggregatedArticlesResults),
         },
         {
             key: '3',
-            label: t('service results'),
+            label: translate(translations.serviceResults),
             children: getTabItem(aggregatedServicesResults),
         },
     ];
@@ -213,7 +210,7 @@ export function SearchResults() {
                     <Search
                         placeholder="input search text"
                         allowClear
-                        enterButton={t('search')}
+                        enterButton={translate(translations.search)}
                         size="large"
                         onSearch={handleSearch}
                         defaultValue={paramValue}

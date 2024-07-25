@@ -6,10 +6,5 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     preserveSymlinks: true
-  },
-  server: {
-    fs: {
-      allow: ['..']
-    }
   }
 })
