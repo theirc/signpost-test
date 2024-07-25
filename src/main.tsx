@@ -21,7 +21,7 @@ app.logo = logo
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <I18nextProvider i18n={i18n}>
     <MetaTagsProvider  metaTags={metaTags}>
-<App />
+        <App />
     </MetaTagsProvider>
     </I18nextProvider>
 )
