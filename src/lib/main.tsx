@@ -1,7 +1,6 @@
 import React, { useEffect } from "react"
 import { Page, Splash, useForceUpdate } from "./components"
 import { app } from "./app"
-import '../i18n'
 
 export function App() {
 

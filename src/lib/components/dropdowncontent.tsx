@@ -1,5 +1,7 @@
 import { RightOutlined } from '@ant-design/icons';
 import React, { useState } from 'react';
+import { translate } from "../app";
+import { translations } from "../../translations";
 import { Link } from 'react-router-dom';
 
 const DropdownContent = ({
@@ -18,8 +20,8 @@ const DropdownContent = ({
     return (
         <div>
             {!setIsDrawerOpen && <div className='dropdown_content mb-8'>
-                <span className='text-zinc-600'>RESOURCES CATEGORIES</span>
-                <span className='text-zinc-600'>TOPICS</span>
+                <span className='text-zinc-600'>{translate(translations.resourcesCategories)}</span>
+                <span className='text-zinc-600'>{translate(translations.topic)}</span>
             </div>}
             <div className="dropdown_content">
                 <div className='category-section-container'>

@@ -14,8 +14,8 @@ import {
   FaLink,
 } from "react-icons/fa";
 import { useParams } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
 import { app, translate } from "../app";
+import { translations } from "../../translations";
 import React from "react";
 import { Footer } from ".";
 import { Breadcrumb } from "antd";
@@ -120,8 +120,6 @@ function ContactDetails({ contactInfo }) {
 export function Service() {
   let { id } = useParams();
 
-  const { t } = useTranslation();
-
   //ToDo: update the content in useEffect
   const service: Service = app.data.services[id];
   console.log(service, "Service Detail:");
@@ -164,11 +162,11 @@ export function Service() {
   return (
     <div className="py-16 text-black text-base bg-white overflow-y-auto flex justify-center w-screen mb-10">
       <div className="text-black mx-auto max-w-[90rem] px-4 sm:px-8 pb-20">
-        <Breadcrumb separator=">" items={[{ title: <a href="/">Home</a> }, { title: "Services" }]} />
+        <Breadcrumb separator=">" items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services)}]}  />
         <h1 className="font-inter text-3xl whitespace-normal">{title}</h1>
         <h2 className="font-inter text-2xl font-normal">{providerName}</h2>
         <h3 className="font-inter text-gray-600 text-sm font-normal leading-[1.375rem]">
-          {t('last updated:')} {formatDate(service.date_updated)}
+          {translate(translations.lastUpdated)} {formatDate(service.date_updated)}
         </h3>
 
         <div className="bg-neutral-container-bg rounded p-6 mb-4">

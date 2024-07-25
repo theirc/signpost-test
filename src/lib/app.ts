@@ -2,7 +2,6 @@ import { api } from "./api"
 import { DB } from "./db"
 import "./types.data"
 import "./types.ai"
-import i18next from 'i18next'
 import isEqual from "lodash/isEqual"
 
 type Statuses = "initializing" | "ready"
@@ -100,15 +99,6 @@ export const app = {
     console.log("Update App: ", app)
     if (app.reactUpdate) app.reactUpdate()
   },
-
-  changeLanguage(lang: string) {
-    if(this.locale === lang) return;
-    this.locale = lang
-    i18next.changeLanguage(lang)
-    localStorage.setItem('preferredLanguage', lang)
-    this.update();
-  },
-
 
   async initialize() {
     if (appPrivateData.boot) return
@@ -218,7 +208,6 @@ function loadCountry(c: Country) {
 }
 
 export function translate(t: LocalizableContent): string {
-  console.log("Translating:", t, "Current locale:", app.locale);
   if (!t) return ""
   if (typeof t === "string") return t
   if (typeof t === "object") return t[app.locale] || t[app.defaultLocale] || ""

@@ -9,8 +9,8 @@ import { useMultiState } from "./hooks";
 import ReactGA from "react-ga4";
 import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
 import { Blocks } from "./blocks";
+import { translations } from "../../translations";
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -29,7 +29,6 @@ type FilterValues = {
 export function BlockServices(props: { block: BlockServices }) {
   const { block } = props
   const styles = Blocks.buildStyle(block)
-  const { t } = useTranslation();
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -98,7 +97,7 @@ export function BlockServices(props: { block: BlockServices }) {
         children: subcategoriesForCategory,
       };
     });
-    combinedData.unshift({ value: -1, label: t('all services types') });
+    combinedData.unshift({ value: -1, label: translate(translations.allServiceTypes) });
     return combinedData;
   };
 
@@ -110,7 +109,7 @@ export function BlockServices(props: { block: BlockServices }) {
         label: translate(x.name),
       };
     });
-    filterProviders.unshift({ value: -1, label: t('all providers') });
+    filterProviders.unshift({ value: -1, label: translate(translations.allProviders) });
     return filterProviders;
   };
 
@@ -379,9 +378,9 @@ export function BlockServices(props: { block: BlockServices }) {
                 </div>
                 <div className="flex flex-col md:flex-row gap-10 flex-grow">
                   <div className="md:flex flex-col flex-1">
-                    <h2>{t('filters')}</h2>
+                    <h2>{translate(translations.filters)}</h2>
                     <TreeSelect
-                      label={t('service types')}
+                      label={translate(translations.service_types)}
                       items={combineCategoriesWithSubcategories(categories, subcategories)}
                       className="w-full overflow-hidden service-types-select"
                       onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
@@ -391,7 +390,7 @@ export function BlockServices(props: { block: BlockServices }) {
                       defaultValue={[-1]}
                     />
                     <TreeSelect
-                      label={t('provider')}
+                      label={translate(translations.provider)}
                       items={mapProviderData(state.filteredProviders)}
                       className="w-full overflow-hidden"
                       onChange={(value) => handleSelectedFilters(value, filterType.provider)}
@@ -403,9 +402,9 @@ export function BlockServices(props: { block: BlockServices }) {
               </div>
             )}
             <div className="hidden md:flex flex-col flex-1">
-            <h2>{t('filters')}</h2>
+            <h2>{translate(translations.filters)}</h2>
               <TreeSelect
-                label={t("service types")}
+                label={translate(translations.serviceTypes)}
                 items={combineCategoriesWithSubcategories(categories, subcategories)}
                 className="w-full overflow-hidden service-types-select"
                 onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
@@ -415,7 +414,7 @@ export function BlockServices(props: { block: BlockServices }) {
                 defaultValue={[-1]}
               />
               <TreeSelect
-                label={t("provider")}
+                label={translate(translations.provider)}
                 items={mapProviderData(state.filteredProviders)}
                 className="w-full overflow-hidden"
                 onChange={(value) => handleSelectedFilters(value, filterType.provider)}
@@ -425,8 +424,8 @@ export function BlockServices(props: { block: BlockServices }) {
             </div>
             <div className="grow-[4] flex-1 relative">
               <div className="flex mt-3.5 mb-3.5 items-center">
-                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">Filters</Button>
-                {view === 0 && <span className="hidden md:inline">{t("showing")} {state.filteredServices.length} {t("of")} {services.length} </span>}
+                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
+                {view === 0 && <span className="hidden md:inline">{translate(translations.showing)} {state.filteredServices.length} {translate(translations.of)} {services.length} </span>}
                 <Space className="flex ml-auto z-10">
                   <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
                     <Radio.Button value={0}>
@@ -434,7 +433,7 @@ export function BlockServices(props: { block: BlockServices }) {
                         <span className="material-symbols-outlined material-icons">
                           map
                         </span>
-                        {t('map')}
+                        {translate(translations.map)}
                       </div>
                     </Radio.Button>
                     <Radio.Button value={1}>
@@ -442,14 +441,14 @@ export function BlockServices(props: { block: BlockServices }) {
                         <span className="material-symbols-outlined material-icons">
                           list_alt
                         </span>
-                        {t('list')}
+                        {translate(translations.list)}
                       </div>
                     </Radio.Button>
                   </Radio.Group>
                 </Space>
               </div>
 
-              {view === 0 && <div className="md:hidden my-4">{t("showing")} {state.filteredServices.length} of {services.length} </div>}
+              {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {state.filteredServices.length} of {services.length} </div>}
               <div>
                 {view === 0 && <Maps services={state.filteredServices} />}
                 {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
