@@ -262,7 +262,7 @@ function BotScoreModal(props: {
       clientmetrics: data.clientmetrics,
       safetymetric: data.safetymetric,
       traumametrics: data.traumametrics,
-      logid: `${serverurl}/admin/content/${m.logID}`
+      logid: `https://directus-qa.azurewebsites.net/admin/content/botlogs/${m.logID}`
     })
   }
 

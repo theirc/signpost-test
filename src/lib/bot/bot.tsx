@@ -7,7 +7,7 @@ import { BsRobot } from "react-icons/bs"
 import { FaThumbsUp } from "react-icons/fa"
 import { FaThumbsDown } from "react-icons/fa"
 import { BsEmojiSmile } from "react-icons/bs"
-import {useReactMediaRecorder} from "react-media-recorder"
+import { useReactMediaRecorder } from "react-media-recorder"
 import { api } from "../api"
 import { useForceUpdate, useMultiState } from "../components"
 import { BotChatMessage } from './botmessage'
@@ -48,21 +48,23 @@ export function AIBot() {
     }
   ])
 
-  const onSend = async (message: string) => {
+  const onSend = async (message?: string, audio?: any) => {
 
     // message ||= "what is kobo forms?"
-    message ||= "how do I get a passport in Iraq?"
+    // message ||= "how do I get a passport in Iraq?"
     // message ||= "What documents do I need to work in Greece?"
     // message ||= "what about Communication Channels and contact?"
 
-    if (!message) return
+    if (!message && !audio) return
 
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
 
-    messages.current.unshift({ type: "human", message })
+    if (message) {
+      messages.current.unshift({ type: "human", message })
+    }
     setState({ isSending: true })
 
-    const response = await api.askbot({ message }, selectedBots)
+    const response = message ? await api.askbot({ message }, selectedBots) : await api.askbot({ audio }, selectedBots)
 
     if (!response.error) {
       for (const m of response.messages) {
@@ -149,7 +151,7 @@ export function AIBot() {
 
 }
 
-function SearchInput(props: { onSearch: (message: string) => void, disabled: boolean }) {
+function SearchInput(props: { onSearch: (message?: string, audio?: any) => void, disabled: boolean }) {
 
   const [value, setValue] = useState("")
   const [isVoiceMode, setIsVoiceMode] = useState<boolean>(false)
@@ -161,41 +163,51 @@ function SearchInput(props: { onSearch: (message: string) => void, disabled: boo
     stopRecording,
     mediaBlobUrl,
     clearBlobUrl,
-  } = useReactMediaRecorder({audio: true})
+  } = useReactMediaRecorder({ audio: true })
 
-    const handleToggleRecording = () => {
-       if(status === "recording") {
-        stopRecording();
-        setRecordingComplete(true)
-       } else {
-        clearBlobUrl();
-        startRecording();
-        setRecordingComplete(false)
-       }
+  const handleToggleRecording = () => {
+    if (status === "recording") {
+      stopRecording()
+      setRecordingComplete(true)
+    } else {
+      clearBlobUrl()
+      startRecording()
+      setRecordingComplete(false)
     }
-
-  const handleModeToggle = () => {
-      setIsVoiceMode(!isVoiceMode);
   }
 
-  const handleSearchChange = (e: React.ChangeEvent <HTMLInputElement>) => {
-    setValue(e.target.value)
-  }
-
-  const handleSearch = (v:string) => {
-    props.onSearch(v);
-    setValue("")
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
   }
 
   const handleSendRecording = async () => {
-    if(mediaBlobUrl) {
+    if (mediaBlobUrl) {
       const response = await fetch(mediaBlobUrl);
       const blob = await response.blob()
-      console.log("Sending audio blob to server:", blob)
+      const base64Data = await blobToBase64(blob)
+      props.onSearch(undefined, base64Data)
 
       clearBlobUrl()
       setRecordingComplete(false)
     }
+  }
+
+  const handleModeToggle = () => {
+    setIsVoiceMode(!isVoiceMode);
+  }
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value)
+  }
+
+  const handleSearch = (v: string) => {
+    props.onSearch(v);
+    setValue("")
   }
 
   // const onChange = (e: any) => {
@@ -208,61 +220,61 @@ function SearchInput(props: { onSearch: (message: string) => void, disabled: boo
 
   return (
     <div>
-    <div className="mb-4 flex justify-between">
-      <Button onClick={handleModeToggle} type="primary" className="w-40">
-        {isVoiceMode ? "Switch to Text" : "Switch to Voice"}
-      </Button>
-    </div>
+      <div className="mb-4 flex justify-between">
+        <Button onClick={handleModeToggle} type="primary" className="w-40">
+          {isVoiceMode ? "Switch to Text" : "Switch to Voice"}
+        </Button>
+      </div>
 
-    {!isVoiceMode ? (
-      <Search
-        value={value}
-        onChange={handleSearchChange}
-        className="w-full"
-        size="large"
-        disabled={props.disabled}
-        placeholder="Ask me anything"
-        enterButton={<MdSend className="mt-1" />}
-        onSearch={handleSearch}
-      />
-    ) : (
-      <div className="flex flex-col items-center">
-        <div className="text-center mb-2">
-          <p>
-            {status === "recording" ? "Recording" : "Ready to Record"}
-          </p>
-          <p className="text-sm ml-4">
-            {status === "recording" ? "Start speaking..." : ""}
-          </p>
+      {!isVoiceMode ? (
+        <Search
+          value={value}
+          onChange={handleSearchChange}
+          className="w-full"
+          size="large"
+          disabled={props.disabled}
+          placeholder="Ask me anything"
+          enterButton={<MdSend className="mt-1" />}
+          onSearch={handleSearch}
+        />
+      ) : (
+        <div className="flex flex-col items-center">
+          <div className="text-center mb-2">
+            <p>
+              {status === "recording" ? "Recording" : "Ready to Record"}
+            </p>
+            <p className="text-sm ml-4">
+              {status === "recording" ? "Start speaking..." : ""}
+            </p>
           </div>
 
           <Button
-          onClick={handleToggleRecording}
-          icon={status === "recording" ? <MdStop className="text-xl"/> : <MdMic className="text-xl" />}
-          type="primary"
-          shape="circle"
-          size="large"
-          className="flex items-center justify-center"
-        />
-        { recordingComplete && mediaBlobUrl && (
-          <div className="mt-4 flex items-center">
-          <audio controls src={mediaBlobUrl} className="mt-4" />
-          <Button 
-          onClick={handleSendRecording}
-          icon={<MdSend/>}
-          type="primary"
-          shape="circle"
-          size="large"
-          className="h-10 ml-6"
+            onClick={handleToggleRecording}
+            icon={status === "recording" ? <MdStop className="text-xl" /> : <MdMic className="text-xl" />}
+            type="primary"
+            shape="circle"
+            size="large"
+            className="flex items-center justify-center"
           />
-          </div>
-        )}
-      </div>
-    )}
-  </div>
-);
+          {recordingComplete && mediaBlobUrl && (
+            <div className="mt-4 flex items-center">
+              <audio controls src={mediaBlobUrl} className="mt-4" />
+              <Button
+                onClick={handleSendRecording}
+                icon={<MdSend />}
+                type="primary"
+                shape="circle"
+                size="large"
+                className="h-10 ml-6"
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
-  
+
 interface MessageProps {
   message: ChatMessage
   isWaiting?: boolean
