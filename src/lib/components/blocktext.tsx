@@ -6,6 +6,8 @@ export function BlockText(props: { block: BlockText }) {
 
   const { block } = props
   return <Container block={block}>
+    <div className="block-text">
     {translate(block.text)}
+    </div>
   </Container>
 }

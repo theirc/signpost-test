@@ -125,19 +125,19 @@ export function Header() {
       let content;
       if (item.type === 'about') {
         content = (
-          <a href="#about-section" className="text-white no-underline">
+          <a href="#about-section" className="no-underline">
             {title}
           </a>
         );
       } else if (item.type === "services") {
         content = (
-          <a href="#service-map" className="text-white no-underline">
+          <a href="#service-map" className="no-underline">
             {title}
           </a>
         );
       } else {
         content = (
-          <Link to={item.link || "#"} className="text-white no-underline">
+          <Link to={item.link || "#"} className="no-underline">
             {title}
           </Link>
         );
@@ -184,10 +184,10 @@ export function Header() {
             
             <ul className="flex items-center list-none">
               <li className="mr-2">
-                <Link to="/signpostbot" className="text-white no-underline">Bot</Link>
+                <Link to="/signpostbot" className="no-underline">Bot</Link>
               </li>
               <li className="mr-2">
-                <Link to='/search-results' className="text-white no-underline">{translate(translations.search)}</Link>
+                <Link to='/search-results' className="no-underline">{translate(translations.search)}</Link>
               </li>
               <li>
                 <LanguageDropdown isMobile={false} />

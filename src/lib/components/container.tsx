@@ -12,8 +12,10 @@ export function Container(props: Props) {
   const { block, className } = props
   const styles = Blocks.buildStyle(block)
 
-  return <div className={`py-16 w-full flex items-center justify-center ${className || ""}`} style={styles}>
-    <div className="sm:w-full px-4 md:w-2/3 overflow-auto">
+  return  <div className={`py-8 sm:py-12 md:py-16 w-full flex items-center justify-center ${className || ""}`} 
+  style={styles}
+>
+  <div className="w-full px-4 sm:px-6 md:px-8 max-w-7xl mx-auto">
       {props.children}
     </div>
   </div>

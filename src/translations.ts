@@ -161,10 +161,10 @@ export const translations: {[key:string]: LocalizableContent} = {
         "so-SO": "Noocyada adeegga"
       },
       of: {
-        "en-US": "Of",
+        "en-US": "of",
         "ar-SA": "ل",
-        "fr-FR": "De",
-        "es-ES": "De",
+        "fr-FR": "de",
+        "es-ES": "de",
         "so-SO": "ka"
       },
       services: {

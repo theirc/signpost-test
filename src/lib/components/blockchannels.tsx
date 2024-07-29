@@ -14,19 +14,21 @@ import {
 export function BlockChannels(props: { block: BlockChannels }) {
   const { block } = props;
 
-  const socialIconClass = "flex flex-col items-center p-4 md:p-4 gap-4 md:g-2 flex-1 rounded-lg bg-white shadow-lg"
-  const iconStyle = "text-gray-700 hover:text-gray-900"
+  const socialIconClass = "flex flex-col items-center p-4 gap-4 flex-1 rounded-lg bg-white shadow-lg"
+  const iconStyle = "text-gray-700 hover:text-gray-900 w-8 h-8 md:w-10 md:h-10"
   const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base no-underline"
+
 
   return (
     <Container block={block}>
+      <div className="flex flex-col items-center">
       {block.title && (
-        <div className="mx-auto text-center text-xl  md:text-2xl font-bold">{translate(props.block.title)} </div>
+        <h2 className="text-xl md:text-2xl font-bold mb-4">{translate(block.title)}</h2>
       )}
       {block.subtitle && (
-        <div className="mx-auto text-center px-4 md:px-6 mt-4 mb-10 text-base md:text-lg">{translate(props.block.subtitle)} </div>
+        <p className="text-base md:text-lg mb-10 max-w-2xl text-center">{translate(block.subtitle)}</p>
       )}
-      <div className="flex flex-col md:flex-row flex-wrap gap-2 md:gap-4 justify-center md:justify-between max-w-sm md:max-w-full mx-auto md:p-4">
+      <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-4 w-full max-w-sm md:max-w-full mx-auto md:justify-between md:p-4">
       {block.fb_link && (
         <a
           href={translate(props.block.fb_link)}
@@ -34,7 +36,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="Facebook"
         >
-          <FaFacebook size={40} className={iconStyle} />
+          <FaFacebook className={`${iconStyle} w-8 h-8`} />
           <div className={textStyle}>{translate(block.fb)}</div>
         </a>
       )}
@@ -45,7 +47,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="Facebook Messenger"
         >
-          <FaFacebookMessenger size={40} className={iconStyle} />
+          <FaFacebookMessenger className={`${iconStyle} w-8 h-8`}  />
           <div className={textStyle}>{translate(block.fbmess)}</div>
         </a>
       )}
@@ -56,7 +58,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="Whatsapp"
         >
-          <FaWhatsapp size={40} className={iconStyle} />
+          <FaWhatsapp className={`${iconStyle} w-8 h-8`} />
           <div className={textStyle}>{translate(block.whatsapp)}</div>
         </a>
       )}
@@ -67,8 +69,8 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="Email"
         >
-          <FaEnvelope size={40} className={iconStyle}/>
-          <div className={textStyle} no-underline>{translate(block.email)}</div>
+          <FaEnvelope className={`${iconStyle} w-8 h-8`} />
+          <div className={textStyle}>{translate(block.email)}</div>
         </a>
       )}
       {block.instagram_link && (
@@ -78,7 +80,7 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="Instagram"
         >
-          <FaInstagram size={40} className={iconStyle} />
+          <FaInstagram className={`${iconStyle} w-8 h-8`} />
           <div className={textStyle}>{translate(block.instagram)}</div>
         </a>
       )}
@@ -89,18 +91,18 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="TikTok"
         >
-          <FaTiktok size={40} className={iconStyle} />
+          <FaTiktok className={`${iconStyle} w-8 h-8`} />
           <div className={textStyle}>{translate(block.tiktok)}</div>
         </a>
       )}
       {block.telegram_link && (
         <a
-          href={translate(props.block.telegram_link)}
+          href={translate(block.telegram_link)}
           className={socialIconClass} 
           target="_blank"
           aria-label="Telegram"
         >
-          <FaTelegram size={40} className={iconStyle} />
+          <FaTelegram className={`${iconStyle} w-8 h-8`} />
           <div className={textStyle}>{translate(block.telegram)}</div>
         </a>
       )}
@@ -111,10 +113,11 @@ export function BlockChannels(props: { block: BlockChannels }) {
           target="_blank"
           aria-label="WhatsApp Channel"
         >
-          <FaWhatsappSquare size={40} className={iconStyle} />
+          <FaWhatsappSquare className={`${iconStyle} w-8 h-8`} />
           <div className={textStyle}>{translate(block.whatsappc)}</div>
         </a>
       )}
+      </div>
       </div>
     </Container>
   );

@@ -6,13 +6,14 @@ export default {
   ],
   theme: {
     extend: {
+      spacing: {
+        'custom-lg': '106px',
+      },
       fontFamily:{
-        'libre-caslon': ['"Libre Caslon Text"', 'serif'],
-        'inter': ['Inter', 'sans-serif'],
+        'helvetica': ['Helvetica', 'Arial', 'sans-serif'],
       },
       colors: {
         'neutral-field-background': '#FFFFFF',
-        'neutral-text': '#000000',
         'neutral-icon': '#575757',
         'neutral-container-bg': 'var(--Color-Neutral-container-background, #F7F7F7)',
       },
@@ -21,6 +22,9 @@ export default {
       },
       borderRadius: {
         'lg': '1rem',
+      },
+      textAlign: {
+        'left': 'left',
       }
     },
   },
