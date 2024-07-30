@@ -41,7 +41,7 @@ export class DB extends Dexie {
   }
 
   async loadLocalProviders(): Promise<number> {
-    console.log("Loading providers...");
+    console.log("Loading providers...")
     const dbs = (await this.providers.toArray()) || []
     if (dbs.length > 0) {
       const r = dbs.reduce((a, b) => { a[b.id] = b; return a }, {})
@@ -86,9 +86,14 @@ export class DB extends Dexie {
     }
     console.log("Last Update: ", lastUpdate)
     const services = await api.getServices(app.country, lastUpdate)
-
+    app.data.services ||= {}
     if (services) {
       console.log(`Saving ${services.length} Services`)
+      for (const service of services) {
+        app.data.services[service.id] = service
+      }
+      app.state.servicesLoaded = true
+      app.update()
       for (const service of services) {
         await this.services.put(service, service.id)
       }
@@ -98,8 +103,13 @@ export class DB extends Dexie {
 
   async updateProviders() {
     console.log("Updating Providers Database...")
+    app.data.categories.providers ||= {}
     const providers = await api.getProviders(app.country)
     if (providers) {
+      for (const provider of providers) {
+        app.data.categories.providers[provider.id] = provider
+      }
+      app.update()
       console.log(`Saving ${providers.length} Providers`)
       for (const provider of providers) {
         await this.providers.put(provider, provider.id)
@@ -112,25 +122,32 @@ export class DB extends Dexie {
     console.log("Updating Articles Database...")
     const content = await api.getArticles(app.country)
 
+    app.data.zendesk.categories ||= {}
+    app.data.zendesk.sections ||= {}
+    app.data.zendesk.articles ||= {}
+
     if (content) {
       console.log(`Saving Articles`)
       for (const key in content) {
         const cat = content[key]
+        app.data.zendesk.categories[cat.id] = cat
         await this.zendeskCategories.put(cat, cat.id)
         for (const key in cat.sections) {
           const sec = cat.sections[key]
           sec.category = cat.id
+          app.data.zendesk.sections[sec.id] = sec
           await this.zendeskSections.put(sec, sec.id)
           for (const key in sec.articles) {
             const art = sec.articles[key]
             art.section = sec.id
             art.category = cat.id
+            app.data.zendesk.articles[art.id] = art
             await this.articles.put(art, art.id)
           }
         }
       }
+      app.update()
     }
-
     console.log("Articles Database Updated!")
   }
 
