@@ -49,7 +49,7 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
     <Dropdown menu={{ items }} trigger={['click']} >
     <a onClick={(e) => e.preventDefault()} className={`language-dropdown text-white ${isMobile ? "w-full" : ""}`}>
       <Space>
-        <ReactCountryFlag countryCode={languages[app.locale as keyof typeof languages].countryCode} svg style={{ width: '1.5em', height: '1.5em' }} />
+        <ReactCountryFlag countryCode={languages[app.locale as keyof typeof languages].countryCode} svg style={{ width: '1em', height: '1em' }} />
         <span>{getLanguageName(app.locale as keyof typeof languages)}</span>
         <DownOutlined />
       </Space>

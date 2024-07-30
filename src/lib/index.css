@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --start: left;
+  --end: right;
+  --text-align: left;
+  --flex-direction: row;
+  --margin-start: 0;
+  --margin-end: auto;
+}
+
+[dir="rtl"] {
+  --start: right;
+  --end: left;
+  --text-align: right;
+  --flex-direction: row-reverse;
+  --margin-start: auto;
+  --margin-end: 0;
+}
 
 body,
 html {
@@ -17,6 +34,30 @@ html {
 box-sizing: border-box;
 }
 
+.rtl {
+  direction: rtl;
+  text-align: var(--text-align);
+}
+.rtl .block-text {
+  padding: 1rem 2rem;
+  margin: 0 auto;
+}
+.rtl .block-text {
+  text-align: justify;
+}
+.rtl nav {
+  direction: rtl;
+  text-align: var(--text-align);
+}
+
+.rtl .menu_icon {
+  margin-left: var(--margin-end);
+  margin-right: var(--margin-start);
+}
+
+.rtl .list-none {
+  flex-direction: var(--flex-direction);
+}
 .service {
   font-family: inherit !important;
 }

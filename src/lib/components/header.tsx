@@ -2,6 +2,7 @@ import { CSSProperties, useRef, useState } from "react";
 import { app, translate } from "../app";
 import { translations } from "../../translations";
 import { Link } from "react-router-dom";
+import { languages } from "../locale";
 import MegaMenu from './megamenu';
 import LanguageDropdown from "./languagedropdown";
 import MobileNavigationDrawer from './mobilenavigationdrawer';
@@ -145,15 +146,16 @@ export function Header() {
       return <li key={title} className="mx-8">{content}</li>;
     });
   };
+ 
+  const isRTL = languages[app.locale]?.rtl;
 
   return (
-    <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-[106px] py-4 tracking-wide" style={styles}>
+    <nav className={`flex items-center justify-between px-4 sm:px-6 lg:px-[106px] py-4 tracking-wide ${isRTL ? "rtl" : ""}`} style={styles}>
       <div>
         <Link to="/">
           <img src={app.logo} height={40} alt="Logo" />
         </Link>
       </div>
-      <Container>
         <div className="toolbar">
           <button
             ref={drawerButtonRef}
@@ -195,7 +197,6 @@ export function Header() {
             </ul>
           </div>
         </div>      
-      </Container>
     </nav>
   );
 }
