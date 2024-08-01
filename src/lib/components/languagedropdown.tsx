@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import React from 'react';
 import { Dropdown, Space } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import ReactCountryFlag from 'react-country-flag';
 import { languages } from "../locale";
 import { app } from "../app";
 
@@ -39,7 +38,6 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
     key: localeCode,
     label: (
     <div onClick={() => handleLanguageChange(localeCode)} className="flex items-center space-x-2">
-    <ReactCountryFlag countryCode={languages[localeCode].countryCode} svg style={{ width: '1.5em', height: '1.5em' }} />
     <span>{getLanguageName(localeCode as keyof typeof languages)}</span>
   </div>
 ),
@@ -49,8 +47,8 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
     <Dropdown menu={{ items }} trigger={['click']} >
     <a onClick={(e) => e.preventDefault()} className={`language-dropdown text-white ${isMobile ? "w-full" : ""}`}>
       <Space>
-        <ReactCountryFlag countryCode={languages[app.locale as keyof typeof languages].countryCode} svg style={{ width: '1em', height: '1em' }} />
-        <span>{getLanguageName(app.locale as keyof typeof languages)}</span>
+      <span className="material-symbols-outlined material-icons">language</span>        
+      <span>{getLanguageName(app.locale as keyof typeof languages)}</span>
         <DownOutlined />
       </Space>
     </a>

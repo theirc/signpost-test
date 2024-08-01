@@ -98,7 +98,7 @@ export const translations: {[key:string]: LocalizableContent} = {
         "so-SO": "Dhammaan bixiyeyaasha"
       },
       searchForInformation: {
-        "en-US": "Search For Information",
+        "en-US": "Search for Information",
         "ar-SA": "ابحث عن معلومات",
         "fr-FR": "Recherche d'informations",
         "es-ES": "Buscar información",

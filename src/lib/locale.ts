@@ -14,109 +14,83 @@ interface LocaleDeclaration {
   name: string
 }
 
-
 export const languages = {
   "ar-SA": {
     rtl: true,
-    name: "Arabic",
-    countryCode: "SA"
+    name: "Arabic"
   },
   bn: {
-    name: "Bengali",
-    countryCode: "BD"
+    name: "Bengali"
   },
   my: {
-    name: "Burmese",
-    countryCode: "MM"
+    name: "Burmese"
   },
   cs: {
-    name: "Czech",
-    countryCode: "CZ"
+    name: "Czech"
   },
   "fa-AF": {
     rtl: true,
-    name: "Dari",
-    countryCode: "AF"
+    name: "Dari"
   },
   "en-US": {
-    name: "English",
-    countryCode: "US"
+    name: "English"
   },
   "fa-FA": {
     rtl: true,
-    name: "Farsi",
-    countryCode: "IR"
+    name: "Farsi"
   },
   "fr-FR": {
-    name: "French",
-    countryCode: "FR"
+    name: "French"
   },
   "de-DE": {
-    name: "German",
-    countryCode: "DE"
+    name: "German"
   },
   el: {
-    name: "Greek",
-    countryCode: "GR"
+    name: "Greek"
   },
   ht: {
-    name: "Haitian Creole",
-    countryCode: "HT"
+    name: "Haitian Creole"
   },
   "ha-HA": {
-    name: "Hausa",
-    countryCode: "NE"
+    name: "Hausa"
   },
   "hu-HU": {
-    name: "Hungarian",
-    countryCode: "HU"
+    name: "Hungarian"
   },
   "it-IT": {
-    name: "Italian",
-    countryCode: "IT"
+    name: "Italian"
   },
   KAU: {
-    name: "Kanuri",
-    countryCode: "NG"
+    name: "Kanuri"
   },
   "ki-KI": {
-    name: "Kirundi",
-    countryCode: "BI"
+    name: "Kirundi"
   },
   "ln-LN": {
-    name: "Lingala",
-    countryCode: "CD"
+    name: "Lingala"
   },
   "ps-PS": {
-    name: "Pashto",
-    countryCode: "AF"
+    name: "Pashto"
   },
   "ru-RU": {
-    name: "Russian",
-    countryCode: "RU"
+    name: "Russian"
   },
   "so-SO": {
-    name: "Somali",
-    countryCode: "SO"
+    name: "Somali"
   },
   "es-ES": {
-    name: "Spanish",
-    countryCode: "ES"
+    name: "Spanish"
   },
   "sw-SW": {
-    name: "Swahili",
-    countryCode: "KE"
+    name: "Swahili"
   },
   th: {
-    name: "Thai",
-    countryCode: "TH"
+    name: "Thai"
   },
   "uk-UK": {
-    name: "Ukrainian",
-    countryCode: "UA"
+    name: "Ukrainian"
   },
   "ur-UR": {
-    name: "Urdu",
-    countryCode: "PK"
+    name: "Urdu"
   }
 }

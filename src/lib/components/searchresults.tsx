@@ -208,7 +208,7 @@ export function SearchResults() {
             <div className="w-full px-4 md:w-2/3 py-16">
                 <div>
                     <Search
-                        placeholder="input search text"
+                        placeholder={translate(translations.searchForInformation)}
                         allowClear
                         enterButton={translate(translations.search)}
                         size="large"

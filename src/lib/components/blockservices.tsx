@@ -1,5 +1,6 @@
 import { app, translate } from "../app";
 import { Loader } from "./loader";
+import { languages } from "../locale"
 import { Maps } from "./map";
 import { Button, Radio, Space } from "antd";
 import { ServicesList } from "./services";
@@ -363,13 +364,15 @@ export function BlockServices(props: { block: BlockServices }) {
     });
   }, []);
 
+  const isRTL = languages[app.locale]?.rtl;
+
 
   return (
-    <Container block={block} className="relative">
-    <div className="text-4xl">{translate(props.block.title)}</div>
-    <div className="text-2xl mt-4 opacity-50">{translate(props.block.subtitle)}</div>
+    <Container block={block} className={`relative service-container ${isRTL ? 'rtl' : ''}`}>
+    <div className={`text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
+    <div className={`text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
     {servicesLoaded ? (
-      <div className="flex flex-col md:flex-row gap-10">
+      <div className={`flex flex-col md:flex-row gap-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
         {filterOpen && (
           <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
             <div className="flex ml-auto mb-5">
@@ -422,41 +425,41 @@ export function BlockServices(props: { block: BlockServices }) {
           />
         </div>
         <div className="grow-[4] flex-1 relative md:w-full lg:w-4/5">
-          <div className="flex mt-3.5 mb-3.5 items-center">
-            <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">
-              {translate(translations.filters)}
-            </Button>
-            {view === 0 && (
-              <span className="hidden md:inline">
-                {translate(translations.showing)} {state.filteredServices.length} {translate(translations.of)} {services.length}
-              </span>
-            )}
-            <Space className="flex ml-auto z-10">
-              <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
-                <Radio.Button value={0}>
-                  <div className="flex gap-2 items-center">
-                    <span className="material-symbols-outlined material-icons">map</span>
-                    {translate(translations.map)}
-                  </div>
-                </Radio.Button>
-                <Radio.Button value={1}>
-                  <div className="flex gap-2 items-center">
-                    <span className="material-symbols-outlined material-icons">list_alt</span>
-                    {translate(translations.list)}
-                  </div>
-                </Radio.Button>
-              </Radio.Group>
-            </Space>
+  <div className="flex-container">
+    <div className="button-group">
+      <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264] mr-2">
+        {translate(translations.filters)}
+      </Button>
+      <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
+        <Radio.Button value={0}>
+          <div className="flex gap-2 items-center">
+            <span className="material-symbols-outlined material-icons">map</span>
+            {translate(translations.map)}
           </div>
-          {view === 0 && (
-            <div className="md:hidden my-4">
-              {translate(translations.showing)} {state.filteredServices.length} of {services.length}
-            </div>
-          )}
-          <div>
-            {view === 0 ? <Maps services={state.filteredServices} /> : <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
+        </Radio.Button>
+        <Radio.Button value={1}>
+          <div className="flex gap-2 items-center">
+            <span className="material-symbols-outlined material-icons">list_alt</span>
+            {translate(translations.list)}
           </div>
-        </div>
+        </Radio.Button>
+      </Radio.Group>
+    </div>
+    {view === 0 && (
+      <span className="hidden md:inline text-info">
+        {translate(translations.showing)} {state.filteredServices.length} {translate(translations.of)} {services.length}
+      </span>
+    )}
+  </div>
+  {view === 0 && (
+    <div className="md:hidden my-4">
+      {translate(translations.showing)} {state.filteredServices.length} of {services.length}
+    </div>
+  )}
+  <div>
+    {view === 0 ? <Maps services={state.filteredServices} /> : <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
+  </div>
+</div>
       </div>
     ) : (
       <div className="flex items-center justify-center my-16">
