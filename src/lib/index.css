@@ -1,6 +1,8 @@
+@import 'animate.css';
 /* @tailwind base; */
 @tailwind components;
 @tailwind utilities;
+
 
 :root {
   --start: left;
@@ -9,6 +11,8 @@
   --flex-direction: row;
   --margin-start: 0;
   --margin-end: auto;
+  --animate-duration: 800ms;
+  --animate-delay: 0.9s;
 }
 #root {
   height: 100%;
@@ -741,6 +745,7 @@ nav .toolbar a {
 }
 .mission-heading  {
   padding-bottom: 16px; 
+  animation-duration: 1s;
 }
 .block-text {
   font-size: 2rem;

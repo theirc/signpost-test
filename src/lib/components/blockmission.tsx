@@ -17,7 +17,7 @@ export function BlockMission(props: { block: BlockMission}) {
 
   return <Container block={block}>
     <div className="py-12 px-4 max-w-4xl mx-auto container-center">
-    <h1 className="text-3xl md:text-4xl text-center max-w-xl mission-heading">{translate(block.title)}</h1>
+    <h1 className="animate__animated animate__fadeInUp text-3xl md:text-4xl text-center max-w-xl mission-heading">{translate(block.title)}</h1>
    
    <Search
    placeholder= {translate(translations.searchForInformation)}
