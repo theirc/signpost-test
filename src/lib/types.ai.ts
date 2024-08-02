@@ -32,6 +32,7 @@ declare global {
     rebuild?(): void
     question?: string
     logID?: number
+    audio?: any
   }
 
   type AI_SCORES = "pass" | "fail" | "redflag"

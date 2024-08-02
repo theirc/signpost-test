@@ -289,6 +289,7 @@ export function Maps({ services }: mapProps) {
             setIsMapReady(true)
           }}
           style={{ borderRadius: '1rem' }}
+          projection={{name: 'mercator'}}
         >
           <GeocoderControl
             mapboxAccessToken="pk.eyJ1Ijoic2lnbnBvc3RnbG9iYWwiLCJhIjoiY2w1dmVwYnVxMDkxbjNjbW96NXkybHZyZCJ9.cYedHq58Ur6PKXkEnwYCzQ"
