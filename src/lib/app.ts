@@ -83,6 +83,7 @@ export const app = {
     } as Categories,
 
     services: {} as Services,
+    providers: {} as Providers,
 
     zendesk: {
       categories: {} as { [index: number]: ZendeskCategory },

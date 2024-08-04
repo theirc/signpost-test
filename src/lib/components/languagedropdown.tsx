@@ -42,7 +42,7 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
 
   return (
     <Dropdown menu={{ items }} trigger={['click']} >
-      <a onClick={(e) => e.preventDefault()} className={`language-dropdown text-white font-inter ${isMobile ? "w-full" : ""}`}>
+      <a onClick={(e) => e.preventDefault()} className={`language-dropdown text-black font-inter font-bold ${isMobile ? "w-full" : ""}`}>
         {getLanguageName(app.locale as keyof typeof langauages)}
         <Space>
           <DownOutlined />

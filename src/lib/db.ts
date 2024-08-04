@@ -45,7 +45,7 @@ export class DB extends Dexie {
     const dbs = (await this.providers.toArray()) || []
     if (dbs.length > 0) {
       const r = dbs.reduce((a, b) => { a[b.id] = b; return a }, {})
-      app.data.categories.providers = r as any
+      app.data.providers = r as any
     }
     console.log("Local Providers Found: ", dbs.length)
     return dbs.length
@@ -103,11 +103,11 @@ export class DB extends Dexie {
 
   async updateProviders() {
     console.log("Updating Providers Database...")
-    app.data.categories.providers ||= {}
+    app.data.providers ||= {}
     const providers = await api.getProviders(app.country)
     if (providers) {
       for (const provider of providers) {
-        app.data.categories.providers[provider.id] = provider
+        app.data.providers[provider.id] = provider
       }
       app.update()
       console.log(`Saving ${providers.length} Providers`)

@@ -156,7 +156,7 @@ export function Service() {
   const location = translate(service.address);
   const description = translate(service.description);
   const providerName = translate(
-    app.data.categories.providers[service?.provider]?.name
+    app.data.providers[service?.provider]?.name
   );
 
   return (

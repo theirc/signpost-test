@@ -3,6 +3,7 @@ export { }
 declare global {
 
   type Services = { [index: number]: Service }
+  type Providers = { [index: number]: Provider}
 
   interface Country {
     id?: number
@@ -14,6 +15,15 @@ declare global {
     headercolor?: string
     headerbgcolor?: string
     menu: Menu[]
+  }
+
+  interface Provider {
+    id?: number
+    country?: string
+    category?: number
+    name?: LocalizableText
+    description?: LocalizableText
+    address?: string
   }
 
   interface Service {

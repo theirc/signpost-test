@@ -1,4 +1,4 @@
-import { MenuCategory } from './header';
+import { MenuResources } from './header';
 import MenuItem from './menuitem';
 import LanguageDropdown from './languagedropdown';
 
@@ -6,7 +6,7 @@ interface MegaMenuProps {
     handleToggle?: (index: number) => void;
     clicked?: number;
     setIsDrawerOpen?: (open: boolean) => void;
-    menuData: MenuCategory[]
+    menuData: MenuResources[]
 }
 
 const MegaMenu: React.FC<MegaMenuProps> = ({
@@ -19,13 +19,13 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
         <div className="nav__container">
             <nav>
                 <ul>
-                    {!setIsDrawerOpen && menuData.map(({ label, href, children }, index) => {
+                    {!setIsDrawerOpen && menuData.map(({ title, link, children }, index) => {
                         return (
                             <MenuItem
                                 key={index}
                                 {...{
-                                    label,
-                                    href,
+                                    title,
+                                    link,
                                     children,
                                     setIsDrawerOpen,
                                 }}
@@ -34,13 +34,13 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
                             />
                         );
                     })}
-                    {setIsDrawerOpen && menuData[0].children.map(({ label, href, children }, index) => {
+                    {setIsDrawerOpen && menuData[0].children.map(({ title, link, children }, index) => {
                         return (
                             <MenuItem
                                 key={index}
                                 {...{
-                                    label,
-                                    href,
+                                    title,
+                                    link,
                                     children,
                                     setIsDrawerOpen,
                                 }}

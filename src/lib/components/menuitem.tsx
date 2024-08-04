@@ -3,10 +3,11 @@ import Container from './menucontainer';
 import DropdownContent from './dropdowncontent';
 import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import { useState } from 'react';
+import { translate } from '../app';
 
 const MenuItem = ({
-    label,
-    href,
+    title,
+    link,
     children,
     onToggle,
     active,
@@ -23,12 +24,12 @@ const MenuItem = ({
             <div className="nav_item_content py-4">
                 <NavLink
                     to={location.pathname}
-                    className={({ isActive }) => (isActive ? 'active no-underline' : 'no-underline')}
+                    className={({ isActive }) => (isActive ? 'active no-underline font-bold' : 'no-underline font-bold')}
                     onClick={onToggle}
                     onMouseEnter={() => setVisible(true)}
                     onFocus={() => setVisible(true)}
                 >
-                    {setIsDrawerOpen && <h2>{label}</h2>}{!setIsDrawerOpen && (<>{label}<DownOutlined className='pl-2' /></>)}
+                    {setIsDrawerOpen && <h2>{translate(title)}</h2>}{!setIsDrawerOpen && (<>{translate(title)}<DownOutlined className='pl-2' /></>)}
                 </NavLink>
                 {children && (
                     <button
@@ -49,7 +50,7 @@ const MenuItem = ({
             {children && (
                 <div
                     role="menu"
-                    className={`dropdown ${active ? 'h-auto' : 'h-0 overflow-hidden md:h-auto'
+                    className={`dropdown border-b border-b-[#DDDDDD] border-solid border-t-0 border-r-0 border-l-0 ${active ? 'h-auto' : 'h-0 overflow-hidden md:h-auto'
                         } ${visible ? 'visible' : 'md:invisible'}`}
                     onMouseLeave={handleClick}
                 >
