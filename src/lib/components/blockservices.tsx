@@ -451,9 +451,10 @@ export function BlockServices(props: { block: BlockServices }) {
             </div>
 
             {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {state.filteredServices.length} of {services.length} </div>}
-            <div>
-              {view === 0 ? <Maps services={state.filteredServices} /> : <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
-            </div>
+              <div>
+                {view === 0 && <Maps services={state.filteredServices} />}
+                {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
+              </div>
           </div>
         </div>}
       {!servicesLoaded && (
