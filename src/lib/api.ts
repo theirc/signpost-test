@@ -1,5 +1,5 @@
-// const serverurl = "http://localhost:3000"
-const serverurl = "https://directus-qa-support.azurewebsites.net"
+// export const serverurl = "http://localhost:3000"
+export const serverurl = "https://directus-qa-support.azurewebsites.net"
 
 
 export const api = {
@@ -45,7 +45,7 @@ export const api = {
 
       let a: ChatMessage = {}
 
-      const breq = { ...req, id: b.value, history: b.history }
+      const breq = { ...req, id: b.value, history: b.history, audio: req.audio }
 
       let options = {
         method: "POST",
@@ -66,8 +66,8 @@ export const api = {
       a.id = b.value
       a.botName = b.label
       a.question = req.message
+      a.audio = req.audio
       answer.messages.push(a)
-
     }
 
     return answer

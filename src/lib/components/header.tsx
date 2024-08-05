@@ -118,12 +118,12 @@ export function Header() {
       }
     });
   }
-
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
       if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return null;
       const title = item.title ? translate(item.title) : "";
       let content;
+  
       if (item.type === 'about') {
         content = (
           <a href="#about-section" className="no-underline">
@@ -143,6 +143,7 @@ export function Header() {
           </Link>
         );
       }
+      
       return <li key={title} className="mx-8">{content}</li>;
     });
   };
@@ -166,24 +167,22 @@ export function Header() {
             {/* Mobile Hamburger menu */}
             <MenuOutlined />
           </button>
-  
           <div className="hidden md:flex items-center justify-between w-full">
             <ul className="flex list-none space-x-2">
               {renderMenuItems(app.page.header.menu)}
               <li><MegaMenu menuData={menu} /></li>
             </ul>
-           {/* Mobile navigation drawer */}
+            {/* Mobile navigation drawer */}
             <div className="md:hidden absolute">
-          <MobileNavigationDrawer
-            menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
-          />
-          {isDrawerOpen && (
-            <div className="p-4">
-              <LanguageDropdown isMobile={true} />
+              <MobileNavigationDrawer
+                menuData={menu} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
+              />
+              {isDrawerOpen && (
+                <div className="p-4">
+                  <LanguageDropdown isMobile={true} />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-            
             <ul className="flex items-center list-none">
               <li className="mr-2">
                 <Link to="/signpostbot" className="no-underline">Bot</Link>

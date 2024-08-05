@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { FaThumbsDown, FaThumbsUp, FaFlag } from "react-icons/fa"
 import { useMultiState } from ".."
-import { api } from "../api"
+import { api, serverurl } from "../api"
 import Markdown from "react-markdown"
 const { TextArea } = Input
 
@@ -50,7 +50,13 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
       <div className="flex">
         {/* {!m.isContacts && <div className="">{m.message}</div>} */}
         {!m.isContacts && <div className="">
-          <Markdown>
+          <Markdown components={{
+            a: ({ node, ...props }) => (
+              <a {...props} target="_blank" rel="noopener noreferrer">
+                {props.children}
+              </a>
+            ),
+          }}>
             {m.message}
           </Markdown>
         </div>}
@@ -256,6 +262,7 @@ function BotScoreModal(props: {
       clientmetrics: data.clientmetrics,
       safetymetric: data.safetymetric,
       traumametrics: data.traumametrics,
+      logid: `https://directus-qa.azurewebsites.net/admin/content/botlogs/${m.logID}`
     })
   }
 

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import React from 'react';
 import { Dropdown, Space } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import { languages } from "../locale";
+import { langauages } from "../locale";
 import { app } from "../app";
 
 interface LanguageDropdownProps {
@@ -30,8 +30,8 @@ export function LanguageDropdown({ isMobile = false }: LanguageDropdownProps) {
     app.update();  
   };
 
-  const getLanguageName = (localeCode: keyof typeof languages) => {
-    return languages[localeCode]?.name || localeCode;
+  const getLanguageName = (localeCode: keyof typeof langauages) => {
+    return langauages[localeCode]?.name || localeCode;
   };
 
   const items = supportedLocales.map((localeCode) => ({

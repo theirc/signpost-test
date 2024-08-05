@@ -31,6 +31,8 @@ declare global {
     needsRebuild?: boolean
     rebuild?(): void
     question?: string
+    logID?: number
+    audio?: any
   }
 
   type AI_SCORES = "pass" | "fail" | "redflag"
@@ -54,6 +56,7 @@ declare global {
     traumametrics?: number
     clientmetrics?: number
     safetymetric?: string
+    logid?: string
   }
 
 

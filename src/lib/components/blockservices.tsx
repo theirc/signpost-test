@@ -49,7 +49,7 @@ export function BlockServices(props: { block: BlockServices }) {
 
   const services = Object.values(app.data.services).filter(
     (x) => x.status !== "archived"
-  );
+  )
   ReactGA.initialize("G-H6VQ1Y6EX9");
 
   const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider))
@@ -296,7 +296,7 @@ export function BlockServices(props: { block: BlockServices }) {
   };
 
   useEffect(() => {
-    let filteredData = [...services];
+    let filteredData = [...services]
 
     Object.entries(selectedFilterValues).forEach(([key, value]) => {
       if (
@@ -326,13 +326,13 @@ export function BlockServices(props: { block: BlockServices }) {
     });
 
     setState({ filteredServices: filteredData });
-  }, [selectedFilterValues, app.data.services]);
+  }, [selectedFilterValues, app.data.services, servicesLoaded]);
 
   useEffect(() => {
     setState({
       filteredServices: services,
     });
-  }, [app.data.services])
+  }, [app.data.services, servicesLoaded])
 
   useEffect(() => {
     const categoriesParams = searchParams.getAll('serviceTypes')
@@ -362,7 +362,7 @@ export function BlockServices(props: { block: BlockServices }) {
       populations: populationsParams.length ? populationsParams : [-1],
       accessibility: accessibilityParams.length ? accessibilityParams : [-1],
     });
-  }, []);
+  }, [servicesLoaded]);
 
   const isRTL = languages[app.locale]?.rtl;
 

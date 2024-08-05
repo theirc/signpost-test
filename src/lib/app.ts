@@ -101,8 +101,11 @@ export const app = {
   },
 
   async initialize() {
+
     if (appPrivateData.boot) return
     appPrivateData.boot = true
+
+    console.log("Initializing...")
 
     const storageCountry = localStorage.getItem("country")
     const storageCategories = localStorage.getItem("categories")
@@ -115,68 +118,67 @@ export const app = {
 
     if (cats) app.data.categories = cats
 
-    const sc = await app.db.loadLocalServices()
-    await app.db.loadLocalProviders()
-    await app.db.loadZendeskContent()
-    app.state.servicesLoaded = sc > 0
-
-
     if (c) {
+      console.log("country exists")
       loadCountry(c)
       app.state.status = "ready"
       app.update()
     }
 
-    setTimeout(async () => {
+    const sc = await app.db.loadLocalServices()
+    await app.db.loadLocalProviders()
+    await app.db.loadZendeskContent()
+    app.state.servicesLoaded = sc > 0
 
-      let serverCountry: Country = await api.getCountry(app.country)
+    // setTimeout(async () => {
 
-      if (serverCountry) {
 
-        if (!c) {
+    let serverCountry: Country = await api.getCountry(app.country)
+
+    if (serverCountry) {
+      if (!c) {
+        localStorage.setItem("country", JSON.stringify(serverCountry))
+        loadCountry(serverCountry)
+      } else {
+        if (!isEqual(c, serverCountry)) {
           localStorage.setItem("country", JSON.stringify(serverCountry))
           loadCountry(serverCountry)
-
+          console.log("Country Updated.")
         } else {
-          if (!isEqual(c, serverCountry)) {
-            localStorage.setItem("country", JSON.stringify(serverCountry))
-            loadCountry(serverCountry)
-            console.log("Country Updated.")
-          } else {
-            console.log("Country Unchanged")
-          }
+          console.log("Country Unchanged")
         }
-
-        app.state.status = "ready"
-        app.update()
-
-        await app.db.updateProviders()
-        await app.db.updateServices()
-        await app.db.updateArticles()
-
-        app.state.servicesLoaded = true
-        app.update()
-
-        console.log("Updating Categories...")
-        cats = await api.getCategories()
-
-        if (cats) {
-          app.data.categories = cats
-          localStorage.setItem("categories", JSON.stringify(cats))
-          if (!isEqual(cats, app.data.categories)) {
-            app.update()
-            console.log("Categories Updated.")
-          } else {
-            console.log("Categories Unchanged")
-          }
-        }
-
-        app.update()
-        console.log("Initialized")
-
       }
 
-    }, 1)
+      app.state.status = "ready"
+      app.update()
+
+      await app.db.updateProviders()
+      await app.db.updateServices()
+      await app.db.updateArticles()
+
+      app.state.servicesLoaded = true
+      app.update()
+
+      console.log("Updating Categories...")
+      cats = await api.getCategories()
+
+      if (cats) {
+        app.data.categories = cats
+        localStorage.setItem("categories", JSON.stringify(cats))
+        if (!isEqual(cats, app.data.categories)) {
+          app.update()
+          console.log("Categories Updated.")
+        } else {
+          console.log("Categories Unchanged")
+        }
+      }
+
+      app.update()
+      console.log("Initialized")
+
+    }
+
+    // }, 1)
 
   },
 
