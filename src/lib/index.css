@@ -90,31 +90,6 @@ box-sizing: border-box;
 .service {
   font-family: inherit !important;
 }
-.flex-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.875rem; /* mt-3.5 */
-  margin-bottom: 0.875rem; /* mb-3.5 */
-}
-
-.button-group {
-  display: flex;
-}
-
-.text-info {
-  text-align: right;
-}
-
-/* RTL specific adjustments */
-[dir="rtl"] .flex-container {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .text-info {
-  text-align: left;
-}
-
 .service span {
   font-family: inherit !important;
 }
@@ -586,7 +561,6 @@ box-sizing: border-box;
   width: 20px;
   height: 20px;
 }
-
 .map-buttons-container .ant-radio-button-wrapper {
   background: #80C2C2;
   border: none;
@@ -594,7 +568,6 @@ box-sizing: border-box;
   padding: 4px 1rem;
   box-sizing: content-box;
 }
-
 .map-buttons-container .ant-radio-button-wrapper.ant-radio-button-wrapper-checked {
   background: #609292;
   border: none;
@@ -604,7 +577,12 @@ box-sizing: border-box;
 :where(.css-dev-only-do-not-override-1xg9z9n).ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before {
   background-color: #609292;
 }
-
+.button-reverse {
+  transform: scaleX(-1);
+}
+.content-normalize{
+  transform: scaleX(-1);
+}
 .category-filter-button {
   background-color: #80C2C2;
   font-weight: 600;
