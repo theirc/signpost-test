@@ -1,5 +1,6 @@
 import { app, translate } from "../app";
 import { Loader } from "./loader";
+import { languages } from "../locale"
 import { Maps } from "./map";
 import { Button, Radio, Space } from "antd";
 import { ServicesList } from "./services";
@@ -11,6 +12,8 @@ import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 import { Blocks } from "./blocks";
 import { translations } from "../../translations";
+import { Container } from "./container"
+
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -361,107 +364,104 @@ export function BlockServices(props: { block: BlockServices }) {
     });
   }, [servicesLoaded]);
 
+  const isRTL = languages[app.locale]?.rtl;
+
 
   return (
-    <div className="transition-all md:py-16 w-full flex items-center md:justify-center" style={styles}>
-      <div className="sm:w-full px-8 lg:w-4/5 w-screen">
-        <div className="text-4xl">{translate(props.block.title)}</div>
-        <div className="text-2xl mt-4 opacity-50">
-          {translate(props.block.subtitle)}
-        </div>
-        {servicesLoaded &&
-          <div className="flex flex-col md:flex-row gap-10">
-            {filterOpen && (
-              <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
-                <div className="flex ml-auto mb-5">
-                  <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
-                </div>
-                <div className="flex flex-col md:flex-row gap-10 flex-grow">
-                  <div className="md:flex flex-col flex-1">
-                    <h2>{translate(translations.filters)}</h2>
-                    <TreeSelect
-                      label={translate(translations.service_types)}
-                      items={combineCategoriesWithSubcategories(categories, subcategories)}
-                      className="w-full overflow-hidden service-types-select"
-                      onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-                      onClear={() => filterProviders(services)}
-                      onDropdownVisibleChange={handleDropdownVisibleChange}
-                      value={selectedFilterValues.serviceTypes}
-                      defaultValue={[-1]}
-                    />
-                    <TreeSelect
-                      label={translate(translations.provider)}
-                      items={mapProviderData(state.filteredProviders)}
-                      className="w-full overflow-hidden"
-                      onChange={(value) => handleSelectedFilters(value, filterType.provider)}
-                      value={selectedFilterValues.provider}
-                      defaultValue={[-1]}
-                    />
-                  </div>
+    <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
+      <div className={`text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
+      <div className={`text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
+      {servicesLoaded &&
+        <div className="flex flex-col md:flex-row gap-10">
+          {filterOpen && (
+            <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
+              <div className="flex ml-auto mb-5">
+                <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
+              </div>
+              <div className="flex flex-col md:flex-row gap-10 flex-grow">
+                <div className="md:flex flex-col flex-1">
+                  <h2>{translate(translations.filters)}</h2>
+                  <TreeSelect
+                    label={translate(translations.service_types)}
+                    items={combineCategoriesWithSubcategories(categories, subcategories)}
+                    className="w-full overflow-hidden service-types-select"
+                    onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+                    onClear={() => filterProviders(services)}
+                    onDropdownVisibleChange={handleDropdownVisibleChange}
+                    value={selectedFilterValues.serviceTypes}
+                    defaultValue={[-1]}
+                  />
+                  <TreeSelect
+                    label={translate(translations.provider)}
+                    items={mapProviderData(state.filteredProviders)}
+                    className="w-full overflow-hidden"
+                    onChange={(value) => handleSelectedFilters(value, filterType.provider)}
+                    value={selectedFilterValues.provider}
+                    defaultValue={[-1]}
+                  />
                 </div>
               </div>
-            )}
-            <div className="hidden md:flex flex-col flex-1">
-            <h2>{translate(translations.filters)}</h2>
-              <TreeSelect
-                label={translate(translations.serviceTypes)}
-                items={combineCategoriesWithSubcategories(categories, subcategories)}
-                className="w-full overflow-hidden service-types-select"
-                onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-                onClear={() => filterProviders(services)}
-                onDropdownVisibleChange={handleDropdownVisibleChange}
-                value={selectedFilterValues.serviceTypes}
-                defaultValue={[-1]}
-              />
-              <TreeSelect
-                label={translate(translations.provider)}
-                items={mapProviderData(state.filteredProviders)}
-                className="w-full overflow-hidden"
-                onChange={(value) => handleSelectedFilters(value, filterType.provider)}
-                value={selectedFilterValues.provider}
-                defaultValue={[-1]}
-              />
             </div>
-            <div className="grow-[4] flex-1 relative">
-              <div className="flex mt-3.5 mb-3.5 items-center">
-                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
-                {view === 0 && <span className="hidden md:inline">{translate(translations.showing)} {state.filteredServices.length} {translate(translations.of)} {services.length} </span>}
-                <Space className="flex ml-auto z-10">
-                  <Radio.Group value={view} onChange={(e) => setView(e.target.value)} className="flex map-buttons-container">
-                    <Radio.Button value={0}>
-                      <div className="flex gap-2 items-center">
-                        <span className="material-symbols-outlined material-icons">
-                          map
-                        </span>
-                        {translate(translations.map)}
-                      </div>
-                    </Radio.Button>
-                    <Radio.Button value={1}>
-                      <div className="flex gap-2 items-center">
-                        <span className="material-symbols-outlined material-icons">
-                          list_alt
-                        </span>
-                        {translate(translations.list)}
-                      </div>
-                    </Radio.Button>
-                  </Radio.Group>
-                </Space>
-              </div>
+          )}
+          <div className="hidden md:flex flex-col flex-1">
+            <h2>{translate(translations.filters)}</h2>
+            <TreeSelect
+              label={translate(translations.serviceTypes)}
+              items={combineCategoriesWithSubcategories(categories, subcategories)}
+              className="w-full overflow-hidden service-types-select"
+              onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+              onClear={() => filterProviders(services)}
+              onDropdownVisibleChange={handleDropdownVisibleChange}
+              value={selectedFilterValues.serviceTypes}
+              defaultValue={[-1]}
+            />
+            <TreeSelect
+              label={translate(translations.provider)}
+              items={mapProviderData(state.filteredProviders)}
+              className="w-full overflow-hidden"
+              onChange={(value) => handleSelectedFilters(value, filterType.provider)}
+              value={selectedFilterValues.provider}
+              defaultValue={[-1]}
+            />
+          </div>
+          <div className="grow-[4] flex-1 relative">
+            <div className="flex mt-3.5 mb-3.5 items-center">
+              <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
+              {view === 0 && <span className="hidden md:inline show-info">{translate(translations.showing)} {state.filteredServices.length} {translate(translations.of)} {services.length} </span>}
+              <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`} >
+                <Radio.Group value={view} onChange={(e) => setView(e.target.value)}  className={`flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
+                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                      <span className="material-symbols-outlined material-icons">
+                        map
+                      </span>
+                      {translate(translations.map)}
+                    </div>
+                  </Radio.Button>
+                  <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
+                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                      <span className="material-symbols-outlined material-icons">
+                        list_alt
+                      </span>
+                      {translate(translations.list)}
+                    </div>
+                  </Radio.Button>
+                </Radio.Group>
+              </Space>
+            </div>
 
-              {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {state.filteredServices.length} of {services.length} </div>}
+            {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {state.filteredServices.length} of {services.length} </div>}
               <div>
                 {view === 0 && <Maps services={state.filteredServices} />}
                 {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
               </div>
-            </div>
-          </div>}
-        {!servicesLoaded && (
-          <div className="flex items-center justify-center my-16">
-            <Loader size={72} width={12} className="bg-gray-500" />
           </div>
-        )
-        }
-      </div>
-    </div >
-  );
+        </div>}
+      {!servicesLoaded && (
+        <div className="flex items-center justify-center my-16">
+          <Loader size={72} width={12} className="bg-gray-500" />
+        </div>
+      )}
+  </Container>
+);
 }

@@ -16,60 +16,70 @@ export function Footer() {
       const title = item.title ? translate(item.title) : "";
       if (item.type === "services") {
         return (
-          <a href="#service-map" key={title} className="text-white hover:text-gray-800 mr-8 mb-5">
-            {title}
-          </a>
+          <li key={title} className="mb-3 sm:mb-0 sm:mr-6">
+            <a href="#service-map" className="hover:text-gray-800">
+              {title}
+            </a>
+          </li>
         );
       } else {
         return (
-          <Link key={title} to={item.link || "#"} className="text-white hover:text-gray-800 mr-8 mb-5">
-            {title}
-          </Link>
+          <li key={title} className="mb-3 sm:mb-0 sm:mr-6">
+            <Link to={item.link || "#"} className="hover:text-gray-800">
+              {title}
+            </Link>
+          </li>
         );
       }
     });
   };
 
+
   const renderCategories = () => {
     return Object.values(categories).map((category) => (
-      <Link 
-        key={category.id} 
-        to={`/categories/${category.id}`} 
-        className="text-white hover:text-gray-800 mr-8 mb-5"
-      >
+      <li key={category.id} className="mb-3 sm:mb-0 sm:mr-6">
+      <Link to={`/categories/${category.id}`} className="hover:text-gray-800">
         {translate(category.name)}
       </Link>
-    ));
-  };
+    </li>
+  ));
+};
 
   return (
-    <footer className="border-t border-gray-200 py-4">
-    <Container block={app.page.footer}>
-      <div className="flex flex-col md:flex-row md:items-center mb-4">
-        <Link to="/" className="mb-14 pr-10 md:mb-0 md:mr-20">
-          <img src={app.logo} height={30} alt="Logo" />
-        </Link>
-        <div className="flex flex-col md:flex-row md:flex-wrap">
-          <Link to="/" className="text-white mr-8 mb-5">{translate(translations.home)}</Link>
-          {renderCategories()}
-          {renderFooterItems(footerMenu)}
+    <footer className="footer-black-text py-4">
+      <Container block={app.page.footer}>
+        <div className="flex flex-col space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <Link to="/" className="mb-6 sm:mb-0">
+              <img src={app.logo} alt="Logo" className="h-10 mb-2" />
+            </Link>
+            <ul className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 list-none">
+              <li className="mb-3 sm:mb-0 sm:mr-6">
+                <Link to="/" className="hover:text-gray-800">
+                  {translate(translations.home)}
+                </Link>
+              </li>
+              {renderCategories()}
+              {renderFooterItems(footerMenu)}
+            </ul>
           </div>
-        </div>
-        <div className="flex flex-wrap mt-8">
+          <ul className="flex flex-wrap list-none">
             {app.page.footer?.footerlinks.map((link) => (
-              <Link 
-                key={`${link.title}-${link.url}`} 
-                to={link.url} 
-                className="mr-4 mb-4 text-white"
-              >
-                {translate(link.title)}
-              </Link>
+              <li key={`${link.title}-${link.url}`} className="mr-4 mb-3">
+                <Link 
+                  to={link.url} 
+                  className="hover:text-gray-800"
+                >
+                  {translate(link.title)}
+                </Link>
+              </li>
             ))}
-          </div>
-          <div className="text-white">
+          </ul>
+          <div>
             {translate(app.page.footer.text)}
           </div>
-    </Container>
+        </div>
+      </Container>
     </footer>
   );
 }

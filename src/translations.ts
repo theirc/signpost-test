@@ -98,7 +98,7 @@ export const translations: {[key:string]: LocalizableContent} = {
         "so-SO": "Dhammaan bixiyeyaasha"
       },
       searchForInformation: {
-        "en-US": "Search For Information",
+        "en-US": "Search for Information",
         "ar-SA": "ابحث عن معلومات",
         "fr-FR": "Recherche d'informations",
         "es-ES": "Buscar información",
@@ -161,10 +161,10 @@ export const translations: {[key:string]: LocalizableContent} = {
         "so-SO": "Noocyada adeegga"
       },
       of: {
-        "en-US": "Of",
+        "en-US": "of",
         "ar-SA": "ل",
-        "fr-FR": "De",
-        "es-ES": "De",
+        "fr-FR": "de",
+        "es-ES": "de",
         "so-SO": "ka"
       },
       services: {

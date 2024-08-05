@@ -1,10 +1,10 @@
 
 declare global {
   type Langauages = {
-    [P in keyof typeof langauages]?: LocaleDeclaration
+    [P in keyof typeof languages]?: LocaleDeclaration
   }
   type LocalizableText = {
-    [P in keyof typeof langauages]?: string
+    [P in keyof typeof languages]?: string
   }
   type LocalizableContent = string | LocalizableText
 }
@@ -13,7 +13,8 @@ interface LocaleDeclaration {
   rtl?: boolean
   name: string
 }
-export const langauages = {
+
+export const languages = {
   "ar-SA": {
     rtl: true,
     name: "Arabic"
@@ -93,5 +94,3 @@ export const langauages = {
     name: "Urdu"
   }
 }
-
-

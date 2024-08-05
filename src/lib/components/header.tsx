@@ -2,6 +2,7 @@ import { CSSProperties, useRef, useState } from "react";
 import { app, translate } from "../app";
 import { translations } from "../../translations";
 import { Link } from "react-router-dom";
+import { languages } from "../locale";
 import MegaMenu from './megamenu';
 import LanguageDropdown from "./languagedropdown";
 import MobileNavigationDrawer from './mobilenavigationdrawer';
@@ -125,19 +126,19 @@ export function Header() {
   
       if (item.type === 'about') {
         content = (
-          <a href="#about-section" className="text-white no-underline">
+          <a href="#about-section" className="no-underline">
             {title}
           </a>
         );
       } else if (item.type === "services") {
         content = (
-          <a href="#service-map" className="text-white no-underline">
+          <a href="#service-map" className="no-underline">
             {title}
           </a>
         );
       } else {
         content = (
-          <Link to={item.link || "#"} className="text-white no-underline">
+          <Link to={item.link || "#"} className="no-underline">
             {title}
           </Link>
         );
@@ -146,15 +147,16 @@ export function Header() {
       return <li key={title} className="mx-8">{content}</li>;
     });
   };
+ 
+  const isRTL = languages[app.locale]?.rtl;
 
   return (
-    <nav className="flex items-center justify-between px-4 sm:px-6 lg:px-[106px] py-4 tracking-wide" style={styles}>
+    <nav className={`flex items-center justify-between px-4 sm:px-6 lg:px-[106px] py-4 tracking-wide ${isRTL ? "rtl" : ""}`} style={styles}>
       <div>
         <Link to="/">
           <img src={app.logo} height={40} alt="Logo" />
         </Link>
       </div>
-      <Container>
         <div className="toolbar">
           <button
             ref={drawerButtonRef}
@@ -183,18 +185,17 @@ export function Header() {
             </div>
             <ul className="flex items-center list-none">
               <li className="mr-2">
-                <Link to="/signpostbot" className="text-white no-underline">Bot</Link>
+                <Link to="/signpostbot" className="no-underline">Bot</Link>
               </li>
               <li className="mr-2">
-                <Link to='/search-results' className="text-white no-underline">{translate(translations.search)}</Link>
+                <Link to='/search-results' className="no-underline">{translate(translations.search)}</Link>
               </li>
               <li>
                 <LanguageDropdown isMobile={false} />
               </li>
             </ul>
           </div>
-        </div>     
-      </Container>
+        </div>      
     </nav>
   );
 }
