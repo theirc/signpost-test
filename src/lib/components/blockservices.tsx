@@ -1,5 +1,6 @@
 import { app, translate } from "../app";
 import { Loader } from "./loader";
+import { languages } from "../locale"
 import { Maps } from "./map";
 import { Button, Radio, Space } from "antd";
 import { ServicesList } from "./services";
@@ -11,6 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { Blocks } from "./blocks";
 import { translations } from "../../translations";
 import { RadioChangeEvent } from "antd/lib";
+import { Container } from "./container"
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -31,6 +33,8 @@ export function BlockServices(props: { block: BlockServices }) {
   const styles = Blocks.buildStyle(block)
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
+  
+  const isRTL = languages[app.locale]?.rtl;
 
   const {
     state: { servicesLoaded },
@@ -341,14 +345,10 @@ export function BlockServices(props: { block: BlockServices }) {
     setView(value)
   }
 
-
   return (
-    <div className="transition-all md:py-16 w-full flex items-center md:justify-center" style={styles}>
-      <div className="sm:w-full px-8 lg:w-4/5 w-screen">
-        <div id="service-map" className="text-4xl">{translate(props.block.title)}</div>
-        <div className="text-2xl mt-4 opacity-50">
-          {translate(props.block.subtitle)}
-        </div>
+    <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
+      <div className={`text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
+      <div className={`text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
         {servicesLoaded &&
           <div className="flex flex-col md:flex-row gap-10">
             {filterOpen && (
@@ -402,18 +402,18 @@ export function BlockServices(props: { block: BlockServices }) {
               <div className="flex mt-3.5 mb-3.5 items-center">
                 <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
                 {view === 0 && <span className="hidden md:inline">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
-                <Space className="flex ml-auto z-10">
-                  <Radio.Group value={view} onChange={handleViewChange} className="flex map-buttons-container">
-                    <Radio.Button value={0}>
-                      <div className="flex gap-2 items-center">
+                <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
+                  <Radio.Group value={view} onChange={handleViewChange} className={`flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
+                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
                         <span className="material-symbols-outlined material-icons">
                           map
                         </span>
                         {translate(translations.map)}
                       </div>
                     </Radio.Button>
-                    <Radio.Button value={1}>
-                      <div className="flex gap-2 items-center">
+                    <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
+                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
                         <span className="material-symbols-outlined material-icons">
                           list_alt
                         </span>
@@ -429,15 +429,13 @@ export function BlockServices(props: { block: BlockServices }) {
                 {view === 0 && <Maps services={filteredServices} />}
                 {view === 1 && <ServicesList serviceCount={services?.length} services={filteredServices} />}
               </div>
-            </div>
-          </div>}
-        {!servicesLoaded && (
-          <div className="flex items-center justify-center my-16">
-            <Loader size={72} width={12} className="bg-gray-500" />
           </div>
-        )
-        }
-      </div>
-    </div >
-  );
+        </div>}
+      {!servicesLoaded && (
+        <div className="flex items-center justify-center my-16">
+          <Loader size={72} width={12} className="bg-gray-500" />
+        </div>
+      )}
+  </Container>
+);
 }

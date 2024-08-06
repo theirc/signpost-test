@@ -2,6 +2,7 @@ import { CSSProperties, useRef, useState } from "react";
 import { app, translate } from "../app";
 import { translations } from "../../translations";
 import { Link } from "react-router-dom";
+import { languages } from "../locale";
 import MegaMenu from './megamenu';
 import LanguageDropdown from "./languagedropdown";
 import MobileNavigationDrawer from './mobilenavigationdrawer';
@@ -101,10 +102,12 @@ export function Header() {
       return <li key={title} className="mx-2">{content}</li>;
     });
   };
+ 
+  const isRTL = languages[app.locale]?.rtl;
 
   return (
     <div className="flex items-center justify-between tracking-wide justify-center" style={styles}>
-      <nav className="sm:w-full px-8 lg:w-4/5 w-screen py-4 flex" style={styles}>
+      <nav className={`sm:w-full px-8 lg:w-4/5 w-screen py-4 flex ${isRTL ? "rtl" : ""}`} style={styles}>
         <div>
           <Link to="/">
             <img src={app.logo} height={40} alt="Logo" />

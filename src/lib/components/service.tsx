@@ -160,12 +160,13 @@ export function Service() {
   );
 
   return (
-    <div className="py-16 text-black text-base bg-white overflow-y-auto flex justify-center w-screen mb-10">
-      <div className="text-black mx-auto max-w-[90rem] px-4 sm:px-8 pb-20">
+    <div className="overflow-y-auto">
+      <Container block={app.page.footer} className="py-16 text-base bg-white w-full justify-center">
+      <div className=" container mx-auto sm:px-8 lg:px-16 w-full">
         <Breadcrumb separator=">" items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services)}]}  />
-        <h1 className="font-inter text-3xl whitespace-normal">{title}</h1>
-        <h2 className="font-inter text-2xl font-normal">{providerName}</h2>
-        <h3 className="font-inter text-gray-600 text-sm font-normal leading-[1.375rem]">
+        <h1 className="text-3xl whitespace-normal">{title}</h1>
+        <h2 className="text-2xl font-normal">{providerName}</h2>
+        <h3 className="text-gray-600 text-sm font-normal leading-[1.375rem]">
           {translate(translations.lastUpdated)} {formatDate(service.date_updated)}
         </h3>
 
@@ -188,7 +189,8 @@ export function Service() {
             <div className="space-y-2">{hourDisplay}</div>
           </div>
         )}
-      </div>
+       </div>
+       </Container>
     </div>
   );
 }
