@@ -182,7 +182,7 @@ function Service(props: { service: Service }) {
               contactDetails: info.contact_details,
             });
             return (
-              <div className="truncate flex items-center gap-2">
+              <div className="truncate flex items-center gap-2" key={`${info.contact_details}-${info.channel}`}>
                 <Text>{icon}</Text>
                 <Link className="truncate text-black" >{contactDetail}</Link>
               </div>

@@ -262,21 +262,19 @@ export function Maps({ services }: mapProps) {
   useEffect(() => {
     const map = mapRef.current?.getMap()
 
-    if (map && bounds) {
-      map.once("load", () => {
-        map.fitBounds(bounds, {
-          padding: 20,
-        })
+    if (map && Object.keys(bounds).length) {
+      map.fitBounds(bounds, {
+        padding: 20,
       })
     }
-  }, [bounds, services])
+  }, [bounds, services, isMapReady])
 
   const handleViewportChange = () => {
     updateClusters()
   }
 
   return (
-    <div id="service-map" className="service-map">
+    <div className="service-map">
       <div className="w-full h-[650px] md:h-[80vh] bg-indigo-200 map-container rounded-2xl">
         <Map
           mapboxAccessToken="pk.eyJ1Ijoic2lnbnBvc3RnbG9iYWwiLCJhIjoiY2w1dmVwYnVxMDkxbjNjbW96NXkybHZyZCJ9.cYedHq58Ur6PKXkEnwYCzQ"
