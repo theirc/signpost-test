@@ -30,7 +30,7 @@ function Cards({
   const isRTL = languages[app.locale]?.rtl;
 
   const cardContent = (
-    <Card hoverable className="home-page-card my-1 text-center bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
+    <Card hoverable className="home-page-card bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
       <Card.Meta
         avatar={<span className="material-icons card-icon">{iconName}</span>}
         title={
