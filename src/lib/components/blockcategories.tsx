@@ -10,11 +10,10 @@ export function BlockCategories(props: { block: BlockCategories }) {
 
   return (
     <Container block={block}>
-      <div className="text-4xl">{translate(block.title)} </div>
-      <div className="text-2xl mt-4 text-gray-500">
+      <h1 className="text-4xl font-normal pt-0 mt-0">{translate(block.title)} </h1>
+      <h2 className="text-2xl font-medium">
         {translate(block.subtitle)}{" "}
-      </div>
-      <section>
+      </h2>
         <HomePageCards
           cards={categories?.map((category) => {
             return {
@@ -25,7 +24,6 @@ export function BlockCategories(props: { block: BlockCategories }) {
             };
           })}
         />
-      </section>
     </Container>
   );
 }

@@ -17,15 +17,15 @@ export function Footer() {
       if (item.type === "services") {
         return (
           <li key={title} className="mb-3 sm:mb-0 sm:mr-6">
-            <a href="#service-map" className="hover:text-gray-800">
+            <a href="#service-map" className="hover:text-gray-800 text-sm">
               {title}
             </a>
           </li>
         );
       } else {
         return (
-          <li key={title} className="mb-3 sm:mb-0 sm:mr-6">
-            <Link to={item.link || "#"} className="hover:text-gray-800">
+          <li key={title} className="mb-3 sm:mb-0 sm:mr-6 text-sm">
+            <Link to={item.link || "#"} className="hover:text-gray-800 text-sm">
               {title}
             </Link>
           </li>
@@ -38,7 +38,7 @@ export function Footer() {
   const renderCategories = () => {
     return Object.values(categories).map((category) => (
       <li key={category.id} className="mb-3 sm:mb-0 sm:mr-6">
-      <Link to={`/categories/${category.id}`} className="hover:text-gray-800">
+      <Link to={`/categories/${category.id}`} className="hover:text-gray-800 text-sm">
         {translate(category.name)}
       </Link>
     </li>
@@ -55,7 +55,7 @@ export function Footer() {
             </Link>
             <ul className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 list-none">
               <li className="mb-3 sm:mb-0 sm:mr-6">
-                <Link to="/" className="hover:text-gray-800">
+                <Link to="/" className="hover:text-gray-800 text-sm">
                   {translate(translations.home)}
                 </Link>
               </li>
@@ -68,16 +68,16 @@ export function Footer() {
               <li key={`${link.title}-${link.url}`} className="mr-4 mb-3">
                 <Link 
                   to={link.url} 
-                  className="hover:text-gray-800"
+                  className="hover:text-gray-800 text-sm font-hairline"
                 >
                   {translate(link.title)}
                 </Link>
               </li>
             ))}
           </ul>
-          <div>
+          <p className="text-base font-light">
             {translate(app.page.footer.text)}
-          </div>
+          </p>
         </div>
       </Container>
     </footer>

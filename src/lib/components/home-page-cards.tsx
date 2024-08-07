@@ -25,11 +25,11 @@ function Cards({
   target,
 }: CardsProps) {
   const cardContent = (
-    <Card hoverable className="home-page-card">
+    <Card hoverable className="home-page-card my-1 text-center bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
       <Card.Meta
         avatar={<span className="material-icons card-icon">{iconName}</span>}
         title={
-          <Title level={4} className="card-title">
+          <Title level={1} className="card-title">
             {title}
           </Title>
         }

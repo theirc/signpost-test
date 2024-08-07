@@ -21,32 +21,37 @@ export function BlockSections(props: { block: BlockSections }) {
 
   return (
     <Container block={block}>
-      <div className="text-4xl">{translate(block.title)} </div>
-      <div className="text-2xl mt-4 text-gray-500">
+      <h1 className="text-4xl font-normal mt-0 pt-0">{translate(block.title)} </h1>
+      <h2 className="text-2xl font-medium">
         {translate(block.subtitle)}
-      </div>
-      <section>
+      </h2>
         {Object.keys(groupedByCategory).map((categoryId) => (
           <>
-            <div className="text-2xl mt-4">
+            <h3 className="my-10 font-normal">
               {translate(categories.find((x) => x.id === +categoryId).name)}
-            </div>
+            </h3>
 
             <HomePageCards
               cards={groupedByCategory[categoryId]?.map(
                 (section: ZendeskSection) => {
-                  return {
-                    title: translate(section.name),
-                    subtitle: translate(section.description),
-                    iconName: "",
-                    href: `/sections/${section.id}`,
+                  const path =
+                  !categoryId
+                  ? "/categories/"
+                  : section.id === 0
+                  ? `/categories/${categoryId}/`
+                  : `/categories/${categoryId}/${section.id}/`;
+
+              return {
+                title: translate(section.name),
+                subtitle: translate(section.description),
+                iconName: "",
+                href: path, 
                   };
                 }
               )}
             />
           </>
         ))}
-      </section>
     </Container>
   );
 }
