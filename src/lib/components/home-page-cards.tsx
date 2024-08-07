@@ -1,6 +1,9 @@
 import { Card, Typography } from "antd";
+import { languages } from "../locale"
+import { app, translate } from "../app";
 import React from "react";
 import { Link } from "react-router-dom";
+
 
 const { Title, Text } = Typography;
 
@@ -24,6 +27,8 @@ function Cards({
   href,
   target,
 }: CardsProps) {
+  const isRTL = languages[app.locale]?.rtl;
+
   const cardContent = (
     <Card hoverable className="home-page-card my-1 text-center bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
       <Card.Meta
@@ -33,7 +38,7 @@ function Cards({
             {title}
           </Title>
         }
-        description={<Text type="secondary">{subtitle}</Text>}
+        description={<Text type="secondary" className={isRTL ? 'text-right' : 'text-left'}>{subtitle}</Text>}
       />
     </Card>
   );

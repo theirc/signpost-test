@@ -173,5 +173,19 @@ export const translations: {[key:string]: LocalizableContent} = {
         "fr-FR": "Services",
         "es-ES": "Servicios",
         "so-SO": "Adeegyada"
+      },
+      backToTop: {
+        "en-US": "Back to Top",
+        "ar-SA": "العودة إلى الأعلى",
+        "fr-FR": "Retour au sommet",
+        "es-ES": "Volver arriba",
+        "so-SO": "Kor ugu noqo",
+      },
+      openingHours: {
+        "en-US": "Opening Hours",
+        "ar-SA": "ساعات العمل",
+        "fr-FR": "Horaires d'ouvertures",
+        "es-ES": "Horario de apertura",
+        "so-SO": "saacadaha furitaanka",
       }
     }

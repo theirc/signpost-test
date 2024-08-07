@@ -1,6 +1,7 @@
 import { app, translate } from "../app";
 import { Container } from "./container";
 import HomePageCards from "./home-page-cards";
+import { languages } from "../locale"
 
 export function BlockSections(props: { block: BlockSections }) {
   const { block } = props;
@@ -19,15 +20,17 @@ export function BlockSections(props: { block: BlockSections }) {
     groupedByCategory[categoryId].push(item);
   });
 
+  const isRTL = languages[app.locale]?.rtl;
+
   return (
     <Container block={block}>
-      <h1 className="text-4xl font-normal mt-0 pt-0">{translate(block.title)} </h1>
-      <h2 className="text-2xl font-medium">
+      <h1 className={isRTL ? 'text-right' : 'text-left'}>{translate(block.title)} </h1>
+      <h2 className={isRTL ? 'text-right' : 'text-left'}>
         {translate(block.subtitle)}
       </h2>
         {Object.keys(groupedByCategory).map((categoryId) => (
           <>
-            <h3 className="my-10 font-normal">
+            <h3 className={`my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
               {translate(categories.find((x) => x.id === +categoryId).name)}
             </h3>
 
