@@ -106,8 +106,8 @@ export function Header() {
   const isRTL = languages[app.locale]?.rtl;
 
   return (
-    <div className="flex items-center justify-between tracking-wide justify-center" style={styles}>
-      <nav className={`sm:w-full px-8 lg:w-4/5 w-screen py-4 flex ${isRTL ? "rtl" : ""}`} style={styles}>
+    <div className="flex items-center tracking-wide justify-center" style={styles}>
+      <nav className={`w-full px-4 sm:px-6 py-4 md:px-8 max-w-7xl mx-auto flex ${isRTL ? "rtl" : ""}`} style={styles}>
         <div>
           <Link to="/">
             <img src={app.logo} height={40} alt="Logo" />
