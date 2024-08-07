@@ -49,9 +49,6 @@ export default {
       textAlign: {
         'left': 'left',
       },
-      corePlugins: {
-        textDecoration: false,
-      }
     },
   },
   plugins: [],
