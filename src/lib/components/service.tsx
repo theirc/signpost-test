@@ -16,6 +16,7 @@ import {
 import { useParams } from "react-router-dom";
 import { app, translate } from "../app";
 import { translations } from "../../translations";
+import { languages } from "../locale";
 import React from "react";
 import { Footer } from ".";
 import { Breadcrumb } from "antd";
@@ -90,8 +91,10 @@ export function getContactDetailLink(info: {
 
 
 function ContactDetails({ contactInfo }) {
+  const isRTL = languages[app.locale]?.rtl;
+
   return (
-    <div className="flex flex-wrap items-start gap-6">
+    <div className={`flex flex-wrap items-start gap-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
       {contactInfo.map((info, index) => {
         if (!info.contact_details) return null;
 
@@ -102,14 +105,16 @@ function ContactDetails({ contactInfo }) {
         });
 
         return (
-          <div key={index} className="flex w-full md:w-auto md:flex-row items-center space-x-3">
+          <div key={index} className={`flex w-full md:w-auto md:flex-row items-center ${
+            isRTL ? 'space-x-reverse space-x-3 flex-row-reverse' : 'space-x-3'
+          }`}>
             {/* Icon and Channel Name */}
-            <div className="text-md text-gray-600">
+            <div className="text-md text-gray-600 m-1">
               {Icon}
               {/* <h1 className="text-sm font-bold">{info.channel}</h1> */}
             </div>
             {/* Contact Details */}
-            <div className="text-sm">{ContactDetail}</div>
+            <div className={`text-sm ${isRTL ? 'text-right' : 'text-left'}`}>{ContactDetail}</div>
           </div>
         );
       })}
@@ -119,8 +124,8 @@ function ContactDetails({ contactInfo }) {
 
 export function Service() {
   let { id } = useParams();
+  const isRTL = languages[app.locale]?.rtl;
 
-  //ToDo: update the content in useEffect
   const service: Service = app.data.services[id];
   console.log(service, "Service Detail:");
 
@@ -160,37 +165,35 @@ export function Service() {
   );
 
   return (
-    <div className="overflow-y-auto">
-      <Container block={app.page.footer} className="py-16 text-base bg-white w-full justify-center">
-      <div className=" container mx-auto sm:px-8 lg:px-16 w-full">
-        <Breadcrumb separator=">" items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services)}]}  />
-        <h1 className="text-3xl whitespace-normal">{title}</h1>
-        <h2 className="text-2xl font-normal">{providerName}</h2>
-        <h3 className="text-gray-600 text-sm font-normal leading-[1.375rem]">
+    <div className={`text-black overflow-y-auto $isRTL ? 'rtl' : ''}`}>
+      <Container className={`text-black $isRTL ? 'rtl' : ''}`}>
+        <Breadcrumb separator=">" className={isRTL ? 'flex flex-row-reverse' : ''} items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services)}]}  />
+        <h1 className={isRTL ? 'text-right' : 'text-left'}>{title}</h1>
+        <h2 className={isRTL ? 'text-right' : 'text-left'}>{providerName}</h2>
+        <h3 className={`text-gray-600 text-sm font-normal leading-[1.375rem] ${isRTL ? 'text-right' : ''}`}>
           {translate(translations.lastUpdated)} {formatDate(service.date_updated)}
         </h3>
 
-        <div className="bg-neutral-container-bg rounded p-6 mb-4">
+        <div className={`bg-neutral-container-bg rounded p-6 mb-4 ${isRTL ? 'text-right' : ''}`}>
           <div dangerouslySetInnerHTML={{ __html: description }} />
         </div>
 
         {location && (
-          <div className="bg-neutral-container-bg rounded p-6 mb-4">
+          <div className={`bg-neutral-container-bg rounded p-6 mb-4 ${isRTL ? 'text-right' : ''}`}>
             <h4 className="mb-4 mt-6">{location}</h4>
           </div>
         )}
 
-        <div className="bg-neutral-container-bg rounded p-6 mb-4">
+        <div className={`bg-neutral-container-bg rounded p-6 mb-4 ${isRTL ? 'text-right' : ''}`}>
           <ContactDetails contactInfo={service.contactInfo} />
         </div>
         {hourDisplay && hourDisplay.length > 0 && (
-          <div className="bg-neutral-container-bg rounded p-6 mb-4">
-            <h2 className="mb-2">{translate('Opening hours')}</h2>
+          <div className={`bg-neutral-container-bg rounded p-6 mb-4 ${isRTL ? 'text-right' : ''}`}>
+            <h2 className="mb-2">{translate(translations.openingHours)}</h2>
             <div className="space-y-2">{hourDisplay}</div>
           </div>
         )}
+           </Container>
        </div>
-       </Container>
-    </div>
   );
 }

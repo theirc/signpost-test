@@ -1,6 +1,7 @@
 import { app, translate } from "../app";
 import { Container } from "./container";
 import HomePageCards from "./home-page-cards";
+import { languages } from "../locale"
 
 export function BlockSections(props: { block: BlockSections }) {
   const { block } = props;
@@ -19,34 +20,41 @@ export function BlockSections(props: { block: BlockSections }) {
     groupedByCategory[categoryId].push(item);
   });
 
+  const isRTL = languages[app.locale]?.rtl;
+
   return (
     <Container block={block}>
-      <div className="text-4xl">{translate(block.title)} </div>
-      <div className="text-2xl mt-4 text-gray-500">
+      <h1 className={isRTL ? 'text-right' : 'text-left'}>{translate(block.title)} </h1>
+      <h2 className={isRTL ? 'text-right' : 'text-left'}>
         {translate(block.subtitle)}
-      </div>
-      <section>
+      </h2>
         {Object.keys(groupedByCategory).map((categoryId) => (
           <>
-            <div className="text-2xl mt-4">
+            <h3 className={`my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
               {translate(categories.find((x) => x.id === +categoryId).name)}
-            </div>
+            </h3>
 
             <HomePageCards
               cards={groupedByCategory[categoryId]?.map(
                 (section: ZendeskSection) => {
-                  return {
-                    title: translate(section.name),
-                    subtitle: translate(section.description),
-                    iconName: "",
-                    href: `/sections/${section.id}`,
+                  const path =
+                  !categoryId
+                  ? "/categories/"
+                  : section.id === 0
+                  ? `/categories/${categoryId}/`
+                  : `/categories/${categoryId}/${section.id}/`;
+
+              return {
+                title: translate(section.name),
+                subtitle: translate(section.description),
+                iconName: "",
+                href: path, 
                   };
                 }
               )}
             />
           </>
         ))}
-      </section>
     </Container>
   );
 }

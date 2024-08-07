@@ -1,5 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { app, translate } from "../app";
+import { languages } from "../locale";
 import { ReadTime } from "./readingtime";
 import { translations } from "../../translations";
 import { Button, Input, Pagination, Tag, Card, Empty, Breadcrumb } from "antd";
@@ -23,6 +24,7 @@ const allOption = {
 export function Categories() {
   const navigate = useNavigate();
   const { id, sectionid } = useParams();
+  const isRTL = languages[app.locale]?.rtl;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,7 +132,7 @@ export function Categories() {
   }, [app.data.zendesk.categories]);
 
   return (
-    <div className="flex overflow-y-scroll flex-col">
+    <div className={`flex overflow-y-scroll flex-col ${isRTL ? 'rtl' : ''}`}>
       <div className="text-white flex justify-center bg-[#163020]">
         <div className="sm:w-full px-4 py-20 md:w-4/5 flex flex-col lg:flex-row lg:gap-16">
           <div className="flex-1 mb-20 lg:mb-0 text-6xl font-bold">Resource Center</div>
@@ -152,7 +154,7 @@ export function Categories() {
         <div className="sm:w-full px-4 md:w-4/5 h-fit">
         <Breadcrumb className="mb-8" separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title:translate(translations.resourceCenter)}]} />
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px] mb-4">
-            <h1> {translate(translations.category)}</h1>
+            <h1 className={isRTL ? 'text-right' : 'text-left'}> {translate(translations.category)}</h1>
             <div className="flex gap-4 flex-wrap">
               {categories.map(category => (
                 <Button
@@ -166,7 +168,7 @@ export function Categories() {
             </div>
           </div>
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
-            <h1>{translate(translations.topic)}</h1>
+            <h1 className={isRTL ? 'text-right' : 'text-left'}>{translate(translations.topic)}</h1>
             <div className="flex gap-4 flex-wrap">
               {categorySections.map(section => (
                 <Button
@@ -184,13 +186,13 @@ export function Categories() {
               placeholder={translate(translations.searchForInformation)}
               allowClear
               size="large"
-              className="lg:w-2/5"
+              className={`lg:w-2/5 ${isRTL ? 'rtl-search' : ''}`}
               onSearch={(value) => setSearchTerm(value)}
             />
           </div>
           <div className={`${paginatedArticles.length ? 'grid lg:grid-cols-4 md:grid-cols-3 gap-6 mt-10' : ''}`}>
             {paginatedArticles?.length ? paginatedArticles.map(article => (
-              <Card key={article.id} className="articles-card">
+              <Card key={article.id} className={`articles-card ${isRTL ? 'rtl-card' : ''}`}>
                 <Tag color="green">{translate(categories.find(category => category.id === article.category)?.name)}</Tag>
                 <ReadTime content={translate(article.description)}/>
                 <h3>{translate(article.name)}</h3>

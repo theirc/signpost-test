@@ -2,7 +2,9 @@ import { useParams } from "react-router-dom"
 import { app, translate } from "../app"
 import ShareButton from "./sharebutton"
 import TextReader from "./textreader"
+import { Container } from "./container"
 import { translations } from "../../translations";
+import { languages } from "../locale";
 import {
   FaFacebook,
   FaTelegram,
@@ -21,6 +23,7 @@ import { Breadcrumb } from "antd";
 export function Article() {
   const refScrollUp = useRef<HTMLDivElement>(null);
   let { id } = useParams()
+  const isRTL = languages[app.locale]?.rtl;
 
   const a: ZendeskArticle = app.data.zendesk.articles[id]
   const channels = app.page.content.find(x => x.type === 'channels') as BlockChannels
@@ -46,26 +49,35 @@ export function Article() {
     }
   }
 
-  return <div className="overflow-y-auto">
-    <div className='py-16 w-full flex justify-center text-black bg-white h-auto' ref={refScrollUp}>
-      <div className="sm:w-full px-8 lg:w-4/5 w-screen">
+  return <div className={`overflow-y-auto ${isRTL ? 'rtl' : ''}`}>
+    <Container className="text-black bg-white">
+      <div className={`flex flex-col ${isRTL ? 'text-right' : ''}`} ref={refScrollUp}>
       <Breadcrumb separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title: <a href={`/categories/${category.id}`}>{translate(category.name)}</a>}, {title: <a href={`/categories/${category.id}/${section.id}`}>{translate(section.name)}</a>}, {title: translate(a.name)}]} />
-        <div className="flex flex-col">
+        <div>
           <h1>{title}</h1>
           <p>{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-          <div className="flex items-center">
+          <div className={`flex items-center mt-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <TextReader />
             <ShareButton />
           </div>
         </div>
-        {a && <div className="article mt-10" dangerouslySetInnerHTML={{ __html: body }} />}
-        <div className="flex">
-          <a onClick={handleScrollToTop} className="text-black ml-auto underline cursor-pointer">
-            <strong>Back to top <ArrowUpOutlined /></strong>
-          </a>
-        </div>
+        {a && <div className={`article mt-10 ${isRTL ? 'text-right' : 'text-left'}`}dangerouslySetInnerHTML={{ __html: body }} />}
+        <div className="relative w-full mt-8">
+    <a 
+      onClick={handleScrollToTop} 
+      className={`
+        absolute underline cursor-pointer
+        ${isRTL ? 'left-0' : 'right-0'}
+      `}
+    >
+      <strong className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+        {translate(translations.backToTop)} 
+        <ArrowUpOutlined className={isRTL ? 'mr-2' : 'ml-2'} />
+      </strong>
+    </a>
+  </div>
       </div>
-    </div>
+      </Container>
     <div className="py-16 w-full md:flex justify-center text-black bg-[#FFF8F7] h-auto hidden">
       <div className="sm:w-full px-8 lg:w-4/5 w-screen">
         {channels.title && (

@@ -2,4 +2,9 @@ body {
   background-color: black;
   color: white;
   font-family: 'Helvetica', sans-serif;
+  text-decoration: none;
+}
+
+a {
+  text-decoration: none;
 }

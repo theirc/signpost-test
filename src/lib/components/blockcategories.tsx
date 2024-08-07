@@ -1,6 +1,7 @@
 import { app, translate } from "../app";
 import { Container } from "./container";
 import HomePageCards from "./home-page-cards";
+import { languages } from "../locale"
 
 export function BlockCategories(props: { block: BlockCategories }) {
   const { block } = props;
@@ -8,13 +9,14 @@ export function BlockCategories(props: { block: BlockCategories }) {
     app.data.zendesk.categories
   );
 
+  const isRTL = languages[app.locale]?.rtl;
+
   return (
-    <Container block={block}>
-      <div className="text-4xl">{translate(block.title)} </div>
-      <div className="text-2xl mt-4 text-gray-500">
-        {translate(block.subtitle)}{" "}
-      </div>
-      <section>
+    <Container block={block} className={isRTL ? 'rtl' : ''}>
+      <h1 className={isRTL ? 'text-right' : 'text-left'}>{translate(block.title)} </h1>
+      <h2 className={isRTL ? 'text-right' : 'text-left'}>
+        {translate(block.subtitle)}
+      </h2>
         <HomePageCards
           cards={categories?.map((category) => {
             return {
@@ -25,7 +27,6 @@ export function BlockCategories(props: { block: BlockCategories }) {
             };
           })}
         />
-      </section>
     </Container>
   );
 }
