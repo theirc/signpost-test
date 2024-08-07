@@ -5,7 +5,7 @@ import { useAnimateOnScroll } from "./useAnimateOnScroll"
 
 export function BlockText(props: { block: BlockText }) {
 
-  useAnimateOnScroll(".fade-up", "animate__fadeInUp")
+  useAnimateOnScroll(".fade-up", "animate__fadeInUp", "1.5s");  
 
   const { block } = props
   return <Container block={block}>

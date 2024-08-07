@@ -47,7 +47,21 @@ html {
 -moz-osx-font-smoothing: grayscale;
 box-sizing: border-box;
 }
-
+.animate__animated {
+  --animate-duration: 2s;
+}
+.animate__fadeInUp {
+  --animate-duration: 2s;
+}
+.fade-up-0 {
+  --animate-delay: 0s;
+}
+.fade-up-1 {
+  --animate-delay: 0.2s;
+}
+.fade-up-2 {
+  --animate-delay: 0.4s;
+}
 .rtl {
   direction: rtl;
   text-align: var(--text-align);

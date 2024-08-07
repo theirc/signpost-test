@@ -13,6 +13,7 @@ import { useSearchParams } from "react-router-dom";
 import { Blocks } from "./blocks";
 import { translations } from "../../translations";
 import { Container } from "./container"
+import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
 
 enum filterType {
@@ -34,6 +35,11 @@ export function BlockServices(props: { block: BlockServices }) {
   const styles = Blocks.buildStyle(block)
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
+  
+  useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
+  useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
+  useAnimateOnScroll(".fade-up-2", "animate__fadeInUp", "1.5s");
+  useAnimateOnScroll(".fade-up-3", "animate__fadeInUp", "1.5s");
 
   const {
     state: { servicesLoaded },
@@ -369,8 +375,8 @@ export function BlockServices(props: { block: BlockServices }) {
 
   return (
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
-      <div className={`text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
-      <div className={`text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
+      <div className={`fade-up-0 text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
+      <div className={`fade-up-1 text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
       {servicesLoaded &&
         <div className="flex flex-col md:flex-row gap-10">
           {filterOpen && (
@@ -380,7 +386,7 @@ export function BlockServices(props: { block: BlockServices }) {
               </div>
               <div className="flex flex-col md:flex-row gap-10 flex-grow">
                 <div className="md:flex flex-col flex-1">
-                  <h2>{translate(translations.filters)}</h2>
+                  <h2 className="">{translate(translations.filters)}</h2>
                   <TreeSelect
                     label={translate(translations.service_types)}
                     items={combineCategoriesWithSubcategories(categories, subcategories)}

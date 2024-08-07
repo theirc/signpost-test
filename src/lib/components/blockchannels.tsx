@@ -1,5 +1,6 @@
 import { translate } from "../app";
 import { Container } from "./container";
+import { useAnimateOnScroll } from "./useAnimateOnScroll";
 import {
   FaFacebook,
   FaTelegram,
@@ -14,7 +15,11 @@ import {
 export function BlockChannels(props: { block: BlockChannels }) {
   const { block } = props;
 
-  const socialIconClass = "flex flex-col items-center p-4 gap-4 flex-1 rounded-lg bg-white shadow-lg"
+  useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
+  useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
+  useAnimateOnScroll(".fade-up-2", "animate__fadeInUp", "1.5s");
+
+  const socialIconClass = "fade-up-2 flex flex-col items-center p-4 gap-4 flex-1 rounded-lg bg-white shadow-lg"
   const iconStyle = "text-gray-700 hover:text-gray-900 w-8 h-8 md:w-10 md:h-10"
   const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base no-underline"
 
@@ -23,10 +28,10 @@ export function BlockChannels(props: { block: BlockChannels }) {
     <Container block={block}>
       <div className="flex flex-col items-center">
       {block.title && (
-        <h2 className="text-xl md:text-2xl font-bold mb-4">{translate(block.title)}</h2>
+        <h2 className="fade-up-0 text-xl md:text-2xl font-bold mb-4">{translate(block.title)}</h2>
       )}
       {block.subtitle && (
-        <p className="text-base md:text-lg mb-10 max-w-2xl text-center">{translate(block.subtitle)}</p>
+        <p className="fade-up-1 text-base md:text-lg mb-10 max-w-2xl text-center">{translate(block.subtitle)}</p>
       )}
       <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-4 w-full max-w-sm md:max-w-full mx-auto md:justify-between md:p-4">
       {block.fb_link && (
