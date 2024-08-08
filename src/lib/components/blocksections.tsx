@@ -14,7 +14,7 @@ export function BlockSections(props: { block: BlockSections }) {
   useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
   useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
   useAnimateOnScroll(".fade-up-2", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-3", "animate__fadeInUp", "5s");
+  useAnimateOnScroll(".fade-up-3", "animate__fadeInUp", "1.5s");
 
   const groupedByCategory = {};
 
@@ -34,10 +34,10 @@ export function BlockSections(props: { block: BlockSections }) {
     <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`}>
       {translate(block.subtitle)}
     </h2>
-    <div className="fade-up-2">
+    <div>
       {Object.keys(groupedByCategory).map((categoryId) => (
         <div key={categoryId}>
-          <h3 className={`my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+          <h3 className={`fade-up-2 my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
             {translate(categories.find((x) => x.id === +categoryId)?.name)}
           </h3>
           <div className="fade-up-3">
