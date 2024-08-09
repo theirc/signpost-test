@@ -188,15 +188,6 @@ export const translations: {[key:string]: LocalizableContent} = {
         "es-ES": "Horario de apertura",
         "so-SO": "saacadaha furitaanka",
       },
-      all: {
-        "ar-SA": "الجميع",
-        "fa-FA": "همه",
-        "fr-FR": "Tout",
-        "uk-UK": "все",
-        "ur-UR": "تمام",
-        "en-US": "All",
-        "so-SO": "Dhammaan",
-      },
       essential: {
         "en-US": "Essential Guides and How-Tos",
         "ar-SA":" أدلة أساسية وكيفية القيام بها",

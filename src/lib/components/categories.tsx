@@ -11,8 +11,15 @@ import Fuse from "fuse.js";
 const { Search } = Input;
 
 const allOption = {
-  description: {}, id: 0,
-   name: translations.all,
+  description: {}, id: 0, name: {
+    "ar-SA": "الجميع",
+    "fa-FA": "همه",
+    "fr-FR": "Tout",
+    "uk-UK": "все",
+    "ur-UR": "تمام",
+    "en-US": "All",
+    "so-SO": "Dhammaan",
+  }
 };
 
 export function Categories() {
