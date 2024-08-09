@@ -11,8 +11,6 @@
   --flex-direction: row;
   --margin-start: 0;
   --margin-end: auto;
-  --animate-duration: 800ms;
-  --animate-delay: 0.9s;
 }
 #root {
   height: 100%;
@@ -49,10 +47,10 @@ box-sizing: border-box;
 }
 .animate__animated,
 [data-animation] {
-  --animate-duration: 1s; 
+  --animate-duration: 0.5s; 
 }
 .animate__fadeInUp {
-  --animate-duration: 1s; 
+  --animate-duration: 0.5s; 
 }
 .fade-up-0 {
   --animate-delay: 0s;
