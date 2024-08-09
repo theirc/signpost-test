@@ -49,10 +49,10 @@ box-sizing: border-box;
 }
 .animate__animated,
 [data-animation] {
-  --animate-duration: 1.5s; 
+  --animate-duration: 1s; 
 }
 .animate__fadeInUp {
-  --animate-duration: 1.5s; 
+  --animate-duration: 1s; 
 }
 .fade-up-0 {
   --animate-delay: 0s;
@@ -786,7 +786,6 @@ nav .toolbar a {
 }
 .mission-heading  {
   padding-bottom: 16px; 
-  animation-duration: 1s;
 }
 .block-text {
   font-size: 2rem;
