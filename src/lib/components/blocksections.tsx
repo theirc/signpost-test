@@ -6,15 +6,13 @@ import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
 export function BlockSections(props: { block: BlockSections }) {
   const { block } = props;
+  useAnimateOnScroll();
+
   const sections: ZendeskSection[] = Object.values(app.data.zendesk.sections);
   const categories: ZendeskCategory[] = Object.values(
     app.data.zendesk.categories
   );
 
-  useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-2", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-3", "animate__fadeInUp", "1.5s");
 
   const groupedByCategory = {};
 
@@ -30,17 +28,17 @@ export function BlockSections(props: { block: BlockSections }) {
 
   return (
     <Container block={block}>
-    <h1 className={`fade-up-0 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(block.title)}</h1>
-    <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+    <h1 className={`fade-up-0 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(block.title)}</h1>
+    <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">
       {translate(block.subtitle)}
     </h2>
     <div>
       {Object.keys(groupedByCategory).map((categoryId) => (
         <div key={categoryId}>
-          <h3 className={`fade-up-2 my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`}>
+          <h3 className={`fade-up-2 my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">
             {translate(categories.find((x) => x.id === +categoryId)?.name)}
           </h3>
-          <div className="fade-up-3">
+          <div className="fade-up-3" data-animation="animate__fadeInUp">
             <HomePageCards
               cards={groupedByCategory[categoryId]?.map(
                 (section: ZendeskSection) => {

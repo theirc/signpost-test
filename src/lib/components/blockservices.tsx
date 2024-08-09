@@ -35,11 +35,7 @@ export function BlockServices(props: { block: BlockServices }) {
   const styles = Blocks.buildStyle(block)
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
-  
-  useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-2", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-3", "animate__fadeInUp", "1.5s");
+  useAnimateOnScroll();
 
   const {
     state: { servicesLoaded },
@@ -375,8 +371,8 @@ export function BlockServices(props: { block: BlockServices }) {
 
   return (
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
-      <div className={`fade-up-0 text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
-      <div className={`fade-up-1 text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
+      <div className={`fade-up-0 text-4xl ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</div>
+      <div className={`fade-up-1 text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.subtitle)}</div>
       {servicesLoaded &&
         <div className="flex flex-col md:flex-row gap-10">
           {filterOpen && (
@@ -386,7 +382,11 @@ export function BlockServices(props: { block: BlockServices }) {
               </div>
               <div className="flex flex-col md:flex-row gap-10 flex-grow">
                 <div className="md:flex flex-col flex-1">
-                  <h2 className="">{translate(translations.filters)}</h2>
+                  <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+                  <div 
+                    className="fade-up-3"
+                    data-animation="animate__fadeInUp"
+                  >
                   <TreeSelect
                     label={translate(translations.service_types)}
                     items={combineCategoriesWithSubcategories(categories, subcategories)}
@@ -397,6 +397,11 @@ export function BlockServices(props: { block: BlockServices }) {
                     value={selectedFilterValues.serviceTypes}
                     defaultValue={[-1]}
                   />
+                  </div>
+                  <div 
+                    className="fade-up-3"
+                    data-animation="animate__fadeInUp"
+                  >
                   <TreeSelect
                     label={translate(translations.provider)}
                     items={mapProviderData(state.filteredProviders)}
@@ -405,12 +410,18 @@ export function BlockServices(props: { block: BlockServices }) {
                     value={selectedFilterValues.provider}
                     defaultValue={[-1]}
                   />
+                  </div>
                 </div>
               </div>
             </div>
           )}
           <div className="hidden md:flex flex-col flex-1">
-            <h2>{translate(translations.filters)}</h2>
+            <h2 className="fade-up-2"
+              data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+            <div 
+              className="fade-up-3"
+              data-animation="animate__fadeInUp"
+            >
             <TreeSelect
               label={translate(translations.serviceTypes)}
               items={combineCategoriesWithSubcategories(categories, subcategories)}
@@ -421,6 +432,11 @@ export function BlockServices(props: { block: BlockServices }) {
               value={selectedFilterValues.serviceTypes}
               defaultValue={[-1]}
             />
+            </div>
+            <div 
+              className="fade-up-4"
+              data-animation="animate__fadeInUp"
+            >
             <TreeSelect
               label={translate(translations.provider)}
               items={mapProviderData(state.filteredProviders)}
@@ -429,6 +445,7 @@ export function BlockServices(props: { block: BlockServices }) {
               value={selectedFilterValues.provider}
               defaultValue={[-1]}
             />
+            </div>
           </div>
           <div className="grow-[4] flex-1 relative">
             <div className="flex mt-3.5 mb-3.5 items-center">
@@ -457,7 +474,8 @@ export function BlockServices(props: { block: BlockServices }) {
             </div>
 
             {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {state.filteredServices.length} of {services.length} </div>}
-              <div>
+              <div className="fade-up-5"
+              data-animation="animate__fadeInUp">
                 {view === 0 && <Maps services={state.filteredServices} />}
                 {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
               </div>

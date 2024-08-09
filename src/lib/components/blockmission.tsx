@@ -11,9 +11,8 @@ import { useAnimateOnScroll } from "./useAnimateOnScroll";
 export function BlockMission(props: { block: BlockMission}) {
   const { block } = props
   const navigate = useNavigate();
+  useAnimateOnScroll();
 
-  useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
 
   const handleSearch = (value: string) => {
       navigate(`/search-results?query=${value}`);
@@ -21,15 +20,16 @@ export function BlockMission(props: { block: BlockMission}) {
 
   return <Container block={block}>
     <div className="py-12 px-4 max-w-4xl mx-auto container-center">
-    <h1 className="fade-up-0 text-3xl md:text-4xl text-center max-w-xl mission-heading">{translate(block.title)}</h1>
+    <h1 className="fade-up-0 text-3xl md:text-4xl text-center max-w-xl mission-heading"           data-animation="animate__fadeInUp">{translate(block.title)}</h1>
    
  
-   <Search
+    <Search
    placeholder= {translate(translations.searchForInformation)}
    enterButton={<Button type="primary" icon={<SearchOutlined />}>{translate(translations.search)}</Button>}
    size="large"
    onSearch={handleSearch}
    className="fade-up-1 header-search-input"
+   data-animation="animate__fadeInUp"
    />
    </div>
   </Container>

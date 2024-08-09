@@ -47,11 +47,12 @@ html {
 -moz-osx-font-smoothing: grayscale;
 box-sizing: border-box;
 }
-.animate__animated {
-  --animate-duration: 2s;
+.animate__animated,
+[data-animation] {
+  --animate-duration: 1.5s; 
 }
 .animate__fadeInUp {
-  --animate-duration: 2s;
+  --animate-duration: 1.5s; 
 }
 .fade-up-0 {
   --animate-delay: 0s;
@@ -62,6 +63,46 @@ box-sizing: border-box;
 .fade-up-2 {
   --animate-delay: 0.4s;
 }
+.fade-up-3 {
+  --animate-delay: 0.6s; 
+}
+.fade-up-4 {
+  --animate-delay: 0.8s
+}
+.fade-up-5 {
+  --animate-delay: 10s
+}
+[data-animation][data-delay="0s"],
+.fade-up-0[data-animation] {
+  --animate-delay: 0s;
+}
+
+[data-animation][data-delay="0.2s"],
+.fade-up-1[data-animation] {
+  --animate-delay: 0.2s;
+}
+
+[data-animation][data-delay="0.4s"],
+.fade-up-2[data-animation] {
+  --animate-delay: 0.4s;
+}
+
+[data-animation][data-delay="0.6s"],
+.fade-up-3[data-animation] {
+  --animate-delay: 0.6s;
+}
+[data-animation][data-delay="0.8s"],
+.fade-up-4[data-animation] {
+  --animate-delay: 0.8s;
+}
+[data-animation][data-delay="10s"],
+.fade-up-5[data-animation] {
+  --animate-delay: 10s;
+}
+[data-animation][data-duration] {
+  --animate-duration: attr(data-duration);
+}
+
 .rtl {
   direction: rtl;
   text-align: var(--text-align);
@@ -760,4 +801,53 @@ nav .toolbar a {
     padding: 1rem ;
   }
   
+}
+.social-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+  flex: 1;
+  border-radius: 0.5rem;
+  box-shadow: 2px 2px 2px 3px rgba(0, 0, 0, 0.1);
+}
+
+.social-icon-svg {
+  color: #4a5568;
+  width: 2rem;
+  height: 2rem;
+}
+
+.social-icon-svg:hover {
+  color: #1a202c;
+}
+
+@media (min-width: 768px) {
+  .social-icon-svg {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+.social-icon-text {
+  margin-top: 0.25rem;
+  color: #2d3748;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+@media (min-width: 768px) {
+  .social-icon-text {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .social-icon-text {
+    font-size: 1rem;
+  }
 }

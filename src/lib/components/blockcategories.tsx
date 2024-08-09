@@ -6,23 +6,24 @@ import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
 export function BlockCategories(props: { block: BlockCategories }) {
   const { block } = props;
+  useAnimateOnScroll();
+
   const categories: ZendeskCategory[] = Object.values(
     app.data.zendesk.categories
   );
-
-  useAnimateOnScroll(".fade-up-0", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-1", "animate__fadeInUp", "1.5s");
-  useAnimateOnScroll(".fade-up-2", "animate__fadeInUp", "1.5s");
   
   const isRTL = languages[app.locale]?.rtl;
 
   return (
     <Container block={block} className={isRTL ? 'rtl' : ''}>
-      <h1 className={`fade-up-0 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(block.title)} </h1>
-      <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+      <h1 className={`fade-up-0 ${isRTL ? 'text-right' : 'text-left'}`}
+      data-animation="animate__fadeInUp">{translate(block.title)} </h1>
+      <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`}
+      data-animation="animate__fadeInUp">
         {translate(block.subtitle)}
       </h2>
-      <div className="fade-up-2">
+      <div className="fade-up-2"
+      data-animation="animate__fadeInUp">
         <HomePageCards
           cards={categories?.map((category) => {
             return {
