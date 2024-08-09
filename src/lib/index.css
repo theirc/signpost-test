@@ -47,10 +47,10 @@ box-sizing: border-box;
 }
 .animate__animated,
 [data-animation] {
-  --animate-duration: 0.5s; 
+  --animate-duration: 0.25s; 
 }
 .animate__fadeInUp {
-  --animate-duration: 0.5s; 
+  --animate-duration: 0.25s; 
 }
 .fade-up-0 {
   --animate-delay: 0s;
