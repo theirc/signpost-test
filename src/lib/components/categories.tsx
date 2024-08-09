@@ -11,14 +11,8 @@ import Fuse from "fuse.js";
 const { Search } = Input;
 
 const allOption = {
-  description: {}, id: 0, name: {
-    "ar-SA": "All",
-    "fa-FA": "All",
-    "fr-FR": "All",
-    "uk-UK": "All",
-    "ur-UR": "All",
-    "en-US": "All"
-  }
+  description: {}, id: 0,
+   name: translations.all,
 };
 
 export function Categories() {
@@ -135,17 +129,17 @@ export function Categories() {
     <div className={`flex overflow-y-scroll flex-col ${isRTL ? 'rtl' : ''}`}>
       <div className="text-white flex justify-center bg-[#163020]">
         <div className="sm:w-full px-4 py-20 md:w-4/5 flex flex-col lg:flex-row lg:gap-16">
-          <div className="flex-1 mb-20 lg:mb-0 text-6xl font-bold">Resource Center</div>
+          <div className="flex-1 mb-20 lg:mb-0 text-6xl font-bold">{translate(translations.resourceCenter)}</div>
           <div className="flex flex-1 gap-4 lg:gap-x-8 flex-col lg:flex-row">
             <div>
               <span className="material-icons text-5xl">lightbulb</span>
-              <p className="text-xl font-bold">Essential Guides and How-Tos</p>
-              <p className="text-base">Access our carefully curated guides and how-to articles that provide practical advice and step-by-step instructions tailored for refugees navigating life in Greece</p>
+              <p className="text-xl font-bold">{translate(translations.essential)}</p>
+              <p className="text-base">{translate(translations.access)}</p>
             </div>
             <div>
               <span className="material-icons text-5xl">list_alt</span>
-              <p className="text-xl font-bold">Comprehensive Information</p>
-              <p className="text-base">Find comprehensive resources on various categories and topics, helping refugees in Greece understand their legal status and access crucial support services.</p>
+              <p className="text-xl font-bold">{translate(translations.comprehensive)}</p>
+              <p className="text-base">{translate(translations.findComprehensive)}</p>
             </div>
           </div>
         </div>

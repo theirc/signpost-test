@@ -187,5 +187,42 @@ export const translations: {[key:string]: LocalizableContent} = {
         "fr-FR": "Horaires d'ouvertures",
         "es-ES": "Horario de apertura",
         "so-SO": "saacadaha furitaanka",
-      }
+      },
+      all: {
+        "ar-SA": "الجميع",
+        "fa-FA": "همه",
+        "fr-FR": "Tout",
+        "uk-UK": "все",
+        "ur-UR": "تمام",
+        "en-US": "All",
+        "so-SO": "Dhammaan",
+      },
+      essential: {
+        "en-US": "Essential Guides and How-Tos",
+        "ar-SA":" أدلة أساسية وكيفية القيام بها",
+        "fr-FR": "Guides essentiels et tutoriels",
+        "es-ES": "Guías esenciales y tutoriales",
+        "so-SO": "Tilmaamaha Muhiimka ah iyo Sida Loo Sameeyo"
+       },
+       access: {
+        "en-US": "Access our carefully curated guides and how-to articles that provide practical advice and step-by-step instructions tailored for refugees navigating life in Greece",
+        "ar-SA": " احصل على أدلتنا المختارة بعناية والمقالات الإرشادية التي تقدم نصائح عملية وتعليمات خطوة بخطوة مصممة للاجئين الذين يتنقلون في الحياة في اليونان.",
+        "fr-FR": "Accédez à nos guides soigneusement sélectionnés et à nos articles pratiques qui offrent des conseils pratiques et des instructions étape par étape adaptées aux réfugiés naviguant dans la vie en Grèce.",
+        "es-ES": "Acceda a nuestras guías cuidadosamente seleccionadas y artículos prácticos que brindan consejos prácticos e instrucciones paso a paso adaptadas para refugiados que navegan la vida en Grecia.",
+        "so-SO": "Hel tilmaamaha iyo maqaalada tillaabo-tillaabo oo si taxaddar leh loo habeeyay oo bixiya talooyin wax ku ool ah iyo tilmaamo talaabo-talaabo ah oo loogu talagalay qaxootiga ku dhex jira nolosha Giriiga."
+       },
+       comprehensive: {
+        "en-US": "Comprehensive Information",
+        "fr-FR": "Informations complètes",
+        "ar-SA": "معلومات شاملة",
+        "es-ES": "Información completa",
+        "so-SO": "Macluumaad dhammaystiran",
+       },
+       findComprehensive: {
+        "en-US": "Find comprehensive resources on various categories and topics, helping refugees in Greece understand their legal status and access crucial support services.",
+        "fr-FR": "Trouvez des ressources complètes sur diverses catégories et sujets, aidant les réfugiés en Grèce à comprendre leur statut juridique et à accéder aux services de soutien essentiels.",
+        "ar-SA": "اعثر على موارد شاملة حول فئات ومواضيع مختلفة، مما يساعد اللاجئين في اليونان على فهم وضعهم القانوني والوصول إلى خدمات الدعم الحيوية.",
+        "es-ES": "Encuentre recursos completos sobre diversas categorías y temas, ayudando a los refugiados en Grecia a comprender su situación legal y acceder a servicios de apoyo cruciales.",
+        "so-SO": "Hel ilo dhammaystiran oo ku saabsan qaybo iyo mowduucyo kala duwan, kuwaas oo ka caawiya qaxootiga Giriigga inay fahmaan xaaladdooda sharci iyo helitaanka adeegyada taageerada muhiimka ah."
+       },
     }
