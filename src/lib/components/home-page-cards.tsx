@@ -34,7 +34,7 @@ function Cards({
       <Card.Meta
         avatar={<span className="material-icons card-icon">{iconName}</span>}
         title={
-          <Title level={1} className="card-title">
+          <Title level={1} className={`card-title ${isRTL ? 'text-right' : 'text-left'}`}>
             {title}
           </Title>
         }
