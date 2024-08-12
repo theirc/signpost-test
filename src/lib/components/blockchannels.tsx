@@ -16,10 +16,6 @@ export function BlockChannels(props: { block: BlockChannels }) {
   const { block } = props;
   useAnimateOnScroll();
 
-  // const socialIconClass = "flex flex-col items-center p-4 gap-4 flex-1 rounded-lg bg-white shadow-lg"
-  // const iconStyle = "text-gray-700 hover:text-gray-900 w-8 h-8 md:w-10 md:h-10"
-  // const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base no-underline"
-
 
   return (
     <Container block={block}>
