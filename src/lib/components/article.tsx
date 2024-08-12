@@ -1,8 +1,11 @@
 import { useParams } from "react-router-dom"
 import { app, translate } from "../app"
 import ShareButton from "./sharebutton"
+import { useAnimateOnScroll } from './useAnimateOnScroll';
 import TextReader from "./textreader"
+import { Container } from "./container"
 import { translations } from "../../translations";
+import { languages } from "../locale";
 import {
   FaFacebook,
   FaTelegram,
@@ -21,14 +24,11 @@ import { Breadcrumb } from "antd";
 export function Article() {
   const refScrollUp = useRef<HTMLDivElement>(null);
   let { id } = useParams()
+  const isRTL = languages[app.locale]?.rtl;
+  useAnimateOnScroll();
 
   const a: ZendeskArticle = app.data.zendesk.articles[id]
   const channels = app.page.content.find(x => x.type === 'channels') as BlockChannels
-
-  const socialIconClass = "flex flex-col items-center p-4 md:p-4 gap-4 md:g-2 flex-1 rounded-lg bg-white shadow-lg no-underline"
-  const iconStyle = "text-gray-700 hover:text-gray-900"
-  const textStyle = "mt-1 md:mt-2 text-gray-800 text-center font-medium text-xs md:text-sm lg:text-base no-underline"
-
 
   if (!a) {
     return <div>Article {id} not found</div>
@@ -46,26 +46,37 @@ export function Article() {
     }
   }
 
-  return <div className="overflow-y-auto">
-    <div className='py-16 w-full flex justify-center text-black bg-white h-auto' ref={refScrollUp}>
-      <div className="sm:w-full px-8 lg:w-4/5 w-screen">
+  return <div className={`overflow-y-auto ${isRTL ? 'rtl' : ''}`}>
+    <Container className="text-black bg-white">
+      <div className={`flex flex-col ${isRTL ? 'text-right' : ''}`} ref={refScrollUp}>
       <Breadcrumb separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title: <a href={`/categories/${category.id}`}>{translate(category.name)}</a>}, {title: <a href={`/categories/${category.id}/${section.id}`}>{translate(section.name)}</a>}, {title: translate(a.name)}]} />
-        <div className="flex flex-col">
-          <h1>{title}</h1>
-          <p>{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-          <div className="flex items-center">
+        <div>
+          <h1 className="fade-up-0"
+              data-animation="animate__fadeInUp">{title}</h1>
+          <p className="fade-up-1"
+              data-animation="animate__fadeInUp">{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+          <div className={`flex items-center mt-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <TextReader />
             <ShareButton />
           </div>
         </div>
-        {a && <div className="article mt-10" dangerouslySetInnerHTML={{ __html: body }} />}
-        <div className="flex">
-          <a onClick={handleScrollToTop} className="text-black ml-auto underline cursor-pointer">
-            <strong>Back to top <ArrowUpOutlined /></strong>
-          </a>
-        </div>
+        {a && <div className={`article mt-10 ${isRTL ? 'text-right' : 'text-left'} fade-up-2`}dangerouslySetInnerHTML={{ __html: body }} data-animation="animate__fadeInUp" />}
+        <div className="relative w-full mt-8">
+    <a 
+      onClick={handleScrollToTop} 
+      className={`
+        absolute underline cursor-pointer
+        ${isRTL ? 'left-0' : 'right-0'}
+      `}
+    >
+      <strong className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+        {translate(translations.backToTop)} 
+        <ArrowUpOutlined className={isRTL ? 'mr-2' : 'ml-2'} />
+      </strong>
+    </a>
+  </div>
       </div>
-    </div>
+      </Container>
     <div className="py-16 w-full md:flex justify-center text-black bg-[#FFF8F7] h-auto hidden">
       <div className="sm:w-full px-8 lg:w-4/5 w-screen">
         {channels.title && (
@@ -76,92 +87,100 @@ export function Article() {
         )}
         <div className="flex flex-col md:flex-row flex-wrap gap-2 md:gap-4 justify-center md:justify-between max-w-sm md:max-w-full mx-auto md:p-4">
           {channels.fb_link && (
-            <a
-              href={translate(channels.fb_link)}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="Facebook"
-            >
-              <FaFacebook size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.fb)}</div>
-            </a>
+        <a
+        href={translate(channels.fb_link)}
+        className="fade-up-3 social-icon"
+        data-animation="animate__fadeInUp"
+        target="_blank"
+        aria-label="Facebook"
+      >
+        <FaFacebook className="social-icon-svg" />
+        <div className="social-icon-text">{translate(channels.fb)}</div>
+      </a>
           )}
           {channels.fbmess_link && (
-            <a
-              href={translate(channels.fbmess_link)}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="Facebook Messenger"
-            >
-              <FaFacebookMessenger size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.fbmess)}</div>
-            </a>
+           <a
+           href={translate(channels.fbmess_link)}
+           className="fade-up-3 social-icon"
+           data-animation="animate__fadeInUp"
+           target="_blank"
+           aria-label="Facebook Messenger"
+         >
+           <FaFacebookMessenger className="social-icon-svg"  />
+           <div className="social-icon-text">{translate(channels.fbmess)}</div>
+         </a>
           )}
           {channels.whatsapp_link && (
-            <a
-              href={translate(channels.whatsapp_link)}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="Whatsapp"
-            >
-              <FaWhatsapp size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.whatsapp)}</div>
-            </a>
+             <a
+             href={translate(channels.whatsapp_link)}
+             className="fade-up-3 social-icon"
+             data-animation="animate__fadeInUp"
+             target="_blank"
+             aria-label="Whatsapp"
+           >
+             <FaWhatsapp className="social-icon-svg"/>
+             <div className="social-icon-text">{translate(channels.whatsapp)}</div>
+           </a>
           )}
           {channels.email_link && (
-            <a
-              href={`mailto:${translate(channels.email_link)}`}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="Email"
-            >
-              <FaEnvelope size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.email)}</div>
-            </a>
+          <a
+          href={`mailto:${translate(channels.email_link)}`}
+          className="fade-up-3 social-icon"
+          data-animation="animate__fadeInUp"
+          target="_blank"
+          aria-label="Email"
+        >
+          <FaEnvelope className="social-icon-svg"/>
+          <div className="social-icon-text">{translate(channels.email)}</div>
+        </a>
           )}
           {channels.instagram_link && (
-            <a
+              <a
               href={translate(channels.instagram_link)}
-              className={socialIconClass}
+              className="fade-up-3 social-icon"
+              data-animation="animate__fadeInUp"
               target="_blank"
               aria-label="Instagram"
             >
-              <FaInstagram size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.instagram)}</div>
+              <FaInstagram className="social-icon-svg" />
+              <div className="social-icon-text">{translate(channels.instagram)}</div>
             </a>
           )}
           {channels.tiktok_link && (
-            <a
-              href={translate(channels.tiktok_link)}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="TikTok"
-            >
-              <FaTiktok size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.tiktok)}</div>
-            </a>
+           <a
+           href={translate(channels.tiktok_link)}
+           className="fade-up-3 social-icon"
+           data-animation="animate__fadeInUp"
+           target="_blank"
+           aria-label="TikTok"
+         >
+           <FaTiktok className="social-icon-svg" />
+           <div className="social-icon-text">{translate(channels.tiktok)}</div>
+         </a>
           )}
           {channels.telegram_link && (
-            <a
-              href={translate(channels.telegram_link)}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="Telegram"
-            >
-              <FaTelegram size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.telegram)}</div>
-            </a>
+          <a
+          href={translate(channels.telegram_link)}
+          className="fade-up-3 social-icon"
+          data-animation="animate__fadeInUp"
+          target="_blank"
+          aria-label="Telegram"
+        >
+          <FaTelegram className="social-icon-svg" />
+          <div className="social-icon-text">{translate(channels.telegram)}</div>
+        </a>
           )}
           {channels.whatsappc_link && (
-            <a
-              href={translate(channels.whatsappc_link)}
-              className={socialIconClass}
-              target="_blank"
-              aria-label="WhatsApp Channel"
-            >
-              <FaWhatsappSquare size={40} className={iconStyle} />
-              <div className={textStyle}>{translate(channels.whatsappc)}</div>
-            </a>
+             <a
+             href={translate(channels.whatsappc_link)}
+             className="fade-up-3 social-icon"
+             data-animation="animate__fadeInUp"
+             target="_blank"
+             aria-label="WhatsApp Channel"
+           >
+             <FaWhatsappSquare className="social-icon-svg" />
+             <div className="social-icon-text">{translate(channels.whatsappc)}</div>
+           </a>
           )}
         </div>
       </div>

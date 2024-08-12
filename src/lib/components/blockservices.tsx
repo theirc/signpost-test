@@ -13,6 +13,7 @@ import { Blocks } from "./blocks";
 import { translations } from "../../translations";
 import { RadioChangeEvent } from "antd/lib";
 import { Container } from "./container"
+import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -33,6 +34,7 @@ export function BlockServices(props: { block: BlockServices }) {
   const styles = Blocks.buildStyle(block)
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
+  useAnimateOnScroll();
   
   const isRTL = languages[app.locale]?.rtl;
 
@@ -347,8 +349,8 @@ export function BlockServices(props: { block: BlockServices }) {
 
   return (
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
-      <div className={`text-4xl ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.title)}</div>
-      <div className={`text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}>{translate(props.block.subtitle)}</div>
+      <div className={`fade-up-0 text-4xl ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</div>
+      <div className={`fade-up-1 text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.subtitle)}</div>
         {servicesLoaded &&
           <div className="flex flex-col md:flex-row gap-10">
             {filterOpen && (
@@ -358,7 +360,11 @@ export function BlockServices(props: { block: BlockServices }) {
                 </div>
                 <div className="flex flex-col md:flex-row gap-10 flex-grow">
                   <div className="md:flex flex-col flex-1">
-                    <h2>{translate(translations.filters)}</h2>
+                    <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+                     <div 
+                    className="fade-up-3"
+                    data-animation="animate__fadeInUp"
+                  >
                     <TreeSelect
                       label={translate(translations.service_types)}
                       items={combineCategoriesWithSubcategories(categories, subcategories)}
@@ -367,7 +373,12 @@ export function BlockServices(props: { block: BlockServices }) {
                       value={selectedFilterValues.serviceTypes}
                       defaultValue={[-1]}
                     />
-                    <TreeSelect
+                    </div>
+                     <div 
+                    className="fade-up-3"
+                    data-animation="animate__fadeInUp"
+                  >                    
+                       <TreeSelect
                       label={translate(translations.provider)}
                       items={mapProviderData(filteredProviders)}
                       className="w-full overflow-hidden"
@@ -375,6 +386,7 @@ export function BlockServices(props: { block: BlockServices }) {
                       value={selectedFilterValues.provider}
                       defaultValue={[-1]}
                     />
+                    </div>
                   </div>
                 </div>
               </div>

@@ -1,13 +1,18 @@
 import { app, translate } from "../app";
 import { Container } from "./container";
 import HomePageCards from "./home-page-cards";
+import { languages } from "../locale"
+import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
 export function BlockSections(props: { block: BlockSections }) {
   const { block } = props;
+  useAnimateOnScroll();
+
   const sections: ZendeskSection[] = Object.values(app.data.zendesk.sections);
   const categories: ZendeskCategory[] = Object.values(
     app.data.zendesk.categories
   );
+
 
   const groupedByCategory = {};
 
@@ -19,34 +24,44 @@ export function BlockSections(props: { block: BlockSections }) {
     groupedByCategory[categoryId].push(item);
   });
 
+  const isRTL = languages[app.locale]?.rtl;
+
   return (
     <Container block={block}>
-      <div className="text-4xl">{translate(block.title)} </div>
-      <div className="text-2xl mt-4 text-gray-500">
-        {translate(block.subtitle)}
-      </div>
-      <section>
-        {Object.keys(groupedByCategory).map((categoryId) => (
-          <>
-            <div className="text-2xl mt-4">
-              {translate(categories.find((x) => x.id === +categoryId).name)}
-            </div>
-
+    <h1 className={`fade-up-0 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(block.title)}</h1>
+    <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">
+      {translate(block.subtitle)}
+    </h2>
+    <div>
+      {Object.keys(groupedByCategory).map((categoryId) => (
+        <div key={categoryId}>
+          <h3 className={`fade-up-2 my-10 text-2xl font-medium ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">
+            {translate(categories.find((x) => x.id === +categoryId)?.name)}
+          </h3>
+          <div className="fade-up-3" data-animation="animate__fadeInUp">
             <HomePageCards
               cards={groupedByCategory[categoryId]?.map(
                 (section: ZendeskSection) => {
+                  const path =
+                    !categoryId
+                      ? "/categories/"
+                      : section.id === 0
+                      ? `/categories/${categoryId}/`
+                      : `/categories/${categoryId}/${section.id}/`;
+
                   return {
                     title: translate(section.name),
                     subtitle: translate(section.description),
                     iconName: "",
-                    href: `/sections/${section.id}`,
+                    href: path, 
                   };
                 }
               )}
             />
-          </>
-        ))}
-      </section>
-    </Container>
-  );
+          </div>
+        </div>
+      ))}
+    </div>
+  </Container>
+);
 }

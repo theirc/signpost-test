@@ -2,10 +2,12 @@ import { Link } from "react-router-dom";
 import { translations } from "../../translations";
 import { app, translate } from "../app";
 import { Container } from "./container";
+import { languages } from "../locale";
 
 export function Footer() {
-
   const categories: { [index: number]: ZendeskCategory } = app.data.zendesk.categories;
+  const isRTL = languages[app.locale]?.rtl;
+
 
   const footerMenu: Menu[] = app.page.header.menu.filter((item: Menu) => 
     ["services"].includes(item.type)
@@ -16,16 +18,16 @@ export function Footer() {
       const title = item.title ? translate(item.title) : "";
       if (item.type === "services") {
         return (
-          <li key={title} className="mb-3 sm:mb-0 sm:mr-6">
-            <a href="#service-map" className="hover:text-gray-800">
+          <li key={title} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'}`}>
+            <a href="#service-map" className="hover:text-gray-800 text-sm">
               {title}
             </a>
           </li>
         );
       } else {
         return (
-          <li key={title} className="mb-3 sm:mb-0 sm:mr-6">
-            <Link to={item.link || "#"} className="hover:text-gray-800">
+          <li key={title} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'} text-sm`}>
+            <Link to={item.link || "#"} className="hover:text-gray-800 text-sm">
               {title}
             </Link>
           </li>
@@ -37,8 +39,8 @@ export function Footer() {
 
   const renderCategories = () => {
     return Object.values(categories).map((category) => (
-      <li key={category.id} className="mb-3 sm:mb-0 sm:mr-6">
-      <Link to={`/categories/${category.id}`} className="hover:text-gray-800">
+      <li key={category.id} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'}`}>
+      <Link to={`/categories/${category.id}`} className="hover:text-gray-800 text-sm">
         {translate(category.name)}
       </Link>
     </li>
@@ -46,7 +48,7 @@ export function Footer() {
 };
 
   return (
-    <footer className="footer-black-text py-4">
+    <footer className={`footer-black-text py-4 ${isRTL ? 'rtl' : ''}`}>
       <Container block={app.page.footer}>
         <div className="flex flex-col space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -55,7 +57,7 @@ export function Footer() {
             </Link>
             <ul className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 list-none">
               <li className="mb-3 sm:mb-0 sm:mr-6">
-                <Link to="/" className="hover:text-gray-800">
+                <Link to="/" className="hover:text-gray-800 text-sm">
                   {translate(translations.home)}
                 </Link>
               </li>
@@ -68,16 +70,16 @@ export function Footer() {
               <li key={`${link.title}-${link.url}`} className="mr-4 mb-3">
                 <Link 
                   to={link.url} 
-                  className="hover:text-gray-800"
+                  className="hover:text-gray-800 text-sm font-hairline"
                 >
                   {translate(link.title)}
                 </Link>
               </li>
             ))}
           </ul>
-          <div>
+          <p className={`text-base font-light ${isRTL ? 'text-right' : ''}`}>
             {translate(app.page.footer.text)}
-          </div>
+          </p>
         </div>
       </Container>
     </footer>
