@@ -850,3 +850,26 @@ nav .toolbar a {
     font-size: 1rem;
   }
 }
+.image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: auto;
+}
+@media (max-width: 768px) {
+  .image-container {
+    flex-direction: column;
+  }
+}
+
+.image-container img {
+ width: 66.666%;
+ height: auto;
+ border-radius: 10px;
+}
+@media (max-width: 768px) {
+  .image-container img {
+    width: 100%;
+  }
+  
+}
