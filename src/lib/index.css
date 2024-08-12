@@ -47,55 +47,62 @@ box-sizing: border-box;
 }
 .animate__animated,
 [data-animation] {
-  --animate-duration: 0.25s; 
+  --animate-duration: 0.20s; 
 }
 .animate__fadeInUp {
-  --animate-duration: 0.25s; 
+  --animate-duration: 0.20s; 
 }
 .fade-up-0 {
   --animate-delay: 0s;
 }
 .fade-up-1 {
-  --animate-delay: 0.2s;
+  --animate-delay: 0.1s;
 }
 .fade-up-2 {
-  --animate-delay: 0.4s;
+  --animate-delay: 0.2s;
 }
 .fade-up-3 {
-  --animate-delay: 0.6s; 
+  --animate-delay: 0.3s; 
 }
 .fade-up-4 {
-  --animate-delay: 0.8s
+  --animate-delay: 0.4s;
 }
 .fade-up-5 {
-  --animate-delay: 10s
+  --animate-delay: 0.5s;
+}
+.fade-up-6 {
+  --animate-delay: 0.6s;
 }
 [data-animation][data-delay="0s"],
 .fade-up-0[data-animation] {
   --animate-delay: 0s;
 }
 
-[data-animation][data-delay="0.2s"],
+[data-animation][data-delay="0.1s"],
 .fade-up-1[data-animation] {
+  --animate-delay: 0.1s;
+}
+
+[data-animation][data-delay="0.1s"],
+.fade-up-2[data-animation] {
   --animate-delay: 0.2s;
 }
 
+[data-animation][data-delay="0.3s"],
+.fade-up-3[data-animation] {
+  --animate-delay: 0.3s;
+}
 [data-animation][data-delay="0.4s"],
-.fade-up-2[data-animation] {
+.fade-up-4[data-animation] {
   --animate-delay: 0.4s;
 }
-
-[data-animation][data-delay="0.6s"],
-.fade-up-3[data-animation] {
-  --animate-delay: 0.6s;
-}
-[data-animation][data-delay="0.8s"],
-.fade-up-4[data-animation] {
-  --animate-delay: 0.8s;
-}
-[data-animation][data-delay="10s"],
+[data-animation][data-delay="0.5s"],
 .fade-up-5[data-animation] {
-  --animate-delay: 10s;
+  --animate-delay: 0.5s;
+}
+[data-animation][data-delay="0.6s"],
+.fade-up-6[data-animation] {
+  --animate-delay: 0.6s;
 }
 [data-animation][data-duration] {
   --animate-duration: attr(data-duration);
