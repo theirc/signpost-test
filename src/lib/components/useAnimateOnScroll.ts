@@ -18,7 +18,7 @@ export const useAnimateOnScroll = (
           if (entry.isIntersecting) {
             const element = entry.target as HTMLElement;
             const animationClass = element.dataset.animation || "animate__fadeInUp";
-            const duration = element.dataset.duration || "1s";
+            const duration = element.dataset.duration || "0.5s";
             const delay = element.dataset.delay || "0s";
 
           element.classList.add("animate__animated", animationClass);
