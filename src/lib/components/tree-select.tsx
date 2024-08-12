@@ -54,6 +54,10 @@ export default function TreeSelect({
     }));
   }
 
+  function filterTreeNode(inputValue: string, treeNode: any): boolean {
+    return treeNode.title.toLowerCase().indexOf(inputValue.toLowerCase()) >= 0;
+  }
+
   return (
     <div className={className}>
       <div>{label}</div>
@@ -72,6 +76,7 @@ export default function TreeSelect({
         onClear={onClear}
         onDropdownVisibleChange={onDropdownVisibleChange}
         treeDefaultExpandAll={true}
+        filterTreeNode={filterTreeNode}
       />
       {showError && (
         <Typography.Text style={{ display: 'block' }} type="danger">

@@ -6,15 +6,14 @@ import { Button, Radio, Space } from "antd";
 import { ServicesList } from "./services";
 import React, { useCallback, useEffect, useState } from "react";
 import TreeSelect, { MenuItem } from "./tree-select";
-import { useMultiState } from "./hooks";
 import ReactGA from "react-ga4";
 import { CloseOutlined, FilterOutlined } from "@ant-design/icons";
 import { useSearchParams } from "react-router-dom";
 import { Blocks } from "./blocks";
 import { translations } from "../../translations";
+import { RadioChangeEvent } from "antd/lib";
 import { Container } from "./container"
 import { useAnimateOnScroll } from "./useAnimateOnScroll";
-
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -36,6 +35,8 @@ export function BlockServices(props: { block: BlockServices }) {
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   useAnimateOnScroll();
+  
+  const isRTL = languages[app.locale]?.rtl;
 
   const {
     state: { servicesLoaded },
@@ -54,14 +55,7 @@ export function BlockServices(props: { block: BlockServices }) {
   )
   ReactGA.initialize("G-H6VQ1Y6EX9");
 
-  const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider))
-  const providers = Object.values(app.data.categories.providers)
-  const uniqueProviders = providers.filter((x) => Array.from(uniqueProvidersSet).includes(x.id))
-  .sort((a, b) =>
-    translate(a.name)
-      .normalize()
-      .localeCompare(translate(b.name).normalize())
-  )
+  const providers = Object.values(app.data.providers)
 
   const usedCategoryIdsSet = new Set<number>();
   const usedSubcategoryIds = new Set<number>();
@@ -80,10 +74,8 @@ export function BlockServices(props: { block: BlockServices }) {
     app.data.categories.subCategories || []
   ).filter((subcat) => usedSubcategoryIds.has(subcat.id));
 
-  const [state, setState] = useMultiState({
-    filteredServices: services,
-    filteredProviders: uniqueProviders,
-  });
+  const [filteredServices, setFilteredServices] = useState(services)
+  const [filteredProviders, setFilteredProviders] = useState(providers)
 
   const accessibilities = Object.values(app.data.categories.accesibility) || [];
   const populations = Object.values(app.data.categories.populations) || [];
@@ -217,7 +209,6 @@ export function BlockServices(props: { block: BlockServices }) {
       const subcategoryMap = new Map<number, boolean>();
 
       if (!value.length || value.flat()[value.flat().length - 1] === -1) {
-        filterProviders(services);
         return services;
       }
 
@@ -237,7 +228,6 @@ export function BlockServices(props: { block: BlockServices }) {
           )
         );
       });
-      filterProviders(services);
 
       const categoryArray = Array.from(categoryMap);
       const subcategoryArray = Array.from(subcategoryMap);
@@ -267,35 +257,7 @@ export function BlockServices(props: { block: BlockServices }) {
       return services;
     },
     [lastValue]
-  );
-
-
-
-  const filterProviders = (services: Service[]) => {
-    const uniqueProvidersIdsSet = new Set(services.flatMap((x) => x.provider));
-    const uniqueProvidersArray = providers
-      ?.filter((x) => Array.from(uniqueProvidersIdsSet).includes(x.id))
-      .sort((a, b) =>
-        translate(a.name)
-          .normalize()
-          .localeCompare(translate(b.name).normalize())
-      );
-
-    setState({ filteredProviders: uniqueProvidersArray });
-  };
-
-  const handleDropdownVisibleChange = (open: boolean) => {
-    if (open === false) {
-      Object.entries(selectedFilterValues).forEach(([key, value]) => {
-        if (
-          key === filterType.serviceTypes &&
-          JSON.stringify(value) === JSON.stringify([[-1]])
-        ) {
-          filterProviders(services);
-        }
-      });
-    }
-  };
+  )
 
   useEffect(() => {
     let filteredData = [...services]
@@ -321,20 +283,27 @@ export function BlockServices(props: { block: BlockServices }) {
         filteredData = handlePopulationsChange(value, filteredData);
       } else if (
         key === filterType.serviceTypes &&
-        value.length
+        value.length &&
+        value[0] !== -1
       ) {
         filteredData = handleServiceTypeChange(value, filteredData);
       }
     });
 
-    setState({ filteredServices: filteredData });
+    setFilteredServices(filteredData)
   }, [selectedFilterValues, app.data.services, servicesLoaded]);
 
   useEffect(() => {
-    setState({
-      filteredServices: services,
-    });
-  }, [app.data.services, servicesLoaded])
+    const uniqueProvidersSet = new Set(services.flatMap((x) => x.provider))
+    const providers = Object.values(app.data.providers).filter((x) => Array.from(uniqueProvidersSet).includes(x.id))
+      .sort((a, b) =>
+        translate(a.name)
+          .normalize().toLowerCase()
+          .localeCompare(translate(b.name).normalize().toLowerCase())
+      )
+    setFilteredProviders(providers)
+    setFilteredServices(services)
+  }, [app.data.services, servicesLoaded, app.data.providers])
 
   useEffect(() => {
     const categoriesParams = searchParams.getAll('serviceTypes')
@@ -358,6 +327,10 @@ export function BlockServices(props: { block: BlockServices }) {
       }
     }
 
+    const mapView = searchParams.get('view')
+
+    if (mapView) setView(+mapView)
+
     setSelectedFilterValues({
       serviceTypes: paramsCategories.length ? paramsCategories : [-1],
       provider: providersParams.length ? providersParams : [-1],
@@ -366,118 +339,107 @@ export function BlockServices(props: { block: BlockServices }) {
     });
   }, [servicesLoaded]);
 
-  const isRTL = languages[app.locale]?.rtl;
-
+  const handleViewChange = (e: RadioChangeEvent) => {
+    const value = e.target.value
+    searchParams.delete('view')
+    searchParams.append('view', value)
+    setSearchParams(new URLSearchParams(searchParams))
+    setView(value)
+  }
 
   return (
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
       <div className={`fade-up-0 text-4xl ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</div>
       <div className={`fade-up-1 text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.subtitle)}</div>
-      {servicesLoaded &&
-        <div className="flex flex-col md:flex-row gap-10">
-          {filterOpen && (
-            <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
-              <div className="flex ml-auto mb-5">
-                <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
-              </div>
-              <div className="flex flex-col md:flex-row gap-10 flex-grow">
-                <div className="md:flex flex-col flex-1">
-                  <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
-                  <div 
+        {servicesLoaded &&
+          <div className="flex flex-col md:flex-row gap-10">
+            {filterOpen && (
+              <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
+                <div className="flex ml-auto mb-5">
+                  <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
+                </div>
+                <div className="flex flex-col md:flex-row gap-10 flex-grow">
+                  <div className="md:flex flex-col flex-1">
+                    <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+                     <div 
                     className="fade-up-3"
                     data-animation="animate__fadeInUp"
                   >
-                  <TreeSelect
-                    label={translate(translations.service_types)}
-                    items={combineCategoriesWithSubcategories(categories, subcategories)}
-                    className="w-full overflow-hidden service-types-select"
-                    onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-                    onClear={() => filterProviders(services)}
-                    onDropdownVisibleChange={handleDropdownVisibleChange}
-                    value={selectedFilterValues.serviceTypes}
-                    defaultValue={[-1]}
-                  />
-                  </div>
-                  <div 
+                    <TreeSelect
+                      label={translate(translations.service_types)}
+                      items={combineCategoriesWithSubcategories(categories, subcategories)}
+                      className="w-full overflow-hidden service-types-select"
+                      onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+                      value={selectedFilterValues.serviceTypes}
+                      defaultValue={[-1]}
+                    />
+                    </div>
+                     <div 
                     className="fade-up-3"
                     data-animation="animate__fadeInUp"
-                  >
-                  <TreeSelect
-                    label={translate(translations.provider)}
-                    items={mapProviderData(state.filteredProviders)}
-                    className="w-full overflow-hidden"
-                    onChange={(value) => handleSelectedFilters(value, filterType.provider)}
-                    value={selectedFilterValues.provider}
-                    defaultValue={[-1]}
-                  />
+                  >                    
+                       <TreeSelect
+                      label={translate(translations.provider)}
+                      items={mapProviderData(filteredProviders)}
+                      className="w-full overflow-hidden"
+                      onChange={(value) => handleSelectedFilters(value, filterType.provider)}
+                      value={selectedFilterValues.provider}
+                      defaultValue={[-1]}
+                    />
+                    </div>
                   </div>
                 </div>
               </div>
+            )}
+            <div className="hidden md:flex flex-col flex-1">
+              <h2>{translate(translations.filters)}</h2>
+              <TreeSelect
+                label={translate(translations.serviceTypes)}
+                items={combineCategoriesWithSubcategories(categories, subcategories)}
+                className="w-full overflow-hidden service-types-select"
+                onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+                value={selectedFilterValues.serviceTypes}
+                defaultValue={[-1]}
+              />
+              <TreeSelect
+                label={translate(translations.provider)}
+                items={mapProviderData(filteredProviders)}
+                className="w-full overflow-hidden"
+                onChange={(value) => handleSelectedFilters(value, filterType.provider)}
+                value={selectedFilterValues.provider}
+                defaultValue={[-1]}
+              />
             </div>
-          )}
-          <div className="hidden md:flex flex-col flex-1">
-            <h2 className="fade-up-2"
-              data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
-            <div 
-              className="fade-up-3"
-              data-animation="animate__fadeInUp"
-            >
-            <TreeSelect
-              label={translate(translations.serviceTypes)}
-              items={combineCategoriesWithSubcategories(categories, subcategories)}
-              className="w-full overflow-hidden service-types-select"
-              onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-              onClear={() => filterProviders(services)}
-              onDropdownVisibleChange={handleDropdownVisibleChange}
-              value={selectedFilterValues.serviceTypes}
-              defaultValue={[-1]}
-            />
-            </div>
-            <div 
-              className="fade-up-4"
-              data-animation="animate__fadeInUp"
-            >
-            <TreeSelect
-              label={translate(translations.provider)}
-              items={mapProviderData(state.filteredProviders)}
-              className="w-full overflow-hidden"
-              onChange={(value) => handleSelectedFilters(value, filterType.provider)}
-              value={selectedFilterValues.provider}
-              defaultValue={[-1]}
-            />
-            </div>
-          </div>
-          <div className="grow-[4] flex-1 relative">
-            <div className="flex mt-3.5 mb-3.5 items-center">
-              <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
-              {view === 0 && <span className="hidden md:inline show-info">{translate(translations.showing)} {state.filteredServices.length} {translate(translations.of)} {services.length} </span>}
-              <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`} >
-                <Radio.Group value={view} onChange={(e) => setView(e.target.value)}  className={`flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
-                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
-                      <span className="material-symbols-outlined material-icons">
-                        map
-                      </span>
-                      {translate(translations.map)}
-                    </div>
-                  </Radio.Button>
-                  <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
-                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
-                      <span className="material-symbols-outlined material-icons">
-                        list_alt
-                      </span>
-                      {translate(translations.list)}
-                    </div>
-                  </Radio.Button>
-                </Radio.Group>
-              </Space>
-            </div>
+            <div className="grow-[4] flex-1 relative">
+              <div className="flex mt-3.5 mb-3.5 items-center">
+                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
+                {view === 0 && <span className="hidden md:inline">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
+                <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
+                  <Radio.Group value={view} onChange={handleViewChange} className={`flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
+                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                        <span className="material-symbols-outlined material-icons">
+                          map
+                        </span>
+                        {translate(translations.map)}
+                      </div>
+                    </Radio.Button>
+                    <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
+                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                        <span className="material-symbols-outlined material-icons">
+                          list_alt
+                        </span>
+                        {translate(translations.list)}
+                      </div>
+                    </Radio.Button>
+                  </Radio.Group>
+                </Space>
+              </div>
 
-            {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {state.filteredServices.length} of {services.length} </div>}
-              <div className="fade-up-5"
-              data-animation="animate__fadeInUp">
-                {view === 0 && <Maps services={state.filteredServices} />}
-                {view === 1 && <ServicesList serviceCount={services?.length} services={state.filteredServices} />}
+              {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {filteredServices.length} of {services.length} </div>}
+              <div>
+                {view === 0 && <Maps services={filteredServices} />}
+                {view === 1 && <ServicesList serviceCount={services?.length} services={filteredServices} />}
               </div>
           </div>
         </div>}

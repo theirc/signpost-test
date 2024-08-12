@@ -33,27 +33,27 @@ const DropdownContent = ({
                         >
                             <Link
                                 className={`${index === activeIndex ? 'text-zinc-500' : 'text-black'} ${setIsDrawerOpen ? 'my-2' : 'no-underline'}`}
-                                to={item.href}
+                                to={item.link}
                                 onClick={() => {
                                     setIsDrawerOpen && setIsDrawerOpen(false);
                                     handleClick()
                                 }}>
-                                {item.children && <h2 className='m-0'>{item.label}</h2>}
-                                {!item.children && <span>{item.label}</span>}
+                                {item.children && <h2 className='m-0'>{translate(item.title)}</h2>}
+                                {!item.children && <span>{translate(item.title)}</span>}
                             </Link>
                             {item.children && <RightOutlined />}
                         </section>
                     ))}
                 </div>
                 <div className='subcat-section-container'>
-                    {activeItem?.children?.map(({ label, href }, index) => (
+                    {activeItem?.children?.map(({ title, link }, index) => (
                         <section
                             key={index}
                             onClick={() => {
                                 setIsDrawerOpen && setIsDrawerOpen(false);
                                 handleClick();
                             }}>
-                            <Link className='no-underline text-black' to={href}>{label}</Link>
+                            <Link className='no-underline text-black' to={link}>{translate(title)}</Link>
                         </section>
                     ))}
                 </div>
