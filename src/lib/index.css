@@ -319,7 +319,6 @@ box-sizing: border-box;
 
 .card-title {
   margin-bottom: 0 !important;
-  color: white !important;
   font-size: 18px;
   font-weight: 700 !important;
   font-size: 18px !important;
@@ -330,9 +329,6 @@ box-sizing: border-box;
   @media screen and (min-width: 768px) {
     font-size: 1rem !important;
   }
-}
-.card-title:hover {
-  color: black !important;
 }
 .nav__header {
   position: static;
