@@ -14,6 +14,7 @@ import { translations } from "../../translations";
 import { RadioChangeEvent } from "antd/lib";
 import { Container } from "./container"
 import { useAnimateOnScroll } from "./useAnimateOnScroll";
+import { Box, Checkbox, FormControlLabel } from "@mui/material";
 
 enum filterType {
   serviceTypes = "serviceTypes",
@@ -35,7 +36,7 @@ export function BlockServices(props: { block: BlockServices }) {
   const [filterOpen, setFilterOpen] = useState(false)
   const [searchParams, setSearchParams] = useSearchParams()
   useAnimateOnScroll();
-  
+
   const isRTL = languages[app.locale]?.rtl;
 
   const {
@@ -49,6 +50,7 @@ export function BlockServices(props: { block: BlockServices }) {
   });
   const [lastValue, setLastValue] = useState<number[]>([-1]);
   const [view, setView] = useState<number>(0)
+  const [categoriesData, setCategoriesData] = useState([])
 
   const services = Object.values(app.data.services).filter(
     (x) => x.status !== "archived"
@@ -80,8 +82,8 @@ export function BlockServices(props: { block: BlockServices }) {
   const accessibilities = Object.values(app.data.categories.accesibility) || [];
   const populations = Object.values(app.data.categories.populations) || [];
 
-  const combineCategoriesWithSubcategories = (categories, subcategories) => {
-    const combinedData = categories.map((category) => {
+  const combineCategoriesWithSubcategories = () => {
+    const combinedData: any = categories.map((category) => {
       const subcategoriesForCategory = subcategories
         .filter((subcategory) => subcategory.parent.includes(category.id))
         .map((subcategory) => ({
@@ -94,7 +96,7 @@ export function BlockServices(props: { block: BlockServices }) {
         children: subcategoriesForCategory,
       };
     });
-    combinedData.unshift({ value: -1, label: translate(translations.allServiceTypes) });
+    combinedData.unshift({ value: -1, label: translate(translations.allServiceTypes) })
     return combinedData;
   };
 
@@ -118,7 +120,7 @@ export function BlockServices(props: { block: BlockServices }) {
     }
   };
 
-  const handleSelectedFilters = (value: number[], filter: filterType) => {
+  const handleSelectedFilters = (value: any[], filter: filterType) => {
     if (!value.length || value.flat()[value.flat().length - 1] === -1) {
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
@@ -337,6 +339,7 @@ export function BlockServices(props: { block: BlockServices }) {
       populations: populationsParams.length ? populationsParams : [-1],
       accessibility: accessibilityParams.length ? accessibilityParams : [-1],
     });
+    setCategoriesData(combineCategoriesWithSubcategories())
   }, [servicesLoaded]);
 
   const handleViewChange = (e: RadioChangeEvent) => {
@@ -351,36 +354,36 @@ export function BlockServices(props: { block: BlockServices }) {
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
       <div className={`fade-up-0 text-4xl ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</div>
       <div className={`fade-up-1 text-2xl mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.subtitle)}</div>
-        {servicesLoaded &&
-          <div className="flex flex-col md:flex-row gap-10">
-            {filterOpen && (
-              <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
-                <div className="flex ml-auto mb-5">
-                  <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
-                </div>
-                <div className="flex flex-col md:flex-row gap-10 flex-grow">
-                  <div className="md:flex flex-col flex-1">
-                    <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
-                     <div 
+      {servicesLoaded &&
+        <div className="flex flex-col md:flex-row gap-10">
+          {filterOpen && (
+            <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
+              <div className="flex ml-auto mb-5">
+                <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
+              </div>
+              <div className="flex flex-col md:flex-row gap-10 flex-grow">
+                <div className="md:flex flex-col flex-1">
+                  <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+                  <div
                     className="fade-up-3"
                     data-animation="animate__fadeInUp"
                   >
-                   <div className="fade-up-3" data-animation="animate__fadeInUp">
-                    <TreeSelect
-                      label={translate(translations.service_types)}
-                      items={combineCategoriesWithSubcategories(categories, subcategories)}
-                      className="w-full overflow-hidden service-types-select"
-                      onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-                      value={selectedFilterValues.serviceTypes}
-                      defaultValue={[-1]}
-                    />
+                    <div className="fade-up-3" data-animation="animate__fadeInUp">
+                      <TreeSelect
+                        label={translate(translations.service_types)}
+                        items={combineCategoriesWithSubcategories()}
+                        className="w-full overflow-hidden service-types-select"
+                        onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+                        value={selectedFilterValues.serviceTypes}
+                        defaultValue={[-1]}
+                      />
                     </div>
-                    </div>
-                     <div 
+                  </div>
+                  <div
                     className="fade-up-4"
                     data-animation="animate__fadeInUp"
-                  >                    
-                       <TreeSelect
+                  >
+                    <TreeSelect
                       label={translate(translations.provider)}
                       items={mapProviderData(filteredProviders)}
                       className="w-full overflow-hidden"
@@ -388,24 +391,47 @@ export function BlockServices(props: { block: BlockServices }) {
                       value={selectedFilterValues.provider}
                       defaultValue={[-1]}
                     />
-                    </div>
                   </div>
                 </div>
               </div>
-            )}
-            <div className="hidden md:flex flex-col flex-1">
-              <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
-              <div className="fade-up-3" data-animation="animate__fadeInUp">
+            </div>
+          )}
+          <div className="hidden md:flex flex-col flex-1">
+            <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+            {/* <h4>{translate(translations.serviceTypes)}</h4>
+            <div className="md:h-[70vh] overflow-y-scroll	">
+              {categoriesData.map(x => (
+                <div>
+                  <FormControlLabel
+                    label={x.label}
+                    control={
+                      <Checkbox value={x.value} onChange={(e) => { handleSelectedFilters([+e.target.value], filterType.serviceTypes) }} />
+                    }
+                  />
+                  {x.children?.map(y => (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+                      <FormControlLabel
+                        label={y.label}
+                        control={
+                          <Checkbox value={`${x.value}-${y.value}`} onChange={(e) => { handleSelectedFilters([e.target.value], filterType.serviceTypes) }} />
+                        }
+                      />
+                    </Box>
+                  ))}
+                </div>
+              ))}
+            </div> */}
+            <div className="fade-up-3" data-animation="animate__fadeInUp">
               <TreeSelect
                 label={translate(translations.serviceTypes)}
-                items={combineCategoriesWithSubcategories(categories, subcategories)}
+                items={combineCategoriesWithSubcategories()}
                 className="w-full overflow-hidden service-types-select"
                 onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
                 value={selectedFilterValues.serviceTypes}
                 defaultValue={[-1]}
               />
-              </div>
-              <div className="fade-up-4" data-animation="animate__fadeInUp">
+            </div>
+            <div className="fade-up-4" data-animation="animate__fadeInUp">
               <TreeSelect
                 label={translate(translations.provider)}
                 items={mapProviderData(filteredProviders)}
@@ -414,39 +440,39 @@ export function BlockServices(props: { block: BlockServices }) {
                 value={selectedFilterValues.provider}
                 defaultValue={[-1]}
               />
-              </div>
             </div>
-            <div className="grow-[4] flex-1 relative">
-              <div className="flex mt-3.5 mb-3.5 items-center">
-                <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
-                {view === 0 && <span className="hidden md:inline">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
-                <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
-                  <Radio.Group value={view} onChange={handleViewChange} className={`fade-up-5 flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`} data-animation="animate__fadeInUp">
-                    <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
-                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
-                        <span className="material-symbols-outlined material-icons">
-                          map
-                        </span>
-                        {translate(translations.map)}
-                      </div>
-                    </Radio.Button>
-                    <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
-                      <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
-                        <span className="material-symbols-outlined material-icons">
-                          list_alt
-                        </span>
-                        {translate(translations.list)}
-                      </div>
-                    </Radio.Button>
-                  </Radio.Group>
-                </Space>
-              </div>
+          </div>
+          <div className="grow-[4] flex-1 relative">
+            <div className="flex mt-3.5 mb-3.5 items-center">
+              <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
+              {view === 0 && <span className="hidden md:inline">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
+              <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
+                <Radio.Group value={view} onChange={handleViewChange} className={`fade-up-5 flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`} data-animation="animate__fadeInUp">
+                  <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
+                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                      <span className="material-symbols-outlined material-icons">
+                        map
+                      </span>
+                      {translate(translations.map)}
+                    </div>
+                  </Radio.Button>
+                  <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
+                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                      <span className="material-symbols-outlined material-icons">
+                        list_alt
+                      </span>
+                      {translate(translations.list)}
+                    </div>
+                  </Radio.Button>
+                </Radio.Group>
+              </Space>
+            </div>
 
-              {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {filteredServices.length} of {services.length} </div>}
-              <div className="fade-up-6" data-animation="animate__fadeInUp">
-                {view === 0 && <Maps services={filteredServices} />}
-                {view === 1 && <ServicesList serviceCount={services?.length} services={filteredServices} />}
-              </div>
+            {view === 0 && <div className="md:hidden my-4">{translate(translations.showing)} {filteredServices.length} of {services.length} </div>}
+            <div className="fade-up-6" data-animation="animate__fadeInUp">
+              {view === 0 && <Maps services={filteredServices} />}
+              {view === 1 && <ServicesList serviceCount={services?.length} services={filteredServices} />}
+            </div>
           </div>
         </div>}
       {!servicesLoaded && (
@@ -454,6 +480,6 @@ export function BlockServices(props: { block: BlockServices }) {
           <Loader size={72} width={12} className="bg-gray-500" />
         </div>
       )}
-  </Container>
-);
+    </Container>
+  );
 }
