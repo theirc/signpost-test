@@ -4,6 +4,8 @@ import HomePageCards from "./home-page-cards";
 import { languages } from "../locale"
 import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
+const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#CDA9E9', '#F5ABA7', '#F9D79E', '#FDF1B1' ]
+
 export function BlockCategories(props: { block: BlockCategories }) {
   const { block } = props;
   useAnimateOnScroll();
@@ -25,12 +27,13 @@ export function BlockCategories(props: { block: BlockCategories }) {
       <div className="fade-up-2"
       data-animation="animate__fadeInUp">
         <HomePageCards
-          cards={categories?.map((category) => {
+          cards={categories?.map((category, index) => {
             return {
               title: translate(category.name),
               subtitle: translate(category.description),
               iconName: category.icon,
               href: `/categories/${category.id}`,
+              color: colors[index % colors.length]
             };
           })}
         />

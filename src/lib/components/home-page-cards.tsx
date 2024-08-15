@@ -14,6 +14,7 @@ export interface CardsProps {
   href: string | (() => void);
   passHref?: boolean;
   target?: "_blank" | "_self" | "_parent" | "_top";
+  color: string;
 }
 
 export interface HomePageCards {
@@ -26,11 +27,17 @@ function Cards({
   iconName,
   href,
   target,
+  color,
 }: CardsProps) {
   const isRTL = languages[app.locale]?.rtl;
 
+  const cardStyle = {
+    backgroundColor: color,
+    transition: 'background-color 0.3s, color 0.3s',
+  }
+
   const cardContent = (
-    <Card hoverable className="home-page-card bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
+    <Card hoverable style={cardStyle} className="home-page-card">
       <Card.Meta
         avatar={<span className="material-icons card-icon">{iconName}</span>}
         title={
