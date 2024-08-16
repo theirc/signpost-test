@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Button, Input, Modal, Select, SelectProps, Tabs } from "antd"
 const { Search } = Input
-import { MdMic, MdStop } from "react-icons/md";
+import { MdMic, MdStop } from "react-icons/md"
 import { MdSend } from "react-icons/md"
 import { BsRobot } from "react-icons/bs"
 import { FaThumbsUp } from "react-icons/fa"
@@ -44,7 +44,7 @@ export function AIBot() {
   const messages = useRef<ChatMessage[]>([
     {
       type: "bot",
-      message: "Hello, I am Signpost Bot. How can I help you?",
+      message: "Hello, I am the Signpost Bot. How can I assist you today?",
     }
   ])
 
@@ -187,7 +187,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
 
   const handleSendRecording = async () => {
     if (mediaBlobUrl) {
-      const response = await fetch(mediaBlobUrl);
+      const response = await fetch(mediaBlobUrl)
       const blob = await response.blob()
       const base64Data = await blobToBase64(blob)
       props.onSearch(undefined, base64Data)
@@ -198,7 +198,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
   }
 
   const handleModeToggle = () => {
-    setIsVoiceMode(!isVoiceMode);
+    setIsVoiceMode(!isVoiceMode)
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -206,7 +206,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
   }
 
   const handleSearch = (v: string) => {
-    props.onSearch(v);
+    props.onSearch(v)
     setValue("")
   }
 
@@ -272,7 +272,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
         </div>
       )}
     </div>
-  );
+  )
 }
 
 interface MessageProps {
