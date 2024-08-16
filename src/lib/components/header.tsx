@@ -115,6 +115,13 @@ export function Header() {
         </div>
         <Container>
           <div className="toolbar">
+          <a 
+              href="/" 
+              className="material-symbols-outlined material-icons leading-snug"
+              style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}
+            >
+              home
+            </a>
             <button
               ref={drawerButtonRef}
               className="menu_icon md:hidden"
