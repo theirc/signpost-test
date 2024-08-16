@@ -51,9 +51,9 @@ export function Article() {
       <div className={`flex flex-col ${isRTL ? 'text-right' : ''}`} ref={refScrollUp}>
       <Breadcrumb separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title: <a href={`/categories/${category.id}`}>{translate(category.name)}</a>}, {title: <a href={`/categories/${category.id}/${section.id}`}>{translate(section.name)}</a>}, {title: translate(a.name)}]} />
         <div>
-          <h1 className="fade-up-0"
+          <h1 className="fade-up-0 text-4xl font-medium leading-snug"
               data-animation="animate__fadeInUp">{title}</h1>
-          <p className="fade-up-1"
+          <p className="fade-up-1 text-sm font-light leading-tight"
               data-animation="animate__fadeInUp">{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
           <div className={`flex items-center mt-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <TextReader />
@@ -69,7 +69,7 @@ export function Article() {
         ${isRTL ? 'left-0' : 'right-0'}
       `}
     >
-      <strong className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+      <strong className={`flex items-center text-base font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
         {translate(translations.backToTop)} 
         <ArrowUpOutlined className={isRTL ? 'mr-2' : 'ml-2'} />
       </strong>

@@ -18,9 +18,9 @@ export function BlockCategories(props: { block: BlockCategories }) {
 
   return (
     <Container block={block} className={isRTL ? 'rtl' : ''}>
-      <h1 className={`fade-up-0 ${isRTL ? 'text-right' : 'text-left'}`}
+      <h1 className={`fade-up-0 text-4xl font-normal leading-snug ${isRTL ? 'text-right' : 'text-left'}`}
       data-animation="animate__fadeInUp">{translate(block.title)} </h1>
-      <h2 className={`fade-up-1 ${isRTL ? 'text-right' : 'text-left'}`}
+      <h2 className={`fade-up-1 text-3xl font-medium leading-normal ${isRTL ? 'text-right' : 'text-left'}`}
       data-animation="animate__fadeInUp">
         {translate(block.subtitle)}
       </h2>

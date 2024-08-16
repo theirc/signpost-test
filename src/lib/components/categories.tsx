@@ -155,12 +155,12 @@ export function Categories() {
         <div className="sm:w-full px-4 md:w-4/5 h-fit">
         <Breadcrumb className="mb-8" separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title:translate(translations.resourceCenter)}]} />
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px] mb-4">
-            <h1 className={isRTL ? 'text-right' : 'text-left'}> {translate(translations.category)}</h1>
+            <h1 className={`text-4xl font-medium leading-normal ${isRTL ? 'text-right' : 'text-left'}`}> {translate(translations.category)}</h1>
             <div className="flex gap-4 flex-wrap">
               {categories.map(category => (
                 <Button
                   key={category.id}
-                  className={`category-filter-button ${category.id === +id || (category.id === 0 && !id) ? 'active' : ''}`}
+                  className={`category-filter-button text-sm font-medium ${category.id === +id || (category.id === 0 && !id) ? 'active' : ''}`}
                   onClick={() => category.id === 0 ? navigate(`/categories/`) : navigate(`/categories/${category.id}/`)}
                 >
                   {translate(category.name)}
@@ -169,12 +169,12 @@ export function Categories() {
             </div>
           </div>
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
-            <h1 className={isRTL ? 'text-right' : 'text-left'}>{translate(translations.topic)}</h1>
+            <h1 className={`text-3xl font-medium leading-normal ${isRTL ? 'text-right' : 'text-left'}`} >{translate(translations.topic)}</h1>
             <div className="flex gap-4 flex-wrap">
               {categorySections.map(section => (
                 <Button
                   key={section.id}
-                  className={`category-filter-button ${section.id === +sectionid || (section.id === 0 && !sectionid) ? 'active' : ''}`}
+                  className={`category-filter-button text-sm font-medium ${section.id === +sectionid || (section.id === 0 && !sectionid) ? 'active' : ''}`}
                   onClick={() => !c ? navigate('/categories/') : section.id === 0 ? navigate(`/categories/${c.id}/`) : navigate(`/categories/${c.id}/${section.id}/`)}
                 >
                   {translate(section.name)}
@@ -196,8 +196,8 @@ export function Categories() {
               <Card key={article.id} className={`articles-card ${isRTL ? 'rtl-card' : ''}`}>
                 <Tag color="green">{translate(categories.find(category => category.id === article.category)?.name)}</Tag>
                 <ReadTime content={translate(article.description)}/>
-                <h3>{translate(article.name)}</h3>
-                <p>{`${stripHtmlTags(translate(article.description))?.slice(0, 100)}...`}</p>
+                <h3 className="text-base font-bold">{translate(article.name)}</h3>
+                <p className="text-sm font-light">{`${stripHtmlTags(translate(article.description))?.slice(0, 100)}...`}</p>
                 <p>{new Date(article.updated_at).toLocaleDateString('en-GB')}</p>
                 <Link to={`/article/${article.id}`} className="text-black underline hover:underline">
                   <strong>{translate(translations.readMore)} <RightOutlined /></strong>

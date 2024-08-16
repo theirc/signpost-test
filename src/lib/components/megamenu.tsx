@@ -46,6 +46,7 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
                                 }}
                                 onToggle={() => handleToggle && handleToggle(index)}
                                 active={clicked === index}
+                    
                             />
                         );
                     })}
