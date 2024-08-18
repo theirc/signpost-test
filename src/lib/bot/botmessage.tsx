@@ -6,13 +6,22 @@ import { FaThumbsDown, FaThumbsUp, FaFlag } from "react-icons/fa"
 import { useMultiState } from ".."
 import { api, serverurl } from "../api"
 import Markdown from "react-markdown"
+import { useReactMediaRecorder } from "react-media-recorder"
 const { TextArea } = Input
 
 export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebuild: () => void }) {
 
   let { isWaiting, rebuild, m } = props
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const {
+    status,
+    startRecording,
+    stopRecording,
+    mediaBlobUrl,
+    clearBlobUrl,
+  } = useReactMediaRecorder({ audio: true })
 
+  console.log('MESSAGE ', m);
   const [state, setState] = useMultiState({
     open: false,
     positivie: "fail" as AI_SCORES,
@@ -82,6 +91,12 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
             className="mt-1 cursor-pointer text-red-500"
             onClick={showModalRedFlag}
           />
+        </div>
+      )}
+
+      {m.tts && (
+        <div className="test">
+          <AudioComponent message={m.message} />
         </div>
       )}
 
@@ -469,5 +484,34 @@ function BotScoreModal(props: {
         </div>
       </div>
     </Modal>
+  )
+}
+
+function AudioComponent(props: { message: string }) {
+  const { message } = props
+
+  const base64ToBlob = (base64: string, contentType = 'audio/wav', sliceSize = 512) => {
+    const byteCharacters = atob(base64)
+    const byteArrays: Uint8Array[] = []
+
+    for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+      const slice = byteCharacters.slice(offset, offset + sliceSize)
+
+      const byteNumbers = new Array(slice.length)
+      for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i)
+      }
+
+      const byteArray = new Uint8Array(byteNumbers)
+      byteArrays.push(byteArray)
+    }
+
+    const audio = new Blob(byteArrays, { type: contentType })
+
+    return URL.createObjectURL(audio)
+  }
+
+  return (
+    <audio controls src={base64ToBlob(message)} className="mt-4" />
   )
 }

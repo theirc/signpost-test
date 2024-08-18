@@ -33,6 +33,7 @@ declare global {
     question?: string
     logID?: number
     audio?: any
+    tts?: boolean
   }
 
   type AI_SCORES = "pass" | "fail" | "redflag"
