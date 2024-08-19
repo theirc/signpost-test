@@ -654,24 +654,24 @@ box-sizing: border-box;
 .content-normalize{
   transform: scaleX(-1);
 }
-.category-filter-button {
+/* .category-filter-button {
   background-color: #80C2C2;
-}
+} */
 
 .category-filter-button:hover {
-  border-color: #609292 !important;
+  border-color: #808080 !important;
   color: black !important;
-  background-color: #609292 !important;
+  background-color: #0000 !important;
 }
 
 .category-filter-button:active {
-  border-color: #609292 !important;
+  border-color: #FFFFFF !important;
   color: black !important;
-  background-color: #609292 !important;
+  background-color: #FFFFFF!important;
 }
 
 .category-filter-button.active {
-  background-color: #609292;
+  background-color: #000;
 }
 
 .articles-card {

@@ -22,6 +22,8 @@ const allOption = {
   }
 };
 
+const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#F5ABA7', '#F9D79E', '#FDF1B1' ]
+
 export function Categories() {
   const navigate = useNavigate();
   const { id, sectionid } = useParams();
@@ -157,11 +159,12 @@ export function Categories() {
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px] mb-4">
             <h1 className={`text-4xl font-medium leading-normal ${isRTL ? 'text-right' : 'text-left'}`}> {translate(translations.category)}</h1>
             <div className="flex gap-4 flex-wrap">
-              {categories.map(category => (
+              {categories.map((category, index) => (
                 <Button
                   key={category.id}
                   className={`category-filter-button text-sm font-medium ${category.id === +id || (category.id === 0 && !id) ? 'active' : ''}`}
                   onClick={() => category.id === 0 ? navigate(`/categories/`) : navigate(`/categories/${category.id}/`)}
+                  style={{backgroundColor: colors[ index % colors.length]}}
                 >
                   {translate(category.name)}
                 </Button>
@@ -171,11 +174,12 @@ export function Categories() {
           <div className="bg-[#F7F7F7] px-4 pb-4 pt-[1px]">
             <h1 className={`text-3xl font-medium leading-normal ${isRTL ? 'text-right' : 'text-left'}`} >{translate(translations.topic)}</h1>
             <div className="flex gap-4 flex-wrap">
-              {categorySections.map(section => (
+              {categorySections.map((section, index) => (
                 <Button
                   key={section.id}
                   className={`category-filter-button text-sm font-medium ${section.id === +sectionid || (section.id === 0 && !sectionid) ? 'active' : ''}`}
                   onClick={() => !c ? navigate('/categories/') : section.id === 0 ? navigate(`/categories/${c.id}/`) : navigate(`/categories/${c.id}/${section.id}/`)}
+                  style={{backgroundColor: colors[ index % colors.length]}}
                 >
                   {translate(section.name)}
                 </Button>
