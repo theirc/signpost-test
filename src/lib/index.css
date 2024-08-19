@@ -607,6 +607,29 @@ box-sizing: border-box;
   grid-template-columns: 50% 50%;
 }
 
+.block-mission-background {
+  background-image: url('../../src/assets/Collages.jpg');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.block-mission-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(129, 123, 123, 0.5); 
+  z-index: 1;
+}
+
+.block-mission-background > * {
+  position: relative;
+  z-index: 2;
+}
+
 .article img {
   display: block;
   width: 100%;
@@ -702,7 +725,6 @@ audio {
 
 .header-search-input {
   width: 100%;
-  margin-top: 30px;
 }
 
 /* .about-content h1 {
