@@ -81,25 +81,25 @@ export function Header() {
 
       if (item.type === 'about') {
         content = (
-          <a href="#about-section" className="text-black font-bold no-underline">
+          <a href="#about-section" className="text-base font-normal leading-snug no-underline">
             {title}
           </a>
         );
       } else if (item.type === "services") {
         content = (
-          <a href="#service-map" className="text-black font-bold no-underline">
+          <a href="#service-map" className="text-base font-normal leading-snug no-underline">
             {title}
           </a>
         );
       } else {
         content = (
-          <Link to={item.link || "#"} className="text-black font-bold no-underline">
+          <Link to={item.link || "#"} className="text-base font-normal leading-snug no-underline">
             {title}
           </Link>
         );
       }
 
-      return <li key={title} className="mx-2">{content}</li>;
+      return <li key={title} className="mx-2 text-base font-normal leading-snug">{content}</li>;
     });
   };
  
@@ -115,6 +115,13 @@ export function Header() {
         </div>
         <Container>
           <div className="toolbar">
+          <a 
+              href="/" 
+              className="material-symbols-outlined material-icons leading-snug"
+              style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}
+            >
+              home
+            </a>
             <button
               ref={drawerButtonRef}
               className="menu_icon md:hidden"
@@ -125,9 +132,11 @@ export function Header() {
               <MenuOutlined />
             </button>
             <div className="hidden md:flex items-center justify-between w-full">
-              <ul className="flex list-none">
+              <ul className="flex list-none
+               text-base font-normal leading-snug">
                 {renderMenuItems(app.page.header.menu)}
-                <li><MegaMenu menuData={menuResources} /></li>
+                <li className="list-none
+               text-base font-normal leading-snug"><MegaMenu menuData={menuResources} /></li>
               </ul>
               {/* Mobile navigation drawer */}
               <div className="md:hidden absolute">
@@ -142,10 +151,10 @@ export function Header() {
               </div>
               <ul className="flex items-center list-none">
                 <li className="mr-2">
-                  <Link to="/signpostbot" className="text-black font-bold no-underline">Bot</Link>
+                  <Link to="/signpostbot" className="text-base font-normal leading-snug no-underline">Bot</Link>
                 </li>
-                <li className="mr-2">
-                  <Link to='/search-results' className="text-black font-bold no-underline">{translate(translations.search)}</Link>
+                <li className="mr-2 ">
+                  <Link to='/search-results' className="text-base font-normal leading-snug no-underline">{translate(translations.search)}</Link>
                 </li>
                 <li>
                   <LanguageDropdown isMobile={false} />

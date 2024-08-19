@@ -14,7 +14,7 @@ export function ReadTime ({content }: ReadTimeProps) {
     return formatReadTimeText(minutes);
     }, [content]);
 
-    return <span className="read-time-bold">{readTime}</span>
+    return <span className="text-sm font-bold">{readTime}</span>
 }
 
 function countWords(html: string): number {

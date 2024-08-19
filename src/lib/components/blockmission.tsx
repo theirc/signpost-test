@@ -22,7 +22,7 @@ export function BlockMission(props: { block: BlockMission}) {
 
   return <Container block={block}>
     <div className="py-12 px-4 max-w-4xl mx-auto container-center">
-    <h1 className="fade-up-0 text-3xl md:text-4xl text-center max-w-xl mission-heading"           
+    <h1 className={`fade-up-0 font-normal mission-heading ${isRTL ? 'text-right' : 'text-left'}`}          
     data-animation="animate__fadeInUp">{translate(block.title)}</h1>
     <div className={`header-search-input fade-up-1 ${isRTL ? 'rtl' : ''}`}
   data-animation="animate__fadeInUp">

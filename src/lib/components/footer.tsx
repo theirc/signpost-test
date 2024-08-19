@@ -19,7 +19,7 @@ export function Footer() {
       if (item.type === "services") {
         return (
           <li key={title} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'}`}>
-            <a href="#service-map" className="hover:text-gray-800 text-sm">
+            <a href="#service-map" className="hover:text-gray-800 text-sm font-medium leading-snug">
               {title}
             </a>
           </li>
@@ -27,7 +27,7 @@ export function Footer() {
       } else {
         return (
           <li key={title} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'} text-sm`}>
-            <Link to={item.link || "#"} className="hover:text-gray-800 text-sm">
+            <Link to={item.link || "#"} className="hover:text-gray-800 text-sm font-light leading-snug">
               {title}
             </Link>
           </li>
@@ -40,7 +40,7 @@ export function Footer() {
   const renderCategories = () => {
     return Object.values(categories).map((category) => (
       <li key={category.id} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'}`}>
-      <Link to={`/categories/${category.id}`} className="hover:text-gray-800 text-sm">
+      <Link to={`/categories/${category.id}`} className="hover:text-gray-800 text-sm font-medium leading-snug">
         {translate(category.name)}
       </Link>
     </li>
@@ -57,7 +57,7 @@ export function Footer() {
             </Link>
             <ul className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 list-none">
               <li className="mb-3 sm:mb-0 sm:mr-6">
-                <Link to="/" className="hover:text-gray-800 text-sm">
+                <Link to="/" className="hover:text-gray-800 text-sm font-medium leading-snug">
                   {translate(translations.home)}
                 </Link>
               </li>
@@ -70,14 +70,14 @@ export function Footer() {
               <li key={`${link.title}-${link.url}`} className="mr-4 mb-3">
                 <Link 
                   to={link.url} 
-                  className="hover:text-gray-800 text-sm font-hairline"
+                  className="hover:text-gray-800 text-base font-normal leading-normal"
                 >
                   {translate(link.title)}
                 </Link>
               </li>
             ))}
           </ul>
-          <p className={`text-base font-light ${isRTL ? 'text-right' : ''}`}>
+          <p className={`text-base font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>
             {translate(app.page.footer.text)}
           </p>
         </div>

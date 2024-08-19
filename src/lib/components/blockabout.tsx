@@ -25,12 +25,12 @@ export function BlockAbout(props: { block: BlockAbout }) {
         <img 
         src={getImageUrl(block.image)}
         alt={translate(block.title)}
-        className="w-full lg:w-2/3 h-auto rounded-[10px]"
+        className="lg:w-2/3 h-auto rounded-[10px]"
         />
       </div>
       <div className={`flex-1 about-content ${isRTL ? 'text-right' : ''}`}>
-        <h1 className="fade-up-1" data-animation="animate__fadeInUp">{translate(block.title)}</h1>
-        <div className={`fade-up-2 grid grid-cols-1 sm:grid-cols-2 gap-4 about-paragraph ${isRTL ? 'sm:grid-flow-col-dense' : ''}`} dangerouslySetInnerHTML={{ __html: translate(block.subtitle) }} data-animation="animate__fadeInUp"></div>
+        <h1 className="fade-up-1 text-4xl font-medium leading-tight" data-animation="animate__fadeInUp">{translate(block.title)}</h1>
+        <p className={`fade-up-2 text-base font-medium leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-4 about-paragraph ${isRTL ? 'sm:grid-flow-col-dense' : ''}`} dangerouslySetInnerHTML={{ __html: translate(block.subtitle) }} data-animation="animate__fadeInUp"></p>
       </div>
     </div>
   </Container>

@@ -24,7 +24,7 @@ const MenuItem = ({
             <div className="nav_item_content py-4">
                 <NavLink
                     to={location.pathname}
-                    className={({ isActive }) => (isActive ? 'active no-underline font-bold' : 'no-underline font-bold')}
+                    className={({ isActive }) => (isActive ? 'active no-underline text-base font-normal leading-snug' : 'no-underline text-base font-normal leading-snug')}
                     onClick={onToggle}
                     onMouseEnter={() => setVisible(true)}
                     onFocus={() => setVisible(true)}

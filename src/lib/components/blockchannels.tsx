@@ -19,15 +19,15 @@ export function BlockChannels(props: { block: BlockChannels }) {
 
   return (
     <Container block={block}>
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col">
       {block.title && (
-        <h2 className="fade-up-0 title" data-animation="animate__fadeInUp">{translate(block.title)}</h2>
+        <h1 className="fade-up-0 text-3xl font-normal leading-snug title" data-animation="animate__fadeInUp">{translate(block.title)}</h1>
       )}
       {block.subtitle && (
-        <p className="fade-up-1 subtitle"            data-animation="animate__fadeInUp">
+        <p className="fade-up-1 subtitle text-2xl font-medium leading-normal" data-animation="animate__fadeInUp">
           {translate(block.subtitle)}</p>
       )}
-      <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-4 w-full max-w-sm md:max-w-full mx-auto md:justify-between md:p-4">
+      <div className="flex flex-col md:flex-row md:flex-wrap gap-4 md:gap-4 w-full max-w-sm md:max-w-full mx-auto md:justify-between md:p-4">
       {block.fb_link && (
         <a
           href={translate(props.block.fb_link)}

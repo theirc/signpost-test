@@ -9,7 +9,7 @@ export function BlockText(props: { block: BlockText }) {
   const { block } = props
   return <Container block={block}>
     <div className=" block-text">
-   <p className="fade-up-0"
+   <p className="fade-up-0 text-base font-medium leading-relaxed"
     data-animation="animate__fadeInUp"
    >{translate(block.text)}</p>
     </div>

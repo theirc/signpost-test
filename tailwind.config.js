@@ -35,6 +35,14 @@ export default {
         extrabold: '800',
         black: '900',
       },
+      lineHeight: {
+        snug: '1.375',
+        relaxed: '1.625',
+        none: '1',
+        tight: '1.25',
+        normal: '1.5',
+        loose: '2',
+      },
       colors: {
         'neutral-field-background': '#FFFFFF',
         'neutral-icon': '#575757',
