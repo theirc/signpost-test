@@ -48,7 +48,7 @@ export function AIBot() {
     }
   ])
 
-  const onSend = async (message?: string, audio?: any) => {
+  const onSend = async (message?: string, audio?: any, tts?: boolean) => {
 
     // message ||= "what is kobo forms?"
     // message ||= "how do I get a passport in Iraq?"
@@ -64,7 +64,7 @@ export function AIBot() {
     }
     setState({ isSending: true })
 
-    const response = message ? await api.askbot({ message }, selectedBots) : await api.askbot({ audio }, selectedBots)
+    const response = message ? await api.askbot({ message }, tts, selectedBots) : await api.askbot({ audio }, tts, selectedBots)
 
     if (!response.error) {
       for (const m of response.messages) {
@@ -93,7 +93,7 @@ export function AIBot() {
   const onRebuild = async () => {
     setState({ isSending: true })
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-    const response = await api.askbot({ command: "rebuild", }, selectedBots)
+    const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
     messages.current.unshift(response)
     setState({ isSending: false })
   }
@@ -151,11 +151,12 @@ export function AIBot() {
 
 }
 
-function SearchInput(props: { onSearch: (message?: string, audio?: any) => void, disabled: boolean }) {
+function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: boolean) => void, disabled: boolean }) {
 
   const [value, setValue] = useState("")
   const [isVoiceMode, setIsVoiceMode] = useState<boolean>(false)
   const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
+  const [tts, setTts] = useState<boolean>(false)
 
   const {
     status,
@@ -176,7 +177,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
     }
   }
 
-  function blobToBase64(blob) {
+  const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result)
@@ -190,7 +191,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
       const response = await fetch(mediaBlobUrl)
       const blob = await response.blob()
       const base64Data = await blobToBase64(blob)
-      props.onSearch(undefined, base64Data)
+      props.onSearch(undefined, base64Data, tts)
 
       clearBlobUrl()
       setRecordingComplete(false)
@@ -206,7 +207,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
   }
 
   const handleSearch = (v: string) => {
-    props.onSearch(v)
+    props.onSearch(v, '', tts);
     setValue("")
   }
 
@@ -223,6 +224,9 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any) => void,
       <div className="mb-4 flex justify-between">
         <Button onClick={handleModeToggle} type="primary" className="w-40">
           {isVoiceMode ? "Switch to Text" : "Switch to Voice"}
+        </Button>
+        <Button onClick={() => setTts(!tts)} type="primary" className="w-60">
+          {tts ? "Switch to Text Response" : "Switch to Voice Response"}
         </Button>
       </div>
 
