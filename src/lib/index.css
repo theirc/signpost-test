@@ -320,10 +320,11 @@ box-sizing: border-box;
 .card-title {
   margin-bottom: 0 !important;
   font-weight: 450 !important;
-  font-size: 18px !important;
+  font-size: 10px !important;
   line-height: 23px !important;
   text-align: left !important;
   font-family: inherit !important;
+  color: rgb(255, 255, 255) !important;
   @media screen and (min-width: 768px) {
     font-size: 1rem !important;
   }
@@ -797,6 +798,7 @@ nav .toolbar a {
 }
 .footer-black-text {
   color: inherit;
+  border-top:  1px solid #ced4da;
 }
 .footer-black-text a {
   color: inherit;
@@ -839,13 +841,13 @@ nav .toolbar a {
 }
 
 .social-icon-svg {
-  color: #4a5568;
+  color: #000000;
   width: 2rem;
   height: 2rem;
 }
 
 .social-icon-svg:hover {
-  color: #1a202c;
+  color: #030c1c;
 }
 
 @media (min-width: 768px) {
@@ -857,11 +859,9 @@ nav .toolbar a {
 
 .social-icon-text {
   margin-top: 0.25rem;
-  color: #2d3748;
-  text-align: center;
-  font-weight: 400;
-  font-size: 1.125rem;
-  line-height: 1;
+  color: #2e343d;
+  font-weight: 200;
+  line-height: 0.5;
   text-decoration: none;
 }
 

@@ -22,7 +22,7 @@ const allOption = {
   }
 };
 
-const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#F5ABA7', '#F9D79E', '#FDF1B1' ]
+const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#F9D79E', '#FDF1B1' ]
 
 export function Categories() {
   const navigate = useNavigate();

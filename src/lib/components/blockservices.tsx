@@ -444,12 +444,12 @@ export function BlockServices(props: { block: BlockServices }) {
           </div>
           <div className="grow-[4] flex-1 relative">
             <div className="flex mt-3.5 mb-3.5 items-center">
-              <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
+              <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264] text-white">{translate(translations.filters)}</Button>
               {view === 0 && <span className="hidden md:inline font-normal text-base leading-snug">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
               <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
                 <Radio.Group value={view} onChange={handleViewChange} className={`fade-up-5 flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`} data-animation="animate__fadeInUp">
                   <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
-                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                    <div className={`flex items-center text-white ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
                       <span className="material-symbols-outlined material-icons">
                         map
                       </span>
@@ -457,7 +457,7 @@ export function BlockServices(props: { block: BlockServices }) {
                     </div>
                   </Radio.Button>
                   <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
-                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                    <div className={`flex items-center text-white ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
                       <span className="material-symbols-outlined material-icons">
                         list_alt
                       </span>
