@@ -22,11 +22,11 @@ export function BlockMission(props: { block: BlockMission}) {
   };
   
   return <Container block={block}>
-    <div className="block-mission-background">
+    <div className="fade-up-0 block-mission-background"  data-animation="animate__fadeInUp">
     <div className="py-12 px-4 max-w-4xl mx-auto container-center">
-    <h1 className={`fade-up-0 font-medium mission-heading ${isRTL ? 'text-right' : 'text-left'}`}          
+    <h1 className={`fade-up-1 font-medium mission-heading ${isRTL ? 'text-right' : 'text-left'}`}          
     data-animation="animate__fadeInUp">{translate(block.title)}</h1>
-    <div className={`header-search-input fade-up-1 ${isRTL ? 'rtl' : ''}`}
+    <div className={`header-search-input fade-up-2 ${isRTL ? 'rtl' : ''}`}
   data-animation="animate__fadeInUp">
  <Search
   placeholder={translate(translations.searchForInformation)}
