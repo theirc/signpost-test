@@ -22,7 +22,7 @@ const allOption = {
   }
 };
 
-const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#F9D79E', '#FDF1B1' ]
+const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#CDA9E9', '#F5ABA7', '#F9D79E', '#FDF1B1' ]
 
 export function Categories() {
   const navigate = useNavigate();
@@ -136,7 +136,7 @@ export function Categories() {
 
   return (
     <div className={`flex overflow-y-scroll flex-col ${isRTL ? 'rtl' : ''}`}>
-      <div className="text-white flex justify-center bg-[#163020]">
+      {/* <div className="text-white flex justify-center bg-[#163020]">
         <div className="sm:w-full px-4 py-20 md:w-4/5 flex flex-col lg:flex-row lg:gap-16">
           <div className="flex-1 mb-20 lg:mb-0 text-6xl font-bold">{translate(translations.resourceCenter)}</div>
           <div className="flex flex-1 gap-4 lg:gap-x-8 flex-col lg:flex-row">
@@ -152,7 +152,7 @@ export function Categories() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
       <div className="py-16 w-full flex justify-center text-black bg-white h-auto">
         <div className="sm:w-full px-4 md:w-4/5 h-fit">
         <Breadcrumb className="mb-8" separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title:translate(translations.resourceCenter)}]} />
