@@ -160,7 +160,7 @@ function Service(props: { service: Service }) {
   const description = `${html2text.textContent.substring(0, 200)}...`;
 
   return (
-    <Link2 key={s.id} to={`/service/${s.id}`} className="no-underline flex items-center h-full flex-grow border-2 border-solid border-gray-300 px-5">
+    <Link2 key={s.id} to={`/service/${s.id}`} className="no-underline flex items-center h-full flex-grow border-2 border-solid border-gray-300 px-5 bg-[#F7F7F7] ">
       <div className="flex flex-col text-black hover:text-blue-500 transition-all h-full justify-between mb-6">
         <div>
           <Title level={3}>{translate(s.name)}</Title>

@@ -8,6 +8,7 @@ import {
 } from "react-map-gl"
 import { app, translate } from "../app"
 import { translations } from "../../translations"
+import { languages } from "../locale"
 import mapboxgl, { RasterLayer, Style } from "mapbox-gl"
 import supercluster, { ClusterFeature, PointFeature } from "supercluster"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -145,6 +146,7 @@ export function Maps({ services }: mapProps) {
   const [isMapReady, setIsMapReady] = useState(false)
   const [mapStyle, setMapStyle] = useState<Style | string>(MAP_STYLES.mapbox)
   const mapRef = useRef<MapRef>(null)
+  const isRTL = languages[app.locale]?.rtl;
 
   const bounds = useMemo(() => {
     return getBoundsForFeatures(services)
@@ -358,9 +360,9 @@ export function Maps({ services }: mapProps) {
               anchor="bottom"
               offset={20}
             >
-              <div className="popup-content">
+              <div className={`popup-content ${isRTL ? 'rtl' : ''}`}>
                 <div className="text-xl mb-2">
-                  <Title level={3}>
+                  <Title level={3} className={isRTL ? 'text-right' : 'text-left'}>
                     {translate(popupInfo.name)}
                   </Title>
                 </div>
@@ -371,7 +373,7 @@ export function Maps({ services }: mapProps) {
                     </span>
                     {popupInfo.address}
                   </Text>}
-                <div className="text-sm mb-2 text-gray-400">
+                <div className={`text-sm mb-2 text-gray-400 ${isRTL ? 'text-right' : 'text-left'}`}>
                   <Text type="secondary">
                     {stripHtmlTags(translate(popupInfo.description) || "")?.slice(
                       0,
@@ -380,7 +382,7 @@ export function Maps({ services }: mapProps) {
                     ...
                   </Text>
                 </div>
-                <div className="md:grid grid-cols-2 gap-4 mt-4 mb-4 flex flex-col">
+                <div className={`md:grid grid-cols-2 gap-4 mt-4 mb-4 flex flex-col ${isRTL ? 'flex-row-reverse' : ''}`}>
                   {popupInfo?.contactInfo?.map(info => {
                     if (!info.contact_details) return null;
 
@@ -390,14 +392,14 @@ export function Maps({ services }: mapProps) {
                       contactDetails: info.contact_details,
                     });
                     return (
-                      <div className="truncate flex items-center gap-2">
+                      <div className={`truncate flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Text>{icon}</Text>
                         <Link className="truncate contact-detail">{contactDetail}</Link>
                       </div>
                     )
                   })}
                 </div>
-                <div className="flex justify-end">
+                <div className={`flex justify-end ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Link
                     href={`/service/${popupInfo.id}`}
                     target="_blank"

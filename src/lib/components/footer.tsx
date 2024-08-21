@@ -48,7 +48,7 @@ export function Footer() {
 };
 
   return (
-    <footer className={`footer-black-text py-4 ${isRTL ? 'rtl' : ''}`}>
+    <footer className={`footer-black-text ${isRTL ? 'rtl' : ''}`}>
       <Container block={app.page.footer}>
         <div className="flex flex-col space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

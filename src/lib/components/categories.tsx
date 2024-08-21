@@ -22,7 +22,7 @@ const allOption = {
   }
 };
 
-const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#CDA9E9', '#F5ABA7', '#F9D79E', '#FDF1B1' ]
+const colors = [ '#D8BB41', '#CC8723', '#2C6040', '#609292', '#31437C', '#563077' ]
 
 export function Categories() {
   const navigate = useNavigate();
@@ -162,7 +162,7 @@ export function Categories() {
               {categories.map((category, index) => (
                 <Button
                   key={category.id}
-                  className={`category-filter-button text-sm font-medium ${category.id === +id || (category.id === 0 && !id) ? 'active' : ''}`}
+                  className={`category-filter-button text-sm font-medium text-white ${category.id === +id || (category.id === 0 && !id) ? 'active' : ''}`}
                   onClick={() => category.id === 0 ? navigate(`/categories/`) : navigate(`/categories/${category.id}/`)}
                   style={{backgroundColor: colors[ index % colors.length]}}
                 >
@@ -177,7 +177,7 @@ export function Categories() {
               {categorySections.map((section, index) => (
                 <Button
                   key={section.id}
-                  className={`category-filter-button text-sm font-medium ${section.id === +sectionid || (section.id === 0 && !sectionid) ? 'active' : ''}`}
+                  className={`category-filter-button text-sm font-medium text-white ${section.id === +sectionid || (section.id === 0 && !sectionid) ? 'active' : ''}`}
                   onClick={() => !c ? navigate('/categories/') : section.id === 0 ? navigate(`/categories/${c.id}/`) : navigate(`/categories/${c.id}/${section.id}/`)}
                   style={{backgroundColor: colors[ index % colors.length]}}
                 >
