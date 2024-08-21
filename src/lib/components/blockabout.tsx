@@ -29,7 +29,7 @@ export function BlockAbout(props: { block: BlockAbout }) {
         />
       </div>
       <div className={`flex-1 about-content ${isRTL ? 'text-right' : ''}`}>
-        <h1 className="fade-up-1 text-4xl font-medium leading-tight" data-animation="animate__fadeInUp">{translate(block.title)}</h1>
+        <h1 className="fade-up-1 text-5xl font-medium leading-tight" data-animation="animate__fadeInUp">{translate(block.title)}</h1>
         <p className={`fade-up-2 text-base font-medium leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-4 about-paragraph ${isRTL ? 'sm:grid-flow-col-dense' : ''}`} dangerouslySetInnerHTML={{ __html: translate(block.subtitle) }} data-animation="animate__fadeInUp"></p>
       </div>
     </div>

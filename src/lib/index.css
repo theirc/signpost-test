@@ -306,6 +306,10 @@ box-sizing: border-box;
   background-color: #F7F7F7 !important;
   color: black !important;
 }
+.home-page-card:hover .card-title,
+.home-page-card:hover .card-description {
+    color: black !important;
+}
 .card-wrapper {
   width: 100%;
   @media screen and (min-width: 768px) {
@@ -320,14 +324,17 @@ box-sizing: border-box;
 .card-title {
   margin-bottom: 0 !important;
   font-weight: 450 !important;
-  font-size: 18px !important;
+  font-size: 10px !important;
   line-height: 23px !important;
   text-align: left !important;
   font-family: inherit !important;
+  color: white !important;
+  
   @media screen and (min-width: 768px) {
     font-size: 1rem !important;
   }
 }
+
 .nav__header {
   position: static;
   height: 70px;
@@ -607,6 +614,43 @@ box-sizing: border-box;
   grid-template-columns: 50% 50%;
 }
 
+.block-mission-background {
+  background-image: url('../../src/assets/collagesss.png');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  color: white;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.block-mission-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.1); 
+  z-index: 1;
+}
+
+.block-mission-background > * {
+  position: relative;
+  z-index: 2;
+}
+@media (max-width: 768px) {
+  .block-mission-background {
+    min-height: 500px; 
+    background-size: cover;
+    background-size: auto 100%; 
+    background-position: center top; 
+  }
+}
+
 .article img {
   display: block;
   width: 100%;
@@ -633,20 +677,20 @@ box-sizing: border-box;
   height: 20px;
 }
 .map-buttons-container .ant-radio-button-wrapper {
-  background: #80C2C2;
+  background: #717171;
   border: none;
-  color: black;
+  color: #FFFFFF;
   padding: 4px 1rem;
   box-sizing: content-box;
 }
 .map-buttons-container .ant-radio-button-wrapper.ant-radio-button-wrapper-checked {
-  background: #609292;
+  background: #C4C4C4;
   border: none;
-  color: black;
+  color: #000;
 }
 
 :where(.css-dev-only-do-not-override-1xg9z9n).ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)::before {
-  background-color: #609292;
+  background-color: #C4C4C4;
 }
 .button-reverse {
   transform: scaleX(-1);
@@ -702,7 +746,15 @@ audio {
 
 .header-search-input {
   width: 100%;
-  margin-top: 30px;
+}
+
+@media (max-width: 768px){
+  .mission-heading {
+    margin-top: 3rem;
+  }
+  .header-search-input {
+    margin-top: 2rem;
+  }
 }
 
 /* .about-content h1 {
@@ -775,6 +827,7 @@ nav .toolbar a {
 }
 .footer-black-text {
   color: inherit;
+  border-top:  1px solid #ced4da;
 }
 .footer-black-text a {
   color: inherit;
@@ -817,13 +870,13 @@ nav .toolbar a {
 }
 
 .social-icon-svg {
-  color: #4a5568;
+  color: #1D1B20;
   width: 2rem;
   height: 2rem;
 }
 
 .social-icon-svg:hover {
-  color: #1a202c;
+  color: #656669;
 }
 
 @media (min-width: 768px) {
@@ -835,11 +888,9 @@ nav .toolbar a {
 
 .social-icon-text {
   margin-top: 0.25rem;
-  color: #2d3748;
-  text-align: center;
-  font-weight: 400;
-  font-size: 1.125rem;
-  line-height: 1;
+  color: #2e343d;
+  font-weight: 300;
+  line-height: 0.5;
   text-decoration: none;
 }
 

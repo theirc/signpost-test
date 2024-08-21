@@ -1,5 +1,6 @@
-import { translate } from "../app";
+import { app, translate } from "../app";
 import { Container } from "./container";
+import { languages } from "../locale"
 import { useAnimateOnScroll } from "./useAnimateOnScroll";
 import {
   FaFacebook,
@@ -15,16 +16,18 @@ import {
 export function BlockChannels(props: { block: BlockChannels }) {
   const { block } = props;
   useAnimateOnScroll();
+  const isRTL = languages[app.locale]?.rtl;
+
 
 
   return (
     <Container block={block}>
       <div className="flex flex-col">
       {block.title && (
-        <h1 className="fade-up-0 text-3xl font-normal leading-snug title" data-animation="animate__fadeInUp">{translate(block.title)}</h1>
+        <h1 className={`fade-up-0 text-3xl font-normal leading-snug title ${isRTL ? 'text-right' : 'text-left'}`}  data-animation="animate__fadeInUp">{translate(block.title)}</h1>
       )}
       {block.subtitle && (
-        <p className="fade-up-1 subtitle text-2xl font-medium leading-normal" data-animation="animate__fadeInUp">
+        <p className={`fade-up-1 subtitle text-2xl font-medium leading-normal ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">
           {translate(block.subtitle)}</p>
       )}
       <div className="flex flex-col md:flex-row md:flex-wrap gap-4 md:gap-4 w-full max-w-sm md:max-w-full mx-auto md:justify-between md:p-4">

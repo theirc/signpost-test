@@ -4,7 +4,7 @@ import HomePageCards from "./home-page-cards";
 import { languages } from "../locale"
 import { useAnimateOnScroll } from "./useAnimateOnScroll";
 
-const colors = [ '#ABDFBF', '#C0E1E0', '#B1C3FB', '#CDA9E9', '#F5ABA7', '#F9D79E', '#FDF1B1' ]
+const colors = [ '#D8BB41', '#CC8723', '#2C6040', '#609292', '#31437C', '#563077', '#575757' ]
 
 export function BlockCategories(props: { block: BlockCategories }) {
   const { block } = props;
