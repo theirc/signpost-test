@@ -344,6 +344,12 @@ export function Maps({ services }: mapProps) {
                   onClick={(e) => {
                     e.originalEvent.stopPropagation()
                     setPopupInfo(service)
+                    const map = mapRef.current?.getMap()
+                    const zoom = map?.getZoom()
+                    map?.flyTo({
+                      center: [longitude, latitude + 0.2],
+                      zoom: (zoom || 0) + 3,
+                    })
                   }}
                 >
                   {customMarkerIcon(cluster.properties.category)}

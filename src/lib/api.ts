@@ -29,14 +29,15 @@ export const api = {
 
   },
 
-  async askbot(req: ChatMessage, bots: { label: string, value: number, history: BotHistory[] }[]) {
+  async askbot(req: ChatMessage, tts: boolean, bots: { label: string, value: number, history: BotHistory[] }[]) {
 
     console.log("Request: ", bots)
 
     let answer: ChatMessage = {
       type: "bot",
       messages: [],
-      question: req.message
+      question: req.message,
+      tts
     }
 
     if (!bots.length) return answer
@@ -45,7 +46,7 @@ export const api = {
 
       let a: ChatMessage = {}
 
-      const breq = { ...req, id: b.value, history: b.history, audio: req.audio }
+      const breq = { ...req, id: b.value, history: b.history, audio: req.audio, tts }
 
       let options = {
         method: "POST",

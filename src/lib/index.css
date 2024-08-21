@@ -329,6 +329,7 @@ box-sizing: border-box;
   text-align: left !important;
   font-family: inherit !important;
   color: white !important;
+  
   @media screen and (min-width: 768px) {
     font-size: 1rem !important;
   }
@@ -746,6 +747,7 @@ audio {
 .header-search-input {
   width: 100%;
 }
+
 @media (max-width: 768px){
   .mission-heading {
     margin-top: 3rem;
@@ -754,6 +756,7 @@ audio {
     margin-top: 2rem;
   }
 }
+
 /* .about-content h1 {
   font-size: 44px;
 }
