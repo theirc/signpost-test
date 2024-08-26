@@ -4,14 +4,17 @@ const { Search } = Input
 import { MdMic, MdStop } from "react-icons/md"
 import { MdSend } from "react-icons/md"
 import { BsRobot } from "react-icons/bs"
+import { FaMicrophone } from "react-icons/fa"
 import { FaThumbsUp } from "react-icons/fa"
 import { FaThumbsDown } from "react-icons/fa"
+import { BsChatLeftText } from "react-icons/bs"
 import { BsEmojiSmile } from "react-icons/bs"
 import { useReactMediaRecorder } from "react-media-recorder"
 import { api } from "../api"
 import { useForceUpdate, useMultiState } from "../components"
 import { BotChatMessage } from './botmessage'
 import type { TabsProps } from 'antd'
+import { Comm } from "./comm"
 
 interface Bots {
   [index: number]: {
@@ -29,6 +32,7 @@ export function AIBot() {
     loadingBotList: false,
     bots: {} as Bots,
     selectedBots: [] as number[],
+    audioMode: false,
   })
 
   useEffect(() => {
@@ -54,6 +58,8 @@ export function AIBot() {
     // message ||= "how do I get a passport in Iraq?"
     // message ||= "What documents do I need to work in Greece?"
     // message ||= "what about Communication Channels and contact?"
+    // message ||= "what is malaria?"
+    message ||= "where can i find english classes in athens?"
 
     if (!message && !audio) return
 
@@ -98,39 +104,66 @@ export function AIBot() {
     setState({ isSending: false })
   }
 
-  const onSelectBot = (e: string[]) => {
-    const bots = e.map(Number)
+  const onSelectBot = (e: string[] | string) => {
 
-    for (const b of bots) {
-      const bot = state.bots[b]
-      if (!bot) continue
-      if (state.selectedBots.includes(b)) continue
-      state.selectedBots.push(b)
-      bot.history = []
+    if (!e || e.length == 0) {
+      setState({ selectedBots: [] })
+      return
     }
 
-    setState({ selectedBots: bots })
+    if (typeof e == "string") {
+      setState({ selectedBots: [Number(e)] })
+    } else {
+
+      const bots = e.map(Number)
+
+      for (const b of bots) {
+        const bot = state.bots[b]
+        if (!bot) continue
+        if (state.selectedBots.includes(b)) continue
+        state.selectedBots.push(b)
+        bot.history = []
+      }
+
+      setState({ selectedBots: bots })
+    }
+
+  }
+
+  function onModeChanged() {
+    setState({ audioMode: !state.audioMode })
   }
 
   const hasSelectedBots = state.selectedBots.length > 0
+  console.log(state.selectedBots)
+
 
   return <div className="bg-white text-black grid grid-rows-3 grid-cols-1 p-4 relative" style={{ gridTemplateRows: "auto 1fr auto", }}>
     <div className="-mt-6 -mb-2 ml-1 flex items-center">
       <h2>Signpost Bot</h2>
       <div className="px-4 flex-grow flex">
-        <div className="w-32 mt-1">Selected Bots</div>
         <Select
-          mode="multiple"
+          // mode= "multiple"
+          mode={!state.audioMode ? "multiple" : undefined}
           className="w-full"
-          placeholder="Please select"
+          placeholder="Please select Bots"
           disabled={state.isSending}
           onChange={onSelectBot}
+          allowClear
           options={Object.keys(state.bots).map(k => ({ label: state.bots[k].name, value: k }))}
           loading={Object.values(state.bots).length == 0}
         />
       </div>
+      <Button
+        icon={state.audioMode ? <BsChatLeftText className="text-xl" /> : <MdMic className="text-xl" />}
+        onClick={onModeChanged}
+        type="primary"
+        shape="circle"
+        size="large"
+        className="flex items-center justify-center"
+      />
     </div>
-    <div className="relative">
+    {!state.audioMode && <div className="relative">
       <div className="absolute top-0 right-0 left-0 bottom-0 overflow-y-auto border border-solid border-gray-300 p-4 flex flex-col-reverse" >
         {state.isSending &&
           <div className="flex mt-8">
@@ -140,8 +173,11 @@ export function AIBot() {
         }
         {messages.current.map((m, i) => <ChatMessage key={i} message={m} isWaiting={state.isSending} />)}
       </div>
-    </div>
-    {hasSelectedBots && <div className="mt-4">
+    </div>}
+
+    {state.audioMode && hasSelectedBots && <Comm bot={state.selectedBots[0] ? state.selectedBots[0] : null} />}
+
+    {hasSelectedBots && !state.audioMode && <div className="mt-4">
       <SearchInput onSearch={onSend} disabled={state.isSending} />
     </div>}
     {!hasSelectedBots && <div className="mt-4 flex justify-center">
@@ -207,7 +243,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
   }
 
   const handleSearch = (v: string) => {
-    props.onSearch(v, '', tts);
+    props.onSearch(v, '', tts)
     setValue("")
   }
 
