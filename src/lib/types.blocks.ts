@@ -100,6 +100,7 @@ declare global {
   interface BlockMission extends Block {
     type: "mission"
     title?: LocalizableText
+    image?: string
   }
 
   interface BlockAbout extends Block {

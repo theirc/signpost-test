@@ -25,7 +25,7 @@ export function Blocks() {
     return null
   })
 
-  return <div className="overflow-y-auto h-full w-full flex justify-center w-screen">
+  return <div className="overflow-y-auto h-full w-full flex justify-center">
     <div className="w-full">
       {blockview}
       <Footer />

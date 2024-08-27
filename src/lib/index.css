@@ -324,7 +324,7 @@ box-sizing: border-box;
 .card-title {
   margin-bottom: 0 !important;
   font-weight: 450 !important;
-  font-size: 10px !important;
+  font-size: 1rem !important;
   line-height: 23px !important;
   text-align: left !important;
   font-family: inherit !important;
