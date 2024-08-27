@@ -39,6 +39,11 @@ export function BlockServices(props: { block: BlockServices }) {
 
   const isRTL = languages[app.locale]?.rtl;
 
+
+  const jitter = (coordinate: number, range: number) => {
+    return coordinate + (Math.random() * range - range / 2);
+  }
+
   const {
     state: { servicesLoaded },
   } = app;
@@ -292,6 +297,12 @@ export function BlockServices(props: { block: BlockServices }) {
       }
     });
 
+    filteredData.forEach(x => {
+      if (x?.location?.length) {
+        x.location[0] = jitter(x.location[0], 0.001)
+        x.location[1] = jitter(x.location[1], 0.001)
+      }
+    })
     setFilteredServices(filteredData)
   }, [selectedFilterValues, app.data.services, servicesLoaded]);
 
@@ -304,6 +315,12 @@ export function BlockServices(props: { block: BlockServices }) {
           .localeCompare(translate(b.name).normalize().toLowerCase())
       )
     setFilteredProviders(providers)
+    services.forEach(x => {
+      if (x?.location?.length) {
+        x.location[0] = jitter(x.location[0], 0.001)
+        x.location[1] = jitter(x.location[1], 0.001)
+      }
+    })
     setFilteredServices(services)
   }, [app.data.services, servicesLoaded, app.data.providers])
 
