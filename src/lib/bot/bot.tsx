@@ -48,7 +48,7 @@ export function AIBot() {
   const messages = useRef<ChatMessage[]>([
     {
       type: "bot",
-      message: "Hello, I am the Signpost Bot. How can I assist you today?",
+      message: "Hello, I am SignpostChat. How can I assist you today?",
     }
   ])
 
