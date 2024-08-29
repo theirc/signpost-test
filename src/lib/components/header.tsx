@@ -25,36 +25,40 @@ export function Header() {
   if (app.page.header.bgcolor) styles.backgroundColor = app.page.header.bgcolor;
 
   const categories = Object.values(app.data.zendesk.categories);
-  const aboutMenu = app.page.header.menu.find((item) => item.type === "about");
-  const resourcesMenu = app.page.header.menu.find((item) => item.type === "menu")
+  const aboutMenu = app.page.header.menu.find((item) => item.type === "about")
+  const resourcesMenus = app.page.header.menu.filter((item) => item.type === "menu") as Menu[]
 
   const extractCategoryID = (link) => {
     const match = link.match(/\/categories\/(\d+)/);
     return match ? match[1] : null;
   }
 
-  const groupedByCategoryID = resourcesMenu.content.reduce((acc, item) => {
-    const categoryID = extractCategoryID(item.link);
-    if (categoryID) {
-      if (!acc[categoryID]) {
-        acc[categoryID] = [];
+  const createMenuResources = (menu: Menu): MenuResources => {
+    const groupedByCategoryID = menu.content!.reduce((acc, item) => {
+      const categoryID = extractCategoryID(item.link);
+      if (categoryID) {
+        if (!acc[categoryID]) {
+          acc[categoryID] = [];
+        }
+        acc[categoryID].push(item);
       }
-      acc[categoryID].push(item);
-    }
-    return acc;
-  }, {})
+      return acc;
+    }, {});
 
-  const result = Object.keys(groupedByCategoryID).map(categoryID => {
-    const items = groupedByCategoryID[categoryID];
-    const parentItem = items.find(item => item.link === `/categories/${categoryID}`);
-    if (parentItem) {
-      parentItem.children = items.filter(item => item.link !== `/categories/${categoryID}`);
-    }
-    return parentItem;
-  }).filter(item => item !== undefined)
+    const result = Object.keys(groupedByCategoryID).map(categoryID => {
+      const items = groupedByCategoryID[categoryID];
+      const parentItem = items.find(item => item.link === `/categories/${categoryID}`);
+      if (parentItem) {
+        parentItem.children = items.filter(item => item.link !== `/categories/${categoryID}`);
+      }
+      return parentItem;
+    }).filter(item => item !== undefined);
+
+    return { title: menu.title!, link: '', children: result };
+  }
 
 
-  let menuResources: MenuResources[] = [{ title: resourcesMenu.title, link: '', children: result }]
+  const menuResourcesArray = resourcesMenus.map(createMenuResources)
 
   if (aboutMenu) {
     if (!aboutMenu.content) {
@@ -102,8 +106,8 @@ export function Header() {
       return <li key={title} className="mx-2 text-base font-normal leading-snug">{content}</li>;
     });
   };
- 
-  const isRTL = languages[app.locale]?.rtl;
+
+  const isRTL = languages[app.locale]?.rtl
 
   return (
     <div className="flex items-center tracking-wide justify-center" style={styles}>
@@ -115,8 +119,8 @@ export function Header() {
         </div>
         <Container>
           <div className="toolbar">
-          <a 
-              href="/" 
+            <a
+              href="/"
               className="material-symbols-outlined material-icons leading-snug"
               style={{ display: 'flex', alignItems: 'center', padding: '0 8px' }}
             >
@@ -135,20 +139,12 @@ export function Header() {
               <ul className="flex list-none
                text-base font-normal leading-snug">
                 {renderMenuItems(app.page.header.menu)}
-                <li className="list-none
-               text-base font-normal leading-snug"><MegaMenu menuData={menuResources} /></li>
+                {menuResourcesArray.map((menuResources, index) => (
+                  <li key={index} className="list-none text-base font-normal leading-snug">
+                    <MegaMenu menuData={[menuResources]} />
+                  </li>
+                ))}
               </ul>
-              {/* Mobile navigation drawer */}
-              <div className="md:hidden absolute">
-                <MobileNavigationDrawer
-                  menuData={menuResources} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
-                />
-                {isDrawerOpen && (
-                  <div className="p-4">
-                    <LanguageDropdown isMobile={true} />
-                  </div>
-                )}
-              </div>
               <ul className="flex items-center list-none">
                 <li className="mr-2">
                   <Link to="/signpostbot" className="text-base font-normal leading-snug no-underline">Bot</Link>
@@ -160,6 +156,17 @@ export function Header() {
                   <LanguageDropdown isMobile={false} />
                 </li>
               </ul>
+            </div>
+            {/* Mobile navigation drawer */}
+            <div className="md:hidden absolute">
+              <MobileNavigationDrawer
+                menuDataArray={menuResourcesArray} {...{ isDrawerOpen, setIsDrawerOpen, drawerButtonRef }}
+              />
+              {isDrawerOpen && (
+                <div className="p-4">
+                  <LanguageDropdown isMobile={true} />
+                </div>
+              )}
             </div>
           </div>
         </Container>

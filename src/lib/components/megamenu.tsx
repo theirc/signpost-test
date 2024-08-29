@@ -34,7 +34,7 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
                             />
                         );
                     })}
-                    {setIsDrawerOpen && menuData[0].children.map(({ title, link, children }, index) => {
+                    {setIsDrawerOpen && menuData[0]?.children.map(({ title, link, children }, index) => {
                         return (
                             <MenuItem
                                 key={index}
@@ -46,7 +46,6 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
                                 }}
                                 onToggle={() => handleToggle && handleToggle(index)}
                                 active={clicked === index}
-                    
                             />
                         );
                     })}
