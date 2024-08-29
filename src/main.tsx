@@ -1,7 +1,7 @@
 import ReactDOM from 'react-dom/client'
 import './lib/index.css'
 import './index.css'
-import logo from "./assets/logo.webp"
+import logo from "./assets/signpost-ai-logo.png"
 import { app, App } from './lib'
 import { MetaTagsProvider } from './lib/components/metatags-context'
 
