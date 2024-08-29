@@ -7,7 +7,7 @@ const MobileNavigationDrawer = ({
   isDrawerOpen,
   setIsDrawerOpen,
   drawerButtonRef,
-  menuData
+  menuDataArray
 }) => {
   const [clicked, setClicked] = useState(null);
   const drawerRef = useRef(null);
@@ -58,12 +58,15 @@ const MobileNavigationDrawer = ({
           </button>
         </div>
         <div>
-          <MegaMenu
-            handleToggle={handleToggle}
-            clicked={clicked}
-            setIsDrawerOpen={setIsDrawerOpen}
-            menuData={menuData}
-          />
+          {menuDataArray?.map((menuData, index) => (
+            <MegaMenu
+              handleToggle={handleToggle}
+              key={index}
+              clicked={clicked}
+              setIsDrawerOpen={setIsDrawerOpen}
+              menuData={[menuData]}
+            />
+          ))}
         </div>
       </div>
     </div>
