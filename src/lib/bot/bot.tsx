@@ -135,7 +135,7 @@ export function AIBot() {
   }
 
   const hasSelectedBots = state.selectedBots.length > 0
-  console.log(state.selectedBots)
+  // console.log(state.selectedBots)
 
 
   return <div className="bg-white text-black grid grid-rows-3 grid-cols-1 p-4 relative" style={{ gridTemplateRows: "auto 1fr auto", }}>
