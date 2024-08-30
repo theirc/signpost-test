@@ -3,7 +3,12 @@ import { MdMic, MdStop } from "react-icons/md"
 import { api } from "../api"
 import { FaStopCircle } from "react-icons/fa"
 import "./comm.css"
-import { useReactMediaRecorder } from "react-media-recorder"
+import mp3 from "./signpostai demo.mp3"
+
+
+async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 interface Props {
   bot: number
@@ -15,50 +20,24 @@ export function Comm(props: Props) {
   const [state, setState] = useState<"ready" | "recoding" | "waiting" | "playing">("ready")
   const [audio, setAudio] = useState<string>(null)
 
-  const {
-    status,
-    startRecording,
-    stopRecording,
-    mediaBlobUrl,
-    clearBlobUrl,
-  } = useReactMediaRecorder({ audio: true })
-
-
 
   async function onStart() {
     setState("recoding")
-    clearBlobUrl()
-    startRecording()
+
+
+
   }
 
-  const onStop = () => {
+  const onStop = async () => {
+    setAudio(mp3)
+
     setState("waiting")
-    stopRecording()
+    await sleep(1000)
+
+    setState("playing")
+
+
   }
-
-  const handleRecordingStop = async () => {
-    if (mediaBlobUrl) {
-      try {
-        const response = await fetch(mediaBlobUrl)
-        const blob = await response.blob()
-        const audio = await blobToBase64(blob)
-
-        const { messages } = await api.askbot({ audio }, true, [{ label: "", value: bot, history: [] }])
-        setAudio(messages[0].message)
-
-        clearBlobUrl()
-        setState("playing")
-      } catch (error) {
-        console.error("Error processing the recording: ", error)
-      }
-    }
-  }
-
-  useEffect(() => {
-    if (status === "stopped" && mediaBlobUrl) {
-      handleRecordingStop()
-    }
-  }, [status, mediaBlobUrl])
 
 
   let classNameColor = state === "recoding" ? "bg-red-500" : "bg-blue-500"
@@ -168,10 +147,8 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
 
       const player = audioRef.current
 
-      const blob = base64ToBlob(audio)
-
       player.pause()
-      player.src = blob
+      player.src = audio
 
       const audioContext = new AudioContext()
       const source = audioContext.createMediaElementSource(player)
