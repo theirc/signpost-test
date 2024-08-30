@@ -371,51 +371,50 @@ export function BlockServices(props: { block: BlockServices }) {
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
       <h1 className={`fade-up-0 text-4xl font-normal leading-snug ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</h1>
       <h2 className={`fade-up-1 text-3xl font-medium leading-normal mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.subtitle)}</h2>
-      {servicesLoaded &&
-        <div className="flex flex-col md:flex-row gap-10">
-          {filterOpen && (
-            <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
-              <div className="flex ml-auto mb-5">
-                <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
-              </div>
-              <div className="flex flex-col md:flex-row gap-10 flex-grow">
-                <div className="md:flex flex-col flex-1">
-                  <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
-                  <div
-                    className="fade-up-3"
-                    data-animation="animate__fadeInUp"
-                  >
-                    <div className="fade-up-3" data-animation="animate__fadeInUp">
-                      <TreeSelect
-                        label={translate(translations.service_types)}
-                        items={combineCategoriesWithSubcategories()}
-                        className="w-full overflow-hidden service-types-select"
-                        onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-                        value={selectedFilterValues.serviceTypes}
-                        defaultValue={[-1]}
-                      />
-                    </div>
-                  </div>
-                  <div
-                    className="fade-up-4"
-                    data-animation="animate__fadeInUp"
-                  >
+      <div className="flex flex-col md:flex-row gap-10">
+        {filterOpen && (
+          <div className="fixed inset-0 bg-white z-50 flex flex-col p-5 overflow-auto">
+            <div className="flex ml-auto mb-5">
+              <Button onClick={() => setFilterOpen(false)} icon={<CloseOutlined />} />
+            </div>
+            <div className="flex flex-col md:flex-row gap-10 flex-grow">
+              <div className="md:flex flex-col flex-1">
+                <h2 className="fade-up-2" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+                <div
+                  className="fade-up-3"
+                  data-animation="animate__fadeInUp"
+                >
+                  <div className="fade-up-3" data-animation="animate__fadeInUp">
                     <TreeSelect
-                      label={translate(translations.provider)}
-                      items={mapProviderData(filteredProviders)}
-                      className="w-full overflow-hidden"
-                      onChange={(value) => handleSelectedFilters(value, filterType.provider)}
-                      value={selectedFilterValues.provider}
+                      label={translate(translations.service_types)}
+                      items={combineCategoriesWithSubcategories()}
+                      className="w-full overflow-hidden service-types-select"
+                      onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+                      value={selectedFilterValues.serviceTypes}
                       defaultValue={[-1]}
                     />
                   </div>
                 </div>
+                <div
+                  className="fade-up-4"
+                  data-animation="animate__fadeInUp"
+                >
+                  <TreeSelect
+                    label={translate(translations.provider)}
+                    items={mapProviderData(filteredProviders)}
+                    className="w-full overflow-hidden"
+                    onChange={(value) => handleSelectedFilters(value, filterType.provider)}
+                    value={selectedFilterValues.provider}
+                    defaultValue={[-1]}
+                  />
+                </div>
               </div>
             </div>
-          )}
-          <div className="hidden md:flex flex-col flex-1">
-            <h2 className="fade-up-2 text-2xl font-bold leading-normal" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
-            {/* <h4>{translate(translations.serviceTypes)}</h4>
+          </div>
+        )}
+        <div className="hidden md:flex flex-col flex-1">
+          <h2 className="fade-up-2 text-2xl font-bold leading-normal" data-animation="animate__fadeInUp">{translate(translations.filters)}</h2>
+          {/* <h4>{translate(translations.serviceTypes)}</h4>
             <div className="md:h-[70vh] overflow-y-scroll	">
               {categoriesData.map(x => (
                 <div>
@@ -438,65 +437,60 @@ export function BlockServices(props: { block: BlockServices }) {
                 </div>
               ))}
             </div> */}
-            <div className="fade-up-3" data-animation="animate__fadeInUp">
-              <TreeSelect
-                label={translate(translations.serviceTypes)}
-                items={combineCategoriesWithSubcategories()}
-                className="w-full overflow-hidden service-types-select"
-                onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
-                value={selectedFilterValues.serviceTypes}
-                defaultValue={[-1]}
-              />
-            </div>
-            <div className="fade-up-4" data-animation="animate__fadeInUp">
-              <TreeSelect
-                label={translate(translations.provider)}
-                items={mapProviderData(filteredProviders)}
-                className="w-full overflow-hidden"
-                onChange={(value) => handleSelectedFilters(value, filterType.provider)}
-                value={selectedFilterValues.provider}
-                defaultValue={[-1]}
-              />
-            </div>
+          <div className="fade-up-3" data-animation="animate__fadeInUp">
+            <TreeSelect
+              label={translate(translations.serviceTypes)}
+              items={combineCategoriesWithSubcategories()}
+              className="w-full overflow-hidden service-types-select"
+              onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
+              value={selectedFilterValues.serviceTypes}
+              defaultValue={[-1]}
+            />
           </div>
-          <div className="grow-[4] flex-1 relative">
-            <div className="flex mt-3.5 mb-3.5 items-center">
-              <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
-              {view === 0 && <span className="hidden md:inline font-normal text-base leading-snug">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
-              <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
-                <Radio.Group value={view} onChange={handleViewChange} className={`fade-up-5 flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`} data-animation="animate__fadeInUp">
-                  <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
-                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
-                      <span className="material-symbols-outlined material-icons">
-                        map
-                      </span>
-                      {translate(translations.map)}
-                    </div>
-                  </Radio.Button>
-                  <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
-                    <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
-                      <span className="material-symbols-outlined material-icons">
-                        list_alt
-                      </span>
-                      {translate(translations.list)}
-                    </div>
-                  </Radio.Button>
-                </Radio.Group>
-              </Space>
-            </div>
-
-            {view === 0 && <div className="md:hidden my-4 font-2xl font-bold">{translate(translations.showing)} {filteredServices.length} of {services.length} </div>}
-            <div className="fade-up-6" data-animation="animate__fadeInUp">
-              {view === 0 && <Maps services={filteredServices} />}
-              {view === 1 && <ServicesList serviceCount={services?.length} services={filteredServices} />}
-            </div>
+          <div className="fade-up-4" data-animation="animate__fadeInUp">
+            <TreeSelect
+              label={translate(translations.provider)}
+              items={mapProviderData(filteredProviders)}
+              className="w-full overflow-hidden"
+              onChange={(value) => handleSelectedFilters(value, filterType.provider)}
+              value={selectedFilterValues.provider}
+              defaultValue={[-1]}
+            />
           </div>
-        </div>}
-      {!servicesLoaded && (
-        <div className="flex items-center justify-center my-16">
-          <Loader size={72} width={12} className="bg-gray-500" />
         </div>
-      )}
+        <div className="grow-[4] flex-1 relative">
+          <div className="flex mt-3.5 mb-3.5 items-center">
+            <Button icon={<FilterOutlined />} onClick={() => setFilterOpen(true)} className="md:hidden bg-[#FAE264]">{translate(translations.filters)}</Button>
+            {view === 0 && <span className="hidden md:inline font-normal text-base leading-snug">{translate(translations.showing)} {filteredServices.length} {translate(translations.of)} {services.length} </span>}
+            <Space className={`flex ${isRTL ? 'mr-auto' : 'ml-auto'} z-10`}>
+              <Radio.Group value={view} onChange={handleViewChange} className={`fade-up-5 flex map-buttons-container ${isRTL ? 'flex-row-reverse' : ''}`} data-animation="animate__fadeInUp">
+                <Radio.Button value={0} className={isRTL ? 'button-reverse' : ''}>
+                  <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                    <span className="material-symbols-outlined material-icons">
+                      map
+                    </span>
+                    {translate(translations.map)}
+                  </div>
+                </Radio.Button>
+                <Radio.Button value={1} className={isRTL ? 'button-reverse' : ''}>
+                  <div className={`flex items-center ${isRTL ? 'flex-row-reverse' : 'flex-row'} gap-2 ${isRTL ? 'content-normalize' : ''}`}>
+                    <span className="material-symbols-outlined material-icons">
+                      list_alt
+                    </span>
+                    {translate(translations.list)}
+                  </div>
+                </Radio.Button>
+              </Radio.Group>
+            </Space>
+          </div>
+
+          {view === 0 && <div className="md:hidden my-4 font-2xl font-bold">{translate(translations.showing)} {filteredServices.length} of {services.length} </div>}
+          <div className="fade-up-6" data-animation="animate__fadeInUp">
+            {view === 0 && <Maps services={filteredServices} />}
+            {view === 1 && <ServicesList serviceCount={services?.length} services={filteredServices} />}
+          </div>
+        </div>
+      </div>
     </Container>
   );
 }

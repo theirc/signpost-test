@@ -59,7 +59,7 @@ export function AIBot() {
     // message ||= "What documents do I need to work in Greece?"
     // message ||= "what about Communication Channels and contact?"
     // message ||= "what is malaria?"
-    message ||= "where can i find english classes in athens?"
+    // message ||= "where can i find english classes in athens?"
 
     if (!message && !audio) return
 
@@ -193,45 +193,71 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
   const [isVoiceMode, setIsVoiceMode] = useState<boolean>(false)
   const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
   const [tts, setTts] = useState<boolean>(false)
+  const [status, setStatus] = useState<"idle" | "recording" | "stopped">("idle")
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
 
-  const {
-    status,
-    startRecording,
-    stopRecording,
-    mediaBlobUrl,
-    clearBlobUrl,
-  } = useReactMediaRecorder({ audio: true })
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunks = useRef<Blob[]>([])
 
-  const handleToggleRecording = () => {
-    if (status === "recording") {
-      stopRecording()
-      setRecordingComplete(true)
-    } else {
-      clearBlobUrl()
-      startRecording()
-      setRecordingComplete(false)
-    }
-  }
-
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
+  const handleRecordingStop = () => {
+    const blob = new Blob(audioChunks.current, { type: "audio/mp4; codecs=mp4a.40.2" })
+    setAudioUrl(URL.createObjectURL(blob))
   }
 
   const handleSendRecording = async () => {
-    if (mediaBlobUrl) {
-      const response = await fetch(mediaBlobUrl)
-      const blob = await response.blob()
-      const base64Data = await blobToBase64(blob)
-      props.onSearch(undefined, base64Data, tts)
-
-      clearBlobUrl()
-      setRecordingComplete(false)
+    if (audioUrl) {
+      try {
+        const blob = await fetch(audioUrl).then(res => res.blob())
+        const base64Data = await blobToBase64(blob)
+        props.onSearch(undefined, base64Data, tts)
+        setAudioUrl(null)
+        setRecordingComplete(false)
+      } catch (error) {
+        console.error("Error sending the audio: ", error)
+      }
     }
+  }
+
+  const handleToggleRecording = async () => {
+    if (status === "recording") {
+      mediaRecorderRef.current?.stop()
+      setStatus("stopped")
+      setRecordingComplete(true)
+    } else {
+      setRecordingComplete(false)
+      audioChunks.current = []
+      setStatus("recording")
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 44100, echoCancellation: true, noiseSuppression: true } })
+        mediaRecorderRef.current = new MediaRecorder(stream)
+
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) audioChunks.current.push(event.data)
+        };
+
+        mediaRecorderRef.current.onstop = handleRecordingStop
+        mediaRecorderRef.current.start()
+      } catch (error) {
+        console.error("Error accessing microphone: ", error)
+        setStatus("idle")
+      }
+    }
+  }
+
+  const blobToBase64 = (blob: Blob) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result.split(",")[1])
+        } else {
+          reject("Failed to convert blob to base64")
+        }
+      }
+      reader.onerror = () => reject("Failed to read blob data")
+      reader.readAsDataURL(blob)
+    })
   }
 
   const handleModeToggle = () => {
@@ -246,14 +272,6 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
     props.onSearch(v, '', tts)
     setValue("")
   }
-
-  // const onChange = (e: any) => {
-  //   setValue(e.target.value)
-  // }
-  // const onSearch = (v) => {
-  //   props.onSearch(v)
-  //   setValue("")
-  // }
 
   return (
     <div>
@@ -296,9 +314,9 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
             size="large"
             className="flex items-center justify-center"
           />
-          {recordingComplete && mediaBlobUrl && (
+          {recordingComplete && audioUrl && (
             <div className="mt-4 flex items-center">
-              <audio controls src={mediaBlobUrl} className="mt-4" />
+              <audio controls src={audioUrl} className="mt-4" />
               <Button
                 onClick={handleSendRecording}
                 icon={<MdSend />}
