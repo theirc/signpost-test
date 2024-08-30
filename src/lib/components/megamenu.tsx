@@ -1,6 +1,7 @@
 import { MenuResources } from './header';
 import MenuItem from './menuitem';
 import LanguageDropdown from './languagedropdown';
+import { Link } from 'react-router-dom';
 
 interface MegaMenuProps {
     handleToggle?: (index: number) => void;
@@ -52,6 +53,7 @@ const MegaMenu: React.FC<MegaMenuProps> = ({
                 </ul>
                 {setIsDrawerOpen && (
                     <div className='mt-4 px-4'>
+                        <h2><Link to="/signpostbot" className="" onClick={() => setIsDrawerOpen(false)}>Bot</Link></h2>
                         <LanguageDropdown isMobile={true} />
                     </div>
                 )}
