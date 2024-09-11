@@ -3,7 +3,7 @@ export { }
 declare global {
 
   type Services = { [index: number]: Service }
-  type Providers = { [index: number]: Provider}
+  type Providers = { [index: number]: Provider }
 
   interface Country {
     id?: number
@@ -15,6 +15,7 @@ declare global {
     headercolor?: string
     headerbgcolor?: string
     menu: Menu[]
+    cookie_banner?: LocalizableText
   }
 
   interface Provider {
@@ -52,7 +53,7 @@ declare global {
     secondaryEmail?: string
     secondaryPhone?: string
     address?: string
-    contactInfo?: {channel: string, contact_details: string}[]
+    contactInfo?: { channel: string, contact_details: string }[]
     form?: unknown
     headerimage?: string
     addHours?: unknown
