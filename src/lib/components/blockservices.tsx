@@ -369,7 +369,7 @@ export function BlockServices(props: { block: BlockServices }) {
 
   return (
     <Container block={block} className={`relative transition-all service-container  ${isRTL ? 'rtl' : ''}`}>
-      <h1 className={`fade-up-0 text-4xl font-normal leading-snug ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</h1>
+      <h1 id="service-map" className={`fade-up-0 text-4xl font-normal leading-snug ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.title)}</h1>
       <h2 className={`fade-up-1 text-3xl font-medium leading-normal mt-4 opacity-50 ${isRTL ? 'text-right' : 'text-left'}`} data-animation="animate__fadeInUp">{translate(props.block.subtitle)}</h2>
       <div className="flex flex-col md:flex-row gap-10">
         {filterOpen && (

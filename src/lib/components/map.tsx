@@ -284,6 +284,7 @@ export function Maps({ services }: mapProps) {
           maxZoom={20}
           minZoom={3}
           onMove={handleViewportChange}
+          cooperativeGestures={true}
           ref={mapRef}
           onLoad={() => {
             setIsMapReady(true)
