@@ -7,6 +7,7 @@ import { Button, Input, Pagination, Tag, Card, Empty, Breadcrumb } from "antd";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { RightOutlined } from "@ant-design/icons";
 import Fuse from "fuse.js";
+import { Footer } from "./footer";
 
 const { Search } = Input;
 
@@ -219,6 +220,7 @@ export function Categories() {
           />
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

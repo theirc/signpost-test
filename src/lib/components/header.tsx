@@ -1,7 +1,7 @@
-import { CSSProperties, useRef, useState } from "react";
+import { CSSProperties, useEffect, useRef, useState } from "react";
 import { app, translate } from "../app";
 import { translations } from "../../translations";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { languages } from "../locale";
 import MegaMenu from './megamenu';
 import LanguageDropdown from "./languagedropdown";
@@ -18,19 +18,34 @@ export interface MenuResources {
 export function Header() {
   const styles: CSSProperties = {};
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const navigate = useNavigate()
+  const location = useLocation()
 
   const drawerButtonRef = useRef(null);
+
+  const menu = app.page.header.menu
 
   if (app.page.header.color) styles.color = app.page.header.color;
   if (app.page.header.bgcolor) styles.backgroundColor = app.page.header.bgcolor;
 
   const categories = Object.values(app.data.zendesk.categories);
-  const aboutMenu = app.page.header.menu.find((item) => item.type === "about")
-  const resourcesMenus = app.page.header.menu.filter((item) => item.type === "menu") as Menu[]
+  const aboutMenu = menu.find((item) => item.type === "about")
+  const resourcesMenus = menu.filter((item) => item.type === "menu") as Menu[]
 
   const extractCategoryID = (link) => {
     const match = link.match(/\/categories\/(\d+)/);
     return match ? match[1] : null;
+  }
+
+  const handleScrollToServiceMap = () => {
+    if (location.pathname !== "/") {
+      navigate("/#service-map", { replace: false })
+    } else {
+      const targetElement = document.getElementById("service-map")
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth" })
+      }
+    }
   }
 
   const createMenuResources = (menu: Menu): MenuResources => {
@@ -79,7 +94,7 @@ export function Header() {
   }
   const renderMenuItems = (menuItems: Menu[]) => {
     return menuItems.map((item) => {
-      if (item.type === 'info' || item.type === 'menu' || item.type === 'link') return null;
+      if (item.type === 'info' || item.type === 'menu' || item.type === 'link' || item.type === 'bot') return null;
       const title = item.title ? translate(item.title) : "";
       let content;
 
@@ -91,9 +106,13 @@ export function Header() {
         );
       } else if (item.type === "services") {
         content = (
-          <a href="#service-map" className="text-base font-normal leading-snug no-underline">
-            {title}
-          </a>
+          <button
+              onClick={handleScrollToServiceMap}
+              className="hover:text-black font-normal leading-snug cursor-pointer text-base bg-transparent border-none p-0"
+              style={{ appearance: 'none' }}
+            >
+              {title}
+            </button>
         );
       } else {
         content = (
@@ -108,6 +127,15 @@ export function Header() {
   };
 
   const isRTL = languages[app.locale]?.rtl
+
+  useEffect(() => {
+    if (location.hash === "#service-map") {
+      const targetElement = document.getElementById("service-map");
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location.pathname, location.hash])
 
   return (
     <div className="flex items-center tracking-wide justify-center" style={styles}>
@@ -138,7 +166,7 @@ export function Header() {
             <div className="hidden md:flex items-center justify-between w-full">
               <ul className="flex list-none
                text-base font-normal leading-snug">
-                {renderMenuItems(app.page.header.menu)}
+                {renderMenuItems(menu)}
                 {menuResourcesArray.map((menuResources, index) => (
                   <li key={index} className="list-none text-base font-normal leading-snug">
                     <MegaMenu menuData={[menuResources]} />
@@ -146,9 +174,9 @@ export function Header() {
                 ))}
               </ul>
               <ul className="flex items-center list-none">
-                <li className="mr-2">
+               {menu.find(x => x.type === 'bot') && <li className="mr-2">
                   <Link to="/signpostbot" className="text-base font-normal leading-snug no-underline">Bot</Link>
-                </li>
+                </li>}
                 <li className="mr-2 ">
                   <Link to='/search-results' className="text-base font-normal leading-snug no-underline">{translate(translations.search)}</Link>
                 </li>

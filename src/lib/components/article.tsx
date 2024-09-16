@@ -19,6 +19,7 @@ import {
 import { useRef } from "react";
 import { ArrowUpOutlined } from "@ant-design/icons";
 import { Breadcrumb } from "antd";
+import { Footer } from "./footer";
 
 
 export function Article() {
@@ -185,5 +186,6 @@ export function Article() {
         </div>
       </div>
     </div>
+    <Footer />
   </div>
 }

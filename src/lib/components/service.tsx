@@ -105,9 +105,8 @@ function ContactDetails({ contactInfo }) {
         });
 
         return (
-          <div key={index} className={`flex w-full md:w-auto md:flex-row items-center ${
-            isRTL ? 'space-x-reverse space-x-3 flex-row-reverse' : 'space-x-3'
-          }`}>
+          <div key={index} className={`flex w-full md:w-auto md:flex-row items-center ${isRTL ? 'space-x-reverse space-x-3 flex-row-reverse' : 'space-x-3'
+            }`}>
             {/* Icon and Channel Name */}
             <div className="text-md text-gray-600 m-1">
               {Icon}
@@ -167,7 +166,7 @@ export function Service() {
   return (
     <div className={`text-black overflow-y-auto $isRTL ? 'rtl' : ''}`}>
       <Container className={`text-black $isRTL ? 'rtl' : ''}`}>
-        <Breadcrumb separator=">" className={isRTL ? 'flex flex-row-reverse' : ''} items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services)}]}  />
+        <Breadcrumb separator=">" className={isRTL ? 'flex flex-row-reverse' : ''} items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services) }]} />
         <h1 className={`text-4xl font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>{title}</h1>
         <h2 className={`text-3xl font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>{providerName}</h2>
         <h3 className={`text-gray-600 text-sm font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>
@@ -193,7 +192,8 @@ export function Service() {
             <div className="space-y-2">{hourDisplay}</div>
           </div>
         )}
-           </Container>
-       </div>
+      </Container>
+        <Footer />
+    </div>
   );
 }

@@ -1,72 +1,88 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { MdMic, MdStop } from "react-icons/md"
 import { api } from "../api"
-import { FaStopCircle } from "react-icons/fa"
+import { FaStopCircle, FaPlayCircle } from "react-icons/fa"
 import "./comm.css"
-import { useReactMediaRecorder } from "react-media-recorder"
 
 interface Props {
   bot: number
 }
 
 export function Comm(props: Props) {
-
   const { bot } = props
-  const [state, setState] = useState<"ready" | "recoding" | "waiting" | "playing">("ready")
+  const [state, setState] = useState<"ready" | "recording" | "waiting" | "playing">("ready")
   const [audio, setAudio] = useState<string>(null)
+  const mediaRecorderRef = useRef(null)
+  const audioChunks = useRef([])
 
-  const {
-    status,
-    startRecording,
-    stopRecording,
-    mediaBlobUrl,
-    clearBlobUrl,
-  } = useReactMediaRecorder({ audio: true })
+  const onStart = async (event?: React.TouchEvent | React.MouseEvent) => {
+    if (event) event.preventDefault()
 
+    setState("recording")
+    audioChunks.current = []
 
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      mediaRecorderRef.current = new MediaRecorder(stream)
 
-  async function onStart() {
-    setState("recoding")
-    clearBlobUrl()
-    startRecording()
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunks.current.push(event.data)
+      }
+
+      mediaRecorderRef.current.onstop = handleRecordingStop
+
+      mediaRecorderRef.current.start(1000)
+    } catch (error) {
+      console.error("Microphone access denied or error occurred:", error)
+      setState("ready")
+    }
   }
 
-  const onStop = () => {
-    setState("waiting")
-    stopRecording()
+  const onStop = (event?: React.TouchEvent | React.MouseEvent) => {
+    if (event) event.preventDefault()
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      setState("waiting")
+      mediaRecorderRef.current.stop()
+    }
   }
 
   const handleRecordingStop = async () => {
-    if (mediaBlobUrl) {
-      try {
-        const response = await fetch(mediaBlobUrl)
-        const blob = await response.blob()
-        const audio = await blobToBase64(blob)
+    const blob = new Blob(audioChunks.current, { type: "audio/webm; codecs=opus" })
+    const audioBase64 = await blobToBase64(blob)
 
-        const { messages } = await api.askbot({ audio }, true, [{ label: "", value: bot, history: [] }])
-        setAudio(messages[0].message)
-
-        clearBlobUrl()
-        setState("playing")
-      } catch (error) {
-        console.error("Error processing the recording: ", error)
-      }
+    try {
+      const { messages } = await api.askbot({ audio: audioBase64 }, true, [{ label: "", value: bot, history: [] }])
+      console.log('RESPONSE: ', messages);
+      setAudio(messages[0].message)
+      setState("playing")
+    } catch (error) {
+      console.error("Error processing the recording: ", error)
     }
   }
 
-  useEffect(() => {
-    if (status === "stopped" && mediaBlobUrl) {
-      handleRecordingStop()
-    }
-  }, [status, mediaBlobUrl])
+  const blobToBase64 = (blob) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result.split(",")[1])
+        } else {
+          reject("Error converting blob to base64: Result is not a string")
+        }
+      }
+      reader.onerror = () => reject("Error reading blob")
+      reader.readAsDataURL(blob)
+    })
+  }
 
 
-  let classNameColor = state === "recoding" ? "bg-red-500" : "bg-blue-500"
+  let classNameColor = state === "recording" ? "bg-red-500" : "bg-blue-500"
 
-  if (state == "recoding" || state == "ready") {
+  if (state == "recording" || state == "ready") {
     return <div className="w-full h-full bg-black text-white flex flex-col items-center justify-center content-center backgrad" >
       <div className="text-center flex-grow grid justify-center content-center">
-        <div className={`shadow rounded-full p-4 mb-4 cursor-pointer ${classNameColor}`} onMouseDown={onStart} onMouseUp={onStop}>
+        <div className={`shadow rounded-full p-4 mb-4 cursor-pointer ${classNameColor}`} onTouchStart={onStart} onTouchEnd={onStop} onMouseDown={onStart} onMouseUp={onStop}>
           <MdMic size={128} />
         </div>
         <div className="font-semibold tracking-wider shadow">
@@ -126,6 +142,7 @@ interface SpeechVisualizerProps {
 function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
 
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const dataArrayRef = useRef<Uint8Array | null>(null)
@@ -137,17 +154,15 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
 
     for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
       const slice = byteCharacters.slice(offset, offset + sliceSize)
-
       const byteNumbers = new Array(slice.length)
       for (let i = 0; i < slice.length; i++) {
         byteNumbers[i] = slice.charCodeAt(i)
       }
-
       const byteArray = new Uint8Array(byteNumbers)
       byteArrays.push(byteArray)
     }
 
-    const audio = new Blob(byteArrays, { type: contentType })
+    const audio = new Blob(byteArrays, { type: "audio/mpeg" })
 
     return URL.createObjectURL(audio)
   }
@@ -161,6 +176,7 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
       }
     }
     onEnd()
+    setIsPlaying(false)
   }
 
   const setupAudio = async () => {
@@ -195,22 +211,19 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
     }
   }
 
+  const handlePlayAudio = async () => {
+    await setupAudio();
+    if (audioRef.current) {
+      audioRef.current.play().then(() => { setIsPlaying(true) }).catch((error) => {
+        console.log('ERROR PLAYING THE AUDIO: ', error);
+      });
+    }
+  }
 
   const size = useWindowSize()
 
   useEffect(() => {
     mounted.current = true
-
-    if (audioRef.current) {
-      try {
-        audioRef.current.pause()
-      } catch (error) { }
-      setupAudio().then(() => {
-        audioRef.current.play().then(() => {
-
-        })
-      })
-    }
 
     return () => {
       mounted.current = false
@@ -231,9 +244,12 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
       {ambars.map((i) => <div key={i} id={`sq${i + 1}`} style={{ height: frequencyData ? frequencyData[i] : 0, width: width }} className="bg-white rounded-lg mx-2"></div>)}
     </div>
     <div>
-      <div className="grid justify-center content-center mb-4 cursor-pointer" onClick={onStop}>
+      {isPlaying && <div className="grid justify-center content-center mb-4 cursor-pointer" onClick={onStop}>
         <FaStopCircle size={64} color="red" className="shadow" />
-      </div>
+      </div>}
+      {!isPlaying && <div className="grid justify-center content-center mb-4 cursor-pointer" onClick={handlePlayAudio}>
+        <FaPlayCircle size={64} color="red" className="shadow" />
+      </div>}
       <audio className="hidden" ref={audioRef} controls onEnded={onStop} />
     </div>
   </div>

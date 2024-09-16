@@ -4,6 +4,7 @@ import Fuse from "fuse.js";
 import { Input, Pagination, Tabs, Typography, type TabsProps } from 'antd';
 import { app, translate } from "../app";
 import { useState } from "react";
+import { Footer } from "./footer";
 
 const { Text, Title, Paragraph } = Typography;
 const { Search } = Input;
@@ -147,7 +148,7 @@ export function SearchResults() {
                     {hits.length > 0 ? <Text type="secondary">
                         {hits.length} results for {paramValue}
                     </Text> : <Text type="secondary">
-                       {translate(translations.noResultsToDisplay)} 
+                        {translate(translations.noResultsToDisplay)}
                     </Text>}
                 </Paragraph>
                 <div>
@@ -204,22 +205,25 @@ export function SearchResults() {
     }
 
     return (
-        <div className="w-full flex flex-wrap justify-center text-black bg-white overflow-y-auto h-full">
-            <div className="w-full px-4 md:w-2/3 py-16">
-                <div>
-                    <Search
-                        placeholder={translate(translations.searchForInformation)}
-                        allowClear
-                        enterButton={translate(translations.search)}
-                        size="large"
-                        onSearch={handleSearch}
-                        defaultValue={paramValue}
-                    />
-                </div>
-                <div>
-                    <Tabs defaultActiveKey="1" items={items} onChange={handleTabChange} />
+        <div className="overflow-y-auto">
+            <div className="w-full flex flex-wrap justify-center text-black bg-white">
+                <div className="w-full px-4 md:w-2/3 py-16">
+                    <div>
+                        <Search
+                            placeholder={translate(translations.searchForInformation)}
+                            allowClear
+                            enterButton={translate(translations.search)}
+                            size="large"
+                            onSearch={handleSearch}
+                            defaultValue={paramValue}
+                        />
+                    </div>
+                    <div>
+                        <Tabs defaultActiveKey="1" items={items} onChange={handleTabChange} />
+                    </div>
                 </div>
             </div>
+            <Footer />
         </div>
     )
 }
