@@ -17,7 +17,8 @@ interface LocaleDeclaration {
 export const languages = {
   "ar-SA": {
     rtl: true,
-    name: "Arabic"
+    name: "Arabic",
+    zendesk: "ar"
   },
   bn: {
     name: "Bengali"
@@ -26,7 +27,8 @@ export const languages = {
     name: "Burmese"
   },
   cs: {
-    name: "Czech"
+    name: "Czech",
+    zendesk: "cs"
   },
   "fa-AF": {
     rtl: true,
@@ -37,16 +39,20 @@ export const languages = {
   },
   "fa-FA": {
     rtl: true,
-    name: "Farsi"
+    name: "Farsi",
+    zendesk: "fa"
   },
   "fr-FR": {
-    name: "French"
+    name: "French",
+    zendesk: "fr"
   },
   "de-DE": {
-    name: "German"
+    name: "German",
+    zendesk: "de"
   },
   el: {
-    name: "Greek"
+    name: "Greek",
+    zendesk: "el-gr"
   },
   ht: {
     name: "Haitian Creole"
@@ -58,39 +64,51 @@ export const languages = {
     name: "Hungarian"
   },
   "it-IT": {
-    name: "Italian"
+    name: "Italian",
+    zendesk: "it"
   },
   KAU: {
-    name: "Kanuri"
+    name: "Kanuri",
+    zendesk: "ko-kr"
   },
   "ki-KI": {
-    name: "Kirundi"
+    name: "Kirundi",
+    zendesk: "rn-BI"
   },
   "ln-LN": {
-    name: "Lingala"
+    name: "Lingala",
+    zendesk: "ln"
   },
   "ps-PS": {
-    name: "Pashto"
+    name: "Pashto",
+    zendesk: "ps"
   },
   "ru-RU": {
-    name: "Russian"
+    name: "Russian",
+    zendesk: "ru"
   },
   "so-SO": {
-    name: "Somali"
+    name: "Somali",
+    zendesk: "so"
   },
   "es-ES": {
-    name: "Spanish"
+    name: "Spanish",
+    zendesk: "es"
   },
   "sw-SW": {
-    name: "Swahili"
+    name: "Swahili",
+    zendesk: "sw"
   },
   th: {
-    name: "Thai"
+    name: "Thai",
+    zendesk: "th"
   },
   "uk-UK": {
-    name: "Ukrainian"
+    name: "Ukrainian",
+    zendesk: "uk"
   },
   "ur-UR": {
-    name: "Urdu"
+    name: "Urdu",
+    zendesk: "ur"
   }
 }

@@ -9,6 +9,7 @@ const colors = [ '#D8BB41', '#CC8723', '#2C6040', '#609292', '#31437C', '#563077
 export function BlockCategories(props: { block: BlockCategories }) {
   const { block } = props;
   useAnimateOnScroll();
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const categories: ZendeskCategory[] = Object.values(
     app.data.zendesk.categories
@@ -32,7 +33,7 @@ export function BlockCategories(props: { block: BlockCategories }) {
               title: translate(category.name),
               subtitle: translate(category.description),
               iconName: category.icon,
-              href: `/categories/${category.id}`,
+              href: `/${locale.toLowerCase()}/categories/${category.id}`,
               color: colors[index % colors.length]
             };
           })}

@@ -127,6 +127,7 @@ export function BlockServices(props: { block: BlockServices }) {
 
   const handleSelectedFilters = (value: any[], filter: filterType) => {
     if (!value.length || value.flat()[value.flat().length - 1] === -1) {
+      filterProviders(services)
       setSelectedFilterValues((prevValues) => ({
         ...prevValues,
         [filter]: [-1],
@@ -135,7 +136,7 @@ export function BlockServices(props: { block: BlockServices }) {
     } else {
       let changedValues: number[] = [];
       if (filter === filterType.serviceTypes) {
-        let prevValue = { ...selectedFilterValues };
+        let prevValue = { ...selectedFilterValues }
 
         for (let v of value) {
           if (
@@ -146,14 +147,17 @@ export function BlockServices(props: { block: BlockServices }) {
             changedValues.push(v);
           }
         }
+        setLastValue(changedValues)
+        setSelectedFilterValues({ serviceTypes: filterFirstSubArray(value), provider: [-1], populations: [-1], accessibility: [-1] })
+        searchParams.delete('provider')
+        searchParams.delete(filter)
+      } else {
+        setSelectedFilterValues((prevValues) => ({
+          ...prevValues,
+          [filter]: filterFirstSubArray(value),
+        }));
+        searchParams.delete(filter)
       }
-      setLastValue(changedValues);
-      setSelectedFilterValues((prevValues) => ({
-        ...prevValues,
-        [filter]: filterFirstSubArray(value),
-      }));
-      searchParams.delete(filter)
-
       filterFirstSubArray(value).forEach(x => {
         searchParams.append(filter, x.toString())
       })
@@ -208,7 +212,18 @@ export function BlockServices(props: { block: BlockServices }) {
       return services;
     },
     []
-  );
+  )
+
+  const filterProviders = (services: Service[]) => {
+    const uniqueProvidersIdsSet = new Set(
+      services.flatMap((x) => x.provider)
+    );
+    const uniqueProvidersArray = providers
+      ?.filter((x) => Array.from(uniqueProvidersIdsSet).includes(x.id))
+      .sort((a, b) => translate(a.name)?.normalize().localeCompare(translate(b.name)?.normalize()))
+
+    setFilteredProviders(uniqueProvidersArray);
+  }
 
   const handleServiceTypeChange = useCallback(
     (value: number[] | (string | number)[], services: Service[]) => {
@@ -216,7 +231,8 @@ export function BlockServices(props: { block: BlockServices }) {
       const subcategoryMap = new Map<number, boolean>();
 
       if (!value.length || value.flat()[value.flat().length - 1] === -1) {
-        return services;
+        filterProviders(services)
+        return services
       }
 
       for (const criteria of value) {
@@ -260,11 +276,25 @@ export function BlockServices(props: { block: BlockServices }) {
           fieldValue: testValue,
         });
       }
+      filterProviders(services)
 
       return services;
     },
     [lastValue]
   )
+
+  const handleDropdownVisibleChange = (open: boolean) => {
+    if (open === false) {
+      Object.entries(selectedFilterValues).forEach(([key, value]) => {
+        if (
+          key === filterType.serviceTypes &&
+          JSON.stringify(value) === JSON.stringify([[-1]])
+        ) {
+          filterProviders(services);
+        }
+      });
+    }
+  }
 
   useEffect(() => {
     let filteredData = [...services]
@@ -392,6 +422,7 @@ export function BlockServices(props: { block: BlockServices }) {
                       onChange={(value) => handleSelectedFilters(value, filterType.serviceTypes)}
                       value={selectedFilterValues.serviceTypes}
                       defaultValue={[-1]}
+                      onDropdownVisibleChange={handleDropdownVisibleChange}
                     />
                   </div>
                 </div>

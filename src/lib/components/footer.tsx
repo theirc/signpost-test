@@ -10,6 +10,7 @@ export function Footer() {
   const location = useLocation()
   const categories: { [index: number]: ZendeskCategory } = app.data.zendesk.categories;
   const isRTL = languages[app.locale]?.rtl;
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
 
   const footerMenu: Menu[] = app.page.header.menu.filter((item: Menu) =>
@@ -58,7 +59,7 @@ export function Footer() {
   const renderCategories = () => {
     return Object.values(categories).map((category) => (
       <li key={category.id} className={`mb-3 sm:mb-0 ${isRTL ? 'sm:ml-6' : 'sm:mr-6'}`}>
-        <Link to={`/categories/${category.id}`} className="hover:text-gray-800 text-sm font-medium leading-snug">
+        <Link to={`/${locale.toLowerCase()}/categories/${category.id}`} className="hover:text-gray-800 text-sm font-medium leading-snug">
           {translate(category.name)}
         </Link>
       </li>

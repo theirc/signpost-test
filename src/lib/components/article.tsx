@@ -27,6 +27,7 @@ export function Article() {
   let { id } = useParams()
   const isRTL = languages[app.locale]?.rtl;
   useAnimateOnScroll();
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const a: ZendeskArticle = app.data.zendesk.articles[id]
   const channels = app.page.content.find(x => x.type === 'channels') as BlockChannels
@@ -50,7 +51,7 @@ export function Article() {
   return <div className={`overflow-y-auto ${isRTL ? 'rtl' : ''}`}>
     <Container className="text-black bg-white">
       <div className={`flex flex-col ${isRTL ? 'text-right' : ''}`} ref={refScrollUp}>
-      <Breadcrumb separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title: <a href={`/categories/${category.id}`}>{translate(category.name)}</a>}, {title: <a href={`/categories/${category.id}/${section.id}`}>{translate(section.name)}</a>}, {title: translate(a.name)}]} />
+      <Breadcrumb separator=">" items={[{title: <a href="/">{translate(translations.home)}</a>}, {title: <a href={`/${locale.toLowerCase()}/categories/${category.id}`}>{translate(category.name)}</a>}, {title: <a href={`/${locale.toLowerCase()}/categories/${category.id}/${section.id}`}>{translate(section.name)}</a>}, {title: translate(a.name)}]} />
         <div>
           <h1 className="fade-up-0 text-4xl font-medium leading-snug"
               data-animation="animate__fadeInUp">{title}</h1>

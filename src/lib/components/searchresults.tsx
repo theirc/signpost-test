@@ -5,6 +5,7 @@ import { Input, Pagination, Tabs, Typography, type TabsProps } from 'antd';
 import { app, translate } from "../app";
 import { useState } from "react";
 import { Footer } from "./footer";
+import { languages } from "../locale";
 
 const { Text, Title, Paragraph } = Typography;
 const { Search } = Input;
@@ -14,6 +15,7 @@ export function SearchResults() {
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
     const navigate = useNavigate()
+    const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
     const paramValue = searchParams.get('query');
     const articles: ZendeskArticle[] = Object.values(app.data.zendesk.articles);
@@ -156,8 +158,8 @@ export function SearchResults() {
                         <Paragraph key={`${hit.id}-${hit.name}`}>
                             <a
                                 href={`${isZendeskArticle(hit)
-                                    ? `/article/${hit.id}`
-                                    : `/service/${hit.id}`
+                                    ? `/${locale.toLowerCase()}/article/${hit.id}`
+                                    : `/${locale.toLowerCase()}/service/${hit.id}`
                                     }`}
                             >
                                 <Title level={5}>{translate(hit.name)}</Title>
