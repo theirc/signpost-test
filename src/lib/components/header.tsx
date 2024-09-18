@@ -20,6 +20,7 @@ export function Header() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const navigate = useNavigate()
   const location = useLocation()
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const drawerButtonRef = useRef(null);
 
@@ -62,9 +63,9 @@ export function Header() {
 
     const result = Object.keys(groupedByCategoryID).map(categoryID => {
       const items = groupedByCategoryID[categoryID];
-      const parentItem = items.find(item => item.link === `/categories/${categoryID}`);
+      const parentItem = items.find(item => item.link === `/${locale.toLowerCase()}/categories/${categoryID}`);
       if (parentItem) {
-        parentItem.children = items.filter(item => item.link !== `/categories/${categoryID}`);
+        parentItem.children = items.filter(item => item.link !== `/${locale.toLowerCase()}/categories/${categoryID}`);
       }
       return parentItem;
     }).filter(item => item !== undefined);
@@ -82,12 +83,12 @@ export function Header() {
     categories.forEach((category) => {
       if (
         !aboutMenu.content.some(
-          (item) => item.link === `/categories/${category.id}`
+          (item) => item.link === `/${locale.toLowerCase()}/categories/${category.id}`
         )
       ) {
         aboutMenu.content.push({
           title: category.name,
-          link: `/categories/${category.id}`,
+          link: `/${locale.toLowerCase()}/categories/${category.id}`,
         });
       }
     });

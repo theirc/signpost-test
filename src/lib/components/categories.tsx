@@ -27,8 +27,9 @@ const colors = [ '#D8BB41', '#CC8723', '#2C6040', '#609292', '#31437C', '#563077
 
 export function Categories() {
   const navigate = useNavigate();
-  const { id, sectionid } = useParams();
+  const { categoryid, sectionid } = useParams();
   const isRTL = languages[app.locale]?.rtl;
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,14 +39,14 @@ export function Categories() {
   const pageSize = 12;
 
 
-  const c = app.data.zendesk.categories[id];
+  const c = app.data.zendesk.categories[categoryid];
   const s = app.data.zendesk.sections[sectionid];
 
   const categories: ZendeskCategory[] = useMemo(() => {
     const cat = Object.values(app.data.zendesk.categories)
     cat.unshift(allOption)
     return cat
-  }, [c, id, initialized]);
+  }, [c, categoryid, initialized]);
 
   let categorySections: ZendeskSection[] = useMemo(() => {
     if (c) {
@@ -121,7 +122,7 @@ export function Categories() {
       setFilteredArticles(articles)
     }
     setCurrentPage(1)
-  }, [id, sectionid, searchTerm, filterArticles, performSearch])
+  }, [categoryid, sectionid, searchTerm, filterArticles, performSearch])
 
   useEffect(() => {
     const startIndex = (currentPage - 1) * pageSize
@@ -163,8 +164,8 @@ export function Categories() {
               {categories.map((category, index) => (
                 <Button
                   key={category.id}
-                  className={`category-filter-button text-sm font-medium text-white ${category.id === +id || (category.id === 0 && !id) ? 'active' : ''}`}
-                  onClick={() => category.id === 0 ? navigate(`/categories/`) : navigate(`/categories/${category.id}/`)}
+                  className={`category-filter-button text-sm font-medium text-white ${category.id === +categoryid || (category.id === 0 && !categoryid) ? 'active' : ''}`}
+                  onClick={() => category.id === 0 ? navigate(`/${locale.toLowerCase()}/categories/`) : navigate(`/${locale.toLowerCase()}/categories/${category.id}/`)}
                   style={{backgroundColor: colors[ index % colors.length]}}
                 >
                   {translate(category.name)}
@@ -179,7 +180,7 @@ export function Categories() {
                 <Button
                   key={section.id}
                   className={`category-filter-button text-sm font-medium text-white ${section.id === +sectionid || (section.id === 0 && !sectionid) ? 'active' : ''}`}
-                  onClick={() => !c ? navigate('/categories/') : section.id === 0 ? navigate(`/categories/${c.id}/`) : navigate(`/categories/${c.id}/${section.id}/`)}
+                  onClick={() => !c ? navigate('/${locale.toLowerCase()}/categories/') : section.id === 0 ? navigate(`/${locale.toLowerCase()}/categories/${c.id}/`) : navigate(`/${locale.toLowerCase()}/categories/${c.id}/${section.id}/`)}
                   style={{backgroundColor: colors[ index % colors.length]}}
                 >
                   {translate(section.name)}
@@ -204,7 +205,7 @@ export function Categories() {
                 <h3 className="text-base font-bold">{translate(article.name)}</h3>
                 <p className="text-sm font-light">{`${stripHtmlTags(translate(article.description))?.slice(0, 100)}...`}</p>
                 <p>{new Date(article.updated_at).toLocaleDateString('en-GB')}</p>
-                <Link to={`/article/${article.id}`} className="text-black underline hover:underline">
+                <Link to={`/${locale.toLowerCase()}/article/${article.id}`} className="text-black underline hover:underline">
                   <strong>{translate(translations.readMore)} <RightOutlined /></strong>
                 </Link>
               </Card>

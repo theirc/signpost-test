@@ -1,10 +1,11 @@
 import { Link as Link2 } from "react-router-dom";
 import { translations } from "../../translations";
-import { translate } from "../app";
+import { app, translate } from "../app";
 import { Pagination, Select, Typography } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { GetIconForChannel, getContactDetailLink } from "./service";
 import { RightOutlined } from "@ant-design/icons";
+import { languages } from "../locale";
 
 
 const { Text, Title, Link } = Typography
@@ -19,7 +20,6 @@ const html2text = document.createElement("div");
 html2text.hidden = true;
 
 export function ServicesList({ services, serviceCount }: ServiceListProps) {
-
   const orderedServices = services.sort((a, b) => {
     const labelA = translate(a.name).toUpperCase();
     const labelB = translate(b.name).toUpperCase();
@@ -154,13 +154,14 @@ export function ServicesList({ services, serviceCount }: ServiceListProps) {
 }
 
 function Service(props: { service: Service }) {
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
   const { service: s } = props;
 
   html2text.innerHTML = translate(s.description);
   const description = `${html2text.textContent.substring(0, 200)}...`;
 
   return (
-    <Link2 key={s.id} to={`/service/${s.id}`} className="no-underline flex items-center h-full flex-grow border-2 border-solid border-gray-300 px-5 bg-[#F7F7F7] ">
+    <Link2 key={s.id} to={`/${locale.toLowerCase()}/service/${s.id}`} className="no-underline flex items-center h-full flex-grow border-2 border-solid border-gray-300 px-5 bg-[#F7F7F7] ">
       <div className="flex flex-col text-black hover:text-blue-500 transition-all h-full justify-between mb-6">
         <div>
           <Title level={3}>{translate(s.name)}</Title>

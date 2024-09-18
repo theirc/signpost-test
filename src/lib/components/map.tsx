@@ -147,6 +147,7 @@ export function Maps({ services }: mapProps) {
   const [mapStyle, setMapStyle] = useState<Style | string>(MAP_STYLES.mapbox)
   const mapRef = useRef<MapRef>(null)
   const isRTL = languages[app.locale]?.rtl;
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const bounds = useMemo(() => {
     return getBoundsForFeatures(services)
@@ -406,7 +407,7 @@ export function Maps({ services }: mapProps) {
                 </div>
                 <div className={`flex justify-end ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Link
-                    href={`/service/${popupInfo.id}`}
+                    href={`/${locale.toLowerCase()}/service/${popupInfo.id}`}
                     target="_blank"
                     className="contact-detail"
                   >
