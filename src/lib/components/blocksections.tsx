@@ -7,6 +7,7 @@ import { useAnimateOnScroll } from "./useAnimateOnScroll";
 export function BlockSections(props: { block: BlockSections }) {
   const { block } = props;
   useAnimateOnScroll();
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const sections: ZendeskSection[] = Object.values(app.data.zendesk.sections);
   const categories: ZendeskCategory[] = Object.values(
@@ -44,10 +45,10 @@ export function BlockSections(props: { block: BlockSections }) {
                 (section: ZendeskSection) => {
                   const path =
                     !categoryId
-                      ? "/categories/"
+                      ? `/${locale.toLowerCase()}/categories/`
                       : section.id === 0
-                      ? `/categories/${categoryId}/`
-                      : `/categories/${categoryId}/${section.id}/`;
+                      ? `/${locale.toLowerCase()}/categories/${categoryId}/`
+                      : `/${locale.toLowerCase()}/categories/${categoryId}/${section.id}/`;
 
                   return {
                     title: translate(section.name),

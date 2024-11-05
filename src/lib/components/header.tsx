@@ -20,6 +20,7 @@ export function Header() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const navigate = useNavigate()
   const location = useLocation()
+  const locale = languages[app.locale]?.zendesk as string ?? app.locale
 
   const drawerButtonRef = useRef(null);
 
@@ -33,7 +34,7 @@ export function Header() {
   const resourcesMenus = menu.filter((item) => item.type === "menu") as Menu[]
 
   const extractCategoryID = (link) => {
-    const match = link.match(/\/categories\/(\d+)/);
+    const match = link?.match(/\/categories\/(\d+)/);
     return match ? match[1] : null;
   }
 
@@ -62,9 +63,9 @@ export function Header() {
 
     const result = Object.keys(groupedByCategoryID).map(categoryID => {
       const items = groupedByCategoryID[categoryID];
-      const parentItem = items.find(item => item.link === `/categories/${categoryID}`);
+      const parentItem = items.find(item => item.link === `/${locale.toLowerCase()}/categories/${categoryID}`);
       if (parentItem) {
-        parentItem.children = items.filter(item => item.link !== `/categories/${categoryID}`);
+        parentItem.children = items.filter(item => item.link !== `/${locale.toLowerCase()}/categories/${categoryID}`);
       }
       return parentItem;
     }).filter(item => item !== undefined);
@@ -82,12 +83,12 @@ export function Header() {
     categories.forEach((category) => {
       if (
         !aboutMenu.content.some(
-          (item) => item.link === `/categories/${category.id}`
+          (item) => item.link === `/${locale.toLowerCase()}/categories/${category.id}`
         )
       ) {
         aboutMenu.content.push({
           title: category.name,
-          link: `/categories/${category.id}`,
+          link: `/${locale.toLowerCase()}/categories/${category.id}`,
         });
       }
     });
@@ -174,9 +175,9 @@ export function Header() {
                 ))}
               </ul>
               <ul className="flex items-center list-none">
-               {menu.find(x => x.type === 'bot') && <li className="mr-2">
                   <Link to="/signpostbot" className="text-base font-normal leading-snug no-underline">Bot</Link>
-                </li>}
+               {/* {menu.find(x => x.type === 'bot') && <li className="mr-2">
+                </li>} */}
                 <li className="mr-2 ">
                   <Link to='/search-results' className="text-base font-normal leading-snug no-underline">{translate(translations.search)}</Link>
                 </li>

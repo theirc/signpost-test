@@ -5,6 +5,7 @@ import { Service } from "./service"
 import { Categories } from "./categories"
 import { Article } from "./article"
 import { SearchResults } from "./searchresults"
+import { Redirect } from "./redirect"
 
 
 export function Page() {
@@ -22,11 +23,12 @@ export function Page() {
       <Header />
       <Routes>
         <Route path="/" element={<Blocks />} />
-        <Route path="/service/:id?" element={<Service />} />
-        <Route path="/article/:id?" element={<Article />} />
-        <Route path="/categories/:id?/:sectionid?" element={<Categories />} />
+        <Route path="/:locale/service/:id?" element={<Service />} />
+        <Route path="/:locale/article/:id?" element={<Article />} />
+        <Route path="/:locale/categories/:categoryid?/:sectionid?" element={<Categories />} />
         <Route path="/signpostbot" element={<AIBot />} />
-        <Route path="/search-results" element={<SearchResults />} />
+        <Route path="/:locale/search-results" element={<SearchResults />} />
+        <Route path="/:locale/sections/:sectionid" element={<Redirect />} />
       </Routes>
     </BrowserRouter>
   </div>
