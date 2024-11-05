@@ -12,7 +12,7 @@ const metaTags = {
     url: 'https://signpost-test.vercel.app/'
 }
 
-app.country = 2
+app.country = 1
 app.logo = logo
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

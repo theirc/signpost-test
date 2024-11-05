@@ -34,7 +34,7 @@ export function Header() {
   const resourcesMenus = menu.filter((item) => item.type === "menu") as Menu[]
 
   const extractCategoryID = (link) => {
-    const match = link.match(/\/categories\/(\d+)/);
+    const match = link?.match(/\/categories\/(\d+)/);
     return match ? match[1] : null;
   }
 
@@ -175,9 +175,9 @@ export function Header() {
                 ))}
               </ul>
               <ul className="flex items-center list-none">
-               {menu.find(x => x.type === 'bot') && <li className="mr-2">
                   <Link to="/signpostbot" className="text-base font-normal leading-snug no-underline">Bot</Link>
-                </li>}
+               {/* {menu.find(x => x.type === 'bot') && <li className="mr-2">
+                </li>} */}
                 <li className="mr-2 ">
                   <Link to='/search-results' className="text-base font-normal leading-snug no-underline">{translate(translations.search)}</Link>
                 </li>
