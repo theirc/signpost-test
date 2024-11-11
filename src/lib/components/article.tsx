@@ -58,7 +58,7 @@ export function Article() {
           <p className="fade-up-1 text-sm font-light leading-tight"
             data-animation="animate__fadeInUp">{new Date(a.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
           <div className={`flex items-center mt-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <TextReader />
+            <TextReader currentLocale={locale.toLowerCase()} />
             <ShareButton />
           </div>
         </div>
