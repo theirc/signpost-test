@@ -95,11 +95,11 @@ function TextReader({ currentLocale }: TextReaderProps) {
   }, [currentLocale]);
 
   return (
-    <div className="readspeaker-container">
+    <div className="min-w-[370px]">
       {showTextReader && (
         <div
           id="readspeaker_button1"
-          className="rs_skip rsbtn rs_preserve m-0"
+          className="rs_skip rsbtn rs_preserve !m-0"
         >
           <a
             rel="nofollow"
