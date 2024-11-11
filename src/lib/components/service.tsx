@@ -165,8 +165,8 @@ export function Service() {
 
   return (
     <div className={`text-black overflow-y-auto $isRTL ? 'rtl' : ''}`}>
-      <Container className={`text-black $isRTL ? 'rtl' : ''}`}>
-        <Breadcrumb separator=">" className={isRTL ? 'flex flex-row-reverse' : ''} items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services) }]} />
+      <Container className={`text-black $isRTL ? 'rtl' : ''}`} id="main-content">
+        <Breadcrumb separator=">" className={isRTL ? 'flex flex-row-reverse rs_skip' : 'rs_skip'} items={[{ title: <a href="/">{translate(translations.home)}</a> }, { title: translate(translations.services) }]} />
         <h1 className={`text-4xl font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>{title}</h1>
         <h2 className={`text-3xl font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>{providerName}</h2>
         <h3 className={`text-gray-600 text-sm font-normal leading-snug ${isRTL ? 'text-right' : ''}`}>
