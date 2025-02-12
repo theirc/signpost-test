@@ -1,22 +1,11 @@
-import ReactDOM from 'react-dom/client'
-import './lib/index.css'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 import './index.css'
-import logo from "./assets/signpost-ai-logo.png"
-import { app, App } from './lib'
-import { MetaTagsProvider } from './lib/components/metatags-context'
+import '@xyflow/react/dist/style.css'
+import { App } from './App.tsx'
 
-const metaTags = {
-    title: 'Signpost Test',
-    description: 'Providing information and services for refugees',
-    image: logo,
-    url: 'https://signpost-test.vercel.app/'
-}
-
-app.country = 1
-app.logo = logo
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-    <MetaTagsProvider  metaTags={metaTags}>
-        <App />
-    </MetaTagsProvider>
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
 )
