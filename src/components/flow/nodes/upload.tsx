@@ -288,20 +288,6 @@ export function DocumentUploadNode({ data, isConnectable }) {
     }
   }
 
-  // Handle description changes
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newDescription = e.target.value
-    setDescription(newDescription)
-    
-    // If we have content, update it with the new description
-    if (parsedContent && parsedContent !== DEFAULT_OUTPUT) {
-      // Extract the main content without the description wrapper
-      const contentMatch = parsedContent.match(/<div class="content-wrapper">(.*?<div class="description.*?<\/div>)?(.*?)<\/div>/s)
-      const mainContent = contentMatch ? contentMatch[2] : parsedContent
-      updateNodeData(mainContent, newDescription)
-    }
-  }
-
   // Initialize from existing data
   useEffect(() => {
     console.log('Node data received:', data)
@@ -313,19 +299,16 @@ export function DocumentUploadNode({ data, isConnectable }) {
       if (data.description) setDescription(data.description)
       if (data.uploadType) setUploadType(data.uploadType)
       if (data.files) {
-        // Note: we can't restore actual File objects, just their names
         console.log('Files in node data:', data.files)
       }
     }
   }, [data])
 
-  // Add an effect to update the node's data whenever parsedContent changes
-  useEffect(() => {
-    if (parsedContent && parsedContent !== DEFAULT_OUTPUT) {
-      console.log('Content changed, updating node data')
-      updateNodeData(parsedContent)
-    }
-  }, [parsedContent])
+  // Handle description changes
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newDescription = e.target.value
+    setDescription(newDescription)
+  }
 
   const getAcceptedFileTypes = () => Object.values(SUPPORTED_FILE_TYPES).join(',')
 
@@ -361,11 +344,14 @@ export function DocumentUploadNode({ data, isConnectable }) {
         </div>
       `
       console.log('Combined content:', combinedContent)
-      updateNodeData(combinedContent)
+      setParsedContent(combinedContent)
+      // Update node data with both content and description
+      updateNodeData(combinedContent, description)
     } catch (error) {
       console.error('Error parsing files:', error)
       const errorContent = `<div class="error">Error parsing files: ${error.message}</div>`
-      updateNodeData(errorContent)
+      setParsedContent(errorContent)
+      updateNodeData(errorContent, description)
     } finally {
       setIsLoading(false)
     }

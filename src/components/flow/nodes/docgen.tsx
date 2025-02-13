@@ -1,5 +1,5 @@
 import { LabeledHandle } from "@/components/labeled-handle"
-import { Position } from '@xyflow/react'
+import { Position, useReactFlow } from '@xyflow/react'
 import { File } from "lucide-react"
 import { NodeLayout } from './node'
 import { NodeTitle } from './title'
@@ -8,14 +8,46 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-export function DocumentGeneratorNode({ data, isConnectable }) {
+// Add interfaces for props and state
+interface DocumentGeneratorNodeProps {
+  data: any; // Define specific type
+  isConnectable: boolean;
+  id: string;
+}
+
+interface FormData {
+  docType: string;
+  categories: string[];
+  subcategories: string[];
+  socialMedia: string[];
+}
+
+// Move options to constants
+const DOC_TYPES = {
+  ARTICLE: 'article',
+  SERVICE_MAP: 'service-map',
+  SOCIAL: 'social',
+  // ...
+} as const;
+
+export function DocumentGeneratorNode({ data, isConnectable, id }) {
+  console.log('DocumentGeneratorNode props:', { data, isConnectable, id })
+  
   const [docType, setDocType] = useState("article")
   const [categories, setCategories] = useState<string[]>([])
   const [subcategories, setSubcategories] = useState<string[]>([])
   const [socialMedia, setSocialMedia] = useState<string[]>([])
+  const [showInput, setShowInput] = useState(false)
+  const { getEdges, getNode } = useReactFlow()
+
+  // Log initial data
+  useEffect(() => {
+    console.log('DocumentGeneratorNode data:', data)
+  }, [data])
 
   const categoryOptions = [
     { value: "1", label: "Shloop it" },
@@ -286,6 +318,58 @@ export function DocumentGeneratorNode({ data, isConnectable }) {
     }
   }
 
+  // Function to get input node's content
+  const getInputContent = () => {
+    if (!id) {
+      console.log('No node ID available:', { id, data })
+      return 'Error: Node ID not available'
+    }
+
+    const edges = getEdges()
+    console.log('All edges:', edges)
+    console.log('Current node ID:', id)
+    
+    // Find edge connected to our data input
+    const inputEdge = edges.find(edge => {
+      const matches = {
+        target: edge.target,
+        expectedTarget: id,
+        targetMatches: edge.target === id,
+        handleMatches: edge.targetHandle === 'data',
+        fullMatch: edge.target === id && edge.targetHandle === 'data'
+      }
+      console.log('Checking edge:', matches)
+      return matches.fullMatch
+    })
+    
+    if (!inputEdge) {
+      console.log('No input edge found matching:', {
+        nodeId: id,
+        expectedHandle: 'data'
+      })
+      return 'No input connected'
+    }
+    
+    console.log('Found input edge:', inputEdge)
+    
+    // Get the source node
+    const sourceNode = getNode(inputEdge.source)
+    console.log('Source node:', sourceNode)
+    
+    if (!sourceNode) {
+      console.log('Source node not found for ID:', inputEdge.source)
+      return 'Input node not found'
+    }
+    
+    console.log('Source node data:', sourceNode.data)
+    
+    // Return the content from the source node's data
+    const content = sourceNode.data?.content
+    console.log('Content found:', content)
+    
+    return content || 'No content available'
+  }
+
   return <NodeLayout>
     <NodeTitle title="Document Generator" icon={File} />
     <div className="relative">
@@ -296,13 +380,22 @@ export function DocumentGeneratorNode({ data, isConnectable }) {
         position={Position.Left} 
         style={{ top: 20 }}
       />
-      <LabeledHandle 
-        id="data" 
-        title="Data Source" 
-        type="target" 
-        position={Position.Left} 
-        style={{ top: 20 }}
-      />
+      <div className="flex items-center gap-2" style={{ position: 'absolute', left: 0, top: 60 }}>
+        <LabeledHandle 
+          id="data"
+          title="Data Source" 
+          type="target" 
+          position={Position.Left}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowInput(true)}
+          className="h-6 px-2 text-xs"
+        >
+          View Input
+        </Button>
+      </div>
       <LabeledHandle 
         id="output" 
         title="Output" 
@@ -337,6 +430,24 @@ export function DocumentGeneratorNode({ data, isConnectable }) {
           {getForm()}
         </div>
       </div>
+
+      <Dialog open={showInput} onOpenChange={setShowInput}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Input Content</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <div className="bg-accent p-4 rounded-md">
+              <div 
+                className="whitespace-pre-wrap text-sm"
+                dangerouslySetInnerHTML={{ 
+                  __html: getInputContent()
+                }}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   </NodeLayout>
 }
