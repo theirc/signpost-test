@@ -16,6 +16,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const READABILITY_CDN = "https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.min.js"
 const URL_PARSE_CDN = "https://cdn.jsdelivr.net/npm/url-parse@1.5.10/dist/url-parse.min.js"
 
+// File Parser CDN Imports - NOTE: This is a temporary solution and will be replaced with some real dependencies
+const PDF_JS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+const MAMMOTH_CDN = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"
+const DOCX2HTML_CDN = "https://cdn.jsdelivr.net/npm/docx2html@1.3.2/dist/docx2html.min.js"
+const CSV_PARSE_CDN = "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"
+
+// Initialize PDF.js worker
+const initPdfJs = async () => {
+  await loadScript(PDF_JS_CDN)
+  const pdfjsLib = (window as any).pdfjsLib
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_JS_CDN.replace('pdf.min.js', 'pdf.worker.min.js')
+  return pdfjsLib
+}
+
 // Load external scripts dynamically
 const loadScript = (src: string): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -40,17 +54,36 @@ const parseWebContent = async (url: string, depth: string = "1"): Promise<{ titl
       loadScript(URL_PARSE_CDN)
     ])
 
-    // Use a CORS proxy to fetch the webpage content
-    const corsProxy = 'https://corsproxy.io/?' // Alternative proxies: 'https://api.allorigins.win/raw?url=' or 'https://cors-anywhere.herokuapp.com/'
-    const response = await fetch(corsProxy + encodeURIComponent(url), {
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      }
-    })
+    // List of CORS proxies to try in order
+    const corsProxies = [
+      'https://api.allorigins.win/raw?url=',
+      'https://corsproxy.io/?',
+      'https://proxy.cors.sh/'
+    ]
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch content: ${response.status} ${response.statusText}`)
+    let response = null
+    let error = null
+
+    // Try each proxy in sequence until one works
+    for (const proxy of corsProxies) {
+      try {
+        response = await fetch(proxy + encodeURIComponent(url), {
+          headers: {
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Origin': window.location.origin
+          }
+        })
+        
+        if (response.ok) break
+      } catch (e) {
+        error = e
+        continue
+      }
+    }
+
+    if (!response?.ok) {
+      throw new Error(`Failed to fetch content: ${error?.message || 'All proxies failed'}`)
     }
 
     const html = await response.text()
@@ -66,13 +99,13 @@ const parseWebContent = async (url: string, depth: string = "1"): Promise<{ titl
     // Fallback if Readability fails
     if (!article) {
       const title = doc.querySelector('title')?.textContent || url
-      const content = doc.body?.innerHTML || 'No content could be extracted'
+      const content = doc.body?.textContent?.trim() || 'No content could be extracted'
       const siteName = doc.querySelector('meta[property="og:site_name"]')?.getAttribute('content') || 
                       new URL(url).hostname
 
       return {
         title,
-        content,
+        content: `<div class="content"><p>${content}</p></div>`,
         excerpt: doc.querySelector('meta[name="description"]')?.getAttribute('content') || '',
         siteName
       }
@@ -82,7 +115,7 @@ const parseWebContent = async (url: string, depth: string = "1"): Promise<{ titl
       title: article.title,
       content: article.content,
       excerpt: article.excerpt,
-      siteName: article.siteName
+      siteName: article.siteName || new URL(url).hostname
     }
   } catch (error) {
     console.error('Error parsing web content:', error)
@@ -193,27 +226,14 @@ const getAudioOutput = (transcript: string, metadata: any) => `
 </div>
 `
 
-// File Parser CDN Imports - NOTE: This is a temporary solution and will be replaced with some real dependencies
-const PDF_JS_CDN = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
-const MAMMOTH_CDN = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"
-const DOCX2HTML_CDN = "https://cdn.jsdelivr.net/npm/docx2html@1.3.2/dist/docx2html.min.js"
-const CSV_PARSE_CDN = "https://cdn.jsdelivr.net/npm/csv-parse/dist/iife/sync.js"
-
-// Initialize PDF.js worker
-const initPdfJs = async () => {
-  await loadScript(PDF_JS_CDN)
-  const pdfjsLib = (window as any).pdfjsLib
-  pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_JS_CDN.replace('pdf.min.js', 'pdf.worker.min.js')
-  return pdfjsLib
-}
-
 export function DocumentUploadNode({ data, isConnectable }) {
   // File Upload Form State
   const [uploadType, setUploadType] = useState("file")
-  const [fileType, setFileType] = useState("any")
   const [files, setFiles] = useState<File[]>([])
   const [description, setDescription] = useState("")
   const [dragActive, setDragActive] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [parsedContent, setParsedContent] = useState<string>(data?.content || DEFAULT_OUTPUT)
   
   // Web Crawler Form State
   const [urls, setUrls] = useState<string>("")
@@ -228,32 +248,127 @@ export function DocumentUploadNode({ data, isConnectable }) {
   // Modal State
   const [showOutput, setShowOutput] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const [parsedContent, setParsedContent] = useState<string>("")
 
-  const handleFileTypeChange = (value: string) => {
-    setFileType(value)
-    setFiles([]) // Clear files when type changes
-  }
+  // Update node data when content changes
+  const updateNodeData = (content: string, newDescription?: string) => {
+    const descToUse = newDescription !== undefined ? newDescription : description
+    
+    // Wrap the content with description if it exists
+    const contentWithDescription = `
+      <div class="content-wrapper">
+        ${descToUse ? `
+          <div class="description mb-4 text-muted-foreground">
+            <h2 class="text-lg font-semibold mb-2">Description</h2>
+            <p>${descToUse}</p>
+          </div>
+        ` : ''}
+        ${content}
+      </div>
+    `
 
-  const getAcceptedFileTypes = () => {
-    if (fileType === 'any') {
-      return Object.values(SUPPORTED_FILE_TYPES).join(',')
-    }
-    return SUPPORTED_FILE_TYPES[fileType] || ''
-  }
-
-  const handleFiles = (newFiles: FileList | null) => {
-    if (!newFiles) return
-
-    const acceptedTypes = getAcceptedFileTypes().split(',')
-    const filteredFiles = Array.from(newFiles).filter(file => {
-      if (fileType === 'any') return true
-      return acceptedTypes.some(type => 
-        file.name.toLowerCase().endsWith(type.replace('.', '').toLowerCase())
-      )
+    console.log('Updating node data:', {
+      content: contentWithDescription,
+      files: files.map(f => f.name),
+      description: descToUse
     })
+    
+    setParsedContent(contentWithDescription)
+    
+    // Update the node's data
+    if (data) {
+      // Preserve existing data structure and just update what we need
+      data.content = contentWithDescription
+      data.files = files.map(f => f.name)
+      data.type = "upload"
+      data.description = descToUse
+      data.uploadType = uploadType
+      data.lastUpdated = new Date().toISOString()
+      
+      console.log('Updated node data:', data)
+    }
+  }
 
-    setFiles(prev => [...prev, ...filteredFiles])
+  // Handle description changes
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newDescription = e.target.value
+    setDescription(newDescription)
+    
+    // If we have content, update it with the new description
+    if (parsedContent && parsedContent !== DEFAULT_OUTPUT) {
+      // Extract the main content without the description wrapper
+      const contentMatch = parsedContent.match(/<div class="content-wrapper">(.*?<div class="description.*?<\/div>)?(.*?)<\/div>/s)
+      const mainContent = contentMatch ? contentMatch[2] : parsedContent
+      updateNodeData(mainContent, newDescription)
+    }
+  }
+
+  // Initialize from existing data
+  useEffect(() => {
+    console.log('Node data received:', data)
+    if (data?.content) {
+      console.log('Setting content from node data:', data.content)
+      setParsedContent(data.content)
+      
+      // Restore other state if available
+      if (data.description) setDescription(data.description)
+      if (data.uploadType) setUploadType(data.uploadType)
+      if (data.files) {
+        // Note: we can't restore actual File objects, just their names
+        console.log('Files in node data:', data.files)
+      }
+    }
+  }, [data])
+
+  // Add an effect to update the node's data whenever parsedContent changes
+  useEffect(() => {
+    if (parsedContent && parsedContent !== DEFAULT_OUTPUT) {
+      console.log('Content changed, updating node data')
+      updateNodeData(parsedContent)
+    }
+  }, [parsedContent])
+
+  const getAcceptedFileTypes = () => Object.values(SUPPORTED_FILE_TYPES).join(',')
+
+  const handleFiles = async (newFiles: FileList | null) => {
+    if (!newFiles) return
+    setFiles(prev => [...prev, ...Array.from(newFiles)])
+  }
+
+  const parseAllFiles = async () => {
+    if (files.length === 0) return
+
+    setIsLoading(true)
+    try {
+      console.log('Starting to parse files:', files.map(f => f.name))
+      const results = await Promise.all(files.map(file => parseFile(file)))
+      console.log('Parse results:', results)
+      
+      // Combine all results into one output
+      const combinedContent = `
+        <div class="content-wrapper">
+          <h1>Combined File Contents</h1>
+          <div class="file-count mb-4">
+            <span class="text-sm text-muted-foreground">Processed ${files.length} file(s)</span>
+          </div>
+          <div class="files-content space-y-8">
+            ${results.map((result, index) => `
+              <div class="file-section">
+                <h2 class="text-lg font-semibold mb-2">${files[index].name}</h2>
+                ${result.content}
+              </div>
+            `).join('\n')}
+          </div>
+        </div>
+      `
+      console.log('Combined content:', combinedContent)
+      updateNodeData(combinedContent)
+    } catch (error) {
+      console.error('Error parsing files:', error)
+      const errorContent = `<div class="error">Error parsing files: ${error.message}</div>`
+      updateNodeData(errorContent)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleDrag = (e: React.DragEvent) => {
@@ -327,17 +442,25 @@ export function DocumentUploadNode({ data, isConnectable }) {
           }
         }
 
-        case 'csv': { // BROKEN! COME BACK TO THIS AND INVESTIGATE THIS DEPENDENCY
+        case 'csv': {
           await loadScript(CSV_PARSE_CDN)
-          const records = (window as any).csvParse(text, { 
-            columns: true, 
-            skip_empty_lines: true 
+          return new Promise((resolve, reject) => {
+            const Papa = (window as any).Papa
+            Papa.parse(file, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results: any) => {
+                const parsedContent = getDataOutput(results.data, 'csv')
+                resolve({
+                  content: parsedContent,
+                  type: 'data'
+                })
+              },
+              error: (error: any) => {
+                reject(new Error(`Failed to parse CSV: ${error}`))
+              }
+            })
           })
-          const parsedContent = getDataOutput(records, 'csv')
-          return {
-            content: parsedContent,
-            type: 'data'
-          }
         }
 
         case 'pdf': {
@@ -421,93 +544,64 @@ export function DocumentUploadNode({ data, isConnectable }) {
     }
   }
 
-  // Update parsed content when files change
-  useEffect(() => {
-    if (files.length > 0) {
-      parseFile(files[0])
-    } else {
-      setParsedContent("")
+  const handleCrawl = async () => {
+    try {
+      setIsLoading(true)
+      const urlList = urls.split('\n').filter(url => url.trim())
+      if (urlList.length === 0) return
+      
+      // Parse the first URL for now (multi-URL support can be added later)
+      const result = await parseWebContent(urlList[0], crawlDepth)
+      const webContent = getWebOutput(result)
+      updateNodeData(webContent)
+    } catch (error) {
+      const errorContent = `<div class="error">Error crawling web content: ${error.message}</div>`
+      updateNodeData(errorContent)
+    } finally {
+      setIsLoading(false)
     }
-  }, [files])
+  }
 
   const FileUploadForm = () => (
     <div className="space-y-4">
       <div>
-        <Label>File Type</Label>
-        <Select 
-          value={fileType}
-          onValueChange={handleFileTypeChange}
+        <Label>Upload Files</Label>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          accept={getAcceptedFileTypes()}
+          onChange={handleChange}
+          className="hidden"
+          disabled={isLoading}
+        />
+        <div 
+          onClick={() => !isLoading && inputRef.current?.click()}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-md p-4 text-center transition-colors ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+          } ${dragActive ? 'border-primary bg-accent' : 'hover:bg-accent'}`}
         >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select file type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="any">Any Supported Format</SelectItem>
-            <SelectItem value="document">Documents (PDF, DOC, TXT)</SelectItem>
-            <SelectItem value="data">Data Files (CSV, JSON)</SelectItem>
-            <SelectItem value="audio">Audio Files (WAV, MP3)</SelectItem>
-            <SelectItem value="web">Web URLs</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {fileType === 'web' ? (
-        <div className="space-y-4">
-          <div>
-            <Label>Web URLs</Label>
-            <Textarea 
-              placeholder="Enter URLs (one per line)..."
-              className="min-h-[100px]"
-              value={urls}
-              onChange={(e) => setUrls(e.target.value)}
-            />
-          </div>
-          <Button 
-            className="w-full"
-            onClick={async () => {
-              try {
-                const urlList = urls.split('\n').filter(url => url.trim())
-                if (urlList.length === 0) return
-                
-                // Parse the first URL for now
-                const result = await parseFile(urlList[0])
-                setParsedContent(result.content)
-              } catch (error) {
-                setParsedContent(`<div class="error">Error parsing URL: ${error.message}</div>`)
-              }
-            }}
-            disabled={!urls.trim()}
-          >
-            Parse URLs
-          </Button>
+          <p className="text-sm text-muted-foreground">
+            {isLoading ? (
+              <>
+                <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-background border-r-foreground"></span>
+                Processing files...
+              </>
+            ) : dragActive ? (
+              "Drop files here"
+            ) : (
+              "Drag and drop files here or click to browse"
+            )}
+          </p>
         </div>
-      ) : (
-        <div>
-          <Label>Upload Files</Label>
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            accept={getAcceptedFileTypes()}
-            onChange={handleChange}
-            className="hidden"
-          />
-          <div 
-            onClick={() => inputRef.current?.click()}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-md p-4 text-center transition-colors cursor-pointer
-              ${dragActive ? 'border-primary bg-accent' : 'hover:bg-accent'}`}
-          >
-            <p className="text-sm text-muted-foreground">
-              {dragActive ? "Drop files here" : "Drag and drop files here or click to browse"}
-            </p>
-          </div>
 
-          {files.length > 0 && (
-            <div className="mt-4 space-y-2">
+        {files.length > 0 && (
+          <div className="mt-4 space-y-4">
+            <div className="space-y-2">
               {files.map((file, index) => (
                 <div key={index} className="flex items-center justify-between bg-accent rounded-md p-2">
                   <span className="text-sm truncate">{file.name}</span>
@@ -515,30 +609,33 @@ export function DocumentUploadNode({ data, isConnectable }) {
                     variant="ghost" 
                     size="sm"
                     onClick={() => removeFile(index)}
+                    disabled={isLoading}
                   >×</Button>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      )}
+            
+            <Button
+              className="w-full"
+              onClick={parseAllFiles}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-r-foreground"></span>
+                  Processing...
+                </>
+              ) : (
+                'Parse All Files'
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   )
 
   const WebCrawlerForm = () => {
-    const handleCrawl = async () => {
-      try {
-        const urlList = urls.split('\n').filter(url => url.trim())
-        if (urlList.length === 0) return
-        
-        // Parse the first URL for now (multi-URL support can be added later)
-        const result = await parseWebContent(urlList[0], crawlDepth)
-        setParsedContent(getWebOutput(result))
-      } catch (error) {
-        setParsedContent(`<div class="error">Error crawling web content: ${error.message}</div>`)
-      }
-    }
-
     return (
       <div className="space-y-4">
         <div>
@@ -546,6 +643,7 @@ export function DocumentUploadNode({ data, isConnectable }) {
           <Select 
             value={crawlDepth}
             onValueChange={setCrawlDepth}
+            disabled={isLoading}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select crawl depth" />
@@ -561,9 +659,16 @@ export function DocumentUploadNode({ data, isConnectable }) {
         <Button 
           className="w-full"
           onClick={handleCrawl}
-          disabled={!urls.trim()}
+          disabled={!urls.trim() || isLoading}
         >
-          Start Crawling
+          {isLoading ? (
+            <>
+              <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-r-foreground"></span>
+              Crawling...
+            </>
+          ) : (
+            'Start Crawling'
+          )}
         </Button>
       </div>
     )
@@ -730,7 +835,7 @@ export function DocumentUploadNode({ data, isConnectable }) {
             <Label>Description</Label>
             <Textarea 
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={handleDescriptionChange}
               placeholder="Enter a description..."
               className="min-h-[80px]"
             />
