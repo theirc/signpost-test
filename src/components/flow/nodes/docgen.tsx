@@ -231,6 +231,22 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
     console.log('DocumentGeneratorNode data:', data)
   }, [data])
 
+  // Effect to automatically generate output when inputs change
+  useEffect(() => {
+    const edges = getEdges()
+    const templateEdge = edges.find(edge => 
+      edge.target === id && edge.targetHandle === 'template'
+    )
+    const dataEdge = edges.find(edge => 
+      edge.target === id && edge.targetHandle === 'data'
+    )
+
+    // Only generate if we have at least one input
+    if (templateEdge || dataEdge) {
+      handleGenerate()
+    }
+  }, [id, getEdges, getNode, docType, data?.description])
+
   const categoryOptions = [
     { value: "1", label: "Shloop it" },
     { value: "2", label: "Doop it" },
@@ -668,47 +684,61 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
     }
   }
 
+  // Update handleGenerate to not require button click
   const handleGenerate = () => {
-    const sampleOutputs = {
-      "article": {
-        title: "Sample Zendesk Article",
-        body: "<h2>Introduction</h2><p>This is a sample Zendesk article generated from the input.</p><h2>Details</h2><p>More formatted content would go here...</p>",
-      },
-      "service-map": {
-        name: "Sample Service Location",
-        description: "A service point generated from the input data",
-        address: "123 Sample St, Example City",
-        categories: ["Category 1", "Category 2"],
-        coordinates: { lat: 40.7128, lng: -74.0060 },
-      },
-      "pdf": {
-        fileUrl: SAMPLE_DOCS.pdf,
-        fileName: "generated-document.pdf",
-        download: () => downloadFromCDN(SAMPLE_DOCS.pdf, "generated-document.pdf")
-      },
-      "docx": {
-        fileUrl: SAMPLE_DOCS.docx,
-        fileName: "generated-document.docx",
-        download: () => downloadFromCDN(SAMPLE_DOCS.docx, "generated-document.docx")
-      },
-      "csv": {
-        fileUrl: "generated-data.csv",
-        fileName: "generated-data.csv",
-        download: generateSampleCSV
-      },
-      "json": {
-        fileUrl: "generated-data.json",
-        fileName: "generated-data.json",
-        download: generateSampleJSON,
-        data: {
-          title: "Sample JSON Output",
-          content: "This would be structured data from the input"
+    setIsLoading(true)
+    
+    try {
+      const sampleOutputs = {
+        "article": {
+          title: "Sample Zendesk Article",
+          body: "<h2>Introduction</h2><p>This is a sample Zendesk article generated from the input.</p><h2>Details</h2><p>More formatted content would go here...</p>",
+        },
+        "service-map": {
+          name: "Sample Service Location",
+          description: "A service point generated from the input data",
+          address: "123 Sample St, Example City",
+          categories: ["Category 1", "Category 2"],
+          coordinates: { lat: 40.7128, lng: -74.0060 },
+        },
+        "pdf": {
+          fileUrl: SAMPLE_DOCS.pdf,
+          fileName: "generated-document.pdf",
+          download: () => downloadFromCDN(SAMPLE_DOCS.pdf, "generated-document.pdf")
+        },
+        "docx": {
+          fileUrl: SAMPLE_DOCS.docx,
+          fileName: "generated-document.docx",
+          download: () => downloadFromCDN(SAMPLE_DOCS.docx, "generated-document.docx")
+        },
+        "csv": {
+          fileUrl: "generated-data.csv",
+          fileName: "generated-data.csv",
+          download: generateSampleCSV
+        },
+        "json": {
+          fileUrl: "generated-data.json",
+          fileName: "generated-data.json",
+          download: generateSampleJSON,
+          data: {
+            title: "Sample JSON Output",
+            content: "This would be structured data from the input"
+          }
         }
       }
-    }
 
-    setGeneratedOutput(sampleOutputs[docType] || { message: "Generated output for " + docType })
-    setShowOutput(true)
+      setGeneratedOutput(sampleOutputs[docType] || { message: "Generated output for " + docType })
+      
+      // Update node data
+      if (data) {
+        data.generatedOutput = sampleOutputs[docType]
+        data.lastUpdated = new Date().toISOString()
+      }
+    } catch (error) {
+      console.error('Error generating document:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return <NodeLayout>
@@ -754,7 +784,10 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
             <Label className="text-xs">Document Type</Label>
             <Select 
               defaultValue="article" 
-              onValueChange={(value) => setDocType(value)}
+              onValueChange={(value) => {
+                setDocType(value)
+                // Will trigger the useEffect
+              }}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select type" />
@@ -774,21 +807,6 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
           <Separator className="my-2" />
           
           {getForm()}
-
-          <Button
-            className="w-full"
-            onClick={handleGenerate}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-r-foreground"></span>
-                Generating...
-              </>
-            ) : (
-              'Generate Document'
-            )}
-          </Button>
         </div>
       </div>
 
@@ -832,11 +850,41 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
       <Dialog open={showOutput} onOpenChange={setShowOutput}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Generated Output</DialogTitle>
+            <DialogTitle>Document Generator Output</DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
-            <div className="bg-accent p-4 rounded-md">
-              {renderOutput()}
+          <div className="mt-4 space-y-6">
+            {/* Template Input */}
+            <div>
+              <h3 className="text-sm font-medium mb-2">Template Input</h3>
+              <div className="bg-accent p-4 rounded-md">
+                <div 
+                  className="whitespace-pre-wrap text-sm"
+                  dangerouslySetInnerHTML={{ 
+                    __html: getTemplateContent()
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Data Source Input */}
+            <div>
+              <h3 className="text-sm font-medium mb-2">Data Source Input</h3>
+              <div className="bg-accent p-4 rounded-md">
+                <div 
+                  className="whitespace-pre-wrap text-sm"
+                  dangerouslySetInnerHTML={{ 
+                    __html: getInputContent()
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Generated Output */}
+            <div>
+              <h3 className="text-sm font-medium mb-2">Generated Output</h3>
+              <div className="bg-accent p-4 rounded-md">
+                {renderOutput()}
+              </div>
             </div>
           </div>
         </DialogContent>

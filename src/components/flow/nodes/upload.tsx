@@ -249,6 +249,13 @@ export function DocumentUploadNode({ data, isConnectable }) {
   const [showOutput, setShowOutput] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Effect to parse files whenever they change or description changes
+  useEffect(() => {
+    if (files.length > 0) {
+      parseAllFiles()
+    }
+  }, [files, description])
+
   // Update node data when content changes
   const updateNodeData = (content: string, newDescription?: string) => {
     const descToUse = newDescription !== undefined ? newDescription : description
@@ -304,10 +311,10 @@ export function DocumentUploadNode({ data, isConnectable }) {
     }
   }, [data])
 
-  // Handle description changes
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newDescription = e.target.value
     setDescription(newDescription)
+    // parseAllFiles will be triggered by the useEffect
   }
 
   const getAcceptedFileTypes = () => Object.values(SUPPORTED_FILE_TYPES).join(',')
@@ -315,6 +322,7 @@ export function DocumentUploadNode({ data, isConnectable }) {
   const handleFiles = async (newFiles: FileList | null) => {
     if (!newFiles) return
     setFiles(prev => [...prev, ...Array.from(newFiles)])
+    // parseAllFiles will be triggered by the useEffect
   }
 
   const parseAllFiles = async () => {
@@ -600,21 +608,6 @@ export function DocumentUploadNode({ data, isConnectable }) {
                 </div>
               ))}
             </div>
-            
-            <Button
-              className="w-full"
-              onClick={parseAllFiles}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-r-foreground"></span>
-                  Processing...
-                </>
-              ) : (
-                'Parse All Files'
-              )}
-            </Button>
           </div>
         )}
       </div>
