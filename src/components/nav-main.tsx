@@ -11,6 +11,7 @@ interface Props {
     items?: {
       title: string
       url: string
+      onClick?: () => void
     }[]
   }[]
 }
@@ -34,11 +35,17 @@ export function NavMain({ items }: Props) {
               <SidebarMenuSub>
                 {item.items?.map((subItem) => (
                   <SidebarMenuSubItem key={subItem.title}>
-                    <SidebarMenuSubButton asChild>
-                      <a href={subItem.url}>
+                    {subItem.onClick ? (
+                      <SidebarMenuSubButton onClick={subItem.onClick}>
                         <span>{subItem.title}</span>
-                      </a>
-                    </SidebarMenuSubButton>
+                      </SidebarMenuSubButton>
+                    ) : (
+                      <SidebarMenuSubButton asChild>
+                        <a href={subItem.url}>
+                          <span>{subItem.title}</span>
+                        </a>
+                      </SidebarMenuSubButton>
+                    )}
                   </SidebarMenuSubItem>
                 ))}
               </SidebarMenuSub>

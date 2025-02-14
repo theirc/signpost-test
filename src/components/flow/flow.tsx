@@ -149,7 +149,7 @@ const getId = () => `dndnode_${id++}`
 
 function DnDFlow() {
 
-  const [nodes, setNodes] = useState(initialNodes)
+  const [nodes, setNodes] = useState(initialNodes2)
   const [edges, setEdges] = useState(initialEdges2)
   const { screenToFlowPosition } = useReactFlow()
 
