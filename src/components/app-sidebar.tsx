@@ -1,19 +1,11 @@
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar, } from "@/components/ui/sidebar"
-import { BookOpen, Bot, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal } from "lucide-react"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
+import { Bot, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal } from "lucide-react"
 import { useState } from "react"
-import { LiveDataModal } from "./forms/live-data-modal"
-import { RAGManagementModal } from "./forms/rag-management-modal"
-import { FilesModal } from "./forms/files-modal"
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [liveDataOpen, setLiveDataOpen] = useState(false)
-  const [dataManagementOpen, setDataManagementOpen] = useState(false)
-  const [ragManagementOpen, setRAGManagementOpen] = useState(false)
-  const [filesOpen, setFilesOpen] = useState(false)
-
+export function AppSidebar({ onLibraryOpen, ...props }: React.ComponentProps<typeof Sidebar> & { onLibraryOpen: () => void }) {
   // This is sample data.
   const data = {
     user: {
@@ -60,23 +52,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Knowledge",
         url: "#",
         icon: Frame,
-        items: [
-          { 
-            title: "Upload Files", 
-            url: "#",
-            onClick: () => setFilesOpen(true)
-          },
-          { 
-            title: "Connect Live Data", 
-            url: "#",
-            onClick: () => setLiveDataOpen(true)
-          },
-          { 
-            title: "Library", 
-            url: "#",
-            onClick: () => setRAGManagementOpen(true)
-          },
-        ],
+        onClick: () => onLibraryOpen(),
+        isLink: true,
       },
     ],
     projects: [
@@ -91,18 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     if (section.title === "Knowledge") {
       return {
         ...section,
-        items: section.items.map(item => {
-          switch (item.title) {
-            case "Files":
-              return { ...item, onClick: () => setFilesOpen(true) }
-            case "Live Data":
-              return { ...item, onClick: () => setLiveDataOpen(true) }
-            case "Library":
-              return { ...item, onClick: () => setRAGManagementOpen(true) }
-            default:
-              return item
-          }
-        })
+        onClick: () => onLibraryOpen()
       }
     }
     return section
@@ -135,19 +101,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
-
-      <FilesModal 
-        open={filesOpen}
-        onOpenChange={setFilesOpen}
-      />
-      <LiveDataModal 
-        open={liveDataOpen}
-        onOpenChange={setLiveDataOpen}
-      />
-      <RAGManagementModal
-        open={ragManagementOpen}
-        onOpenChange={setRAGManagementOpen}
-      />
     </>
   )
 }

@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import React from "react"
-import { FilesModal } from "./files-modal"
-import { LiveDataModal } from "./live-data-modal"
-import { availableSources, updateAvailableSources } from "./files-modal"
+import { FilesModal } from "../components/forms/files-modal"
+import { LiveDataModal } from "../components/forms/live-data-modal"
+import { availableSources, updateAvailableSources } from "../components/forms/files-modal"
 import { SourcesTable } from "@/components/sources-table"
 
-interface RAGManagementModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+interface RAGManagementProps {
+  onClose?: () => void
 }
 
 // This would come from your backend in reality
@@ -110,7 +109,7 @@ type SortConfig = {
   direction: 'asc' | 'desc'
 }
 
-export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalProps) {
+export function RAGManagement({ onClose }: RAGManagementProps) {
   const [sources, setSources] = React.useState(availableSources)
   const [selectedSources, setSelectedSources] = React.useState<string[]>([])
   const [previewContent, setPreviewContent] = React.useState<{ name: string; content: string } | null>(null)
@@ -125,7 +124,7 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
       tags: source.tags || [] // Ensure tags is at least an empty array
     }))
     setSources(sourcesWithTags)
-  }, [open, filesModalOpen])
+  }, [filesModalOpen])
 
   const handleDelete = (id: string) => {
     // Update both local state and availableSources
@@ -157,16 +156,18 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
   }
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[900px]">
-          <DialogHeader>
-            <DialogTitle>Library</DialogTitle>
-            <DialogDescription>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Library</h2>
+            <p className="text-muted-foreground">
               Available data sources in your knowledge library.
-            </DialogDescription>
-          </DialogHeader>
-          
+            </p>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
           <SourcesTable 
             sources={sources}
             selectedSources={selectedSources}
@@ -188,29 +189,29 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
             showAddButton={true}
           />
 
-          <DialogFooter className="mt-4">
-            <div className="flex justify-between w-full">
-              <div className="text-sm text-gray-500">
-                {selectedSources.length} sources selected
-              </div>
-              <div className="space-x-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-                <Button 
-                  variant="default" 
-                  disabled={selectedSources.length === 0}
-                  onClick={() => {
-                    // Handle save selected sources
-                    console.log('Selected sources:', selectedSources)
-                    onOpenChange(false)
-                  }}
-                >
-                  Save Selection
-                </Button>
-              </div>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              {selectedSources.length} sources selected
             </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="space-x-2">
+              {onClose && (
+                <Button variant="outline" onClick={onClose}>Close</Button>
+              )}
+              <Button 
+                variant="default" 
+                disabled={selectedSources.length === 0}
+                onClick={() => {
+                  // Handle save selected sources
+                  console.log('Selected sources:', selectedSources)
+                  onClose?.()
+                }}
+              >
+                Save Selection
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Content Preview Dialog */}
       <Dialog open={!!previewContent} onOpenChange={() => setPreviewContent(null)}>
@@ -240,6 +241,6 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
         open={liveDataModalOpen}
         onOpenChange={setLiveDataModalOpen}
       />
-    </>
+    </div>
   )
 } 
