@@ -34,6 +34,14 @@ const data = {
       ],
     },
     {
+      title: "Playground",
+      url: "#",
+      icon: Bot,
+      items: [
+        {title: "Chatbot", url: "?view=chatbot"}
+      ],
+    },
+    {
       title: "Settings",
       url: "#",
       icon: Settings2,
