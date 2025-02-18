@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@radix-ui/react-separator"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { RAGManagement } from "./pages/knowledge"
+import { BotLogsTable } from "./pages/logs"
 
 
 export function App() {
@@ -33,6 +34,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<FlowDesigner />} />
             <Route path="/rag" element={<RAGManagement />} />
+            <Route path="/logs" element={<BotLogsTable />} />            
           </Routes>
         </div>
       </SidebarInset>

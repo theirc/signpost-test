@@ -2,8 +2,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal } from "lucide-react"
-import { useState } from "react"
+import { Bot, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
 
 export function AppSidebar() {
   // This is sample data.
@@ -53,10 +52,12 @@ export function AppSidebar() {
         url: "rag",
         icon: Frame,
         isLink: true,
-        items: [{
-          title: "RAG",
-          url: "rag",
-        }]
+      },
+      {
+        title: "Bot Logs",
+        url: "logs",
+        icon: Logs,
+        isLink: true,
       },
     ],
     projects: [
