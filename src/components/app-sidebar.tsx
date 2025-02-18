@@ -54,10 +54,6 @@ export function AppSidebar() {
         url: "logs",
         icon: Logs,
         isLink: true,
-        items: [{
-          title: "RAG",
-          url: "rag",
-        }]
       },
     ],
     projects: [
