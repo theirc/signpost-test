@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import React from "react"
+import { FilesModal } from "./files-modal"
+import { LiveDataModal } from "./live-data-modal"
+import { availableSources, updateAvailableSources } from "./files-modal"
+import { SourcesTable } from "@/components/sources-table"
 
 interface RAGManagementModalProps {
   open: boolean
@@ -101,13 +105,33 @@ const sampleSources = [
   }
 ]
 
+type SortConfig = {
+  key: string
+  direction: 'asc' | 'desc'
+}
+
 export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalProps) {
-  const [sources, setSources] = React.useState(sampleSources)
+  const [sources, setSources] = React.useState(availableSources)
   const [selectedSources, setSelectedSources] = React.useState<string[]>([])
   const [previewContent, setPreviewContent] = React.useState<{ name: string; content: string } | null>(null)
+  const [filesModalOpen, setFilesModalOpen] = React.useState(false)
+  const [liveDataModalOpen, setLiveDataModalOpen] = React.useState(false)
+
+  // Keep sources in sync with availableSources and ensure tags are present
+  React.useEffect(() => {
+    // Map over sources to ensure each has a tags array
+    const sourcesWithTags = availableSources.map(source => ({
+      ...source,
+      tags: source.tags || [] // Ensure tags is at least an empty array
+    }))
+    setSources(sourcesWithTags)
+  }, [open, filesModalOpen])
 
   const handleDelete = (id: string) => {
-    setSources(sources.filter(source => source.id !== id))
+    // Update both local state and availableSources
+    const newSources = sources.filter(source => source.id !== id)
+    setSources(newSources)
+    updateAvailableSources(availableSources.filter(source => source.id !== id))
     setSelectedSources(selectedSources.filter(sourceId => sourceId !== id))
   }
 
@@ -123,10 +147,19 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
     setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
   }
 
+  // Update sources when files modal closes
+  const handleFilesModalOpenChange = (open: boolean) => {
+    setFilesModalOpen(open)
+    if (!open) {
+      // Update sources when files modal closes
+      setSources(availableSources)
+    }
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>Library</DialogTitle>
             <DialogDescription>
@@ -134,66 +167,26 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
             </DialogDescription>
           </DialogHeader>
           
-          <div className="border rounded-md">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-3 text-left font-medium">
-                    <input
-                      type="checkbox"
-                      checked={selectedSources.length === sources.length}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="p-3 text-left font-medium">Name</th>
-                  <th className="p-3 text-left font-medium">Type</th>
-                  <th className="p-3 text-left font-medium">Last Updated</th>
-                  <th className="p-3 text-left font-medium">Preview</th>
-                  <th className="p-3 text-left font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sources.map((source) => (
-                  <tr key={source.id} className="border-b last:border-b-0">
-                    <td className="p-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedSources.includes(source.id)}
-                        onChange={() => handleToggleSelect(source.id)}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    <td className="p-3">{source.name}</td>
-                    <td className="p-3">{source.type}</td>
-                    <td className="p-3">{source.lastUpdated}</td>
-                    <td className="p-3">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setPreviewContent({ 
-                          name: source.name,
-                          content: source.content 
-                        })}
-                      >
-                        View Content
-                      </Button>
-                    </td>
-                    <td className="p-3">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleDelete(source.id)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SourcesTable 
+            sources={sources}
+            selectedSources={selectedSources}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
+            onPreview={(source) => setPreviewContent({ 
+              name: source.name,
+              content: source.content 
+            })}
+            onDelete={handleDelete}
+            onAddNew={() => {
+              setFilesModalOpen(true)
+            }}
+            onConnectLiveData={() => {
+              setLiveDataModalOpen(true)
+            }}
+            showCheckboxes={true}
+            showActions={true}
+            showAddButton={true}
+          />
 
           <DialogFooter className="mt-4">
             <div className="flex justify-between w-full">
@@ -219,6 +212,7 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
         </DialogContent>
       </Dialog>
 
+      {/* Content Preview Dialog */}
       <Dialog open={!!previewContent} onOpenChange={() => setPreviewContent(null)}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
@@ -236,6 +230,16 @@ export function RAGManagementModal({ open, onOpenChange }: RAGManagementModalPro
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <FilesModal 
+        open={filesModalOpen}
+        onOpenChange={handleFilesModalOpenChange}
+      />
+
+      <LiveDataModal 
+        open={liveDataModalOpen}
+        onOpenChange={setLiveDataModalOpen}
+      />
     </>
   )
 } 
