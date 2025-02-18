@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-// Import the shared sources from files-modal
+// Import the shared sources and table component from their new location
 import { availableSources } from "@/components/forms/files-modal"
+import { SourcesTable } from "@/components/sources-table"
 
 export function DocumentUploadNode({ data, isConnectable }) {
   const [showOutput, setShowOutput] = useState(false)
@@ -31,13 +32,13 @@ export function DocumentUploadNode({ data, isConnectable }) {
 
     const formattedContent = `
       <div class="content-wrapper">
-        <div class="description mb-4 text-muted-foreground">
+          <div class="description mb-4 text-muted-foreground">
           <h2 class="text-lg font-semibold mb-2">Selected Sources</h2>
           <p>Combined content from ${selectedSources.length} selected sources</p>
         </div>
         <div class="main-content">
           ${selectedContent}
-        </div>
+          </div>
       </div>
     `
 
@@ -105,53 +106,17 @@ export function DocumentUploadNode({ data, isConnectable }) {
             </Button>
           </div>
 
-          <div className="border rounded-md">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="p-2 text-left text-sm font-medium">
-                    <input
-                      type="checkbox"
-                      checked={selectedSources.length === sources.length}
-                      onChange={handleSelectAll}
-                      className="rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="p-2 text-left text-sm font-medium">Name</th>
-                  <th className="p-2 text-left text-sm font-medium">Type</th>
-                  <th className="p-2 text-left text-sm font-medium">Preview</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sources.map((source) => (
-                  <tr key={source.id} className="border-b last:border-b-0">
-                    <td className="p-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedSources.includes(source.id)}
-                        onChange={() => handleToggleSelect(source.id)}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    <td className="p-2 text-sm">{source.name}</td>
-                    <td className="p-2 text-sm">{source.type}</td>
-                    <td className="p-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setPreviewContent({ 
-                          name: source.name,
-                          content: source.content 
-                        })}
-                      >
-                        View Content
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SourcesTable 
+            sources={sources}
+            selectedSources={selectedSources}
+            onToggleSelect={handleToggleSelect}
+            onSelectAll={handleSelectAll}
+            onPreview={(source) => setPreviewContent({ 
+              name: source.name,
+              content: source.content 
+            })}
+            showCheckboxes={true}
+          />
 
           <div className="text-sm text-gray-500">
             {selectedSources.length} sources selected

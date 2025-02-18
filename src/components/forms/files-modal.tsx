@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
+import { X, ArrowUpDown } from "lucide-react"
+import { SourcesTable, type Source } from "@/components/sources-table"
 
 // CDN URLs for various file parsers
 const READABILITY_CDN = "https://cdnjs.cloudflare.com/ajax/libs/Readability.js/0.4.4/Readability.min.js"
@@ -17,12 +19,13 @@ interface FilesModalProps {
 }
 
 // This would normally be in your backend/database
-export let availableSources = [
+export let availableSources: Source[] = [
   { 
     id: '1', 
     name: 'Help Center Articles', 
     type: 'Zendesk', 
     lastUpdated: '2024-02-20',
+    tags: ['documentation', 'help', 'user-guide'],
     content: `How to Reset Your Password
     1. Click on the "Forgot Password" link
     2. Enter your email address
@@ -40,9 +43,15 @@ export let availableSources = [
     name: 'Product Documentation', 
     type: 'Files', 
     lastUpdated: '2024-02-19',
+    tags: ['documentation', 'technical', 'product'],
     content: `Product Features Overview...`
   }
 ]
+
+// Function to update available sources
+export const updateAvailableSources = (newSources: Source[]) => {
+  availableSources = newSources
+}
 
 // Function to load a script from CDN
 const loadScript = (url: string): Promise<void> => {
@@ -59,6 +68,38 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [processedContent, setProcessedContent] = useState<string>("")
+  const [currentTags, setCurrentTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState("")
+  const [processingProgress, setProcessingProgress] = useState<{current: number, total: number} | null>(null)
+  const [processedSources, setProcessedSources] = useState<Source[]>([])
+  const [sourceNames, setSourceNames] = useState<{[key: string]: string}>({})
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!open) {
+      setUploadedFiles([])
+      setProcessedContent("")
+      setCurrentTags([])
+      setTagInput("")
+      setProcessedSources([])
+      setSourceNames({})
+    }
+  }, [open])
+
+  // Handle tag input
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault()
+      if (!currentTags.includes(tagInput.trim())) {
+        setCurrentTags([...currentTags, tagInput.trim()])
+      }
+      setTagInput("")
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setCurrentTags(currentTags.filter(tag => tag !== tagToRemove))
+  }
 
   // Load required CDNs
   useEffect(() => {
@@ -147,14 +188,22 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
     })
   }
 
-  // Function to handle file selection
+  // Update handleFileSelect to store processed sources separately
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     setUploadedFiles(files)
+    setProcessingProgress({ current: 0, total: files.length })
+    setProcessedSources([]) // Clear previously processed sources
+    setSourceNames({}) // Clear source names
     
     setIsLoading(true)
     try {
-      for (const file of files) {
+      const newSources: Source[] = []
+      const newSourceNames: {[key: string]: string} = {}
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setProcessingProgress({ current: i + 1, total: files.length })
         let content = ""
         
         switch (file.type) {
@@ -180,23 +229,59 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
             }
         }
 
-        // Add to available sources
-        const newSource = {
-          id: Math.random().toString(36).substring(7),
+        const sourceId = Math.random().toString(36).substring(7)
+        // Create new source but don't add to availableSources yet
+        const newSource: Source = {
+          id: sourceId,
           name: file.name,
           type: 'Files',
           lastUpdated: new Date().toISOString(),
-          content: content
+          content: content,
+          tags: [...currentTags] // Create a new array to avoid reference issues
         }
         
-        availableSources = [...availableSources, newSource]
+        newSources.push(newSource)
+        newSourceNames[sourceId] = file.name
         setProcessedContent(content)
       }
+      setProcessedSources(newSources)
+      setSourceNames(newSourceNames)
     } catch (error) {
       console.error('Error processing files:', error)
     } finally {
       setIsLoading(false)
+      setProcessingProgress(null)
     }
+  }
+
+  // Handle adding processed sources to availableSources
+  const handleAddSources = () => {
+    if (processedSources.length > 0) {
+      // Ensure each source has the current tags and updated names
+      const sourcesWithTagsAndNames = processedSources.map(source => ({
+        ...source,
+        name: sourceNames[source.id] || source.name,
+        tags: [...currentTags] // Create a new array with current tags
+      }))
+      
+      // Update available sources
+      updateAvailableSources([...availableSources, ...sourcesWithTagsAndNames])
+      
+      // Clear the form
+      setUploadedFiles([])
+      setProcessedContent("")
+      setCurrentTags([])
+      setProcessedSources([])
+      setSourceNames({})
+    }
+  }
+
+  // Handle name change for a source
+  const handleNameChange = (sourceId: string, newName: string) => {
+    setSourceNames(prev => ({
+      ...prev,
+      [sourceId]: newName
+    }))
   }
 
   return (
@@ -226,18 +311,88 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="tags" className="text-right">Tags</Label>
+                <div className="col-span-3 space-y-2">
+                  <Input
+                    id="tags"
+                    placeholder="Add tags (press Enter)"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagInputKeyDown}
+                  />
+                  {currentTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {currentTags.map(tag => (
+                        <span 
+                          key={tag}
+                          className="inline-flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-sm"
+                        >
+                          {tag}
+                          <button
+                            onClick={() => removeTag(tag)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
           {isLoading && (
-            <div className="text-center text-sm text-muted-foreground">
-              Processing files...
+            <div className="space-y-2 text-center text-sm text-muted-foreground">
+              <div>Processing files...</div>
+              {processingProgress && (
+                <div>
+                  File {processingProgress.current} of {processingProgress.total}
+                </div>
+              )}
             </div>
           )}
 
-          {processedContent && (
+          {/* Show list of processed files with editable names */}
+          {processedSources.length > 0 && !isLoading && (
+            <div className="space-y-4">
+              <Label>Processed Files</Label>
+              <div className="space-y-3">
+                {processedSources.map((source) => (
+                  <div key={source.id} className="grid grid-cols-1 gap-2">
+                    <div className="flex items-center gap-4">
+                      <Label className="min-w-[80px]">Name:</Label>
+                      <Input
+                        value={sourceNames[source.id] || source.name}
+                        onChange={(e) => handleNameChange(source.id, e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setProcessedContent(source.content)}
+                      >
+                        Preview
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Content Preview */}
+          {processedContent && !isLoading && (
             <div className="space-y-2">
-              <Label>Preview</Label>
+              <div className="flex items-center justify-between">
+                <Label>Content Preview</Label>
+                <div className="text-sm text-muted-foreground">
+                  {uploadedFiles.length} file(s) processed
+                </div>
+              </div>
               <div className="bg-muted p-4 rounded-md max-h-[200px] overflow-y-auto">
                 <pre className="text-sm whitespace-pre-wrap">
                   {processedContent}
@@ -248,14 +403,24 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
         </div>
 
         <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button 
-            type="submit" 
-            disabled={isLoading || uploadedFiles.length === 0}
-            onClick={() => onOpenChange(false)}
-          >
-            {isLoading ? 'Processing...' : 'Done'}
-          </Button>
+          <div className="flex justify-between w-full">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <div className="space-x-2">
+              <Button 
+                variant="default" 
+                disabled={isLoading || processedSources.length === 0}
+                onClick={handleAddSources}
+              >
+                Add to Library
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+              >
+                Done
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
