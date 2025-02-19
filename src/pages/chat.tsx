@@ -1,17 +1,18 @@
 "use client";
 
 import {useChat} from '@ai-sdk/react'
-import {Form, useForm, FormProvider} from "react-hook-form"
-import { useEffect, useState } from 'react'
+import { useForm, FormProvider} from "react-hook-form"
+import { useCallback, useEffect, useState } from 'react'
 import { getBots } from '@/api/getBots'
 import { Paperclip, SendHorizontal, Triangle } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import {FormField, FormItem, FormLabel, FormControl, FormMessage} from '@/components/ui/form'
+import {FormField, FormItem, FormControl, FormMessage} from '@/components/ui/form'
+import { data } from 'react-router-dom';
 
 export default function Chat() {
-  const {messages, input, handleSubmit, handleInputChange, append} = useChat()
+  const {messages, append, setMessages} = useChat({api: "https://directus-qa-support.azurewebsites.net/ai/",})
   const [bots, setBots] = useState<{[index: number]: string}> ({})
     const [selectedBot, setSelectedBot] = useState<number | null>(null)
     const [selectedBotName, setSelectedBotName] = useState<string> ("Select a bot")
@@ -35,51 +36,49 @@ export default function Chat() {
         loadBots()
     }, [])
 
-    const handleBotChange = (botId: number) => {
+    const handleBotChange = useCallback ((botId: number) => {
       setSelectedBot(botId)
       setSelectedBotName(bots[botId])
-    }
+      setMessages([])
+    }, [bots, setMessages])
 
-    const handleSendMessage = async (data: { message: string }) => {
-      if (!data.message.trim() || !selectedBot) return;
+    const handleSendMessage = useCallback(
+      async (data: { message: string }) => {
+        if (!data.message.trim() || !selectedBot) return;
   
-      append({ role: "user", content: data.message });
-      form.reset();
-  
+        append({ role: "user", content: data.message });
+        form.reset();
+    
       try {
-        const API_URL =
-          import.meta.env.VITE_API_URL ||
-          "https://directus-qa-support.azurewebsites.net";
-  
-        const requestPayLoad = {
+        const API_URL = "https://directus-qa-support.azurewebsites.net";
+    
+        const requestPayload = {
           message: data.message,
-          id: selectedBot,
-          history: messages,
-          tts: false,
+          id: selectedBot, 
+          history: messages, 
+          tts: false, 
         };
-  
-        console.log(`Sending message to bot ID: ${selectedBot}`);
-  
+
         const response = await fetch(`${API_URL}/ai/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestPayLoad),
+          body: JSON.stringify(requestPayload),
         });
-  
+    
         if (!response.ok) {
           throw new Error(`Server Error: ${response.status}`);
         }
-  
+    
         const responseData = await response.json();
-        console.log("Response Received:", responseData);
-  
-        if (responseData.messages && responseData.messages.length > 0) {
-          append({ role: "assistant", content: responseData.messages[0].message });
-        }
+    
+        const reply = responseData.message || responseData.messages?.[0]?.message || "No response received.";
+        append({ role: "assistant", content: reply });
       } catch (error) {
-        console.error("Chatbot Error:", error);
+        append({ role: "assistant", content: "Failed to get response. Please try again." });
       }
-    };
+    },
+    [selectedBot, messages, append, form]
+  )
 
     return(
         <div className='flex flex-col h-screen w-full max-w-4xl mx-auto'>
@@ -90,7 +89,7 @@ export default function Chat() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline">{selectedBotName}</Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className='w-56'>
+            <DropdownMenuContent className='w-56 max-h-60 overflow-y-auto'>
            <DropdownMenuLabel>Select a bot</DropdownMenuLabel>
            <DropdownMenuGroup>{Object.entries(bots).map(([id, name]) => (
             <DropdownMenuItem key={id} onClick={() => handleBotChange(Number(id))}>
@@ -113,10 +112,10 @@ export default function Chat() {
                           <div
                            key={index}
                             className={`p-2 rounded-lg w-fit ${
-                              message.role === "user" ? "bg-gray-500 text-white ml-auto" : "bg-gray-100 text-gray-800"
+                              message.role === "user" ? "bg-gray-300 text-black ml-auto" : "bg-gray-100 text-gray-800"
                             }`}
                           >
-                            {message.role === "user" ? "You" : "AI"}: {message.content}
+                          {message.content}
                           </div>
                         ))
                       )}

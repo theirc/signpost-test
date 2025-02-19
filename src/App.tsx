@@ -1,23 +1,16 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator, } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarInset, SidebarProvider, SidebarTrigger, } from "@/components/ui/sidebar"
-import Chat from "@/components/ui/chat"
-import { FlowDesigner } from "./components/flow/flow"
-import { useEffect, useState } from "react"
+import { FlowDesigner } from "@/components/flow/flow"
+import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { Separator } from "@radix-ui/react-separator"
+import { BrowserRouter, Route, Routes } from "react-router-dom"
+import Chat from "./pages/chat"
+
 
 export function App() {
-  const [activePage, setActivePage] = useState("designer"); 
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search) 
-    const view = params.get("view") || "designer"
-    setActivePage(view)
-  }, [])
-
-  return (
+  return <BrowserRouter>
     <SidebarProvider>
-      <AppSidebar /> 
+      <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -30,21 +23,23 @@ export function App() {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>{activePage === "chatbot" ? "Chatbot Playground" : "RAG Bot"}</BreadcrumbPage>
+                  <BreadcrumbPage>RAG Bot</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>
-
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {activePage === "designer" && <FlowDesigner />}
-          {activePage === "chatbot" && <Chat />}
+          <Routes>
+            <Route path="/" element={<FlowDesigner />} />
+            {/* <Route path="/rag" element={<RAGManagement />} />
+            <Route path="/logs" element={<BotLogsTable />} />     */}
+            <Route path="/chat" element={<Chat/>} />        
+          </Routes>
         </div>
       </SidebarInset>
     </SidebarProvider>
-  );
-
+  </BrowserRouter>
 }
 
 
