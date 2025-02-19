@@ -56,13 +56,23 @@ export const updateAvailableSources = (newSources: Source[]) => {
 // Function to load a script from CDN
 const loadScript = (url: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = url
-    script.onload = () => resolve()
-    script.onerror = () => reject()
-    document.head.appendChild(script)
-  })
-}
+    // Check if script is already loaded
+    if (document.querySelector(`script[src="${url}"]`)) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = url;
+    script.async = true;
+
+    script.onload = () => resolve();
+    script.onerror = (e) => reject(new Error(`Script load error for ${url}: ${e}`));
+
+    document.head.appendChild(script);
+  });
+};
 
 export function FilesModal({ open, onOpenChange }: FilesModalProps) {
   const [isLoading, setIsLoading] = useState(false)
@@ -105,19 +115,22 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
   useEffect(() => {
     const loadDependencies = async () => {
       try {
-        await Promise.all([
-          loadScript(READABILITY_CDN),
-          loadScript(PDF_JS_CDN),
-          loadScript(MAMMOTH_CDN),
-          loadScript(DOCX2HTML_CDN),
-          loadScript(CSV_PARSE_CDN)
-        ])
+        // Load scripts sequentially to avoid race conditions
+        await loadScript(READABILITY_CDN);
+        await loadScript(PDF_JS_CDN);
+        await loadScript(MAMMOTH_CDN);
+        await loadScript(DOCX2HTML_CDN);
+        await loadScript(CSV_PARSE_CDN);
       } catch (error) {
-        console.error('Error loading dependencies:', error)
+        console.error('Error loading dependencies:', error);
+        // Handle the error gracefully - maybe show a user message
       }
+    };
+
+    if (open) {  // Only load when modal is open
+      loadDependencies();
     }
-    loadDependencies()
-  }, [])
+  }, [open]);  // Depend on open state
 
   // Function to parse PDF files
   const parsePDF = async (file: File): Promise<string> => {
@@ -191,10 +204,12 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
   // Update handleFileSelect to store processed sources separately
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
+    console.log("Selected files:", files)
+
     setUploadedFiles(files)
     setProcessingProgress({ current: 0, total: files.length })
-    setProcessedSources([]) // Clear previously processed sources
-    setSourceNames({}) // Clear source names
+    setProcessedSources([])
+    setSourceNames({})
     
     setIsLoading(true)
     try {
@@ -245,6 +260,7 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
         setProcessedContent(content)
       }
       setProcessedSources(newSources)
+      console.log("Processed sources:", newSources)
       setSourceNames(newSourceNames)
     } catch (error) {
       console.error('Error processing files:', error)
