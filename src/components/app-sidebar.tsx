@@ -25,14 +25,10 @@ export function AppSidebar() {
         ],
       },
       {
-        title: "Models",
-        url: "#",
+        title: "Bots",
+        url: "bots",
         icon: Bot,
-        items: [
-          { title: "OpenAI", url: "/", },
-          { title: "Anthropic", url: "/", },
-          { title: "Gemini", url: "/", },
-        ],
+        isLink: true,
       },
       {
         title: "Settings",
