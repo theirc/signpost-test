@@ -1,6 +1,7 @@
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, } from "@/components/ui/collapsible"
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, } from "@/components/ui/sidebar"
+import { Link } from "react-router-dom"
 
 interface Props {
   items: {
@@ -8,8 +9,7 @@ interface Props {
     url: string
     icon?: LucideIcon
     isActive?: boolean
-    isLink?: boolean
-    onClick?: () => void
+    isLink?: ConstrainBoolean
     items?: {
       title: string
       url: string
@@ -23,13 +23,14 @@ export function NavMain({ items }: Props) {
     <SidebarGroupLabel>Platform</SidebarGroupLabel>
     <SidebarMenu>
       {items.map((item) => {
-        // If the item is a direct link (has onClick and isLink), render it without Collapsible
-        if (item.onClick && item.isLink) {
+        if (item.isLink) {
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title} onClick={item.onClick}>
+              <SidebarMenuButton tooltip={item.title}>
                 {item.icon && <item.icon />}
-                <span>{item.title}</span>
+                <Link to={item.url}>
+                  <span>{item.title}</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )
@@ -56,9 +57,9 @@ export function NavMain({ items }: Props) {
                         </SidebarMenuSubButton>
                       ) : (
                         <SidebarMenuSubButton asChild>
-                          <a href={subItem.url}>
+                          <Link to={subItem.url}>
                             <span>{subItem.title}</span>
-                          </a>
+                          </Link>
                         </SidebarMenuSubButton>
                       )}
                     </SidebarMenuSubItem>
