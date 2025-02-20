@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
 import jsPDF from "jspdf"
 import "jspdf-autotable"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
 
 export type Log = {
     id: string
@@ -15,6 +19,7 @@ export type Log = {
     reporter: string
     score: string
     question: string
+    date_created: string
 }
 
 interface LogsTableProps {
@@ -39,12 +44,15 @@ export function LogsTable({
     pageSize = defaultPageSize,
 }: LogsTableProps) {
     const [sortConfig, setSortConfig] = useState<{ key: keyof Log; direction: "asc" | "desc" }>({
-        key: "id",
+        key: "date_created",
         direction: "desc",
     })
     const [searchTerm, setSearchTerm] = useState("")
     const [scoreFilter, setScoreFilter] = useState<string>("")
     const [reporterFilter, setReporterFilter] = useState<string>("")
+    const [dateRange, setDateRange] = useState<
+        { from: Date | null; to: Date | null } | undefined
+    >(undefined)
     const [currentPage, setCurrentPage] = useState(1)
 
     const uniqueScores = useMemo(() => Array.from(new Set(logs.map((log) => log.score))), [logs])
@@ -81,10 +89,29 @@ export function LogsTable({
                 log.question.toLowerCase().includes(searchTermLower)
 
             const matchesScore = scoreFilter === "" || log.score === scoreFilter
-            const matchesReporter =
-                reporterFilter === "" || log.reporter === reporterFilter
+            const matchesReporter = reporterFilter === "" || log.reporter === reporterFilter
+            let matchesDateRange = true
 
-            return matchesSearch && matchesScore && matchesReporter
+            if (dateRange?.from && dateRange?.to) {
+                const logDate = new Date(log.date_created)
+                const fromDate = new Date(dateRange.from)
+                const toDate = new Date(dateRange.to)
+                fromDate.setHours(0, 0, 0, 0)
+                toDate.setHours(23, 59, 59, 999)
+                matchesDateRange = logDate >= fromDate && logDate <= toDate;
+            } else if (dateRange?.from) {
+                const logDate = new Date(log.date_created)
+                const fromDate = new Date(dateRange.from)
+                fromDate.setHours(0, 0, 0, 0)
+                matchesDateRange = logDate >= fromDate
+            } else if (dateRange?.to) {
+                const logDate = new Date(log.date_created)
+                const toDate = new Date(dateRange.to)
+                toDate.setHours(23, 59, 59, 999)
+                matchesDateRange = logDate <= toDate
+            }
+
+            return matchesSearch && matchesScore && matchesReporter && matchesDateRange
         }).sort((a, b) => {
             const aValue = a[sortConfig.key]
             const bValue = b[sortConfig.key]
@@ -97,14 +124,14 @@ export function LogsTable({
             }
             return 0
         })
-    }, [logs, searchTerm, scoreFilter, sortConfig, reporterFilter])
+    }, [logs, searchTerm, scoreFilter, sortConfig, reporterFilter, dateRange])
 
     const selectedLogsData = useMemo(() =>
         filteredAndSortedLogs.filter((log) => selectedLogs.includes(log.id)),
         [filteredAndSortedLogs, selectedLogs])
 
     const handleExportPdf = useCallback(() => {
-        const doc = new jsPDF();
+        const doc = new jsPDF()
 
         const headers = [
             "Bot",
@@ -112,7 +139,7 @@ export function LogsTable({
             "Answer",
             "Reporter",
             "Score",
-            "Question",
+            "Date Created",
         ]
 
         const body = selectedLogsData.map((log) => [
@@ -121,13 +148,13 @@ export function LogsTable({
             log.answer,
             log.reporter,
             log.score,
-            log.question,
+            format(new Date(log.date_created), "MMM dd, yyyy")
         ]);
 
         (doc as any).autoTable({
             head: [headers],
             body: body,
-        });
+        })
 
         doc.save("ai_bot_logs.pdf")
     }, [selectedLogsData])
@@ -142,6 +169,25 @@ export function LogsTable({
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page)
+    }
+
+    const formatDateRange = () => {
+        if (!dateRange) {
+            return "Pick a date";
+        }
+
+        if (dateRange.from && dateRange.to) {
+            return `${format(dateRange.from, "MMM dd, yyyy")} - ${format(
+                dateRange.to,
+                "MMM dd, yyyy"
+            )}`
+        }
+
+        if (dateRange.from) {
+            return format(dateRange.from, "MMM dd, yyyy")
+        }
+
+        return "Pick a date";
     }
 
     return (
@@ -181,6 +227,38 @@ export function LogsTable({
                             </option>
                         ))}
                     </select>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn(
+                                    "w-[300px] justify-start text-left font-normal",
+                                    !dateRange?.from && "text-muted-foreground"
+                                )}
+                            >
+                                {formatDateRange()}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                            className="w-auto p-0"
+                            align="start"
+                            side="bottom"
+                        >
+                            <Calendar
+                                mode="range"
+                                defaultMonth={dateRange?.from}
+                                selected={dateRange}
+                                onSelect={(range) => {
+                                    setDateRange({
+                                        from: range?.from || null,
+                                        to: range?.to || null,
+                                    })
+                                }}
+                                numberOfMonths={2}
+                            />
+                        </PopoverContent>
+                    </Popover>
                     {!!selectedLogs.length && <Button onClick={handleExportPdf} disabled={selectedLogs.length === 0}>
                         Export to PDF
                     </Button>}
@@ -227,7 +305,15 @@ export function LogsTable({
                                     <ArrowUpDown className="h-4 w-4" />
                                 </div>
                             </TableHead>
-                            <TableHead>Question</TableHead>
+                            <TableHead
+                                className="cursor-pointer hover:bg-muted"
+                                onClick={() => handleSort("date_created")}
+                            >
+                                <div className="flex items-center gap-2">
+                                    Date Created
+                                    <ArrowUpDown className="h-4 w-4" />
+                                </div>
+                            </TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -247,7 +333,7 @@ export function LogsTable({
                                 <TableCell>{log.answer}</TableCell>
                                 <TableCell>{log.reporter}</TableCell>
                                 <TableCell>{log.score}</TableCell>
-                                <TableCell>{log.question}</TableCell>
+                                <TableCell>{format(new Date(log.date_created), "MMM dd, yyyy")}</TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
                                         {onPreview && (
@@ -276,36 +362,36 @@ export function LogsTable({
                     </TableBody>
                 </Table>
             </div>
-                <Pagination>
-                    <PaginationContent>
-                        {currentPage === 1 ? (
-                            <span aria-disabled="true">
-                                <PaginationPrevious />
-                            </span>
-                        ) : (
-                            <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                        )}
+            <Pagination>
+                <PaginationContent>
+                    {currentPage === 1 ? (
+                        <span aria-disabled="true">
+                            <PaginationPrevious />
+                        </span>
+                    ) : (
+                        <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                    )}
 
-                        {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
-                            <PaginationItem key={page}>
-                                <PaginationLink
-                                    onClick={() => handlePageChange(page)}
-                                    isActive={currentPage === page}
-                                >
-                                    {page}
-                                </PaginationLink>
-                            </PaginationItem>
-                        ))}
+                    {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
+                        <PaginationItem key={page}>
+                            <PaginationLink
+                                onClick={() => handlePageChange(page)}
+                                isActive={currentPage === page}
+                            >
+                                {page}
+                            </PaginationLink>
+                        </PaginationItem>
+                    ))}
 
-                        {currentPage === pageCount ? (
-                            <span aria-disabled="true">
-                                <PaginationNext />
-                            </span>
-                        ) : (
-                            <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                        )}
-                    </PaginationContent>
-                </Pagination>
+                    {currentPage === pageCount ? (
+                        <span aria-disabled="true">
+                            <PaginationNext />
+                        </span>
+                    ) : (
+                        <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                    )}
+                </PaginationContent>
+            </Pagination>
         </div>
     )
 }

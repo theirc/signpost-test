@@ -27,6 +27,9 @@ export function SettingsLayout() {
             <TabsTrigger value="usage" onClick={() => navigate("/settings/usage")}>
               Usage
             </TabsTrigger>
+            <TabsTrigger value="roles" onClick={() => navigate("/settings/roles")}>
+              Access Control
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
