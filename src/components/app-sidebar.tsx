@@ -44,6 +44,12 @@ export function AppSidebar() {
         ],
       },
       {
+        title: "Playground",
+        url: "chat",
+        icon: Bot,
+        isLink: true,
+      },
+      {
         title: "Knowledge",
         url: "rag",
         icon: Frame,
