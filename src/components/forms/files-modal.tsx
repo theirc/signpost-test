@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label"
 import { useState, useEffect } from "react"
 import { X, ArrowUpDown } from "lucide-react"
 import { SourcesTable, type Source } from "@/components/sources-table"
+import React from "react"
 
 // CDN URLs for various file parsers
 const READABILITY_CDN = "https://cdnjs.cloudflare.com/ajax/libs/Readability.js/0.4.4/Readability.min.js"
@@ -76,6 +77,7 @@ const loadScript = (url: string): Promise<void> => {
 
 export function FilesModal({ open, onOpenChange }: FilesModalProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [processedContent, setProcessedContent] = useState<string>("")
   const [currentTags, setCurrentTags] = useState<string[]>([])
@@ -181,8 +183,31 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
       reader.onload = async (e) => {
         try {
           const csv = e.target?.result as string
-          const result = (window as any).Papa.parse(csv, { header: true })
-          resolve(JSON.stringify(result.data, null, 2))
+          const result = (window as any).Papa.parse(csv, { 
+            header: true,
+            skipEmptyLines: true
+          })
+          
+          // Format the parsed data in a more readable way
+          const formattedData = result.data.map((row: any) => {
+            // Clean up each value in the row
+            const cleanRow = Object.fromEntries(
+              Object.entries(row).map(([key, value]) => {
+                // If value is a string that looks like JSON, try to parse it
+                if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))) {
+                  try {
+                    return [key, JSON.parse(value)]
+                  } catch {
+                    return [key, value]
+                  }
+                }
+                return [key, value]
+              })
+            )
+            return cleanRow
+          })
+
+          resolve(JSON.stringify(formattedData, null, 2))
         } catch (error) {
           reject(error)
         }
@@ -252,7 +277,7 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
           type: 'Files',
           lastUpdated: new Date().toISOString(),
           content: content,
-          tags: [...currentTags] // Create a new array to avoid reference issues
+          tags: ['File Upload', ...currentTags] // Add File Upload tag
         }
         
         newSources.push(newSource)
@@ -277,7 +302,7 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
       const sourcesWithTagsAndNames = processedSources.map(source => ({
         ...source,
         name: sourceNames[source.id] || source.name,
-        tags: [...currentTags] // Create a new array with current tags
+        tags: ['File Upload', ...currentTags] // Ensure File Upload tag is preserved
       }))
       
       // Update available sources
@@ -289,6 +314,9 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
       setCurrentTags([])
       setProcessedSources([])
       setSourceNames({})
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -302,7 +330,7 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[800px] sm:max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Upload Files</DialogTitle>
           <DialogDescription>
@@ -310,115 +338,99 @@ export function FilesModal({ open, onOpenChange }: FilesModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div>
-            <div className="grid gap-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="file-upload" className="text-right">Upload</Label>
-                <div className="col-span-3">
-                  <Input 
-                    id="file-upload" 
-                    type="file" 
-                    className="cursor-pointer" 
-                    multiple
-                    accept=".pdf,.docx,.txt,.md,.csv"
-                    onChange={handleFileSelect}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="tags" className="text-right">Tags</Label>
-                <div className="col-span-3 space-y-2">
-                  <Input
-                    id="tags"
-                    placeholder="Add tags (press Enter)"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagInputKeyDown}
-                  />
-                  {currentTags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {currentTags.map(tag => (
-                        <span 
-                          key={tag}
-                          className="inline-flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-sm"
-                        >
-                          {tag}
-                          <button
-                            onClick={() => removeTag(tag)}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {isLoading && (
-            <div className="space-y-2 text-center text-sm text-muted-foreground">
-              <div>Processing files...</div>
-              {processingProgress && (
-                <div>
-                  File {processingProgress.current} of {processingProgress.total}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Show list of processed files with editable names */}
-          {processedSources.length > 0 && !isLoading && (
-            <div className="space-y-4">
-              <Label>Processed Files</Label>
-              <div className="space-y-3">
-                {processedSources.map((source) => (
-                  <div key={source.id} className="grid grid-cols-1 gap-2">
-                    <div className="flex items-center gap-4">
-                      <Label className="min-w-[80px]">Name:</Label>
-                      <Input
-                        value={sourceNames[source.id] || source.name}
-                        onChange={(e) => handleNameChange(source.id, e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setProcessedContent(source.content)}
-                      >
-                        Preview
-                      </Button>
-                    </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-6 p-1">
+            <div>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="file-upload" className="text-right">Upload</Label>
+                  <div className="col-span-3">
+                    <Input 
+                      id="file-upload" 
+                      type="file" 
+                      className="cursor-pointer" 
+                      multiple
+                      ref={fileInputRef}
+                      accept=".pdf,.docx,.txt,.md,.csv"
+                      onChange={handleFileSelect}
+                      disabled={isLoading}
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
 
-          {/* Content Preview */}
-          {processedContent && !isLoading && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Content Preview</Label>
-                <div className="text-sm text-muted-foreground">
-                  {uploadedFiles.length} file(s) processed
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="tags" className="text-right">Tags</Label>
+                  <div className="col-span-3 space-y-2">
+                    <Input
+                      id="tags"
+                      placeholder="Add tags (press Enter)"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleTagInputKeyDown}
+                    />
+                    {currentTags.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {currentTags.map(tag => (
+                          <span 
+                            key={tag}
+                            className="inline-flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-sm"
+                          >
+                            {tag}
+                            <button
+                              onClick={() => removeTag(tag)}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="bg-muted p-4 rounded-md max-h-[200px] overflow-y-auto">
-                <pre className="text-sm whitespace-pre-wrap">
-                  {processedContent}
-                </pre>
-              </div>
             </div>
-          )}
+
+            {processedSources.length > 0 && !isLoading && (
+              <div className="space-y-4">
+                <Label>Processed Files</Label>
+                <div className="space-y-3">
+                  {processedSources.map((source) => (
+                    <div key={source.id} className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center gap-4">
+                        <Label className="min-w-[80px]">Name:</Label>
+                        <Input
+                          value={sourceNames[source.id] || source.name}
+                          onChange={(e) => handleNameChange(source.id, e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Content Preview */}
+            {processedContent && !isLoading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Content Preview</Label>
+                  <div className="text-sm text-muted-foreground">
+                    {uploadedFiles.length} file(s) processed
+                  </div>
+                </div>
+                <div className="bg-muted p-4 rounded-md min-h-[200px] max-h-[400px] overflow-y-auto">
+                  <pre className="text-sm font-mono whitespace-pre-wrap break-words" style={{ maxWidth: '100%' }}>
+                    {processedContent}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <DialogFooter className="mt-6">
+        <DialogFooter className="mt-6 border-t pt-4">
           <div className="flex justify-between w-full">
             <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <div className="space-x-2">

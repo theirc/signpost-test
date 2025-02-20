@@ -242,14 +242,22 @@ export function SourcesTable({
                 <TableCell>{source.lastUpdated}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {(source.tags || []).map(tag => (
-                      <span 
-                        key={tag}
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-muted"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {(source.tags || []).map(tag => {
+                      let tagStyle = "bg-muted"
+                      if (tag === 'File Upload') {
+                        tagStyle = "bg-blue-100 text-blue-800"
+                      } else if (tag === 'Live Data') {
+                        tagStyle = "bg-purple-100 text-purple-800"
+                      }
+                      return (
+                        <span 
+                          key={tag}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
+                        >
+                          {tag}
+                        </span>
+                      )
+                    })}
                   </div>
                 </TableCell>
                 {(onPreview || showActions) && (
