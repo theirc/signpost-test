@@ -3,15 +3,37 @@ import { FlowDesigner } from "@/components/flow/flow"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@radix-ui/react-separator"
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes, useLocation, Link, useNavigate } from "react-router-dom"
 import Chat from "./pages/chat"
-import { RAGManagement } from "./pages/knowledge"
+import { CollectionsManagement } from "./pages/knowledge"
 import { BotLogsTable } from "./pages/logs"
-import { BotManagement } from "./pages/bots"  
+import { BotManagement } from "./pages/bots"
+import { SourcesManagement } from "./pages/sources"
 
+const routeNames: Record<string, string> = {
+  '/': 'Designer',
+  '/chat': 'Playground',
+  '/rag': 'Collections',
+  '/sources': 'Data Sources',
+  '/logs': 'Bot Logs',
+  '/bots': 'Bots'
+}
 
-export function App() {
-  return <BrowserRouter>
+function NavigationLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const navigate = useNavigate()
+  return (
+    <BreadcrumbLink onClick={() => navigate(to)}>
+      {children}
+    </BreadcrumbLink>
+  )
+}
+
+function AppContent() {
+  const location = useLocation()
+  const currentPath = location.pathname
+  const currentName = routeNames[currentPath] || 'Unknown'
+
+  return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
@@ -21,13 +43,17 @@ export function App() {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Designer</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>RAG Bot</BreadcrumbPage>
+                  <NavigationLink to="/">Home</NavigationLink>
                 </BreadcrumbItem>
+                {currentPath !== '/' && (
+                  <>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{currentName}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </>
+                )}
               </BreadcrumbList>
             </Breadcrumb>
           </div>
@@ -36,13 +62,22 @@ export function App() {
           <Routes>
             <Route path="/" element={<FlowDesigner />} />
             <Route path="/chat" element={<Chat/>} />        
-            <Route path="/rag" element={<RAGManagement />} />
+            <Route path="/rag" element={<CollectionsManagement />} />
+            <Route path="/sources" element={<SourcesManagement />} />
             <Route path="/logs" element={<BotLogsTable />} />
             <Route path="/bots" element={<BotManagement />} />
           </Routes>
         </div>
       </SidebarInset>
     </SidebarProvider>
-  </BrowserRouter>
+  )
+}
+
+export function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  )
 }
 

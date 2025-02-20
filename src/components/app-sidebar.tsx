@@ -2,7 +2,7 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
+import { Bot, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
 
 export function AppSidebar() {
   // This is sample data.
@@ -51,9 +51,12 @@ export function AppSidebar() {
       },
       {
         title: "Knowledge",
-        url: "rag",
-        icon: Frame,
-        isLink: true,
+        url: "#",
+        icon: Book,
+        items: [
+          { title: "Collections", url: "rag" },
+          { title: "Data Sources", url: "sources" },
+        ],
       },
       {
         title: "Bot Logs",
@@ -63,9 +66,9 @@ export function AppSidebar() {
       },
     ],
     projects: [
-      { name: "Design Engineering", url: "/", icon: Frame, },
-      { name: "Sales & Marketing", url: "/", icon: PieChart, },
-      { name: "Travel", url: "/", icon: Map, },
+      { name: "Design Engineering", url: "/", icon: Frame },
+      { name: "Sales & Marketing", url: "/", icon: PieChart },
+      { name: "Travel", url: "/", icon: Map },
     ],
   }
 
