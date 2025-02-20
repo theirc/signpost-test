@@ -52,22 +52,22 @@ export function DecisionNode({ data, isConnectable }) {
 
   // Function to get input node's content
   const getInputContent = () => {
-    if (!data.id) return 'No node ID available'
+    if (!data.id) return "No node ID available";
 
-    const edges = getEdges()
-    
+    const edges = getEdges();
+
     // Find edge connected to our input
-    const inputEdge = edges.find(edge => 
-      edge.target === data.id && edge.targetHandle === 'input'
-    )
-    
-    if (!inputEdge) return 'No input connected'
-    
+    const inputEdge = edges.find(
+      (edge) => edge.target === data.id && edge.targetHandle === "input"
+    );
+
+    if (!inputEdge) return "No input connected";
+
     // Get the source node
-    const sourceNode = getNode(inputEdge.source)
-    if (!sourceNode) return 'Input node not found'
-    
-    return sourceNode.data?.content || 'No content available'
+    const sourceNode = getNode(inputEdge.source);
+    if (!sourceNode) return "Input node not found";
+
+    return sourceNode.data?.content as string || "No content available"; // Type assertion here
   }
 
   const evaluateDecision = () => {

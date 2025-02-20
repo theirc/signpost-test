@@ -1,26 +1,6 @@
-import { Log, LogsTable } from "@/components/logs-table"
+import sampleLogs from "@/components/data/sample-logs"
+import { LogsTable } from "@/components/logs-table"
 import React, { useState } from "react"
-
-const sampleLogs: Log[] = [
-    {
-        id: '1',
-        bot: 'Weaviate',
-        message: 'What is malaria?',
-        answer: 'Malaria is a disease caused by the parasite Plasmodium falciparum. It is transmitted by mosquitoes and can be fatal if left untreated.',
-        reporter: 'Helen',
-        score: 'Pass',
-        question: 'What is malaria?'
-    },
-    {
-        id: '2',
-        bot: 'Signpost Help Helper',
-        message: "I'm a single mother with three kids, one of them need medical support. where can i go to get support?",
-        answer: "To receive support as a single mother with three kids, including one needing medical assistance, you can apply for social benefits in Georgia. The criteria for receiving assistance include having a large family with three or more children under the age of 18. Additionally, being a single mother or father raising minor children on your own qualifies you for support. To access this assistance, you would need to fill out an application form to apply for the necessary help.",
-        reporter: 'Liam Nicoll',
-        score: 'Fail',
-        question: "I'm a single mother with three kids, one of them need medical support. where can i go to get support?"
-    }
-]
 
 
 export function BotLogsTable() {

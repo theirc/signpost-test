@@ -565,7 +565,7 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
     const content = sourceNode.data?.content
     console.log('Content found:', content)
     
-    return content || 'No content available'
+    return content as string || 'No content available'
   }
 
   // Function to get template input node's content
@@ -591,7 +591,7 @@ export function DocumentGeneratorNode({ data, isConnectable, id }) {
       return 'Template node not found'
     }
     
-    return sourceNode.data?.content || 'No content available'
+    return sourceNode.data?.content as string || 'No content available'
   }
 
   const renderOutput = () => {
