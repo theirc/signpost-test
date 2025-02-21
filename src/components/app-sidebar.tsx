@@ -32,15 +32,13 @@ export function AppSidebar() {
       },
       {
         title: "Settings",
-        url: "#",
+        url: "settings",
         icon: Settings2,
         items: [
-          {
-            title: "General", url: "/",
-          },
-          { title: "Team", url: "/", },
-          { title: "Billing", url: "/", },
-          { title: "Limits", url: "/", },
+          { title: "Projects", url: "/settings/projects" },
+          { title: "Team", url: "/settings/team" },
+          { title: "Billing", url: "/settings/billing" },
+          { title: "Usage", url: "/settings/usage" },
         ],
       },
       {

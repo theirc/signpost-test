@@ -9,6 +9,11 @@ import { CollectionsManagement } from "./pages/knowledge"
 import { BotLogsTable } from "./pages/logs"
 import { BotManagement } from "./pages/bots"
 import { SourcesManagement } from "./pages/sources"
+import { SettingsLayout } from "./pages/settings/layout"
+import { ProjectsSettings } from "./pages/settings/projects"
+import { TeamSettings } from "./pages/settings/team"
+import { UsageSettings } from "./pages/settings/usage"
+import { BillingSettings } from "./pages/settings/billing"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -16,7 +21,11 @@ const routeNames: Record<string, string> = {
   '/rag': 'Collections',
   '/sources': 'Data Sources',
   '/logs': 'Bot Logs',
-  '/bots': 'Bots'
+  '/bots': 'Bots',
+  '/settings/projects': 'Settings / Projects',
+  '/settings/team': 'Settings / Team',
+  '/settings/billing': 'Settings / Billing',
+  '/settings/usage': 'Settings / Usage'
 }
 
 function NavigationLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -66,6 +75,12 @@ function AppContent() {
             <Route path="/sources" element={<SourcesManagement />} />
             <Route path="/logs" element={<BotLogsTable />} />
             <Route path="/bots" element={<BotManagement />} />
+            <Route path="/settings" element={<SettingsLayout />}>
+              <Route path="projects" element={<ProjectsSettings />} />
+              <Route path="team" element={<TeamSettings />} />
+              <Route path="billing" element={<BillingSettings />} />
+              <Route path="usage" element={<UsageSettings />} />
+            </Route>
           </Routes>
         </div>
       </SidebarInset>
