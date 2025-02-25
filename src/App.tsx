@@ -14,6 +14,9 @@ import { ProjectsSettings } from "./pages/settings/projects"
 import { TeamSettings } from "./pages/settings/team"
 import { UsageSettings } from "./pages/settings/usage"
 import { BillingSettings } from "./pages/settings/billing"
+import { Users } from "./pages/settings/users"
+import { AccessControlSettings } from "./pages/settings/access-control"
+import { Roles } from "./pages/settings/roles"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -25,7 +28,8 @@ const routeNames: Record<string, string> = {
   '/settings/projects': 'Settings / Projects',
   '/settings/team': 'Settings / Team',
   '/settings/billing': 'Settings / Billing',
-  '/settings/usage': 'Settings / Usage'
+  '/settings/usage': 'Settings / Usage',
+  '/settings/roles': 'Settings / Access Control'
 }
 
 function NavigationLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -70,7 +74,7 @@ function AppContent() {
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <Routes>
             <Route path="/" element={<FlowDesigner />} />
-            <Route path="/chat" element={<Chat/>} />        
+            <Route path="/chat" element={<Chat />} />
             <Route path="/rag" element={<CollectionsManagement />} />
             <Route path="/sources" element={<SourcesManagement />} />
             <Route path="/logs" element={<BotLogsTable />} />
@@ -80,7 +84,10 @@ function AppContent() {
               <Route path="team" element={<TeamSettings />} />
               <Route path="billing" element={<BillingSettings />} />
               <Route path="usage" element={<UsageSettings />} />
+              <Route path="roles" element={<AccessControlSettings />} />
             </Route>
+            <Route path="/settings/team/users/:id" element={<Users />} />
+            <Route path="/settings/roles/:id" element={<Roles />} />
           </Routes>
         </div>
       </SidebarInset>

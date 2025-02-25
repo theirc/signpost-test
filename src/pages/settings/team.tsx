@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Link } from "react-router-dom"
 
 interface Team {
   id: string
@@ -123,7 +124,7 @@ export function TeamSettings() {
                   </TableCell>
                   <TableCell>{new Date(member.joined).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">Edit Role</Button>
+                    <Link to={`users/${member.id}`}>Edit User</Link>
                     <Button variant="ghost" size="sm" className="text-red-600">Remove</Button>
                   </TableCell>
                 </TableRow>

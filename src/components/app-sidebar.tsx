@@ -39,6 +39,7 @@ export function AppSidebar() {
           { title: "Team", url: "/settings/team" },
           { title: "Billing", url: "/settings/billing" },
           { title: "Usage", url: "/settings/usage" },
+          { title: "Access Control", url: "/settings/roles" },
         ],
       },
       {
