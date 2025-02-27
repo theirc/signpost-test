@@ -8,7 +8,7 @@ import Chat from "./pages/chat"
 import { CollectionsManagement } from "./pages/knowledge"
 import { BotLogsTable } from "./pages/logs"
 import { BotManagement } from "./pages/bots"
-import { SourcesManagement } from "./pages/sources"
+import Sources from './pages/sources.tsx'
 import { SettingsLayout } from "./pages/settings/layout"
 import { ProjectsSettings } from "./pages/settings/projects"
 import { TeamSettings } from "./pages/settings/team"
@@ -76,7 +76,7 @@ function AppContent() {
             <Route path="/" element={<FlowDesigner />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/rag" element={<CollectionsManagement />} />
-            <Route path="/sources" element={<SourcesManagement />} />
+            <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
             <Route path="/bots" element={<BotManagement />} />
             <Route path="/settings" element={<SettingsLayout />}>

@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Switch } from "@/components/ui/switch"
 import { availableSources, updateAvailableSources } from "./files-modal"
 import type { Source } from "@/components/sources-table"
 import { Textarea } from "@/components/ui/textarea"
+import { useWebScraping } from "@/hooks/use-web-scraping"
 
 interface LiveDataModalProps {
   open: boolean
@@ -132,75 +133,6 @@ const performWebScrape = async (url: string) => {
     
     // Provide some fallback content to avoid completely failing
     return `Failed to scrape the URL: ${url}. Error: ${error.message}. Please try again later or try a different URL.`
-  }
-}
-
-// Function to extract links from HTML content
-const extractLinks = (html: string, baseUrl: string): { 
-  internalLinks: string[], 
-  externalLinks: { url: string, text: string }[] 
-} => {
-  try {
-    // Parse the HTML
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
-    
-    // Get all links
-    const linkElements = doc.querySelectorAll('a[href]')
-    const internalLinks: string[] = []
-    const externalLinks: { url: string, text: string }[] = []
-    
-    // Process each link
-    linkElements.forEach(link => {
-      const href = link.getAttribute('href')
-      if (!href) return
-      
-      try {
-        // Skip javascript and anchor-only links
-        if (href.startsWith('javascript:') || href === '#') return
-        
-        // Convert relative URLs to absolute
-        let absoluteUrl: string
-        if (href.startsWith('http://') || href.startsWith('https://')) {
-          absoluteUrl = href
-        } else if (href.startsWith('/')) {
-          // Handle domain-relative URLs
-          const urlObj = new URL(baseUrl)
-          absoluteUrl = `${urlObj.protocol}//${urlObj.host}${href}`
-        } else if (href.startsWith('#')) {
-          // Skip anchors
-          return
-        } else {
-          // Handle page-relative URLs
-          const baseUrlWithoutFilename = baseUrl.replace(/\/[^\/]*$/, '/')
-          absoluteUrl = new URL(href, baseUrlWithoutFilename).href
-        }
-        
-        // Check if internal or external link
-        const baseUrlDomain = new URL(baseUrl).hostname
-        const linkDomain = new URL(absoluteUrl).hostname
-        
-        if (baseUrlDomain === linkDomain) {
-          // Internal link - add to crawling list if not already included
-          if (!internalLinks.includes(absoluteUrl)) {
-            internalLinks.push(absoluteUrl)
-          }
-        } else {
-          // External link - capture with its text for reference
-          externalLinks.push({
-            url: absoluteUrl,
-            text: link.textContent?.trim() || absoluteUrl
-          })
-        }
-      } catch (e) {
-        console.warn(`Skipping invalid URL: ${href}`, e)
-      }
-    })
-    
-    return { internalLinks, externalLinks }
-  } catch (error) {
-    console.error('Error extracting links:', error)
-    return { internalLinks: [], externalLinks: [] }
   }
 }
 
@@ -411,6 +343,15 @@ const truncateUrl = (url: string, maxLength: number = 50): string => {
 }
 
 export function LiveDataModal({ open, onOpenChange, onSourcesUpdate }: LiveDataModalProps) {
+  const { 
+    isLoading: dependenciesLoading, 
+    dependenciesLoaded, 
+    loadDependencies,
+    extractLinks,
+    htmlToPlainText,
+    performWebScrape
+  } = useWebScraping();
+  
   const [sourceType, setSourceType] = useState<string>('')
   const [config, setConfig] = useState<SourceConfig>(DEFAULT_CONFIG)
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -419,6 +360,13 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdate }: LiveDataM
     total: 0,
     status: ''
   })
+
+  // Load dependencies when modal opens
+  useEffect(() => {
+    if (open && !dependenciesLoaded) {
+      loadDependencies();
+    }
+  }, [open, dependenciesLoaded, loadDependencies]);
 
   const handleSave = async () => {
     if (!sourceType || !config.name) return
@@ -601,7 +549,11 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdate }: LiveDataM
       }
 
       const updatedSources = [...availableSources, newSource]
-      updateAvailableSources(updatedSources)
+      
+      // Don't pass argument to updateAvailableSources
+      updateAvailableSources()
+      
+      // Update UI with new sources
       onSourcesUpdate(updatedSources)
 
       // Store configuration separately - include the content in the config
