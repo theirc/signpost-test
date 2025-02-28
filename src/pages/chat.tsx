@@ -51,14 +51,12 @@ export default function Chat () {
 
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
 
-    message ||= "where can i find english classes in athens?"
-
     if (!message && !audio) return
 
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
 
     if (message) {
-      messages.current.push({ type: "human", message })
+      messages.current.unshift({ type: "human", message })
     }
     setState({ isSending: true })
 
@@ -255,10 +253,10 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
   return (
     <div>
       <div className="mb-4 flex justify-between">
-        <Button onClick={handleModeToggle} variant="outline" className="w-40">
+        <Button onClick={handleModeToggle} className="w-40 hover:bg-gray-600">
           {isVoiceMode ? "Switch to Text" : "Switch to Voice"}
         </Button>
-        <Button onClick={() => setTts(!tts)} variant={tts ? "default" : "outline"} className="w-60">
+        <Button onClick={() => setTts(!tts)}  className="w-50 hover:bg-gray-600">
           {tts ? "Switch to Text Response" : "Switch to Voice Response"}
         </Button>
       </div>
@@ -303,13 +301,15 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
           {status === "recording" ? <StopCircle className="size-5 text-red-500" /> : <Mic className="size-5" />}
           </Button>
           {recordingComplete && mediaBlobUrl && (
-            <div className="mt-4 flex items-center">
-              <audio controls src={mediaBlobUrl} className="mt-4" />
+            <div className="mt-4 flex flex-col items-center space-y-4 w-full">
+              <audio controls src={mediaBlobUrl} className="w-full max-w-md rounded-lg shadow-sm border border-gray-300 p-2 bg-gray-100" />
               <Button
               onClick={handleSendRecording}
-              size="icon"
-             className="ml-6">
+              size="sm"
+              variant='default'
+             className="flex items-center justify-content gap-2 px-4 py-2 rounded-lg shadow-md transition hover:bg-gray-800">
             <Send className="size-5" />
+            <span>Send</span>
             </Button>
             </div>
           )}
@@ -370,6 +370,6 @@ function ChatMessage(props: MessageProps) {
       </Button>
     )}
   </div>
-);
+)
 }
 }
