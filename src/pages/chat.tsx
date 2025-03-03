@@ -12,6 +12,7 @@ import { BotChatMessage } from '@/bot/botmessage'
 import { BotHistory } from '@/types/types.ai';
 import type { ChatMessage } from '@/types/types.ai';
 import { useReactMediaRecorder } from "react-media-recorder";
+import "../index.css"
 
 interface Bots {
   [index: number]: {
@@ -126,7 +127,8 @@ export default function Chat () {
 
   const hasSelectedBots = state.selectedBots.length > 0
 
-  return (  <div className="flex flex-col h-screen w-full mx-auto">
+  return ( 
+   <div className="flex flex-col h-screen w-full mx-auto">
   <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-md">
     <h2 className="text-lg font-bold">Signpost Bot</h2>
     
@@ -152,8 +154,6 @@ export default function Chat () {
 
   <div className="flex-1 flex flex-col p-4 overflow-y-auto">
   <div className="flex-1 overflow-y-auto flex flex-col space-y-4"> 
-    {state.isSending && <Loader2 className="animate-spin mx-auto" />}
-
     {/* Messages */}
     {!state.audioMode && (
       <div className="flex-1 overflow-y-auto p-6 space-y-4 w-full">
@@ -166,6 +166,15 @@ export default function Chat () {
             <ChatMessage key={i} message={m} isWaiting={state.isSending} />
           ))
         )}
+        {state.isSending && (
+       <div className="flex justify-start w-fit">
+       <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
+         <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+         <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+         <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
+       </div>
+     </div>
+   )}
       </div>
     )}
   </div>
@@ -178,7 +187,7 @@ export default function Chat () {
 
   {/* Message Input Box */}
   {hasSelectedBots && !state.audioMode ? (
-    <div className="border-t p-4 bg-white">
+    <div className="sticky bottom-0 border-t p-4 bg-white">
       <SearchInput onSearch={onSend} disabled={state.isSending} />
     </div>
   ) : (

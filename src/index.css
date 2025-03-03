@@ -116,3 +116,61 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes typing {
+  0%, 100% {
+    transform: translateY(0px);
+    opacity: 0.8;
+    background-position: 0% 50%;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+    background-position: 100% 50%;
+  }
+}
+
+.animate-typing-1 {
+  animation: typing 1s infinite, colorShift1 3s infinite linear;
+  background-size: 200% 200%;
+}
+
+.animate-typing-2 {
+  animation: typing 1s infinite 0.2s, colorShift2 3s infinite linear;
+  background-size: 200% 200%;
+}
+
+.animate-typing-3 {
+  animation: typing 1s infinite 0.4s, colorShift3 3s infinite linear;
+  background-size: 200% 200%;
+}
+
+@keyframes colorShift1 {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+}
+
+@keyframes colorShift2 {
+  0%, 100% { filter: hue-rotate(120deg); }
+  50% { filter: hue-rotate(300deg); }
+}
+
+@keyframes colorShift3 {
+  0%, 100% { filter: hue-rotate(240deg); }
+  50% { filter: hue-rotate(60deg); }
+}
+
+@keyframes messagePopup {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-message-popup {
+  animation: messagePopup 0.3s ease-out forwards;
+}
