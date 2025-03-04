@@ -8,7 +8,7 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Import the shared sources and table component from their new location
-import { availableSources } from "@/components/forms/files-modal"
+import { availableSources } from "@/components/old_forms/files-modal"
 import { SourcesTable } from "@/components/sources-table"
 
 export function DocumentUploadNode({ data, isConnectable }) {
@@ -62,8 +62,8 @@ export function DocumentUploadNode({ data, isConnectable }) {
   }
 
   const handleToggleSelect = (id: string) => {
-    setSelectedSources(prev => 
-      prev.includes(id) 
+    setSelectedSources(prev =>
+      prev.includes(id)
         ? prev.filter(sourceId => sourceId !== id)
         : [...prev, id]
     )
@@ -85,19 +85,19 @@ export function DocumentUploadNode({ data, isConnectable }) {
   return <NodeLayout>
     <NodeTitle title="Select Sources" icon={Upload} />
     <div className="relative">
-      <LabeledHandle 
-        id="output" 
-        title="Output" 
-        type="source" 
-        position={Position.Right} 
+      <LabeledHandle
+        id="output"
+        title="Output"
+        type="source"
+        position={Position.Right}
         style={{ top: 20 }}
       />
       <div className="w-full px-4 pt-16 pb-4">
         <div className='space-y-4'>
           <div className="flex justify-between items-center">
             <h3 className="text-sm font-medium">Available Sources</h3>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setShowOutput(true)}
               className="px-2 py-1 h-7"
@@ -106,14 +106,14 @@ export function DocumentUploadNode({ data, isConnectable }) {
             </Button>
           </div>
 
-          <SourcesTable 
+          <SourcesTable
             sources={sources}
             selectedSources={selectedSources}
             onToggleSelect={handleToggleSelect}
             onSelectAll={handleSelectAll}
-            onPreview={(source) => setPreviewContent({ 
+            onPreview={(source) => setPreviewContent({
               name: source.name,
-              content: source.content 
+              content: source.content
             })}
             showCheckboxes={true}
           />
