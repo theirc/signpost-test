@@ -1,5 +1,4 @@
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
 import { Bot, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
@@ -91,7 +90,6 @@ export function AppSidebar() {
         </SidebarHeader>
         <SidebarContent>
           <NavMain items={data.navMain} />
-          <NavProjects projects={data.projects} />
         </SidebarContent>
         <SidebarFooter>
           <NavUser user={data.user} />

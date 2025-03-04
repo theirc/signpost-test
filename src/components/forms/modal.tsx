@@ -1,32 +1,83 @@
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import React, { useState } from "react"
+import { type FormHookInstance } from "./hooks"
 
-export function DialogDemo() {
-  return <Dialog>
-    <DialogTrigger asChild>
-      <Button variant="outline">Edit Profile</Button>
-    </DialogTrigger>
-    <DialogContent className="sm:max-w-[425px]">
+type ControllerType = ReturnType<typeof useModal>
+
+interface Props extends React.HTMLAttributes<HTMLDivElement> {
+  controller?: ControllerType
+  title?: string
+  description?: string
+  // footer?: React.ReactNode
+  form?: FormHookInstance
+}
+
+function EmptyContext(props: any) {
+  return <>
+    {props.children}
+  </>
+}
+
+export function Modal(props: Props) {
+
+  const { title, controller: modalController, description, form, children, ...rest } = props
+  let controller: ControllerType = modalController || form?.modal
+  const { open, setOpen } = controller
+  const Context = form?.context || EmptyContext
+
+  let footer = null
+  let SubmitButton: any = form?.SubmitButton
+
+  React.Children.forEach(children, (child: any) => {
+    if (child.type.displayName == "DialogFooter") footer = child
+  })
+
+  function onOpenChange(open: boolean) {
+    setOpen(open)
+    if (!open && form) {
+      form.methods.reset()
+    }
+  }
+
+  if (!footer) {
+    footer = <DialogFooter>
+      <SubmitButton />
+    </DialogFooter>
+  }
+
+
+  return <Dialog open={open} onOpenChange={onOpenChange} modal>
+    <DialogContent {...rest} >
       <DialogHeader>
-        <DialogTitle>Edit profile</DialogTitle>
-        <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>
+        {title && <DialogTitle>{title}</DialogTitle>}
+        {description && <DialogDescription>Make changes to your profile here. Click save when you're done.</DialogDescription>}
       </DialogHeader>
-      <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="name" className="text-right">Name</Label>
-          <Input id="name" defaultValue="Pedro Duarte" className="col-span-3" />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="username" className="text-right">Username</Label>
-          <Input id="username" defaultValue="@peduarte" className="col-span-3" />
-        </div>
-      </div>
-      <DialogFooter>
-        <Button type="submit">Save changes</Button>
-      </DialogFooter>
+      <Context>
+        {children}
+      </Context>
+      {footer}
+      {/* {props.footer} */}
     </DialogContent>
   </Dialog>
-
 }
+
+Modal.Footer = DialogFooter
+
+export function useModal() {
+
+  const [open, setOpen] = useState(false)
+
+  const modal = {
+    open,
+    show() {
+      setOpen(true)
+    },
+    hide() {
+      setOpen(false)
+    },
+    setOpen,
+  }
+  return modal
+}
+
+

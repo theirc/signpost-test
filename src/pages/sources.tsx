@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import React, { useState } from "react"
-import { FilesModal } from "../components/forms/files-modal"
-import { LiveDataModal, liveDataConfigs } from "../components/forms/live-data-modal"
+import { FilesModal } from "../components/old_forms/files-modal"
+import { LiveDataModal, liveDataConfigs } from "../components/old_forms/live-data-modal"
 import { SourcesTable } from "@/components/sources-table"
 import { Loader2, RefreshCcw } from "lucide-react"
 import { useSources } from "@/hooks/use-sources"
@@ -27,7 +27,7 @@ export default function Sources() {
     try {
       // Call the deleteSource function from the hook
       const success = await deleteSource(id)
-      
+
       if (success) {
         // Update local state
         setSourcesDisplay(sourcesDisplay.filter(source => source.id !== id))
@@ -76,7 +76,7 @@ export default function Sources() {
           </Button>
         </div>
       </div>
-      
+
       {loading || sourcesLoading ? (
         <div className="w-full h-64 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
@@ -110,12 +110,12 @@ export default function Sources() {
         </DialogContent>
       </Dialog>
 
-      <FilesModal 
+      <FilesModal
         open={filesModalOpen}
         onOpenChange={handleFilesModalOpenChange}
       />
 
-      <LiveDataModal 
+      <LiveDataModal
         open={liveDataModalOpen}
         onOpenChange={setLiveDataModalOpen}
         onSourcesUpdate={setSourcesDisplay}

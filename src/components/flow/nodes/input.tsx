@@ -1,22 +1,17 @@
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { NodeHandlers } from "@/components/flow/handles"
+import { Input, Modal, Row, Select, useForm } from "@/components/forms"
 import { workerRegistry } from "@/lib/agents/registry"
 import { NodeProps, useUpdateNodeInternals } from '@xyflow/react'
-import { ListTree } from "lucide-react"
-import { NodeHandlers } from "../handles"
+import { Cable } from "lucide-react"
 import { NodeTitle } from '../title'
+import { AddFields } from "../addfields"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
-import { createModel } from "@/lib/data/model"
-import { z } from "zod"
-import { inputOutputTypes } from "@/lib/agents/worker"
-import { Input, InputTextArea, Modal, Row, Select, useForm } from "@/components/forms"
-import { AddFields } from "../addfields"
 import { model } from "@/components/data/addfieldsmodels"
-const { schema } = workerRegistry
+const { request } = workerRegistry
 
 
-export function SchemaNode(props: NodeProps) {
+export function RequestNode(props: NodeProps) {
   const worker = useWorker(props.id)
 
   const updateNodeInternals = useUpdateNodeInternals()
@@ -34,9 +29,8 @@ export function SchemaNode(props: NodeProps) {
     updateNodeInternals(props.id)
   }
 
-
   return <NodeLayout>
-    <NodeTitle registry={schema} worker={worker} />
+    <NodeTitle registry={request} worker={worker} />
     <NodeHandlers worker={worker} />
 
     <AddFields onClick={form.modal.show} />
@@ -44,7 +38,6 @@ export function SchemaNode(props: NodeProps) {
       <Row>
         <Input span={12} field={m.name} required />
         <Input span={12} field={m.title} required />
-        <InputTextArea span={12} field={m.prompt} required />
         <Select span={12} field={m.type} placeholder="Select Type" required />
       </Row>
     </Modal>
@@ -52,8 +45,5 @@ export function SchemaNode(props: NodeProps) {
   </NodeLayout >
 }
 
+request.icon = Cable
 
-
-
-
-schema.icon = ListTree
