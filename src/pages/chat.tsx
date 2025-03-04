@@ -2,16 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import { Bot, Play, SendHorizontal, Triangle, Square, Mic, ChevronDown, Loader2, MessageSquare, StopCircle, Send } from 'lucide-react'
+import { Paperclip, Mic, Loader2, MessageSquare, StopCircle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
-import { BotHistory } from '@/types/types.ai';
-import type { ChatMessage } from '@/types/types.ai';
-import { useReactMediaRecorder } from "react-media-recorder";
+import { BotHistory } from '@/types/types.ai'
+import type { ChatMessage } from '@/types/types.ai'
+import { useReactMediaRecorder } from "react-media-recorder"
+import { SourcesTable } from '@/components/sources-table'
+import { availableSources } from '@/components/forms/files-modal'
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import "../index.css"
 
 interface Bots {
@@ -23,6 +26,10 @@ interface Bots {
 }
 
 export default function Chat () {
+  const [showFileDialog, setShowFileDialog] = useState(false)
+  const [selectedSources, setSelectedSources] = useState<string[]>([])
+  const [sources, setSources] = useState(availableSources)
+  const [message, setMessage] = useState("")
 
   const [state, setState] = useMultiState({
     isSending: false,
@@ -43,6 +50,10 @@ export default function Chat () {
     })
   }, [])
 
+  useEffect(()=> {
+    setSources(availableSources)
+  }, [availableSources])
+
   const messages = useRef<ChatMessage[]>([
     {
       type: "bot",
@@ -57,7 +68,7 @@ export default function Chat () {
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
 
     if (message) {
-      messages.current.unshift({ type: "human", message })
+      messages.current.push({ type: "human", message })
     }
     setState({ isSending: true })
 
@@ -121,6 +132,31 @@ export default function Chat () {
     messages.current = []
   }
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedSources(prev => 
+      prev.includes(id)
+      ? prev.filter(sourceId => sourceId !== id)
+      : [...prev, id]
+    )
+  }
+
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
+  }
+
+  const handleAttachFiles = () =>{
+    const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
+    .filter(Boolean)
+      .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
+      .join('\n\n');
+
+    if (selectedContent) {
+      setMessage(prevMessage => prevMessage + '\n\n' + selectedContent);
+    }
+    setShowFileDialog(false);
+    setSelectedSources([]);
+
+  }
   function onModeChanged() {
     setState({ audioMode: !state.audioMode })
   }
@@ -278,6 +314,15 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
       }}
       className="flex items-center border border-gray-300 rounded-lg p-2 bg-white shadow-sm w-full"
     >
+      <Button 
+      type="button" 
+      variant="ghost" 
+      className="mr-2"
+      onClick={() => setShowFileDialog(true)} 
+    >
+    <Paperclip className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+    </Button>
+
       <input
         type="text"
         value={value}
@@ -324,6 +369,36 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
           )}
         </div>
       )}
+      <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Attach Files</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <SourcesTable 
+              sources={sources}
+              selectedSources={selectedSources}
+              onToggleSelect={handleToggleSelect}
+              onSelectAll={handleSelectAll}
+              showCheckboxes={true}
+            />
+            <div className="flex justify-end mt-4 gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFileDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAttachFiles}
+                disabled={selectedSources.length === 0}
+              >
+                Attach Selected
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
