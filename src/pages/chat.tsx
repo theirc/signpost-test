@@ -63,6 +63,8 @@ export default function Chat () {
 
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
 
+    message ||= "where can i find english classes in athens?"
+
     if (!message && !audio) return
 
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
@@ -94,7 +96,7 @@ export default function Chat () {
       setState({ isSending: false })
     }
 
-    messages.current.push(response)
+    messages.current.unshift(response)
     setState({ isSending: false })
   }
 
@@ -102,7 +104,7 @@ export default function Chat () {
     setState({ isSending: true })
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
     const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
-    messages.current.push(response)
+    messages.current.unshift(response)
     setState({ isSending: false })
   }
 
@@ -198,8 +200,8 @@ export default function Chat () {
             <p>Start chatting below!</p>
           </div>
         ) : (
-          messages.current.map((m, i) => (
-            <ChatMessage key={i} message={m} isWaiting={state.isSending} />
+          [...messages.current].reverse().map((m, i) => (
+            <ChatMessage key={i} message={m as ChatMessage} isWaiting={state.isSending} />
           ))
         )}
         {state.isSending && (
@@ -410,10 +412,10 @@ interface MessageProps {
 
 function ChatMessage(props: MessageProps) {
   const { isWaiting } = props;
-  let { type, message, messages = [], needsRebuild, rebuild } = props.message;
+  let { type, message, messages = [], needsRebuild, rebuild } = props.message
 
   const isBot = type === "bot"
-  const hasBots = messages.length > 0;
+  const hasBots = messages.length > 0
 
   return (
     <div className={`mt-4 flex w-full ${isBot ? "justify-start" : "justify-end"}`}>
