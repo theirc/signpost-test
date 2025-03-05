@@ -1,198 +1,100 @@
-import { useState, useCallback, useRef, useContext } from 'react'
-import { addEdge, Background, Controls, ReactFlow, applyEdgeChanges, applyNodeChanges, Node, Edge, NodeChange, EdgeChange, OnConnect, Connection, useReactFlow, ReactFlowProvider } from '@xyflow/react'
-import { nodeTypes } from './nodes/nodetypes'
+import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Connection, Controls, Edge, EdgeChange, Node, NodeChange, Panel, ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react'
+import { useCallback, useState } from 'react'
+import { Toolbar } from './menu'
+import { toast, Toaster } from "sonner"
+import { app } from '@/lib/app'
+import { workerRegistry } from '@/lib/agents/registry'
 
-const initialNodes: Node[] = [
-  { id: '1', type: "template", position: { x: 100, y: 100 }, data: { label: 'Input' } },
-  // { id: '2', type: "ai", position: { x: 200, y: 200 }, data: { label: 'AI' } },
-  // { id: '3', type: "docgen", position: { x: 400, y: 500 }, data: { label: 'Transformer' } },
-  // { id: '4', type: "schema", position: { x: 500, y: 500 }, data: { label: 'Transformer' } },
-]
+import { ButtonEdge } from './edges'
+import { RequestNode } from './nodes/input'
+import { SchemaNode } from './nodes/schema'
+import { SelecthNode } from './nodes/select'
+import { ResponseNode } from './nodes/response'
+import { ConditionNode } from './nodes/condition'
+import { TextNode } from './nodes/text'
+import { AINode } from './nodes/ai'
+import { SpeechToText } from './nodes/stt'
+import { BackgroundNode } from './nodes/backgroundstart'
 
-const initialNodes2: Node[] = [
-  {
-    "id": "1",
-    "type": "template",
-    "position": {
-      "x": 51,
-      "y": 256
-    },
-    "data": {
-      "label": "Input"
-    },
-    "measured": {
-      "width": 224,
-      "height": 135
-    },
-    "selected": false,
-    "dragging": false
-  },
-  {
-    "id": "2",
-    "type": "ai",
-    "position": {
-      "x": 351,
-      "y": 336
-    },
-    "data": {
-      "label": "AI"
-    },
-    "measured": {
-      "width": 224,
-      "height": 271
-    },
-    "selected": false,
-    "dragging": false
-  },
-  {
-    "id": "3",
-    "type": "docgen",
-    "position": {
-      "x": 1034.2365553754103,
-      "y": 619.2534271817364
-    },
-    "data": {
-      "label": "Transformer"
-    },
-    "measured": {
-      "width": 224,
-      "height": 151
-    },
-    "selected": false,
-    "dragging": false
-  },
-  {
-    "id": "4",
-    "type": "schema",
-    "position": {
-      "x": 693.1536028400477,
-      "y": 451.6804920892271
-    },
-    "data": {
-      "label": "Transformer"
-    },
-    "measured": {
-      "width": 224,
-      "height": 231
-    },
-    "selected": false,
-    "dragging": false
-  },
-  {
-    "id": "dndnode_0",
-    "type": "decision",
-    "position": {
-      "x": 1035.834094929275,
-      "y": 374.51458701850186
-    },
-    "data": {
-      "label": "decision node"
-    },
-    "measured": {
-      "width": 224,
-      "height": 209
-    },
-    "selected": true,
-    "dragging": false
-  },
-  {
-    "id": "dndnode_1",
-    "type": "notify",
-    "position": {
-      "x": 1425,
-      "y": 450
-    },
-    "data": {
-      "label": "notify node"
-    }
-  }
-]
-
-const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', deletable: true },
-  { id: 'e1-3', source: '2', target: '3' },
-]
-
-const initialEdges2: Edge[] = [
-  {
-    "id": "e1-2",
-    "source": "1",
-    "target": "2",
-    "deletable": true
-  },
-  {
-    "source": "2",
-    "sourceHandle": "lab",
-    "target": "4",
-    "targetHandle": "input",
-    "id": "xy-edge__2lab-4input"
-  },
-  {
-    "source": "4",
-    "sourceHandle": "dt",
-    "target": "dndnode_0",
-    "targetHandle": "input",
-    "id": "xy-edge__4dt-dndnode_0input"
-  },
-  {
-    "source": "dndnode_0",
-    "sourceHandle": "true",
-    "target": "dndnode_1",
-    "targetHandle": "input",
-    "id": "xy-edge__dndnode_0true-dndnode_1input"
-  }
-]
-
-
-let id = 0
-const getId = () => `dndnode_${id++}`
+const nodeTypes = {
+  request: RequestNode,
+  schema: SchemaNode,
+  select: SelecthNode,
+  response: ResponseNode,
+  condition: ConditionNode,
+  text: TextNode,
+  ai: AINode,
+  stt: SpeechToText,
+  background: BackgroundNode,
+}
 
 function DnDFlow() {
-
-  const [nodes, setNodes] = useState(initialNodes)
-  const [edges, setEdges] = useState(initialEdges)
+  const [nodes, setNodes] = useState([])
+  const [edges, setEdges] = useState([])
   const { screenToFlowPosition } = useReactFlow()
 
   const onNodesChange = (changes: NodeChange[]) => {
     setNodes((nds) => {
-      console.log(nds)
       return applyNodeChanges(changes, nds)
     })
   }
 
   const onEdgesChange = (changes: EdgeChange[]) => {
-    setEdges((eds) => applyEdgeChanges(changes, eds))
-  }
-
-  const onConnect = (params: Connection) => {
     setEdges((eds) => {
-      console.log(eds)
-      return addEdge(params, eds)
+      return applyEdgeChanges(changes, eds)
     })
   }
 
-  const onDragOver = useCallback((event) => {
+  const onConnect = (c: Connection) => {
+
+    const workers = app.agent.workers[c.source]
+    const handle = workers.handlers[c.sourceHandle]
+
+    if (handle.type === "execute") {
+      c = { ...c, type: 'executeEdge', animated: true } as any
+    }
+
+    setEdges((eds) => {
+      return addEdge(c, eds)
+    })
+  }
+
+  const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
   }, [])
 
   const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
-    const type = event.dataTransfer.getData("nodeType")
+    const type = event.dataTransfer.getData("nodeType") as WorkerTypes
     if (!type) return
+    if (type == "request" && app.agent.hasInput()) return
 
+    const factory = workerRegistry[type] as WorkerRegistryItem
+    if (!factory) return
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY, })
-    const newNode: Node = {
-      id: getId(),
-      type,
+    const worker = factory.create(app.agent)
+
+    const node = {
+      id: worker.config.id,
+      type: worker.config.type,
       position,
-      data: { label: `${type} node` },
+      data: {}
     }
 
-    setNodes((nds) => nds.concat(newNode))
-
+    setNodes((nds) => nds.concat(node))
   }, [screenToFlowPosition])
 
+
+
+  const onDelete = useCallback(({ nodes }: { nodes: Node[]; edges: Edge[] }): void => {
+    if (nodes && nodes.length > 0) {
+      for (const node of nodes) {
+        app.agent.deleteWorker(node.id)
+      }
+    }
+
+  }, [])
 
   return <div style={{ height: '100%' }}>
     <ReactFlow
@@ -203,20 +105,33 @@ function DnDFlow() {
       onConnect={onConnect}
       onDrop={onDrop}
       onDragOver={onDragOver}
-
+      onDelete={onDelete}
       className='bg-sky-50'
       nodeTypes={nodeTypes}
+      edgeTypes={{ executeEdge: ButtonEdge }}
     >
       <Background />
       <Controls />
     </ReactFlow>
   </div>
-
-
 }
 
 export function FlowDesigner() {
-  return <ReactFlowProvider>
-    <DnDFlow />
-  </ReactFlowProvider>
+
+  function onSave() {
+    toast("The flow was saved", {
+      description: "Not Implemented!",
+      action: {
+        label: "Ok",
+        onClick: () => console.log("Ok"),
+      },
+    })
+  }
+  return <>
+    <Toolbar onSave={onSave} />
+    <ReactFlowProvider>
+      <DnDFlow />
+      <Toaster />
+    </ReactFlowProvider>
+  </>
 }

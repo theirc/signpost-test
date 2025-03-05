@@ -1,20 +1,17 @@
+import { LabeledHandle } from "@/components/labeled-handle"
 import { Slider } from '@/components/ui/slider'
-import { NodeProps, Position } from '@xyflow/react'
+import { Position } from '@xyflow/react'
 import { Brain, BookTemplate, Send } from "lucide-react"
 import { NodeLayout } from './node'
-import { NodeTitle } from '../title'
+import { NodeTitle } from './title'
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useWorker } from '../hooks'
 
-export function NotifyNode(props: NodeProps) {
-  const worker = useWorker(props.id)
+export function NotifyNode({ data, isConnectable }) {
 
   return <NodeLayout>
-    <NodeTitle registry={null} worker={worker} />
-
-    {/* <ExecuteNextHandle /> */}
-    {/* <LabeledHandle id="input" title="Input" type="target" position={Position.Left} /> */}
+    <NodeTitle title="Notify" icon={Send} />
+    <LabeledHandle id="input" title="Input" type="target" position={Position.Left} />
     <div className="w-full flex p-4">
       <Select>
         <SelectTrigger className="w-full">

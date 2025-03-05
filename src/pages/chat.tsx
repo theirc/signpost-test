@@ -70,7 +70,7 @@ export default function Chat () {
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
 
     if (message) {
-      messages.current.unshift({ type: "human", message })
+      messages.current.push({ type: "human", message })
     }
     setState({ isSending: true })
 
@@ -159,6 +159,7 @@ export default function Chat () {
   //   setSelectedSources([]);
 
   // }
+
   function onModeChanged() {
     setState({ audioMode: !state.audioMode })
   }
