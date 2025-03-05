@@ -12,9 +12,9 @@ import { BotChatMessage } from '@/bot/botmessage'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
-import { SourcesTable } from '@/components/sources-table'
-import { availableSources } from '@/components/forms/files-modal'
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
+// import { SourcesTable } from '@/components/sources-table'
+// import { availableSources } from "@/components/forms/files-modal"
+// import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import "../index.css"
 
 interface Bots {
@@ -26,9 +26,9 @@ interface Bots {
 }
 
 export default function Chat () {
-  const [showFileDialog, setShowFileDialog] = useState(false)
-  const [selectedSources, setSelectedSources] = useState<string[]>([])
-  const [sources, setSources] = useState(availableSources)
+  // const [showFileDialog, setShowFileDialog] = useState(false);
+  // const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  // const [sources, setSources] = useState(availableSources);
   const [message, setMessage] = useState("")
 
   const [state, setState] = useMultiState({
@@ -50,9 +50,9 @@ export default function Chat () {
     })
   }, [])
 
-  useEffect(()=> {
-    setSources(availableSources)
-  }, [availableSources])
+  // useEffect(()=> {
+  //   setSources(availableSources)
+  // }, [availableSources])
 
   const messages = useRef<ChatMessage[]>([
     {
@@ -134,31 +134,31 @@ export default function Chat () {
     messages.current = []
   }
 
-  const handleToggleSelect = (id: string) => {
-    setSelectedSources(prev => 
-      prev.includes(id)
-      ? prev.filter(sourceId => sourceId !== id)
-      : [...prev, id]
-    )
-  }
+  // const handleToggleSelect = (id: string) => {
+  //   setSelectedSources(prev => 
+  //     prev.includes(id)
+  //     ? prev.filter(sourceId => sourceId !== id)
+  //     : [...prev, id]
+  //   )
+  // }
 
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
-  }
+  // const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
+  // }
 
-  const handleAttachFiles = () =>{
-    const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
-    .filter(Boolean)
-      .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
-      .join('\n\n');
+  // const handleAttachFiles = () =>{
+  //   const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
+  //   .filter(Boolean)
+  //     .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
+  //     .join('\n\n');
 
-    if (selectedContent) {
-      setMessage(prevMessage => prevMessage + '\n\n' + selectedContent);
-    }
-    setShowFileDialog(false);
-    setSelectedSources([]);
+  //   if (selectedContent) {
+  //     setMessage(prevMessage => prevMessage + '\n\n' + selectedContent);
+  //   }
+  //   setShowFileDialog(false);
+  //   setSelectedSources([]);
 
-  }
+  // }
   function onModeChanged() {
     setState({ audioMode: !state.audioMode })
   }
@@ -316,14 +316,14 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
       }}
       className="flex items-center border border-gray-300 rounded-lg p-2 bg-white shadow-sm w-full"
     >
-      <Button 
+      {/* <Button 
       type="button" 
       variant="ghost" 
       className="mr-2"
       onClick={() => setShowFileDialog(true)} 
     >
     <Paperclip className="h-5 w-5 text-gray-500 hover:text-gray-700" />
-    </Button>
+    </Button> */}
 
       <input
         type="text"
@@ -371,7 +371,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
           )}
         </div>
       )}
-      <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
+      {/* <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Attach Files</DialogTitle>
@@ -400,7 +400,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
             </div>
           </div>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   )
 }
