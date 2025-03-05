@@ -321,7 +321,7 @@ function BotScoreModal(props: {
 
   return(
   <Dialog open={open} onOpenChange={close}>
-  <DialogContent>
+  <DialogContent className="max-h-[calc(100vh-4rem)] overflow-y-auto">
     <DialogHeader>
       <DialogTitle>{botName} - {title}</DialogTitle>
     </DialogHeader>
