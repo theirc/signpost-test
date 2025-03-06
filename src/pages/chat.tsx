@@ -12,9 +12,9 @@ import { BotChatMessage } from '@/bot/botmessage'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
-// import { SourcesTable } from '@/components/sources-table'
-// import { availableSources } from "@/components/forms/files-modal"
-// import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
+import { SourcesTable } from '@/components/sources-table'
+import { availableSources } from "@/components/old_forms/files-modal"
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import "../index.css"
 
 interface Bots {
@@ -26,9 +26,9 @@ interface Bots {
 }
 
 export default function Chat () {
-  // const [showFileDialog, setShowFileDialog] = useState(false);
-  // const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  // const [sources, setSources] = useState(availableSources);
+  const [showFileDialog, setShowFileDialog] = useState(false)
+  const [selectedSources, setSelectedSources] = useState<string[]>([])
+  const [sources, setSources] = useState(availableSources)
   const [message, setMessage] = useState("")
 
   const [state, setState] = useMultiState({
@@ -50,14 +50,15 @@ export default function Chat () {
     })
   }, [])
 
-  // useEffect(()=> {
-  //   setSources(availableSources)
-  // }, [availableSources])
+  useEffect(()=> {
+    setSources(availableSources)
+  }, [availableSources])
+  
 
   const messages = useRef<ChatMessage[]>([
     {
       type: "bot",
-      message: "Hello, I am SignpostChat. How can I assist you today?",
+      message: "Hello, how can I assist you today?",
     }
   ])
 
@@ -96,7 +97,7 @@ export default function Chat () {
       setState({ isSending: false })
     }
 
-    messages.current.unshift(response)
+    messages.current.push(response)
     setState({ isSending: false })
   }
 
@@ -104,7 +105,7 @@ export default function Chat () {
     setState({ isSending: true })
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
     const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
-    messages.current.unshift(response)
+    messages.current.push(response)
     setState({ isSending: false })
   }
 
@@ -134,31 +135,31 @@ export default function Chat () {
     messages.current = []
   }
 
-  // const handleToggleSelect = (id: string) => {
-  //   setSelectedSources(prev => 
-  //     prev.includes(id)
-  //     ? prev.filter(sourceId => sourceId !== id)
-  //     : [...prev, id]
-  //   )
-  // }
+  const handleToggleSelect = (id: string) => {
+    setSelectedSources(prev => 
+      prev.includes(id)
+      ? prev.filter(sourceId => sourceId !== id)
+      : [...prev, id]
+    )
+  }
 
-  // const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
-  // }
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
+  }
 
-  // const handleAttachFiles = () =>{
-  //   const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
-  //   .filter(Boolean)
-  //     .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
-  //     .join('\n\n');
+  const handleAttachFiles = () =>{
+    const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
+    .filter(Boolean)
+      .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
+      .join('\n\n');
 
-  //   if (selectedContent) {
-  //     setMessage(prevMessage => prevMessage + '\n\n' + selectedContent);
-  //   }
-  //   setShowFileDialog(false);
-  //   setSelectedSources([]);
+    if (selectedContent) {
+      setMessage(prevMessage => prevMessage + '\n\n' + selectedContent);
+    }
+    setShowFileDialog(false);
+    setSelectedSources([]);
 
-  // }
+  }
 
   function onModeChanged() {
     setState({ audioMode: !state.audioMode })
@@ -197,14 +198,14 @@ export default function Chat () {
     {!state.audioMode && (
       <div className="flex-1 overflow-y-auto p-6 space-y-4 w-full">
         {messages.current.length === 0 ? (
-          <div className="flex flex-col items-center text-gray-500">
-            <p>Start chatting below!</p>
-          </div>
+    <div className="flex flex-col items-center text-gray-500">
+    <p>Start chatting below!</p>
+      </div>
         ) : (
-          [...messages.current].reverse().map((m, i) => (
-            <ChatMessage key={i} message={m as ChatMessage} isWaiting={state.isSending} />
-          ))
-        )}
+        messages.current.map((m, i) => (
+        <ChatMessage key={i} message={m} isWaiting={state.isSending} />
+           ))
+          )}
         {state.isSending && (
        <div className="flex justify-start w-fit">
        <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
@@ -317,14 +318,14 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
       }}
       className="flex items-center border border-gray-300 rounded-lg p-2 bg-white shadow-sm w-full"
     >
-      {/* <Button 
+      <Button 
       type="button" 
       variant="ghost" 
       className="mr-2"
       onClick={() => setShowFileDialog(true)} 
     >
     <Paperclip className="h-5 w-5 text-gray-500 hover:text-gray-700" />
-    </Button> */}
+    </Button>
 
       <input
         type="text"
@@ -372,7 +373,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
           )}
         </div>
       )}
-      {/* <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
+      <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Attach Files</DialogTitle>
@@ -401,7 +402,7 @@ function SearchInput(props: { onSearch: (message?: string, audio?: any, tts?: bo
             </div>
           </div>
         </DialogContent>
-      </Dialog> */}
+      </Dialog>
     </div>
   )
 }
@@ -413,50 +414,52 @@ interface MessageProps {
 
 function ChatMessage(props: MessageProps) {
   const { isWaiting } = props;
-  let { type, message, messages = [], needsRebuild, rebuild } = props.message
+  let { type, message, messages, needsRebuild, rebuild } = props.message
+  messages = messages || []
 
-  const isBot = type === "bot"
-  const hasBots = messages.length > 0
+  const hasBots = messages.length > 0 
 
+  if(type == "bot") {
   return (
-    <div className={`mt-4 flex w-full ${isBot ? "justify-start" : "justify-end"}`}>
-    {hasBots ? (
-      <Tabs defaultValue={messages[0]?.id?.toString()}>
-        <TabsList>
-          {messages.map((m) => (
-            <TabsTrigger key={m.id} value={m.id.toString()}>
-              {m.botName}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
+  <div className="mt-8 flex w-full justify-start">
+  <div className="flex gap-4">
+    {hasBots && (
+      <div className="-mt-3 ml-4 w-full flex gap-4">
         {messages.map((m) => (
-          <TabsContent key={m.id} value={m.id.toString()}>
+          <div key={m.id}>
+            <div className="font-medium text-xs text-blue-500 mb-1">{m.botName}</div>
             <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
-          </TabsContent>
+          </div>
         ))}
-      </Tabs>
-    ) : (
-      <div className={`p-3 rounded-lg ${isBot ? "bg-gray-100 text-black" : "bg-gray-200 text-black max-w-xs"}`}>
-        {message}
       </div>
     )}
-
-    {!isWaiting && needsRebuild && (
-      <Button
-        className="mx-2 -mt-1"
-        variant="default"
-        onClick={rebuild}
-        disabled={isWaiting}
-      >
-        {isWaiting ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          "Rebuild"
-        )}
-      </Button>
+    {!hasBots && (
+      <div className="bg-white text-black p-3 rounded-lg max-w-xs">
+        <div className="">{message}</div>
+      </div>
     )}
   </div>
+</div>
+)
+}
+
+return (
+<div className="mt-8 flex w-full justify-end">
+<div className="bg-gray-200 text-black p-3 rounded-lg max-w-xs">
+  <div>
+    <div className="ml-2">{message}</div>
+  </div>
+  {!isWaiting && needsRebuild && (
+    <Button
+      className="mx-2 -mt-1"
+      onClick={rebuild}
+      disabled={isWaiting}
+    >
+      Rebuild
+    </Button>
+  )}
+</div>
+</div>
 )
 }
 }

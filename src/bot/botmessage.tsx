@@ -517,7 +517,7 @@ function BotScoreModal(props: {
       {/* Footer Buttons */}
       <DialogFooter>
         <Button type="button" variant="outline" onClick={close}>Cancel</Button>
-        <Button type="submit" disabled={confirmLoading}>Submit</Button>
+        <Button type="submit" disabled={confirmLoading} onClick={handleOk}>Submit</Button>
       </DialogFooter>
     </form>
   </DialogContent>
