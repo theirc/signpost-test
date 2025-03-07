@@ -17,6 +17,8 @@ import { BillingSettings } from "./pages/settings/billing"
 import { Users } from "./pages/settings/users"
 import { AccessControlSettings } from "./pages/settings/access-control"
 import { Roles } from "./pages/settings/roles"
+import { AgentList } from "./pages/flow/agents.tsx"
+import { Agent } from "./pages/flow/agent.tsx"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -50,14 +52,13 @@ function AppContent() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
+        <header className="flex h-12 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="ml-2" />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
-                  <NavigationLink to="/">Home</NavigationLink>
+                  <NavigationLink to="/"><span className="cursor-pointer">Home</span></NavigationLink>
                 </BreadcrumbItem>
                 {currentPath !== '/' && (
                   <>
@@ -71,9 +72,9 @@ function AppContent() {
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex flex-1 flex-col p-2 pt-0">
           <Routes>
-            <Route path="/" element={<FlowDesigner />} />
+            <Route path="/" element={<AgentList />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/rag" element={<CollectionsManagement />} />
             <Route path="/sources" element={<Sources />} />
@@ -88,6 +89,7 @@ function AppContent() {
             </Route>
             <Route path="/settings/team/users/:id" element={<Users />} />
             <Route path="/settings/roles/:id" element={<Roles />} />
+            <Route path="/agent/:id" element={<Agent />} />
           </Routes>
         </div>
       </SidebarInset>

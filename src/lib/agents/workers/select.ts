@@ -4,9 +4,9 @@ function create(agent: Agent) {
   const worker = agent.addWorker({ type: "select" })
 
   worker.addHandlers([
-    { type: "any", direction: "input", title: "Input", },
-    { type: "any", direction: "input", title: "Input", },
-    { type: "any", direction: "output", title: "Selected", },
+    { type: "any", direction: "input", title: "Input", name: "input1" },
+    { type: "any", direction: "input", title: "Input", name: "input2" },
+    { type: "any", direction: "output", title: "Selected", name: "selected" },
   ])
 
   return worker

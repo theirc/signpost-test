@@ -1,13 +1,14 @@
 import { useReactFlow } from '@xyflow/react'
 import { EllipsisVertical, Settings, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import { memo } from 'react'
 
 interface Props {
   registry: WorkerRegistryItem
   worker: AIWorker
 }
 
-export function NodeTitle({ registry, worker }: Props & React.ComponentProps<"div">) {
+export const NodeTitle = memo(({ registry, worker }: Props & React.ComponentProps<"div">) => {
   const Icon = registry.icon || Settings
   const { deleteElements } = useReactFlow()
 
@@ -31,6 +32,6 @@ export function NodeTitle({ registry, worker }: Props & React.ComponentProps<"di
       </DropdownMenuContent>
     </DropdownMenu>
   </div>
-}
+})
 
 

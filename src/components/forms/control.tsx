@@ -4,11 +4,12 @@ import { Col } from "./grid"
 
 declare global {
   interface DefaultInputProps {
-    field?: Field
+    field: Field
     span?: ColumnSpans
     children?: any
     required?: boolean
     validate?: ZodType
+    hideLabel?: boolean
   }
 }
 
@@ -30,7 +31,7 @@ export function validateValue(v: any, required: boolean, field: Field, validate?
 
 }
 
-export function Control({ field, span, required, ...props }: DefaultInputProps) {
+export function Control({ field, span, required, hideLabel, ...props }: DefaultInputProps) {
 
   const { formState: { errors } } = useFormContext()
   const { title, name } = field
@@ -44,10 +45,10 @@ export function Control({ field, span, required, ...props }: DefaultInputProps) 
   }
 
   return <Col span={span || 4} className="flex flex-col" >
-    <div className="flex items-center gap-1 pb-1">
-      {title && <div className="font-medium text-sm ml-[2px]">{title}</div>}
+    {!hideLabel && <div className="flex items-center gap-1 pb-1">
+      {title && <div className="text-sm ml-[2px]">{title}</div>}
       {required && <div className="text-red-500 text-sm">●</div>}
-    </div>
+    </div>}
     <div className="flex-grow">
       {props.children}
     </div>

@@ -4,8 +4,8 @@ function create(agent: Agent) {
   const worker = agent.addWorker({ type: "stt" })
 
   worker.addHandlers([
-    { type: "audio", direction: "input", title: "Input", },
-    { type: "string", direction: "output", title: "Output", },
+    { type: "audio", direction: "input", title: "Input", name: "input" },
+    { type: "string", direction: "output", title: "Output", name: "output" },
   ])
 
   return worker

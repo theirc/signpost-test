@@ -1,4 +1,4 @@
-import { ChevronRight, type LucideIcon } from "lucide-react"
+import { Brain, ChevronRight, type LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, } from "@/components/ui/collapsible"
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom"
@@ -21,7 +21,16 @@ interface Props {
 export function NavMain({ items }: Props) {
   return <SidebarGroup>
     <SidebarGroupLabel>Platform</SidebarGroupLabel>
+
     <SidebarMenu>
+
+      <Link to={"/"}>
+        <SidebarMenuItem >
+          <SidebarMenuButton tooltip="Agents">
+            <Brain />Agents
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </Link>
       {items.map((item) => {
         if (item.isLink) {
           return (
