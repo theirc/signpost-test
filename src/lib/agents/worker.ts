@@ -12,35 +12,25 @@ export const inputOutputTypes = {
   execute: "Execute",
 }
 
-// type IOTypes =
-//   "string" |
-//   "number" |
-//   "boolean" |
-//   "any" |
-//   "execute" |
-//   "audio" |
-//   "image" |
-//   "video" |
-//   "chat"
-
 type IOTypes = keyof typeof inputOutputTypes
 
 declare global {
   type AIWorker = ReturnType<typeof buildWorker>
 
-  interface WorkerConfig {
-    id?: string
-    type: WorkerTypes
-    handles?: { [index: string]: NodeIO }
-    payload?: any
-    x?: number
-    y?: number
-  }
+  // interface WorkerConfig {
+  //   id?: string
+  //   type: WorkerTypes
+  //   handles?: WorkerHandles
+  //   x?: number
+  //   y?: number
+  // }
+
+  type WorkerHandles = { [index: string]: NodeIO }
 
   interface NodeIO {
     id?: string
     title: string
-    name?: string
+    name: string
     value?: any
     direction: "output" | "input"
     type: IOTypes
@@ -49,35 +39,28 @@ declare global {
   }
 }
 
-function createIdentifier(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-zA-Z0-9]/g, ' ')
-    .split(' ')
-    .map((word) => word.toLowerCase())
-    .join('_')
-}
 
 export function buildWorker(w: WorkerConfig) {
 
   w.handles = w.handles || {}
-  w.payload = w.payload || {}
+  const fields = {}
 
   const aiw = {
     config: w,
+    lastUpdate: 0,
 
-    get payload() {
-      return w.payload
-    },
-
-    get handlers() {
+    get handles() {
       return w.handles
     },
+
+    fields,
 
     addHandler(h: NodeIO): NodeIO {
       if (!h.id) h.id = ulid()
       w.handles[h.id] = h
+      fields[h.name] = h
       h.worker = aiw
+      aiw.lastUpdate = Date.now().valueOf()
       return h
     },
 

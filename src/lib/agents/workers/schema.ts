@@ -4,7 +4,7 @@ function create(agent: Agent) {
   const worker = agent.addWorker({ type: "schema" })
 
   worker.addHandlers([
-    { type: "string", direction: "input", title: "Input", },
+    { type: "string", direction: "input", title: "Input", name: "input" },
     // { type: "boolean", direction: "output", title: "Is Contact", },
     // { type: "string", direction: "output", title: "Search Keywords", },
     // { type: "string", direction: "output", title: "Language", },

@@ -1,52 +1,60 @@
-import { useCallback, useState } from 'react'
-import { Handle, NodeProps, Position, XYPosition } from '@xyflow/react'
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cn } from '@/lib/utils'
-import { Slider } from '@/components/ui/slider'
-import { Brain, Settings } from "lucide-react"
+import { workerRegistry } from '@/lib/agents/registry'
+import { NodeProps, Position } from '@xyflow/react'
+import { Brain } from "lucide-react"
+import { NodeHandlers, WorkerHandle } from '../handles'
+import { useWorker } from '../hooks'
 import { NodeTitle } from '../title'
 import { NodeLayout } from './node'
-import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@/components/ui/select'
-import { app } from '@/lib/app'
-import { useWorker } from '../hooks'
-import { NodeHandlers } from '../handles'
-import { workerRegistry } from '@/lib/agents/registry'
+import { createModel } from '@/lib/data/model'
+import { InputTextArea, Row, Select, Slider, useForm } from '@/components/forms'
+import { memo, useRef } from 'react'
+import { MemoizedWorker } from '../memoizedworkers'
 const { ai } = workerRegistry
+
 ai.icon = Brain
 
-export function AINode(props: NodeProps) {
+const list: FieldList = [
+  { value: "openai", label: "OpenAI" },
+]
 
-  const worker = useWorker(props.id)
-
-  return <NodeLayout>
-    <NodeTitle registry={ai} worker={worker} />
-    {/* <ExecuteNextHandle /> */}
-    {/* <LabeledHandle id="input" title="Input" type="target" position={Position.Left} /> */}
-    {/* <LabeledHandle id="prompt" title="Prompt" type="target" position={Position.Left} /> */}
-    <div className='p-4 nodrag'>
-
-      <div className='mb-4'>
-        <Select>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Model" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="light">OpenAI</SelectItem>
-            <SelectItem value="dark">Claude</SelectItem>
-            <SelectItem value="system">Gemini</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className='text-gray-500 text-sm mb-3'>Temperature</div>
-      <Slider defaultValue={[50]} max={100} step={1} className="w-full" />
+const model = createModel({
+  fields: {
+    prompt: { title: "Prompt", type: "string", },
+    model: { title: "Model", type: "string", list },
+    temperature: { title: "Temperature", type: "number" },
+  }
+})
 
 
-    </div>
-    <NodeHandlers worker={worker} />
-  </NodeLayout>
+
+function Content({ worker }: { worker: BotWorker }) {
+
+  const { form, m } = useForm(model)
+
+  form.onSubmit = data => {
+    console.log(data)
+  }
+
+  return <div className='p-2 nodrag w-full'>
+    <form.context>
+      <Row>
+        <Select field={m.model} span={12} />
+        <Slider field={m.temperature} defaultValue={[50]} max={100} step={1} span={12} />
+      </Row>
+    </form.context>
+  </div>
 
 }
 
 
+
+export function AINode(props: NodeProps) {
+  const worker = useWorker<BotWorker>(props.id)
+  return <NodeLayout>
+    <NodeTitle registry={ai} worker={worker} />
+    <MemoizedWorker worker={worker}>
+      <Content worker={worker} />
+    </MemoizedWorker>
+    <NodeHandlers worker={worker} />
+  </NodeLayout>
+}

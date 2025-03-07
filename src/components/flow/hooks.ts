@@ -1,9 +1,6 @@
 import { app } from "@/lib/app"
-import { useMemo } from "react"
 
-
-export function useWorker(id: string) {
-  // const worker = useMemo(() => app.agent.workers[id], [id])
+export function useWorker<T = AIWorker>(id: string): T {
   const worker = app.agent.workers[id]
-  return worker
+  return worker as T
 }

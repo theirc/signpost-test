@@ -2,7 +2,9 @@ import { app } from "@/lib/app"
 import { cn } from "@/lib/utils"
 import { Connection, Handle, HandleProps, HandleType, Position, useNodeConnections } from "@xyflow/react"
 import { Binary, CircleHelp, Hash, Type, MessageCircleMore, Headphones, Image, Video } from "lucide-react"
-import React from "react"
+import React, { memo, useRef } from "react"
+import isEqual from "lodash/isEqual"
+import { MemoizedWorker } from "./memoizedworkers"
 
 type LabeledHandleProps = HandleProps & React.HTMLAttributes<HTMLDivElement> & { title?: string, handler?: NodeIO }
 
@@ -25,59 +27,49 @@ interface WorkerHandleProps extends Partial<LabeledHandleProps> {
 function HanlderIcon({ handler }: { handler: NodeIO }) {
   if (!handler) return null
   return <>
-    {handler?.type == "string" && <Type size={12} className="mt-[1px]" />}
-    {handler?.type == "number" && <Hash size={12} className="mt-[1px]" />}
-    {handler?.type == "boolean" && <Binary size={12} className="mt-[1px]" />}
-    {handler?.type == "any" && <CircleHelp size={12} className="mt-[1px]" />}
-    {handler?.type == "chat" && <MessageCircleMore size={12} className="mt-[1px]" />}
-    {handler?.type == "audio" && <Headphones size={12} className="mt-[1px]" />}
-    {handler?.type == "image" && <Image size={12} className="mt-[1px]" />}
-    {handler?.type == "video" && <Video size={12} className="mt-[1px]" />}
+    {handler?.type == "string" && <Type size={10} className="mt-[1px]" />}
+    {handler?.type == "number" && <Hash size={10} className="mt-[1px]" />}
+    {handler?.type == "boolean" && <Binary size={10} className="mt-[1px]" />}
+    {handler?.type == "any" && <CircleHelp size={10} className="mt-[1px]" />}
+    {handler?.type == "chat" && <MessageCircleMore size={10} className="mt-[1px]" />}
+    {handler?.type == "audio" && <Headphones size={10} className="mt-[1px]" />}
+    {handler?.type == "image" && <Image size={10} className="mt-[1px]" />}
+    {handler?.type == "video" && <Video size={10} className="mt-[1px]" />}
   </>
 }
 
 export function WorkerHandle(props: WorkerHandleProps) {
   const { handler } = props
+  if (!handler) return null
   const position = handler.direction == "output" ? Position.Right : Position.Left
   const type = handler.direction == "output" ? "source" : "target"
-  if (handler.type == "execute") return <ExecuteHandle handler={handler} />
+  if (handler.type == "execute") return <LabeledHandle title={handler.title} position={position} type={type} id={handler.id} handler={handler} className="bg-red-500 border border-red-500" />
   return <LabeledHandle title={handler.title} position={position} type={type} id={handler.id} handler={handler} />
-
 }
 
-function LabeledHandle({ title, position, handler, ...props }: LabeledHandleProps) {
+function LabeledHandle({ title, position, handler, className, ...props }: LabeledHandleProps) {
 
-  return <div className={cn("relative flex items-center my-1", getFlexDirection(position),)}>
-    <CustomHandle {...props} position={position} className="size-2 bg-white border border-solid border-stone-400" />
-    {handler.direction == "input" &&
-      <div className="ml-2">
-        <HanlderIcon handler={handler} />
-      </div>
-    }
-    <div>
-      <label className={`px-1 text-foreground} mr-1`}>{title}</label>
-    </div>
-    {handler.direction == "output" &&
-      <div className="mr-2">
-        <HanlderIcon handler={handler} />
-      </div>
-    }
-  </div>
-}
-
-function ExecuteHandle(props: { handler: NodeIO }) {
-  const { handler } = props
-
-  const position = handler.direction == "output" ? Position.Right : Position.Left
-  const type = handler.direction == "output" ? "source" : "target"
 
   return <div className={cn("relative flex items-center", getFlexDirection(position),)}>
-    <CustomHandle id={handler.id} position={position} type={type} className="w-2 h-2 bg-red-500 border border-solid border-red-500" />
+    <CustomHandle {...props} position={position} className={cn("size-2 border border-solid bg-white border-stone-400", className)} />
+    {handler.direction == "input" &&
+      <div className="ml-[6px] mt-[1px]">
+        <HanlderIcon handler={handler} />
+      </div>
+    }
     <div>
-      <label className={`px-3 text-foreground}`}>{handler.title}</label>
+      <label className={`px-[4px]`}>{title}</label>
     </div>
+    {handler.direction == "output" &&
+      <div className="mr-[6px] mt-[2px]">
+        <HanlderIcon handler={handler} />
+      </div>
+    }
   </div>
+
+
 }
+
 
 
 function CustomHandle(props: HandleProps) {
@@ -85,7 +77,6 @@ function CustomHandle(props: HandleProps) {
   const connections = useNodeConnections()
   let isConnectable = true
 
-  // console.log("Connections:", connections)
 
   for (let i = 0; i < connections.length; i++) {
     const h = connections[i]
@@ -95,8 +86,8 @@ function CustomHandle(props: HandleProps) {
     const workers = app.agent.workers[h.source]
     const workert = app.agent.workers[h.target]
     if (!workers || !workert) continue
-    const handles = workers.handlers[h.sourceHandle]
-    const handlet = workert.handlers[h.targetHandle]
+    const handles = workers.handles[h.sourceHandle]
+    const handlet = workert.handles[h.targetHandle]
 
     if (!handles || !handlet) continue
 
@@ -112,8 +103,8 @@ function CustomHandle(props: HandleProps) {
     const workers = app.agent.workers[e.source]
     const workert = app.agent.workers[e.target]
     if (!workers || !workert) return false
-    const handles = workers.handlers[e.sourceHandle]
-    const handlet = workert.handlers[e.targetHandle]
+    const handles = workers.handles[e.sourceHandle]
+    const handlet = workert.handles[e.targetHandle]
     if (!handles || !handlet) return false
 
     if (handles.type === "execute" || handlet.type === "execute") return (handles.type === "execute" && handlet.type === "execute")
@@ -128,18 +119,83 @@ function CustomHandle(props: HandleProps) {
   return <Handle {...props} isConnectable={isConnectable} isValidConnection={isValidConnection} />
 }
 
-export function NodeHandlers(props: { worker: AIWorker }) {
+function buildSlots(handlers: NodeIO[]) {
+  const slots: [left: NodeIO, right: NodeIO][] = []
+
+  for (const h of handlers) {
+    if (h.direction == "input") {
+      slots.push([h, null])
+    }
+  }
+
+  for (let i = 0; i < handlers.length; i++) {
+    const h = handlers[i]
+    if (h.direction == "input") continue
+
+    //find the first right empty slot
+    let found = false
+    for (let j = 0; j < slots.length; j++) {
+      const s = slots[j]
+      if (!s[1]) {
+        slots[j] = [s[0], h]
+        found = true
+        break
+      }
+    }
+
+    if (!found) {
+      slots.push([null, h])
+    }
+
+  }
+  return slots
+}
+
+function LeftRighWorkerHandle({ handles }: { handles: [NodeIO, NodeIO][] }) {
+
+  return <div className="w-full">
+    {handles.map((h, i) => {
+      const left = h[0]
+      const right = h[1]
+      return <div className="flex" key={i}>
+        <WorkerHandle handler={left} />
+        <div className="flex-grow" />
+        <WorkerHandle handler={right} />
+      </div>
+    })}
+  </div>
+
+}
+
+export function NodeHandlers({ worker }: { worker: AIWorker }) {
+  return <MemoizedWorker worker={worker}>
+    <InternalNodeHandlers worker={worker} />
+  </MemoizedWorker>
+}
+
+
+function InternalNodeHandlers(props: { worker: AIWorker }) {
   const { worker } = props
 
-  const hs = Object.values(worker.handlers)
-  const leftExec = hs.filter(h => (h.type === "execute") && h.direction === "input")
-  const rightExec = hs.filter(h => (h.type === "execute") && h.direction === "output")
+  const hs = Object.values(worker.handles)
   const handlers = hs.filter(h => (h.type !== "execute"))
+  const executeHandlers = hs.filter(h => (h.type == "execute"))
 
-  return <>
-    {handlers.map((h) => <WorkerHandle key={h.id} handler={h} />)}
-    {leftExec.map((h) => <WorkerHandle key={h.id} handler={h} />)}
-    {rightExec.map((h) => <WorkerHandle key={h.id} handler={h} />)}
-  </>
+  const slots = buildSlots(handlers)
+  const execSlots = buildSlots(executeHandlers)
+
+  return <div className="my-2">
+    <LeftRighWorkerHandle handles={slots} />
+    <div className="h-2" />
+    <LeftRighWorkerHandle handles={execSlots} />
+  </div>
+
+  // return <>
+  //   {handlers.map((h) => <WorkerHandle key={h.id} handler={h} />)}
+  //   {leftExec.map((h) => <WorkerHandle key={h.id} handler={h} />)}
+  //   {rightExec.map((h) => <WorkerHandle key={h.id} handler={h} />)}
+  // </>
 }
+
+
 

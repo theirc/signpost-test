@@ -8,7 +8,7 @@ function create(agent: Agent) {
   const worker = agent.addWorker({ type: "request" })
 
   worker.addHandlers([
-    { type: "execute", direction: "output", title: "Next", },
+    { type: "execute", direction: "output", title: "Next", name: "next" },
   ])
 
   return worker

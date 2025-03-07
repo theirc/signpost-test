@@ -1,14 +1,10 @@
 import { FormProvider, SubmitHandler, UseFormProps, useForm as useReactHookForm } from "react-hook-form"
 import { Button, ButtonProps } from "../ui/button"
 import { useModal } from "./modal"
+import { SubmitButton } from "./submitbutton"
 
 export type FormContext = (props: { children: any }) => any
 export type FormHookInstance = ReturnType<typeof useForm>["form"]
-
-
-function SubmitButton({ submit, children = "Submit", ...props }: ButtonProps & { submit?: any }) {
-  return <Button {...props} onClick={submit}>{children}</Button>
-}
 
 interface Options extends UseFormProps {
   doNotReset?: boolean
@@ -51,6 +47,7 @@ export function useForm<T>(model: Model<T>, options: Options = {}) {
 
   return {
     ...methods,
+    m: model.fields,
     form,
   }
 

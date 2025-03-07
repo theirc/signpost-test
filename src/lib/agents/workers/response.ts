@@ -4,8 +4,8 @@ function create(agent: Agent) {
   const worker = agent.addWorker({ type: "response" })
 
   worker.addHandlers([
-    { type: "execute", direction: "input", title: "Execute", },
-    { type: "string", direction: "input", title: "Answer", }
+    { type: "execute", direction: "input", title: "Execute", name: "execute" },
+    { type: "string", direction: "input", title: "Answer", name: "answer" },
   ])
 
   return worker

@@ -19,6 +19,10 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "prefer-const": "off",
+      "eslint no-empty": ["error", { "allowEmptyCatch": true }],
+      "react-hooks/rules-of-hooks": "off", // Checks rules of Hooks
+      "react-hooks/exhaustive-deps": "off", // Checks effect dependencies
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true },],
       "@typescript-eslint/no-unused-vars": ["off"],
       "@typescript-eslint/no-explicit-any": "off"

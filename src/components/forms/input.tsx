@@ -8,7 +8,7 @@ export function Input({ field, span, className, required, validate, ...props }: 
   const { register } = useFormContext()
   const validateFn = v => validateValue(v, required, field, validate)
 
-  return <Control field={field} span={span} required={required}>
+  return <Control {...props} field={field} span={span} required={required} >
     <ShadInput className={cn("focus-visible:ring-transparent w-full h-full", className)} {...register(field.name, { validate: validateFn })}  {...props} />
   </Control>
 

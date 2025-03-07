@@ -1,5 +1,5 @@
-import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Connection, Controls, Edge, EdgeChange, Node, NodeChange, Panel, ReactFlow, ReactFlowProvider, useReactFlow } from '@xyflow/react'
-import { useCallback, useState } from 'react'
+import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Connection, Controls, Edge, EdgeChange, Node, NodeChange, Panel, ReactFlow, ReactFlowProvider, useEdges, useReactFlow } from '@xyflow/react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Toolbar } from './menu'
 import { toast, Toaster } from "sonner"
 import { app } from '@/lib/app'
@@ -15,6 +15,9 @@ import { TextNode } from './nodes/text'
 import { AINode } from './nodes/ai'
 import { SpeechToText } from './nodes/stt'
 import { BackgroundNode } from './nodes/backgroundstart'
+import { Skeleton } from '../ui/skeleton'
+import { agents } from '@/lib/data'
+import { buildAgent } from '@/lib/agents'
 
 const nodeTypes = {
   request: RequestNode,
@@ -28,34 +31,74 @@ const nodeTypes = {
   background: BackgroundNode,
 }
 
-function DnDFlow() {
+function Flow() {
+
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
   const { screenToFlowPosition } = useReactFlow()
 
+  useEffect(() => {
+    const initialNodes: Node[] = []
+    for (const key in app.agent.workers) {
+      const w = app.agent.workers[key]
+      initialNodes.push({
+        id: w.config.id,
+        data: w.config,
+        type: w.config.type,
+        position: { x: w.config.x, y: w.config.y },
+      })
+    }
+    setNodes(initialNodes)
+    const initialEdges: Edge[] = []
+    for (const key in app.agent.edges) {
+      const e = app.agent.edges[key]
+      initialEdges.push({ id: key, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle })
+    }
+    setEdges(initialEdges)
+
+  }, [])
+
+
+
   const onNodesChange = (changes: NodeChange[]) => {
-    setNodes((nds) => {
-      return applyNodeChanges(changes, nds)
-    })
+    for (const change of changes) {
+      if (change.type === 'position') {
+        const w = app.agent.workers[change.id]
+        if (!w) continue
+        w.config.x = change.position.x
+        w.config.y = change.position.y
+      }
+    }
+    setNodes((nds) => applyNodeChanges(changes, nds))
   }
 
   const onEdgesChange = (changes: EdgeChange[]) => {
-    setEdges((eds) => {
-      return applyEdgeChanges(changes, eds)
-    })
+    for (const change of changes) {
+      if (change.type === 'remove') delete app.agent.edges[change.id]
+    }
+    console.log("Edges changed:", app.agent.edges)
+
+    setEdges((eds) => applyEdgeChanges(changes, eds))
   }
 
   const onConnect = (c: Connection) => {
+    // console.log("Connect:", c)
 
     const workers = app.agent.workers[c.source]
-    const handle = workers.handlers[c.sourceHandle]
+    const handle = workers.handles[c.sourceHandle]
+
 
     if (handle.type === "execute") {
       c = { ...c, type: 'executeEdge', animated: true } as any
     }
 
     setEdges((eds) => {
-      return addEdge(c, eds)
+      const added = addEdge(c, eds)
+      for (const edge of added) {
+        app.agent.edges[edge.id] = edge
+      }
+      console.log("Added edge:", app.agent.edges)
+      return added
     })
   }
 
@@ -74,6 +117,8 @@ function DnDFlow() {
     if (!factory) return
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY, })
     const worker = factory.create(app.agent)
+    worker.config.x = position.x
+    worker.config.y = position.y
 
     const node = {
       id: worker.config.id,
@@ -86,7 +131,6 @@ function DnDFlow() {
   }, [screenToFlowPosition])
 
 
-
   const onDelete = useCallback(({ nodes }: { nodes: Node[]; edges: Edge[] }): void => {
     if (nodes && nodes.length > 0) {
       for (const node of nodes) {
@@ -96,7 +140,7 @@ function DnDFlow() {
 
   }, [])
 
-  return <div style={{ height: '100%' }}>
+  return <div className='w-full h-full'>
     <ReactFlow
       nodes={nodes}
       edges={edges}
@@ -106,7 +150,7 @@ function DnDFlow() {
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDelete={onDelete}
-      className='bg-sky-50'
+      className='!bg-sky-50'
       nodeTypes={nodeTypes}
       edgeTypes={{ executeEdge: ButtonEdge }}
     >
@@ -116,22 +160,45 @@ function DnDFlow() {
   </div>
 }
 
-export function FlowDesigner() {
 
-  function onSave() {
-    toast("The flow was saved", {
-      description: "Not Implemented!",
-      action: {
-        label: "Ok",
-        onClick: () => console.log("Ok"),
-      },
-    })
-  }
+export function FlowDesigner({ id }: { id?: string }) {
+
+  const isLoading = useRef(false)
+  const [agent, setAgent] = useState<Agent>(null)
+
+  useEffect(() => {
+    console.log("Loading agent:", id)
+    if (isLoading.current) return
+    isLoading.current = true
+    if (id == "new") {
+      app.agent = buildAgent({
+        title: "New Agent",
+      })
+      setAgent(app.agent)
+    } else {
+      agents.loadAgent(id as any).then((a) => {
+        console.log("Agent loaded:", a)
+        app.agent = a
+        setAgent(a)
+      })
+    }
+  }, [])
+
+
+
+  if (!agent) return <div className='size-full p-4'>
+    <div className="space-y-2">
+      <Skeleton className="h-8 w-full" />
+      <Skeleton className="w-full h-96" />
+    </div>
+  </div>
+
   return <>
-    <Toolbar onSave={onSave} />
+    <Toolbar />
     <ReactFlowProvider>
-      <DnDFlow />
+      <Flow />
       <Toaster />
     </ReactFlowProvider>
   </>
 }
+
