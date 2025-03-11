@@ -16,17 +16,27 @@ import { useSupabase } from './use-supabase'
 
 export type SourceConfig = {
   id: string
-  source_id: string
-  enabled: boolean
+  source: string
+  enabled: number
   url?: string
+  sitemap?: string
+  subdomain?: string
+  map?: string
   prompt?: string
+  bot_log?: string
+  max_links?: number
+  crawl_depth?: number
+  max_total_links?: number
+  include_external_links?: number
+  extract_main_content?: number
   chunk_size?: number
   chunk_overlap?: number
   max_token_limit?: number
-  include_urls?: boolean
-  extract_media_content?: boolean
+  include_urls?: number
+  extract_media_content?: number
   exclude_urls?: string[]
-  retrieve_links?: boolean
+  retrieve_links?: number
+  type?: string
 }
 
 export function useSourceConfig() {
@@ -38,9 +48,9 @@ export function useSourceConfig() {
     try {
       setLoading(true)
       const { data, error } = await supabase
-        .from('source_config')
+        .from('source_configs')
         .select('*')
-        .eq('source_id', sourceId)
+        .eq('source', sourceId)
         .single()
 
       if (error && error.code !== 'PGRST116') throw error // PGRST116 is "no rows returned"
@@ -53,42 +63,66 @@ export function useSourceConfig() {
     }
   }
 
-  const updateSourceConfig = async (config: Partial<SourceConfig> & { source_id: string }) => {
+  const updateSourceConfig = async (config: Partial<SourceConfig> & { source: string }) => {
     try {
       setLoading(true)
+      console.log('Starting updateSourceConfig with config:', config);
       
       // Check if config exists
-      const { data: existingConfig } = await supabase
-        .from('source_config')
+      console.log('Checking if config exists for source:', config.source);
+      const { data: existingConfig, error: checkError } = await supabase
+        .from('source_configs')
         .select('id')
-        .eq('source_id', config.source_id)
+        .eq('source', config.source)
         .single()
+
+      if (checkError) {
+        console.log('Error checking existing config:', checkError);
+      }
+      
+      console.log('Existing config check result:', existingConfig);
       
       let result;
       
       if (existingConfig) {
-        // Update existing config
+        console.log('Updating existing config for source:', config.source);
         const { data, error } = await supabase
-          .from('source_config')
+          .from('source_configs')
           .update(config)
-          .eq('source_id', config.source_id)
+          .eq('source', config.source)
           .select()
         
-        if (error) throw error
+        if (error) {
+          console.error('Error updating config:', error);
+          throw error;
+        }
+        console.log('Update response:', data);
         result = data?.[0]
       } else {
-        // Insert new config
+        console.log('Inserting new config:', config);
         const { data, error } = await supabase
-          .from('source_config')
+          .from('source_configs')
           .insert([config])
           .select()
         
-        if (error) throw error
+        if (error) {
+          console.error('Error inserting config:', error);
+          throw error;
+        }
+        console.log('Insert response:', data);
         result = data?.[0]
       }
       
+      console.log('Final result:', result);
       return result as SourceConfig
     } catch (err) {
+      console.error('Error in updateSourceConfig:', err);
+      if (err instanceof Error) {
+        console.error('Error details:', {
+          message: err.message,
+          stack: err.stack
+        });
+      }
       setError(err instanceof Error ? err : new Error(String(err)))
       return null
     } finally {

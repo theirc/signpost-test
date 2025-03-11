@@ -1,19 +1,22 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import React, { useState } from "react"
 import { FilesModal } from "../components/old_forms/files-modal"
-import { LiveDataModal, liveDataConfigs } from "../components/old_forms/live-data-modal"
+import { LiveDataModal } from "../components/old_forms/live-data-modal"
 import { SourcesTable } from "@/components/sources-table"
-import { Loader2, RefreshCcw } from "lucide-react"
+import { Loader2, RefreshCcw, MoreVertical } from "lucide-react"
 import { useSources } from "@/hooks/use-sources"
 import { useSourceDisplay } from "@/hooks/use-source-display"
+import { useSourceConfig } from "@/hooks/use-source-config"
 
 export default function Sources() {
   const { sources, loading: sourcesLoading, fetchSources, deleteSource } = useSources()
   const { sourcesDisplay, setSourcesDisplay } = useSourceDisplay(sources, sourcesLoading)
+  const { getConfigForSource } = useSourceConfig()
   const [loading, setLoading] = useState(false)
-  const [previewContent, setPreviewContent] = React.useState<{ name: string; content: string } | null>(null)
+  const [previewContent, setPreviewContent] = React.useState<{ name: string; content: string; type?: 'content' | 'config' } | null>(null)
   const [filesModalOpen, setFilesModalOpen] = React.useState(false)
   const [liveDataModalOpen, setLiveDataModalOpen] = React.useState(false)
 
@@ -37,26 +40,66 @@ export default function Sources() {
     }
   }
 
-  const handlePreview = (source: { id: string; name: string; content: string; tags?: string[] }) => {
-    // Check if this is a live data source
+  const handleViewContent = async (source: { id: string; name: string; content: string; tags?: string[] }) => {
+    setPreviewContent({
+      name: `${source.name} - Content`,
+      content: source.content,
+      type: 'content'
+    })
+  }
+
+  const handleViewConfig = async (source: { id: string; name: string; content: string; tags?: string[] }) => {
+    const config = await getConfigForSource(source.id)
+    setPreviewContent({
+      name: `${source.name} - Configuration`,
+      content: config ? JSON.stringify(config, null, 2) : 'No configuration found',
+      type: 'config'
+    })
+  }
+
+  // Custom action renderer for the SourcesTable
+  const renderActions = (source: { id: string; name: string; content: string; tags?: string[] }) => {
     const isLiveData = source.tags?.includes('Live Data')
-    if (isLiveData) {
-      const config = liveDataConfigs.find(c => c.sourceId === source.id)
-      setPreviewContent({
-        name: source.name,
-        content: config ? JSON.stringify(config, null, 2) : 'No configuration found'
-      })
-    } else {
-      setPreviewContent({
-        name: source.name,
-        content: source.content
-      })
-    }
+    
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => handleViewContent(source)}>
+            View Content
+          </DropdownMenuItem>
+          {isLiveData && (
+            <DropdownMenuItem onClick={() => handleViewConfig(source)}>
+              View Config
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => handleDelete(source.id)}
+            className="text-red-600"
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
   }
 
   // Update sources when files modal closes
   const handleFilesModalOpenChange = (open: boolean) => {
     setFilesModalOpen(open)
+  }
+
+  // Handle live data modal close
+  const handleLiveDataModalOpenChange = (open: boolean) => {
+    setLiveDataModalOpen(open)
+    if (!open) {
+      // Refresh sources when modal closes
+      fetchSources()
+    }
   }
 
   return (
@@ -86,8 +129,7 @@ export default function Sources() {
           sources={sourcesDisplay}
           showCheckboxes={false}
           showActions={true}
-          onPreview={handlePreview}
-          onDelete={handleDelete}
+          renderActions={renderActions}
         />
       )}
 
@@ -96,6 +138,9 @@ export default function Sources() {
         <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{previewContent?.name}</DialogTitle>
+            <DialogDescription>
+              {previewContent?.type === 'config' ? 'Source configuration details' : 'Source content'}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 mt-4 min-h-0">
             <div className="bg-muted p-4 rounded-md h-full overflow-y-auto">
@@ -117,8 +162,7 @@ export default function Sources() {
 
       <LiveDataModal
         open={liveDataModalOpen}
-        onOpenChange={setLiveDataModalOpen}
-        onSourcesUpdate={setSourcesDisplay}
+        onOpenChange={handleLiveDataModalOpenChange}
       />
     </div>
   )

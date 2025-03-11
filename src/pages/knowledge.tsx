@@ -145,15 +145,36 @@ export function CollectionsManagement() {
         // Process in batches to avoid UI blocking
         for (let i = 0; i < sources.length; i++) {
           const source = sources[i];
-          const sourceTags = await getTagsForSource(source.id);
+          
+          // Parse tags from the database format
+          let tags: string[] = [];
+          if (source.tags) {
+            if (typeof source.tags === 'string') {
+              // Handle PostgreSQL array format: '{tag1,tag2}' or '["tag1","tag2"]'
+              try {
+                // First try JSON parse for ["tag1","tag2"] format
+                tags = JSON.parse(source.tags);
+              } catch {
+                // If that fails, try PostgreSQL {tag1,tag2} format
+                tags = source.tags
+                  .replace('{', '')
+                  .replace('}', '')
+                  .split(',')
+                  .map(tag => tag.trim())
+                  .filter(tag => tag.length > 0);
+              }
+            } else if (Array.isArray(source.tags)) {
+              tags = source.tags;
+            }
+          }
           
           displaySources.push({
             id: source.id,
             name: source.name,
-            type: source.type_id,
+            type: source.type,
             lastUpdated: source.last_updated || source.created_at,
             content: source.content,
-            tags: sourceTags.map((tag: any) => tag.name)
+            tags: tags
           });
         }
         
@@ -466,7 +487,7 @@ export function CollectionsManagement() {
           setIsEditModalOpen(open);
         }
       }}>
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingCollection ? `Edit Collection: ${editingCollection.name}` : 'Create New Collection'}
@@ -475,33 +496,35 @@ export function CollectionsManagement() {
               {editingCollection ? "Modify the collection name and select sources to include." : "Create a new collection by adding a name and selecting sources."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="collection-name">Name</Label>
-              <Input
-                id="collection-name"
-                value={newCollectionName}
-                onChange={(e) => setNewCollectionName(e.target.value)}
-                placeholder="Enter collection name"
-              />
-            </div>
-            {sourcesLoading ? (
-              <div className="flex justify-center items-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex-1 overflow-y-auto py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="collection-name">Name</Label>
+                <Input
+                  id="collection-name"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  placeholder="Enter collection name"
+                />
               </div>
-            ) : (
-              <SourcesTable 
-                sources={sourcesDisplay}
-                selectedSources={selectedSources}
-                onToggleSelect={handleToggleSelect}
-                onSelectAll={handleSelectAll}
-                showCheckboxes={true}
-                showActions={false}
-                showAddButton={false}
-              />
-            )}
+              {sourcesLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <SourcesTable 
+                  sources={sourcesDisplay}
+                  selectedSources={selectedSources}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  showCheckboxes={true}
+                  showActions={false}
+                  showAddButton={false}
+                />
+              )}
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={resetEditState}>
               Cancel
             </Button>

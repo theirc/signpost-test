@@ -25,6 +25,7 @@ interface SourcesTableProps {
   showCheckboxes?: boolean
   showActions?: boolean
   showAddButton?: boolean
+  renderActions?: (source: Source) => React.ReactNode
 }
 
 export function SourcesTable({
@@ -38,7 +39,8 @@ export function SourcesTable({
   onConnectLiveData,
   showCheckboxes = false,
   showActions = false,
-  showAddButton = false
+  showAddButton = false,
+  renderActions
 }: SourcesTableProps) {
   const [sortConfig, setSortConfig] = useState<{key: string, direction: 'asc' | 'desc'}>({
     key: 'lastUpdated',
@@ -221,7 +223,7 @@ export function SourcesTable({
                 </div>
               </TableHead>
               <TableHead>Tags</TableHead>
-              {(onPreview || showActions) && <TableHead>Actions</TableHead>}
+              {(showActions || renderActions) && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -260,29 +262,33 @@ export function SourcesTable({
                     })}
                   </div>
                 </TableCell>
-                {(onPreview || showActions) && (
+                {(showActions || renderActions) && (
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {onPreview && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onPreview(source)}
-                        >
-                          View Content
-                        </Button>
-                      )}
-                      {onDelete && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => onDelete(source.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                        >
-                          Delete
-                        </Button>
-                      )}
-                    </div>
+                    {renderActions ? (
+                      renderActions(source)
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        {onPreview && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onPreview(source)}
+                          >
+                            View Content
+                          </Button>
+                        )}
+                        {onDelete && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => onDelete(source.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-100"
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </TableCell>
                 )}
               </TableRow>
