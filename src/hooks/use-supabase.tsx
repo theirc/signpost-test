@@ -10,13 +10,16 @@
  */
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// NOTE: Move these to environment variables when we have a production environment
-const supabaseUrl = 'https://jtystutuijtkbemrnayl.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0eXN0dXR1aWp0a2JlbXJuYXlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkyODQ2ODAsImV4cCI6MjA1NDg2MDY4MH0.SRxEN0K4YTe-fjeTK_p8G2v6aT7ON0nv7sCaneoWjNc'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Create a truly singleton client at the module level
 // This ensures only one client exists across the entire application
 let supabaseClient: SupabaseClient;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and Anon Key must be provided in environment variables.');
+}
 
 try {
   supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
