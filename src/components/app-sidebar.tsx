@@ -1,7 +1,7 @@
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
+import { Bot,MessagesSquare, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
 
 export function AppSidebar() {
   // This is sample data.
@@ -21,7 +21,7 @@ export function AppSidebar() {
       {
         title: "Playground",
         url: "chat",
-        icon: Bot,
+        icon: MessagesSquare,
         isLink: true,
       },
       {
