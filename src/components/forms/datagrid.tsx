@@ -75,8 +75,8 @@ export function Datagrid<T = object>(props: Props<T>) {
   }, [])
 
   if (!onLoad) {
-    if (model.supabaseQuery) {
-      const sbm: SupabaseQueryBuilder = model.supabaseQuery
+    if (model.data) {
+      const sbm: SupabaseQueryBuilder = model.data as any
       onLoad = async () => {
         const { data, count } = await sbm.select()
         return data as any[]

@@ -1,17 +1,27 @@
 
+declare global {
+  interface TextWorker extends AIWorker {
+    fields: {
+      output: NodeIO
+    }
+  }
+}
+
 function create(agent: Agent) {
 
-  const worker = agent.addWorker({ type: "text" })
-
-  worker.addHandlers([
-    { type: "string", direction: "output", title: "Output", persistent: true, name: "output" },
-  ])
-
-  return worker
+  return agent.initializeWorker(
+    { type: "text" },
+    [
+      // { type: "any", direction: "input", title: "Condition", name: "condition" },
+      { type: "string", direction: "output", title: "Output", name: "output", persistent: true },
+    ],
+    text
+  )
 
 }
 
 async function execute(worker: AIWorker) {
+
 
 }
 

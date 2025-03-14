@@ -15,8 +15,10 @@ const model: SupabaseModel<"workers"> = {
     x: { title: "X" },
     y: { title: "Y" },
     agent: { title: "Agent" },
+    parameters: { title: "Parameters" },
   },
 }
 
-export const workers = createSupabaseModel(model, supabase.from("workers"))
+export const workers = createSupabaseModel(model, supabase.from("workers"), "workers")
+
 
