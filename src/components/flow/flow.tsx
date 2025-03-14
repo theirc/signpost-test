@@ -8,39 +8,48 @@ import { workerRegistry } from '@/lib/agents/registry'
 import { ButtonEdge } from './edges'
 import { RequestNode } from './nodes/input'
 import { SchemaNode } from './nodes/schema'
-import { SelecthNode } from './nodes/select'
 import { ResponseNode } from './nodes/response'
-import { ConditionNode } from './nodes/condition'
+// import { ConditionNode } from './nodes/condition'
 import { TextNode } from './nodes/text'
 import { AINode } from './nodes/ai'
-import { SpeechToText } from './nodes/stt'
-import { BackgroundNode } from './nodes/backgroundstart'
+// import { SpeechToText } from './nodes/stt'
+// import { BackgroundNode } from './nodes/backgroundstart'
 import { Skeleton } from '../ui/skeleton'
 import { agents } from '@/lib/data'
 import { buildAgent } from '@/lib/agents'
+import { CombineNode } from './nodes/combine'
+import { display } from '@/lib/agents/workers/display'
+import { DisplayNode } from './nodes/diisplay'
+import { MockNode } from './nodes/mock'
+import { useForceUpdate } from '@/lib/utils'
 
 const nodeTypes = {
   request: RequestNode,
   schema: SchemaNode,
-  select: SelecthNode,
   response: ResponseNode,
-  condition: ConditionNode,
+  // condition: ConditionNode,
   text: TextNode,
   ai: AINode,
-  stt: SpeechToText,
-  background: BackgroundNode,
+  // stt: SpeechToText,
+  // background: BackgroundNode,
+  combine: CombineNode,
+  display: DisplayNode,
+  mock: MockNode,
 }
 
 function Flow() {
 
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
-  const { screenToFlowPosition } = useReactFlow()
+  const counter = useRef(0)
+  const { screenToFlowPosition, updateNode } = useReactFlow()
+  const { agent } = app
+  const update = useForceUpdate()
 
   useEffect(() => {
     const initialNodes: Node[] = []
-    for (const key in app.agent.workers) {
-      const w = app.agent.workers[key]
+    for (const key in agent.workers) {
+      const w = agent.workers[key]
       initialNodes.push({
         id: w.config.id,
         data: w.config,
@@ -50,14 +59,33 @@ function Flow() {
     }
     setNodes(initialNodes)
     const initialEdges: Edge[] = []
-    for (const key in app.agent.edges) {
-      const e = app.agent.edges[key]
+    for (const key in agent.edges) {
+      const e = agent.edges[key]
       initialEdges.push({ id: key, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle })
     }
     setEdges(initialEdges)
 
   }, [])
 
+
+  agent.update = () => {
+    if (agent.currentWorker) {
+      counter.current++
+      setNodes((nds) =>
+        nds.map((node) => {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              label: counter.current.toString(),
+            },
+          }
+        }),
+      )
+      console.log(`Executing Worker: '${agent.currentWorker.config.type}' `, agent.currentWorker)
+    }
+    update()
+  }
 
 
   const onNodesChange = (changes: NodeChange[]) => {
@@ -76,7 +104,7 @@ function Flow() {
     for (const change of changes) {
       if (change.type === 'remove') delete app.agent.edges[change.id]
     }
-    console.log("Edges changed:", app.agent.edges)
+    // console.log("Edges changed:", app.agent.edges)
 
     setEdges((eds) => applyEdgeChanges(changes, eds))
   }
@@ -97,7 +125,7 @@ function Flow() {
       for (const edge of added) {
         app.agent.edges[edge.id] = edge
       }
-      console.log("Added edge:", app.agent.edges)
+      // console.log("Added edge:", app.agent.edges)
       return added
     })
   }
@@ -111,7 +139,21 @@ function Flow() {
     event.preventDefault()
     const type = event.dataTransfer.getData("nodeType") as WorkerTypes
     if (!type) return
-    if (type == "request" && app.agent.hasInput()) return
+
+
+    if (type == "request" && app.agent.hasInput()) {
+      toast("Only one Input is allowed.", {
+        action: { label: "Ok", onClick: null, },
+      })
+      return
+    }
+
+    if (type == "response" && app.agent.hasResponse()) {
+      toast("Only one Response is allowed.", {
+        action: { label: "Ok", onClick: null, },
+      })
+      return
+    }
 
     const factory = workerRegistry[type] as WorkerRegistryItem
     if (!factory) return
@@ -153,6 +195,7 @@ function Flow() {
       className='!bg-sky-50'
       nodeTypes={nodeTypes}
       edgeTypes={{ executeEdge: ButtonEdge }}
+      fitView
     >
       <Background />
       <Controls />

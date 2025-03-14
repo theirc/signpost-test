@@ -11,6 +11,11 @@ export function useForceUpdate() {
   return forceUpdate
 }
 
+export function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+
 // export function makeReadeableId(len = 8): string {
 //   let text = ""
 //   const possible = "BCDFGHJKLMNPQRSTVWXYZ"

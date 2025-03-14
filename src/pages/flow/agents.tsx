@@ -16,7 +16,7 @@ export function AgentList() {
       </Link>
     </div>
     <div className="flex-grow">
-      <Datagrid model={agents.model} editPath="agent" />
+      <Datagrid model={agents} editPath="agent" />
     </div>
   </div>
 

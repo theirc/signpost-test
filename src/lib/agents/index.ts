@@ -5,7 +5,20 @@ declare global {
   type LiteralUnion<KnownValues extends string> = (string & {}) | KnownValues
   type Agent = ReturnType<typeof buildAgent>
   type EdgeConnections = { [index: string]: { source: string, target: string, sourceHandle: string, targetHandle: string } }
+
+  interface AgentParameters {
+    debug?: boolean
+    input: any
+    output?: any
+    // update: (p: AgentParameters) => void
+    agent?: Agent
+    error?: string
+  }
 }
+
+
+
+const update = (p: AgentParameters) => { }
 
 export function buildAgent(config: AgentConfig) {
 
@@ -21,11 +34,64 @@ export function buildAgent(config: AgentConfig) {
     edges,
     workers,
 
+    currentWorker: null as AIWorker,
+    update() {
+      //Used to update the UI in front end
+    },
+
+    getResponseWorker() {
+      for (const key in workers) {
+        if (workers[key].config.type === "response") return workers[key]
+      }
+      return null
+    },
+
     hasInput() {
       for (const key in workers) {
         if (workers[key].config.type === "request") return true
       }
       return false
+    },
+
+    hasResponse() {
+      return agent.getResponseWorker() !== null
+    },
+
+    reset() {
+      for (const key in workers) {
+        const w = workers[key]
+        for (const key in w.handles) {
+          const h = w.handles[key]
+          if (h.persistent) continue
+          h.value = undefined
+        }
+      }
+    },
+
+    async execute(p: AgentParameters) {
+      agent.reset()
+      p.input ||= {}
+      p.output ||= {}
+      p.input ||= {}
+      p.output ||= {}
+      // p.update = p.update || update
+      p.agent = agent
+      console.log("Executing agent...")
+      const worker = agent.getResponseWorker()
+      if (!worker) return
+      await worker.execute(p)
+      agent.currentWorker = null
+      agent.update()
+    },
+
+    initializeWorker(config: WorkerConfig, handlers: NodeIO[], registry: WorkerRegistryItem) {
+      const worker = agent.addWorker(config)
+      worker.registry = registry
+      for (const h of handlers) {
+        h.system = true
+      }
+      worker.addHandlers(handlers)
+      return worker
     },
 
     addWorker(w: WorkerConfig): AIWorker {

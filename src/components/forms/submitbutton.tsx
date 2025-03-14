@@ -1,5 +1,8 @@
 import { Button, ButtonProps } from "../ui/button"
 
-export function SubmitButton({ submit, children = "Submit", ...props }: ButtonProps & { submit?: any }) {
-  return <Button {...props} onClick={submit}>{children}</Button>
+export function SubmitButton({ children = "Submit", ...props }: ButtonProps) {
+  return <Button {...props} >{children}</Button>
+}
+export function DeleteButton({ children = "Delete", ...props }: ButtonProps) {
+  return <Button className="bg-rose-500" {...props} >{children}</Button>
 }

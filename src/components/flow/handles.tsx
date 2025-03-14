@@ -1,82 +1,23 @@
 import { app } from "@/lib/app"
-import { cn } from "@/lib/utils"
-import { Connection, Handle, HandleProps, HandleType, Position, useNodeConnections } from "@xyflow/react"
-import { Binary, CircleHelp, Hash, Type, MessageCircleMore, Headphones, Image, Video } from "lucide-react"
-import React, { memo, useRef } from "react"
-import isEqual from "lodash/isEqual"
+import { Connection, Handle, HandleProps, Position, useNodeConnections } from "@xyflow/react"
+import { Binary, CircleHelp, Hash, Headphones, Image, MessageCircleMore, Type, Video } from "lucide-react"
+import React, { useContext } from "react"
 import { MemoizedWorker } from "./memoizedworkers"
+import { cn } from "@/lib/utils"
+import { useWorkerContext } from "./hooks"
+import { HanlderIcon } from "./handlericon"
 
-type LabeledHandleProps = HandleProps & React.HTMLAttributes<HTMLDivElement> & { title?: string, handler?: NodeIO }
-
-function getFlexDirection(position: string) {
-  const flexDirection = position === "top" || position === "bottom" ? "flex-col" : "flex-row"
-  switch (position) {
-    case "bottom":
-    case "right":
-      return flexDirection + "-reverse justify-end"
-    default:
-      return flexDirection
-  }
-}
-
-interface WorkerHandleProps extends Partial<LabeledHandleProps> {
-  handler: NodeIO
-}
+type WorkerHandleProps = Partial<HandleProps> & React.HTMLAttributes<HTMLDivElement> & { handler?: NodeIO }
 
 
-function HanlderIcon({ handler }: { handler: NodeIO }) {
-  if (!handler) return null
-  return <>
-    {handler?.type == "string" && <Type size={10} className="mt-[1px]" />}
-    {handler?.type == "number" && <Hash size={10} className="mt-[1px]" />}
-    {handler?.type == "boolean" && <Binary size={10} className="mt-[1px]" />}
-    {handler?.type == "any" && <CircleHelp size={10} className="mt-[1px]" />}
-    {handler?.type == "chat" && <MessageCircleMore size={10} className="mt-[1px]" />}
-    {handler?.type == "audio" && <Headphones size={10} className="mt-[1px]" />}
-    {handler?.type == "image" && <Image size={10} className="mt-[1px]" />}
-    {handler?.type == "video" && <Video size={10} className="mt-[1px]" />}
-  </>
-}
-
-export function WorkerHandle(props: WorkerHandleProps) {
-  const { handler } = props
-  if (!handler) return null
-  const position = handler.direction == "output" ? Position.Right : Position.Left
-  const type = handler.direction == "output" ? "source" : "target"
-  if (handler.type == "execute") return <LabeledHandle title={handler.title} position={position} type={type} id={handler.id} handler={handler} className="bg-red-500 border border-red-500" />
-  return <LabeledHandle title={handler.title} position={position} type={type} id={handler.id} handler={handler} />
-}
-
-function LabeledHandle({ title, position, handler, className, ...props }: LabeledHandleProps) {
-
-
-  return <div className={cn("relative flex items-center", getFlexDirection(position),)}>
-    <CustomHandle {...props} position={position} className={cn("size-2 border border-solid bg-white border-stone-400", className)} />
-    {handler.direction == "input" &&
-      <div className="ml-[6px] mt-[1px]">
-        <HanlderIcon handler={handler} />
-      </div>
-    }
-    <div>
-      <label className={`px-[4px]`}>{title}</label>
-    </div>
-    {handler.direction == "output" &&
-      <div className="mr-[6px] mt-[2px]">
-        <HanlderIcon handler={handler} />
-      </div>
-    }
-  </div>
-
-
-}
-
-
-
-function CustomHandle(props: HandleProps) {
-
+export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps) {
   const connections = useNodeConnections()
-  let isConnectable = true
 
+  if (!handler) return null
+
+  let isConnectable = true
+  const type = handler.direction == "output" ? "source" : "target"
+  const position = handler.direction == "output" ? Position.Right : Position.Left
 
   for (let i = 0; i < connections.length; i++) {
     const h = connections[i]
@@ -107,65 +48,74 @@ function CustomHandle(props: HandleProps) {
     const handlet = workert.handles[e.targetHandle]
     if (!handles || !handlet) return false
 
-    if (handles.type === "execute" || handlet.type === "execute") return (handles.type === "execute" && handlet.type === "execute")
-    if (handles.type === "any" || handlet.type === "any") return true
+    if (handlet.type === "unknown") return true
+    if (handles.type === "unknown") return true
+
+    // if (handles.type === "execute" || handlet.type === "execute") return (handles.type === "execute" && handlet.type === "execute")
+    // if (handles.type === "unknown") return true
 
     return handles.type === handlet.type
 
   }
 
+  return <Handle
+    id={handler.id}
+    position={position}
+    type={type}
+    className={className}
+    style={{ width: 8, height: 8, border: 1, borderStyle: "solid", borderColor: "grey", background: "white" }}
+    isConnectable={isConnectable}
+    isValidConnection={isValidConnection}
+  />
 
-
-  return <Handle {...props} isConnectable={isConnectable} isValidConnection={isValidConnection} />
 }
 
-function buildSlots(handlers: NodeIO[]) {
-  const slots: [left: NodeIO, right: NodeIO][] = []
+export function WorkerLabeledHandle({ handler, ...props }: WorkerHandleProps) {
+  const ct = useWorkerContext()
+  if (!handler) return null
 
-  for (const h of handlers) {
-    if (h.direction == "input") {
-      slots.push([h, null])
-    }
+  function onClick() {
+    ct?.onEdit?.(handler)
   }
 
-  for (let i = 0; i < handlers.length; i++) {
-    const h = handlers[i]
-    if (h.direction == "input") continue
+  return <div>
+    <div className="relative flex">
+      <WorkerHandle handler={handler} />
 
-    //find the first right empty slot
-    let found = false
-    for (let j = 0; j < slots.length; j++) {
-      const s = slots[j]
-      if (!s[1]) {
-        slots[j] = [s[0], h]
-        found = true
-        break
-      }
-    }
+      {handler.direction == "output" && <div className="flex-grow" />}
+      {handler.direction == "input" && <div className="ml-[6px]"><HanlderIcon handler={handler} worker={ct?.worker} /></div>}
 
-    if (!found) {
-      slots.push([null, h])
-    }
+      <h3 className={cn(
+        `px-[4px] max-w-32 overflow-x-hidden text-wrap text-ellipsis border-transparent border rounded font-semibold`,
+        { "hover:bg-gray-200 hover:border-gray-400 cursor-pointer": !handler.system })}
+        onClick={onClick}
+      >
+        {handler.title || handler.name}
+      </h3>
 
-  }
-  return slots
-}
-
-function LeftRighWorkerHandle({ handles }: { handles: [NodeIO, NodeIO][] }) {
-
-  return <div className="w-full">
-    {handles.map((h, i) => {
-      const left = h[0]
-      const right = h[1]
-      return <div className="flex" key={i}>
-        <WorkerHandle handler={left} />
-        <div className="flex-grow" />
-        <WorkerHandle handler={right} />
-      </div>
-    })}
+      {handler.direction == "input" && <div className="flex-grow" />}
+      {handler.direction == "output" && <div className="mr-[6px]"><HanlderIcon handler={handler} worker={ct?.worker} /></div>}
+    </div>
+    {props.children}
   </div>
 
 }
+
+
+export function InlineHandles({ children }: { children: [React.ReactNode, React.ReactNode] }) {
+
+  const left = children?.[0]
+  const right = children?.[1]
+
+  return <div className="w-full flex">
+    {left}
+    <div className="flex-grow" />
+    {right}
+  </div>
+
+}
+
+
 
 export function NodeHandlers({ worker }: { worker: AIWorker }) {
   return <MemoizedWorker worker={worker}>
@@ -176,26 +126,11 @@ export function NodeHandlers({ worker }: { worker: AIWorker }) {
 
 function InternalNodeHandlers(props: { worker: AIWorker }) {
   const { worker } = props
-
   const hs = Object.values(worker.handles)
-  const handlers = hs.filter(h => (h.type !== "execute"))
-  const executeHandlers = hs.filter(h => (h.type == "execute"))
-
-  const slots = buildSlots(handlers)
-  const execSlots = buildSlots(executeHandlers)
-
+  const handlers = hs
   return <div className="my-2">
-    <LeftRighWorkerHandle handles={slots} />
-    <div className="h-2" />
-    <LeftRighWorkerHandle handles={execSlots} />
+    {handlers.map((h, i) => <WorkerLabeledHandle key={i} handler={h} />)}
   </div>
-
-  // return <>
-  //   {handlers.map((h) => <WorkerHandle key={h.id} handler={h} />)}
-  //   {leftExec.map((h) => <WorkerHandle key={h.id} handler={h} />)}
-  //   {rightExec.map((h) => <WorkerHandle key={h.id} handler={h} />)}
-  // </>
 }
-
 
 

@@ -10,8 +10,7 @@ import { useWorker } from '../hooks'
 export function NotifyNode(props: NodeProps) {
   const worker = useWorker(props.id)
 
-  return <NodeLayout>
-    <NodeTitle registry={null} worker={worker} />
+  return <NodeLayout worker={worker}>
 
     {/* <ExecuteNextHandle /> */}
     {/* <LabeledHandle id="input" title="Input" type="target" position={Position.Left} /> */}
