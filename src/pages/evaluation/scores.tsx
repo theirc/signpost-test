@@ -1,28 +1,28 @@
-import sampleLogs from "@/components/data/sample-logs"
-import { LogsTable } from "@/components/logs-table"
+import sampleScores from "@/components/data/sample-scores"
+import { ScoresTable } from "@/components/scores-table"
 import React, { useState } from "react"
 
 
-export function BotLogsTable() {
-    const [logs, setLogs] = useState(sampleLogs)
-    const [selectedLogs, setSelectedLogs] = React.useState<string[]>([])
+export function BotScoresTable() {
+    const [scores, setScores] = useState(sampleScores)
+    const [selectedScores, setSelectedScores] = React.useState<string[]>([])
 
     const handleDelete = (id: string) => {
-        const newLogs = logs.filter(source => source.id !== id)
-        setLogs(newLogs)
-        setSelectedLogs(selectedLogs.filter(sourceId => sourceId !== id))
+        const newScores = scores.filter(source => source.id !== id)
+        setScores(newScores)
+        setSelectedScores(selectedScores.filter(sourceId => sourceId !== id))
     }
 
     const handleToggleSelect = (id: string) => {
-        setSelectedLogs(prev =>
+        setSelectedScores(prev =>
             prev.includes(id)
-                ? prev.filter(logId => logId !== id)
+                ? prev.filter(scoreId => scoreId !== id)
                 : [...prev, id]
         )
     }
 
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedLogs(event.target.checked ? logs.map(log => log.id) : [])
+        setSelectedScores(event.target.checked ? scores.map(score => score.id) : [])
     }
 
     return (
@@ -30,21 +30,21 @@ export function BotLogsTable() {
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Bot Logs</h2>
+                        <h2 className="text-3xl font-bold tracking-tight">Scores</h2>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <LogsTable
-                        logs={logs}
-                        selectedLogs={selectedLogs}
+                    <ScoresTable
+                        scores={scores}
+                        selectedScores={selectedScores}
                         onToggleSelect={handleToggleSelect}
                         onSelectAll={handleSelectAll}
                         onDelete={handleDelete}
                     />
                     <div className="flex justify-between items-center">
                         <div className="text-sm text-muted-foreground">
-                            {selectedLogs.length} logs selected
+                            {selectedScores.length} scores selected
                         </div>
                     </div>
                 </div>
