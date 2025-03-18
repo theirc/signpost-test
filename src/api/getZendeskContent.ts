@@ -10,14 +10,11 @@ export interface ZendeskArticle {
 
 // Helper function to strip HTML and clean up text
 function stripHtml(html: string): string {
-  // First create a temporary element to handle HTML parsing
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  // Get the text content, which removes all HTML tags
-  const text = doc.body.textContent || '';
-  // Clean up extra whitespace
-  return text
-    .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
-    .replace(/^\s+|\s+$/g, '')  // Trim whitespace from start and end
+  // Keep links but remove other HTML tags
+  return html
+    .replace(/<a\s+(?:[^>]*?)href="([^"]*)"(?:[^>]*?)>([^<]*)<\/a>/gi, '$2 ($1)')  // Convert links to text with URL
+    .replace(/<[^>]+>/g, '')  // Remove all other HTML tags
+    .replace(/\s+/g, ' ')  // Clean up whitespace
     .trim();
 }
 
