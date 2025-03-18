@@ -8,37 +8,12 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useSources, Source } from "@/hooks/use-sources"
-import { useSourceConfig } from "@/hooks/use-source-config"
+import { useSourceConfig, SourceConfig } from "@/hooks/use-source-config"
+import { zendeskApi } from "@/api/getZendeskContent"
 
 interface LiveDataModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-}
-
-// Base configuration interface matching database schema
-interface SourceConfig {
-  id?: string
-  source_id: string
-  enabled: boolean
-  url?: string
-  prompt?: string
-  chunk_size?: number
-  chunk_overlap?: number
-  max_token_limit?: number
-  include_urls?: boolean
-  extract_media_content?: boolean
-  exclude_urls?: string[]
-  retrieve_links?: boolean
-  sitemap?: string
-  subdomain?: string
-  map?: string
-  bot_log?: string
-  max_links?: number
-  crawl_depth?: number
-  max_total_links?: number
-  include_external_links?: boolean
-  extract_main_content?: boolean
-  type?: string
 }
 
 // Form state interface
@@ -49,6 +24,9 @@ interface FormState {
   url?: string
   sitemap?: string
   subdomain?: string
+  email?: string
+  apiToken?: string
+  locale?: string
   map?: string
   prompt?: string
   bot_log?: string
@@ -70,6 +48,7 @@ const DEFAULT_FORM_STATE: FormState = {
   name: "",
   type: "",
   enabled: true,
+  locale: "en-us",
   max_links: 10,
   crawl_depth: 0,
   max_total_links: 50,
@@ -87,83 +66,161 @@ const DEFAULT_FORM_STATE: FormState = {
 export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
   const supabase = useSupabase()
   const { addSource } = useSources()
-  const { updateSourceConfig } = useSourceConfig()
+  const { updateSourceConfig, createLiveDataElement } = useSourceConfig()
   
   const [form, setForm] = useState<FormState>(DEFAULT_FORM_STATE)
   const [isLoading, setIsLoading] = useState(false)
+  const [progress, setProgress] = useState<string>('')
 
   const resetForm = () => {
     setForm(DEFAULT_FORM_STATE)
+    setProgress('')
   }
 
   const handleSave = async () => {
-    // Check all required fields from Source interface
-    if (!form.name || !form.type) {
-      console.error('Missing required fields')
-      return
-    }
-
-    setIsLoading(true)
     try {
-      // Create the source first with required fields
-      const sourceData: Partial<Source> = {
+      setIsLoading(true)
+      setProgress('')
+
+      // Create source first
+      const source: Partial<Source> = {
         name: form.name,
         type: form.type,
-        content: "Fetching...", // Use placeholder text to indicate content will be populated
-        tags: [form.type, 'Live Data']
+        content: 'Pending content...',  // Required field
+        tags: [form.type, 'Live Data']  // Add both type and Live Data tags
       }
 
-      // Only add url if it exists
-      if (form.url) {
-        sourceData.url = form.url
-      }
+      const savedSource = await addSource(source)
+      if (!savedSource) throw new Error('Failed to create source')
 
-      console.log('sourceData', sourceData);
-      const newSource = await addSource(sourceData)
-      
-      if (!newSource) {
-        throw new Error('Failed to create source')
-      }
-
-      // Prepare the configuration - only include fields that exist in the database schema
-      const sourceConfig = {
-        source: newSource.id,
+      // Prepare config based on source type
+      const config: Partial<SourceConfig> & { source: string } = {
+        source: savedSource.id,
         enabled: form.enabled ? 1 : 0,
-        url: form.url || null,
-        sitemap: form.sitemap || null,
-        subdomain: form.subdomain || null,
-        map: form.map || null,
-        prompt: form.prompt || null,
-        bot_log: form.bot_log || null,
-        max_links: form.max_links || null,
-        crawl_depth: form.crawl_depth || null,
-        max_total_links: form.max_total_links || null,
-        include_external_links: form.include_external_links ? 1 : 0,
-        extract_main_content: form.extract_main_content ? 1 : 0,
         type: form.type
       }
 
-      console.log('About to save source config:', {
-        sourceConfig,
-        newSourceId: newSource.id,
-        formType: form.type,
-        formEnabled: form.enabled
-      });
+      // Add type-specific configuration
+      if (form.type === 'web-scraping') {
+        config.url = form.url
+        config.sitemap = form.sitemap
+        config.max_links = form.max_links
+        config.crawl_depth = form.crawl_depth
+        config.max_total_links = form.max_total_links
+        config.include_external_links = form.include_external_links ? 1 : 0
+        config.extract_main_content = form.extract_main_content ? 1 : 0
+      } else if (form.type === 'zendesk') {
+        config.subdomain = form.subdomain
+        config.api_token = form.apiToken  // Save API token in config
+        
+        // Save the config first
+        const savedConfig = await updateSourceConfig(config)
+        if (!savedConfig) throw new Error('Failed to save source configuration')
+        if (!savedConfig.source) throw new Error('Saved configuration is missing source ID')
 
-      // Save the configuration
-      const savedConfig = await updateSourceConfig(sourceConfig)
-      console.log('Response from updateSourceConfig:', savedConfig);
+        // If we have Zendesk credentials, fetch articles
+        if (form.subdomain && form.email && form.apiToken) {
+          try {
+            console.log('Fetching Zendesk articles with:', {
+              subdomain: form.subdomain,
+              email: form.email,
+              apiToken: '[REDACTED]'
+            });
 
-      if (!savedConfig) {
-        console.error('updateSourceConfig returned null or undefined');
-        throw new Error('Failed to save source configuration')
+            const articles = await zendeskApi.getArticles(
+              form.subdomain,
+              form.email,
+              form.apiToken,
+              form.locale
+            )
+            console.log('Received articles from Zendesk:', {
+              count: articles.length,
+              sample: articles[0] ? {
+                id: articles[0].id,
+                title: articles[0].title,
+                bodyLength: articles[0].body?.length,
+                hasBody: !!articles[0].body
+              } : null
+            });
+            
+            // Store each article as a live data element
+            let successCount = 0;
+            let errorCount = 0;
+            const totalArticles = articles.length;
+            
+            for (const [index, article] of articles.entries()) {
+              if (!article.body) {
+                console.warn('Skipping article with no body:', article.id);
+                continue;
+              }
+
+              try {
+                setProgress(`Importing article ${index + 1}/${totalArticles}: ${article.title}`)
+                console.log('Creating live data element for article:', {
+                  id: article.id,
+                  title: article.title,
+                  bodyLength: article.body.length
+                });
+
+                await createLiveDataElement({
+                  source_config_id: savedConfig.source,
+                  content: article.body,
+                  metadata: {
+                    title: article.title,
+                    article_id: article.id,
+                    url: article.html_url,
+                    locale: article.locale,
+                    updated_at: article.updated_at
+                  },
+                  status: 'active',
+                  version: String(article.id)
+                })
+                successCount++;
+              } catch (error) {
+                console.error('Error creating live data element for article:', {
+                  id: article.id,
+                  error
+                });
+                errorCount++;
+              }
+            }
+
+            setProgress('Finalizing import...')
+
+            // Update source content with summary using direct Supabase update
+            const { error: updateError } = await supabase
+              .from('sources')
+              .update({
+                content: `Imported ${successCount} articles from Zendesk (${errorCount} failed)`
+              })
+              .eq('id', savedSource.id)
+
+            if (updateError) {
+              console.error('Error updating source content:', updateError);
+              throw updateError;
+            }
+
+          } catch (error) {
+            console.error('Error in Zendesk article processing:', error);
+            throw new Error('Failed to fetch Zendesk articles')
+          }
+        }
+      } else if (form.type === 'directus') {
+        config.url = form.url
+      } else if (form.type === 'bot-logs') {
+        config.bot_log = form.bot_log
       }
 
-      // Reset and close
-      resetForm()
+      // Save config if not already saved for Zendesk
+      if (form.type !== 'zendesk') {
+        const savedConfig = await updateSourceConfig(config)
+        if (!savedConfig) throw new Error('Failed to save source configuration')
+      }
+
       onOpenChange(false)
     } catch (error) {
-      console.error('Error saving source:', error)
+      console.error('Error in handleSave:', error)
+      // You might want to show an error toast or message here
     } finally {
       setIsLoading(false)
     }
@@ -271,15 +328,46 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
         )}
 
         {form.type === 'zendesk' && (
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">Subdomain</Label>
-            <Input
-              className="col-span-3"
-              value={form.subdomain || ''}
-              onChange={(e) => updateForm({ subdomain: e.target.value })}
-              placeholder="your-company"
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Subdomain</Label>
+              <Input
+                className="col-span-3"
+                value={form.subdomain || ''}
+                onChange={(e) => updateForm({ subdomain: e.target.value })}
+                placeholder="your-company"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Email</Label>
+              <Input
+                className="col-span-3"
+                type="email"
+                value={form.email || ''}
+                onChange={(e) => updateForm({ email: e.target.value })}
+                placeholder="your-email@company.com"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">API Token</Label>
+              <Input
+                className="col-span-3"
+                type="password"
+                value={form.apiToken || ''}
+                onChange={(e) => updateForm({ apiToken: e.target.value })}
+                placeholder="Enter your Zendesk API token"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Locale</Label>
+              <Input
+                className="col-span-3"
+                value={form.locale || ''}
+                onChange={(e) => updateForm({ locale: e.target.value })}
+                placeholder="e.g. en-us, fr, de, ja"
+              />
+            </div>
+          </>
         )}
 
         {form.type === 'directus' && (
@@ -395,6 +483,14 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
           </DialogDescription>
         </DialogHeader>
 
+        {isLoading && progress && (
+          <div className="h-8 bg-secondary/50 flex items-center justify-center border-y">
+            <div className="text-sm text-muted-foreground">
+              {progress}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="source-type" className="text-right">Source Type</Label>
@@ -417,13 +513,18 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSave}
-            disabled={isLoading || !form.type || !form.name}
-          >
-            {isLoading ? 'Saving...' : 'Save Configuration'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="w-24" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={isLoading || !form.type || !form.name}
+              className="w-32"
+            >
+              {isLoading ? 'Saving...' : 'Save Configuration'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

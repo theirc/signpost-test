@@ -37,6 +37,19 @@ export type SourceConfig = {
   exclude_urls?: string[]
   retrieve_links?: number
   type?: string
+  api_token?: string
+}
+
+export type LiveDataElement = {
+  id?: string
+  source_config_id: string
+  content: string
+  version?: string
+  fetch_timestamp?: string
+  status?: string
+  metadata?: any
+  last_updated?: string
+  created_at?: string
 }
 
 export function useSourceConfig() {
@@ -90,7 +103,7 @@ export function useSourceConfig() {
           .from('source_configs')
           .update(config)
           .eq('source', config.source)
-          .select()
+          .select('*')
         
         if (error) {
           console.error('Error updating config:', error);
@@ -103,7 +116,7 @@ export function useSourceConfig() {
         const { data, error } = await supabase
           .from('source_configs')
           .insert([config])
-          .select()
+          .select('*')
         
         if (error) {
           console.error('Error inserting config:', error);
@@ -130,9 +143,67 @@ export function useSourceConfig() {
     }
   }
 
+  const createLiveDataElement = async (element: Partial<LiveDataElement>) => {
+    try {
+      setLoading(true)
+      console.log('Creating live data element:', element);
+      
+      if (!element.source_config_id || !element.content) {
+        throw new Error('source_config_id and content are required for live data elements');
+      }
+      
+      const { data, error } = await supabase
+        .from('live_data_elements')
+        .insert([{
+          source_config_id: element.source_config_id,
+          content: element.content,
+          version: element.version || 1,
+          status: element.status || 'active',
+          metadata: element.metadata || {},
+          fetch_timestamp: element.fetch_timestamp || new Date().toISOString()
+        }])
+        .select()
+      
+      if (error) {
+        console.error('Error creating live data element:', error);
+        throw error;
+      }
+      
+      console.log('Created live data element:', data);
+      return data?.[0] as LiveDataElement
+    } catch (err) {
+      console.error('Error in createLiveDataElement:', err);
+      setError(err instanceof Error ? err : new Error(String(err)))
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getLiveDataElements = async (sourceConfigId: string) => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('live_data_elements')
+        .select('*')
+        .eq('source_config_id', sourceConfigId)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data as LiveDataElement[]
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)))
+      return []
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return { 
     getConfigForSource,
     updateSourceConfig,
+    createLiveDataElement,
+    getLiveDataElements,
     loading, 
     error 
   }

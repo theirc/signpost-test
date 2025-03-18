@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import React, { useEffect, useState, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SourcesTable, type Source as SourceDisplay } from "@/components/sources-table"
 import { useCollections, Collection } from "@/hooks/use-collections"
@@ -14,7 +14,7 @@ import { useSupabase } from "@/hooks/use-supabase"
 
 export function CollectionsManagement() {
   // Supabase hooks
-  const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection } = useCollections()
+  const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection, generateCollectionVector } = useCollections()
   const { 
     getSourcesForCollection, 
     addSourceToCollection, 
@@ -399,6 +399,29 @@ export function CollectionsManagement() {
     handleEditCollection(collection);
   };
 
+  const handleGenerateVector = async (collection: Collection) => {
+    if (!collectionSources[collection.id]?.length) {
+      console.log('No sources in collection to process')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const success = await generateCollectionVector(
+        collection.id, 
+        collectionSources[collection.id]
+      )
+
+      if (success) {
+        console.log('Vector generated successfully')
+      }
+    } catch (error) {
+      console.error('Error generating vector:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto py-6 space-y-8">
       <div className="flex justify-between items-center">
@@ -466,14 +489,32 @@ export function CollectionsManagement() {
                 <div className="text-sm text-muted-foreground">No sources</div>
               )}
               
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 w-full"
-                onClick={() => viewCollectionDetails(collection)}
-              >
-                View Details
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 flex-1"
+                  onClick={() => viewCollectionDetails(collection)}
+                >
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 flex-1 min-w-0"
+                  onClick={() => handleGenerateVector(collection)}
+                  disabled={!collectionSources[collection.id]?.length || loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Database className="h-4 w-4 mr-2" />
+                  )}
+                  <span className="truncate">
+                    Build
+                  </span>
+                </Button>
+              </div>
             </div>
           ))}
         </div>
