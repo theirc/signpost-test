@@ -13,54 +13,56 @@ import { format } from "date-fns"
 import { utils, writeFile } from "xlsx"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 
-
-export type Log = {
+export type Score = {
     id: string
     bot: string
-    detectedLanguage: string
-    detectedLocation: string
-    searchTerm: string
-    category: string
-    userMessage: string
+    message: string
     answer: string
+    reporter: string
+    score: string
+    question: string
+    category: string
     date_created: string
 }
 
-interface LogsTableProps {
-    logs: Log[]
-    selectedLogs?: string[]
+interface ScoresTableProps {
+    scores: Score[]
+    selectedScores?: string[]
     onToggleSelect?: (id: string) => void
     onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
-    onPreview?: (source: Log) => void
+    onPreview?: (source: Score) => void
     onDelete?: (id: string) => void
     pageSize?: number
 }
 
 const defaultPageSize = 10
 
-export function LogsTable({
-    logs,
-    selectedLogs = [],
+export function ScoresTable({
+    scores,
+    selectedScores = [],
     onToggleSelect,
     onSelectAll,
     onPreview,
     onDelete,
     pageSize = defaultPageSize,
-}: LogsTableProps) {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Log; direction: "asc" | "desc" }>({
+}: ScoresTableProps) {
+    const [sortConfig, setSortConfig] = useState<{ key: keyof Score; direction: "asc" | "desc" }>({
         key: "date_created",
         direction: "desc",
     })
     const [searchTerm, setSearchTerm] = useState("")
-    const [botFilter, setBotFilter] = useState<string>("")
-    const [languageFilter, setLanguageFilter] = useState<string>("")
-    const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null } | undefined>(undefined)
+    const [scoreFilter, setScoreFilter] = useState<string>("")
+    const [reporterFilter, setReporterFilter] = useState<string>("")
+    const [dateRange, setDateRange] = useState<
+        { from: Date | null; to: Date | null } | undefined
+    >(undefined)
     const [currentPage, setCurrentPage] = useState(1)
 
-    const uniqueBots = useMemo(() => Array.from(new Set(logs.map((log) => log.bot))), [logs])
-    const uniqueLanguages = useMemo(() => Array.from(new Set(logs.map((log) => log.detectedLanguage))), [logs])
+    const uniqueScores = useMemo(() => Array.from(new Set(scores.map((score) => score.score))), [scores])
 
-    const handleSort = useCallback((key: keyof Log) => {
+    const uniqueReporters = useMemo(() => Array.from(new Set(scores.map((score) => score.reporter))), [scores])
+
+    const handleSort = useCallback((key: keyof Score) => {
         setSortConfig((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc", }))
     }, [setSortConfig])
 
@@ -68,52 +70,51 @@ export function LogsTable({
         setSearchTerm(e.target.value)
     }, [setSearchTerm])
 
-    const handleBotFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        setBotFilter(e.target.value)
-    }, [setBotFilter])
+    const handleScoreFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        setScoreFilter(e.target.value)
+    }, [setScoreFilter])
 
-    const handleLanguageFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        setLanguageFilter(e.target.value)
-    }, [setLanguageFilter])
+    const handleReporterFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+        setReporterFilter(e.target.value)
+    }, [setReporterFilter])
 
-    const filteredAndSortedLogs = useMemo(() => {
+    const filteredAndSortedScores = useMemo(() => {
         const searchTermLower = searchTerm.toLowerCase()
 
-        return logs.filter((log) => {
+        return scores.filter((score) => {
             const matchesSearch =
                 searchTerm === "" ||
-                log.bot.toLowerCase().includes(searchTermLower) ||
-                log.category.toLowerCase().includes(searchTermLower) ||
-                log.detectedLanguage.toLowerCase().includes(searchTermLower) ||
-                log.detectedLocation.toLowerCase().includes(searchTermLower) ||
-                log.searchTerm.toLowerCase().includes(searchTermLower) ||
-                log.userMessage.toLowerCase().includes(searchTermLower) ||
-                log.answer.toLowerCase().includes(searchTermLower)
+                score.bot.toLowerCase().includes(searchTermLower) ||
+                score.message.toLowerCase().includes(searchTermLower) ||
+                score.answer.toLowerCase().includes(searchTermLower) ||
+                score.reporter.toLowerCase().includes(searchTermLower) ||
+                score.score.toLowerCase().includes(searchTermLower) ||
+                score.question.toLowerCase().includes(searchTermLower)
 
-            const matchesBot = botFilter === "" || log.bot === botFilter
-            const matchesLanguage = languageFilter === "" || log.detectedLanguage === languageFilter
+            const matchesScore = scoreFilter === "" || score.score === scoreFilter
+            const matchesReporter = reporterFilter === "" || score.reporter === reporterFilter
             let matchesDateRange = true
 
             if (dateRange?.from && dateRange?.to) {
-                const logDate = new Date(log.date_created)
+                const scoreDate = new Date(score.date_created)
                 const fromDate = new Date(dateRange.from)
                 const toDate = new Date(dateRange.to)
                 fromDate.setHours(0, 0, 0, 0)
                 toDate.setHours(23, 59, 59, 999)
-                matchesDateRange = logDate >= fromDate && logDate <= toDate
+                matchesDateRange = scoreDate >= fromDate && scoreDate <= toDate
             } else if (dateRange?.from) {
-                const logDate = new Date(log.date_created)
+                const scoreDate = new Date(score.date_created)
                 const fromDate = new Date(dateRange.from)
                 fromDate.setHours(0, 0, 0, 0)
-                matchesDateRange = logDate >= fromDate
+                matchesDateRange = scoreDate >= fromDate
             } else if (dateRange?.to) {
-                const logDate = new Date(log.date_created)
+                const scoreDate = new Date(score.date_created)
                 const toDate = new Date(dateRange.to)
                 toDate.setHours(23, 59, 59, 999)
-                matchesDateRange = logDate <= toDate
+                matchesDateRange = scoreDate <= toDate
             }
 
-            return matchesSearch && matchesDateRange && matchesBot && matchesLanguage
+            return matchesSearch && matchesScore && matchesReporter && matchesDateRange
         }).sort((a, b) => {
             const aValue = a[sortConfig.key]
             const bValue = b[sortConfig.key]
@@ -126,35 +127,31 @@ export function LogsTable({
             }
             return 0
         })
-    }, [logs, searchTerm, sortConfig, dateRange, botFilter, languageFilter])
+    }, [scores, searchTerm, scoreFilter, sortConfig, reporterFilter, dateRange])
 
-    const selectedLogsData = useMemo(() =>
-        filteredAndSortedLogs.filter((log) => selectedLogs.includes(log.id)),
-        [filteredAndSortedLogs, selectedLogs])
+    const selectedScoresData = useMemo(() =>
+        filteredAndSortedScores.filter((score) => selectedScores.includes(score.id)),
+        [filteredAndSortedScores, selectedScores])
 
     const handleExportPdf = useCallback(() => {
         const doc = new jsPDF()
 
         const headers = [
             "Bot",
-            "Category",
-            "Detected Language",
-            "Detected Location",
-            "Search Term",
-            "User Message",
+            "Message",
             "Answer",
+            "Reporter",
+            "Score",
             "Date Created",
         ]
 
-        const body = selectedLogsData.map((log) => [
-            log.bot,
-            log.category,
-            log.detectedLanguage,
-            log.detectedLocation,
-            log.searchTerm,
-            log.userMessage,
-            log.answer,
-            format(new Date(log.date_created), "MMM dd, yyyy")
+        const body = selectedScoresData.map((score) => [
+            score.bot,
+            score.message,
+            score.answer,
+            score.reporter,
+            score.score,
+            format(new Date(score.date_created), "MMM dd, yyyy")
         ]);
 
         (doc as any).autoTable({
@@ -162,78 +159,65 @@ export function LogsTable({
             body: body,
         })
 
-        doc.save("ai_bot_logs.pdf")
-    }, [selectedLogsData])
+        doc.save("ai_bot_scores.pdf")
+    }, [selectedScoresData])
 
     const handleExportExcel = useCallback(() => {
-        const headers = [
-            "Bot",
-            "Category",
-            "Detected Language",
-            "Detected Location",
-            "Search Term",
-            "User Message",
-            "Answer",
-            "Date Created"
-        ]
-        const data = selectedLogsData.map((log) => [
-            log.bot,
-            log.category,
-            log.detectedLanguage,
-            log.detectedLocation,
-            log.searchTerm,
-            log.userMessage,
-            log.answer,
-            format(new Date(log.date_created), "MMM dd, yyyy"),
+        const headers = ["Bot", "Message", "Answer", "Reporter", "Score", "Date Created"]
+        const data = selectedScoresData.map((score) => [
+            score.bot,
+            score.message,
+            score.answer,
+            score.reporter,
+            score.score,
+            format(new Date(score.date_created), "MMM dd, yyyy"),
         ])
 
         const worksheet = utils.aoa_to_sheet([headers, ...data])
         const workbook = utils.book_new()
-        utils.book_append_sheet(workbook, worksheet, "Logs")
-        writeFile(workbook, "ai_bot_logs.xlsx")
-    }, [selectedLogsData])
+        utils.book_append_sheet(workbook, worksheet, "Scores")
+        writeFile(workbook, "ai_bot_scores.xlsx")
+    }, [selectedScoresData])
 
     const handleExportJson = useCallback(() => {
-        const json = JSON.stringify(selectedLogsData, null, 2)
+        const json = JSON.stringify(selectedScoresData, null, 2)
         const blob = new Blob([json], { type: "application/json" })
         const link = document.createElement("a")
         link.href = URL.createObjectURL(blob)
-        link.download = "ai_bot_logs.json"
+        link.download = "ai_bot_scores.json"
         link.click()
-    }, [selectedLogsData])
+    }, [selectedScoresData])
 
     const handleExportXml = useCallback(() => {
-        const xml = `<logs>\n${selectedLogsData
+        const xml = `<scores>\n${selectedScoresData
             .map(
-                (log) => `
-    <log>
-        <bot>${log.bot}</bot>
-        <category>${log.category}</category>
-        <detectedLanguage>${log.detectedLanguage}</detectedLanguage>
-        <detectedLocation>${log.detectedLocation}</detectedLocation>
-        <searchTerm>${log.searchTerm}</searchTerm>
-        <userMessage>${log.userMessage}</userMessage>
-        <answer>${log.answer}</answer>
-        <dateCreated>${format(new Date(log.date_created), "yyyy-MM-dd")}</dateCreated>
-    </log>`
+                (score) => `
+    <score>
+        <bot>${score.bot}</bot>
+        <message>${score.message}</message>
+        <answer>${score.answer}</answer>
+        <reporter>${score.reporter}</reporter>
+        <scor>${score.score}</scor>
+        <dateCreated>${format(new Date(score.date_created), "yyyy-MM-dd")}</dateCreated>
+    </score>`
             )
             .join("\n")}
-</logs>`
+</scores>`
 
         const blob = new Blob([xml], { type: "application/xml" })
         const link = document.createElement("a")
         link.href = URL.createObjectURL(blob)
-        link.download = "ai_bot_logs.xml"
+        link.download = "ai_bot_scores.xml"
         link.click()
-    }, [selectedLogsData])
+    }, [selectedScoresData])
 
-    const pageCount = Math.ceil(filteredAndSortedLogs.length / pageSize)
+    const pageCount = Math.ceil(filteredAndSortedScores.length / pageSize)
 
-    const paginatedLogs = useMemo(() => {
+    const paginatedScores = useMemo(() => {
         const startIndex = (currentPage - 1) * pageSize
         const endIndex = startIndex + pageSize
-        return filteredAndSortedLogs.slice(startIndex, endIndex)
-    }, [filteredAndSortedLogs, currentPage, pageSize])
+        return filteredAndSortedScores.slice(startIndex, endIndex)
+    }, [filteredAndSortedScores, currentPage, pageSize])
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page)
@@ -265,33 +249,33 @@ export function LogsTable({
                     <div className="flex-1 relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search logs..."
+                            placeholder="Search scores..."
                             value={searchTerm}
                             onChange={handleSearchTermChange}
                             className="pl-8"
                         />
                     </div>
                     <select
-                        value={botFilter}
-                        onChange={handleBotFilterChange}
+                        value={scoreFilter}
+                        onChange={handleScoreFilterChange}
                         className="px-3 py-2 rounded-md border"
                     >
-                        <option value="">All bots</option>
-                        {uniqueBots.map((bot) => (
-                            <option key={bot} value={bot}>
-                                {bot}
+                        <option value="">All Scores</option>
+                        {uniqueScores.map((score) => (
+                            <option key={score} value={score}>
+                                {score}
                             </option>
                         ))}
                     </select>
                     <select
-                        value={languageFilter}
-                        onChange={handleLanguageFilterChange}
+                        value={reporterFilter}
+                        onChange={handleReporterFilterChange}
                         className="px-3 py-2 rounded-md border"
                     >
-                        <option value="">All languages</option>
-                        {uniqueLanguages.map((language) => (
-                            <option key={language} value={language}>
-                                {language}
+                        <option value="">All Reporters</option>
+                        {uniqueReporters.map((reporter) => (
+                            <option key={reporter} value={reporter}>
+                                {reporter}
                             </option>
                         ))}
                     </select>
@@ -327,8 +311,7 @@ export function LogsTable({
                             />
                         </PopoverContent>
                     </Popover>
-
-                    {!!selectedLogs.length && <Popover>
+                    {!!selectedScores.length && <Popover>
                         <PopoverTrigger asChild>
                             <Button
                                 id="export"
@@ -364,16 +347,10 @@ export function LogsTable({
                             <TableHead className="w-12">
                                 <input
                                     type="checkbox"
-                                    checked={selectedLogs.length === filteredAndSortedLogs.length}
+                                    checked={selectedScores.length === filteredAndSortedScores.length}
                                     onChange={onSelectAll}
                                     className="rounded border-gray-300"
                                 />
-                            </TableHead>
-                            <TableHead>
-                                <div className="flex items-center gap-2">
-                                    Date Created
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
                             </TableHead>
                             <TableHead
                                 className="cursor-pointer hover:bg-muted"
@@ -384,30 +361,55 @@ export function LogsTable({
                                     <ArrowUpDown className="h-4 w-4" />
                                 </div>
                             </TableHead>
-                            <TableHead>Detected Language</TableHead>
-                            <TableHead>User Message</TableHead>
+                            <TableHead>Message</TableHead>
                             <TableHead>Answer</TableHead>
-                            <TableHead>Category</TableHead>
+                            <TableHead
+                                className="cursor-pointer hover:bg-muted"
+                                onClick={() => handleSort("reporter")}
+                            >
+                                <div className="flex items-center gap-2">
+                                    Reporter
+                                    <ArrowUpDown className="h-4 w-4" />
+                                </div>
+                            </TableHead>
+                            <TableHead
+                                className="cursor-pointer hover:bg-muted"
+                                onClick={() => handleSort("score")}
+                            >
+                                <div className="flex items-center gap-2">
+                                    Score
+                                    <ArrowUpDown className="h-4 w-4" />
+                                </div>
+                            </TableHead>
+                            <TableHead
+                                className="cursor-pointer hover:bg-muted"
+                                onClick={() => handleSort("date_created")}
+                            >
+                                <div className="flex items-center gap-2">
+                                    Date Created
+                                    <ArrowUpDown className="h-4 w-4" />
+                                </div>
+                            </TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paginatedLogs.map((log) => (
-                            <TableRow key={log.id}>
+                        {paginatedScores.map((score) => (
+                            <TableRow key={score.id}>
                                 <TableCell>
                                     <input
                                         type="checkbox"
-                                        checked={selectedLogs.includes(log.id)}
-                                        onChange={() => onToggleSelect?.(log.id)}
+                                        checked={selectedScores.includes(score.id)}
+                                        onChange={() => onToggleSelect?.(score.id)}
                                         className="rounded border-gray-300"
                                     />
                                 </TableCell>
-                                <TableCell>{format(new Date(log.date_created), "MMM dd, yyyy")}</TableCell>
-                                <TableCell>{log.bot}</TableCell>
-                                <TableCell>{log.detectedLanguage}</TableCell>
-                                <TableCell>{log.userMessage}</TableCell>
-                                <TableCell>{log.answer}</TableCell>
-                                <TableCell>{log.category}</TableCell>
+                                <TableCell>{score.bot}</TableCell>
+                                <TableCell>{score.message}</TableCell>
+                                <TableCell>{score.answer}</TableCell>
+                                <TableCell>{score.reporter}</TableCell>
+                                <TableCell>{score.score}</TableCell>
+                                <TableCell>{format(new Date(score.date_created), "MMM dd, yyyy")}</TableCell>
                                 <TableCell className="text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

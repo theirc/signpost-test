@@ -6,7 +6,7 @@ import { Separator } from "@radix-ui/react-separator"
 import { BrowserRouter, Route, Routes, useLocation, Link, useNavigate } from "react-router-dom"
 import Chat from "./pages/chat"
 import { CollectionsManagement } from "./pages/knowledge"
-import { BotLogsTable } from "./pages/logs"
+import { BotLogsTable } from "./pages/evaluation/logs.tsx"
 import { BotManagement } from "./pages/bots"
 import Sources from './pages/sources.tsx'
 import { SettingsLayout } from "./pages/settings/layout"
@@ -19,13 +19,15 @@ import { AccessControlSettings } from "./pages/settings/access-control"
 import { Roles } from "./pages/settings/roles"
 import { AgentList } from "./pages/flow/agents.tsx"
 import { Agent } from "./pages/flow/agent.tsx"
+import { BotScoresTable } from "./pages/evaluation/scores.tsx"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
   '/chat': 'Playground',
   '/rag': 'Collections',
   '/sources': 'Data Sources',
-  '/logs': 'Bot Logs',
+  '/logs': 'Logs',
+  '/scores': 'Scores',
   '/bots': 'Bots',
   '/settings/projects': 'Settings / Projects',
   '/settings/team': 'Settings / Team',
@@ -79,6 +81,7 @@ function AppContent() {
             <Route path="/rag" element={<CollectionsManagement />} />
             <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
+            <Route path="/scores" element={<BotScoresTable />} />
             <Route path="/bots" element={<BotManagement />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route path="projects" element={<ProjectsSettings />} />
