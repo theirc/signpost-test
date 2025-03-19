@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import { AudioWaveform, ArrowUp, User, Plus, MessageSquare, StopCircle, Send } from 'lucide-react'
+import { AudioWaveform, ArrowUp, Plus, MessageSquare, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
 import { useMultiState } from '@/hooks/use-multistate'
@@ -63,7 +63,7 @@ export default function Chat () {
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
 
     message ||= "where can i find english classes in athens?"
-    
+
     if (!message && !audio) return
 
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
@@ -375,7 +375,7 @@ function SearchInput(props: {
                 }`}
               >
                 {status === "recording" ? 
-                  <StopCircle className="h-8 w-8 text-white" /> : 
+                  <Circle  /> : 
                   <AudioWaveform className="h-8 w-8 text-gray-800" />
                 }
               </button>
@@ -407,9 +407,6 @@ function SearchInput(props: {
                 Cancel
               </button>
             </div>
-            <div className="text-xs text-center text-gray-500 border-t border-gray-100 py-1 px-3">
-              Signpost Bot is in beta and may produce inaccurate information
-            </div>
           </div>
         </div>
       ) : (
@@ -421,24 +418,24 @@ function SearchInput(props: {
             }}
             className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
           >
-            <div className="flex items-center w-full">
+            <div className="flex items-center w-full p-2">
               <div className="flex-shrink-0 pl-2">
                 <button
                   type="button"
                   onClick={props.openFileDialog}
                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
                 >
-                  <Plus className="h-5 w-5" />
+                  <CirclePlus className="h-6 w-6" />
                 </button>
               </div>
-              <div className="flex-grow px-2 py-2 max-h-48 overflow-y-auto">
+              <div className="flex-grow px-2 py-3 max-h-48 overflow-y-auto">
                 <textarea
                   ref={textareaRef}
                   value={value}
                   onChange={handleSearchChange}
                   onKeyDown={handleKeyDown}
                   placeholder="Type your message here."
-                  className="w-full outline-none resize-none max-h-40 py-1 px-1 text-gray-800"
+                  className="w-full outline-none resize-none py-1 px-1 text-gray-800 min-h-[40px]"
                   rows={1}
                   style={{ overflowY: 'auto' }}
                 />
@@ -448,7 +445,7 @@ function SearchInput(props: {
                 <button
                   type="button"
                   onClick={() => setShowSettings(!showSettings)}
-                  className="p-2 mr-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                  className="p-2 mr-1 hover:text-gray-700 hover:bg-gray-100 rounded-full bg-black text-white"
                 >
                   <MessageSquare className="h-5 w-5" />
                 </button>
@@ -465,9 +462,6 @@ function SearchInput(props: {
                   }
                 </button>
               </div>
-            </div>
-            <div className="text-xs text-center text-gray-500 border-t border-gray-100 py-1 px-3">
-              Signpost Bot is in beta and may produce inaccurate information
             </div>
           </form>
         </div>
@@ -492,15 +486,12 @@ function ChatMessage(props: MessageProps) {
     return (
       <div className="flex w-full max-w-3xl">
         <div className="flex gap-3 w-full">
-          <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium text-sm">
-            SB
-          </div>
           <div className="flex-grow">
             {hasBots ? (
               <div className="space-y-6 w-full">
                 {messages.map((m) => (
                   <div key={m.id} className="w-full">
-                    <div className="font-medium text-xs text-blue-600 mb-1">
+                    <div className="font-medium text-xs mb-1 border border-gray-300 rounded-lg p-3 px-4 w-fit">
                       {m.botName}
                     </div>
                     <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
@@ -534,9 +525,6 @@ function ChatMessage(props: MessageProps) {
               <span className="mr-1">↻</span> Rebuild
             </Button>
           )}
-        </div>
-        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-          <User/>
         </div>
       </div>
     </div>
