@@ -3,7 +3,7 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useState } from 'react'
 import { api } from '@/api/getBots'
-import { Paperclip, Mic, Loader2, MessageSquare, StopCircle, Send } from 'lucide-react'
+import { Paperclip, Mic, Loader2, MessageSquare, StopCircle, Send, MessageSquarePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
 import { useMultiState } from '@/hooks/use-multistate'
@@ -283,6 +283,19 @@ export default function Chat () {
     <div className="flex h-screen">
       {/* Sidebar for Chat History and New Conversation */}
       <div className="w-1/4 border-r p-4">
+      <div className='flex justify-end mb-4'>
+            <Button 
+            onClick={() => {
+              setMessages([])
+              setActiveChat(null)
+              setState({ selectedBots: [] })
+            }} 
+            size="sm" 
+            className="flex items-center gap-1"
+          >
+            <MessageSquarePlus/>
+            </Button>
+            </div>
         <ChatHistory 
           setActiveChat={handleLoadChatHistory} 
           onSelectBot={(botId) => {
