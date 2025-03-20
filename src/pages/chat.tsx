@@ -1,13 +1,15 @@
-"use client";
+"use client"
+const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import { AudioWaveform, ArrowUp, Plus, MessageSquare, CirclePlus, Circle } from 'lucide-react'
+import { Mic, MessageSquare, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
+import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
@@ -29,6 +31,13 @@ export default function Chat () {
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [sources, setSources] = useState(availableSources)
   const [message, setMessage] = useState("")
+  const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      type: "bot",
+      message: "Hello, how can I assist you today?",
+    }
+  ])
 
   const [state, setState] = useMultiState({
     isSending: false,
@@ -42,8 +51,8 @@ export default function Chat () {
   useEffect(() => {
     api.getBots().then((sb) => {
       const bots: Bots = {}
-      for (const value in sb) {
-        bots[value] = { name: sb[value], id: value, history: [] }
+      for (const key in sb) {
+        bots[Number(key)] = { name: sb[key], id: key, history: [] }
       }
       setState({ bots })
     })
@@ -52,72 +61,70 @@ export default function Chat () {
   useEffect(()=> {
     setSources(availableSources)
   }, [availableSources])
-  
-  const messages = useRef<ChatMessage[]>([
-    {
-      type: "bot",
-      message: "Hello, how can I assist you today?",
-    }
-  ])
 
-  const onSend = async (message?: string, audio?: any, tts?: boolean) => {
-
-    message ||= "where can i find english classes in athens?"
-
-    if (!message && !audio) return
-
-    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-
-    if (message) {
-      messages.current.push({ type: "human", message })
-    }
-    setState({ isSending: true })
-
-    const response = message ? await api.askbot({ message }, tts, selectedBots) : await api.askbot({ audio }, tts, selectedBots)
-
-    if (!response.error) {
-      for (const m of response.messages) {
-        const rbot = state.bots[m.id]
-        if (!rbot) continue
-        const messageRegistered = rbot.history.find(h => h.message == message && h.isHuman)
-        if (!messageRegistered) rbot.history.push({ isHuman: true, message })
-        if (!m.needsRebuild && !m.error) {
-          const messageRegistered = rbot.history.find(h => h.message == m.message && !h.isHuman)
-          if (!messageRegistered) rbot.history.push({ isHuman: false, message: m.message })
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedChats = localStorage.getItem(LOCAL_STORAGE_KEY)
+        if (savedChats) {
+          const parsedChats = JSON.parse(savedChats)
+          return Array.isArray(parsedChats) ? parsedChats : []
         }
+      } catch (error) {
+        console.error("Error loading initial chat history:", error)
       }
     }
+    return []
+  })
 
-    response.rebuild = async () => {
-      setState({ isSending: true })
-      response.needsRebuild = false
-      await onRebuild()
-      setState({ isSending: false })
-    }
+  useEffect(()=> {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
+  }, [chatHistory])
+  
+  const handleLoadChatHistory = (chatSession: ChatSession) => {
+    
+    setActiveChat(chatSession)
 
-    messages.current.push(response)
-    setState({ isSending: false })
-  }
-
-  const onRebuild = async () => {
-    setState({ isSending: true })
-    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-    const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
-    messages.current.push(response)
-    setState({ isSending: false })
+    setTimeout(() => {
+      if (chatSession.messages && chatSession.messages.length > 0) {
+        setMessages([...chatSession.messages])
+      } else {
+        setMessages([])
+      }
+      
+      if (chatSession.botName) {
+        const botEntry = Object.entries(state.bots).find(
+          ([_, bot]) => bot.name === chatSession.botName
+        )
+  
+        if (botEntry) {
+          const botId = Number(botEntry[0])
+          setState({ selectedBots: [botId] })
+        }
+      }
+      setMessage(prev => prev + "")
+    }, 50)
   }
 
   const onSelectBot = (e: string[] | string) => {
+    console.log("Selecting bot:", e)
+  
+    const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
+    
     if (!e || e.length == 0) {
       setState({ selectedBots: [] })
       return
     }
-
+  
+    let newSelectedBotId: number
+    
     if (typeof e == "string") {
-      setState({ selectedBots: [Number(e)] })
+      newSelectedBotId = Number(e)
+      setState({ selectedBots: [newSelectedBotId] })
     } else {
       const bots = e.map(Number)
-
+      newSelectedBotId = bots[0]
+      
       for (const b of bots) {
         const bot = state.bots[b]
         if (!bot) continue
@@ -125,10 +132,116 @@ export default function Chat () {
         state.selectedBots.push(b)
         bot.history = []
       }
-
+  
       setState({ selectedBots: bots })
     }
-    messages.current = []
+    
+    if (previousSelectedBot !== newSelectedBotId) {
+      setMessages([])
+      setActiveChat(null)
+    }
+  }
+
+  const onSend = async (message?: string, audio?: any, tts?: boolean) => {
+    message ||= "where can i find english classes in athens?"
+    
+    if (!message && !audio) return
+    
+    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
+    
+    const currentBotName = state.selectedBots.length > 0 ? state.bots[state.selectedBots[0]].name : "Chat"
+    
+    const userMessage: ChatMessage = { type: "human", message: message || "" }
+    
+    if (message) {
+      setMessages(prev => [...prev, userMessage])
+    }
+    
+    let currentActiveChat: ChatSession
+    
+    if (!activeChat) {
+      currentActiveChat = {
+        id: new Date().toISOString(),
+        botName: currentBotName,
+        messages: [userMessage],
+        timestamp: new Date().toLocaleString(),
+      }
+      setActiveChat(currentActiveChat)
+      
+      setChatHistory(prevHistory => [currentActiveChat, ...prevHistory])
+    } else {
+      currentActiveChat = {
+        ...activeChat,
+        messages: [...activeChat.messages, userMessage]
+      }
+      setActiveChat(currentActiveChat)
+      
+      setChatHistory(prevHistory => 
+        prevHistory.map(chat => 
+          chat.id === currentActiveChat.id ? currentActiveChat : chat
+        )
+      )
+    }
+    
+    setState({ isSending: true })
+    
+    const response = message ? 
+      await api.askbot({ message }, tts, selectedBots) : 
+      await api.askbot({ audio }, tts, selectedBots)
+    
+    if (!response.error) {
+      for (const m of response.messages) {
+        const rbot = state.bots[m.id]
+        if (!rbot) continue
+        
+        const messageRegistered = rbot.history.find(h => h.message === message && h.isHuman)
+        if (!messageRegistered) rbot.history.push({ isHuman: true, message: message || "" })
+        
+        if (!m.needsRebuild && !m.error) {
+          const messageRegistered = rbot.history.find(h => h.message === m.message && !h.isHuman)
+          if (!messageRegistered) rbot.history.push({ isHuman: false, message: m.message })
+        }
+      }
+    }
+    
+    response.rebuild = async () => {
+      setState({ isSending: true })
+      response.needsRebuild = false
+      await onRebuild()
+      setState({ isSending: false })
+    }
+    
+    const botResponseForHistory: ChatMessage = {
+      type: "bot",
+      message: response.message || "",
+      messages: response.messages || [],
+      needsRebuild: response.needsRebuild || false
+    }
+    
+    setMessages(prev => [...prev, response as ChatMessage])
+    
+    const updatedChatWithResponse: ChatSession = {
+      ...currentActiveChat,
+      messages: [...currentActiveChat.messages, botResponseForHistory]
+    }
+    
+    setActiveChat(updatedChatWithResponse)
+    
+    setChatHistory(prevHistory => 
+      prevHistory.map(chat => 
+        chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat
+      )
+    )
+    
+    setState({ isSending: false })
+  }
+
+  const onRebuild = async () => {
+    setState({ isSending: true })
+    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
+    const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
+    setMessages(prev => [...prev, response])
+    setState({ isSending: false })
   }
 
   const handleToggleSelect = (id: string) => {
@@ -156,67 +269,117 @@ export default function Chat () {
     setSelectedSources([])
   }
 
+  function onModeChanged() {
+    setState({ audioMode: !state.audioMode })
+  }
+
   const hasSelectedBots = state.selectedBots.length > 0
 
   return ( 
-    <div className="flex flex-col h-screen w-full max-w-4xl mx-auto">
-      <div className="py-3 px-4 border-b flex justify-between items-center bg-white shadow-sm">
-        <h2 className="text-lg font-bold text-gray-800">Playground</h2>
-        <div className="flex-grow max-w-sm mx-4">
-          <Select onValueChange={onSelectBot}>
-            <SelectTrigger className="h-9 border-gray-300 bg-white hover:bg-gray-50">
-              <SelectValue placeholder="Select bot" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(state.bots).map((k) => (
-                <SelectItem key={k} value={k}>{state.bots[k].name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <div className="flex h-screen">
+      <div className="w-1/4 border-r p-4">
+        <div className='flex justify-end mb-4'>
+          <Button 
+            onClick={() => {
+              setMessages([])
+              setActiveChat(null)
+              setState({ selectedBots: [] })
+            }} 
+            size="sm" 
+            className="flex items-center gap-1"
+          >
+            <MessageSquarePlus/>
+          </Button>
         </div>
+        <ChatHistory 
+          setActiveChat={handleLoadChatHistory} 
+          onSelectBot={(botId) => {
+            onSelectBot(botId)
+          }} 
+          bots={state.bots}
+          chatHistory={chatHistory}
+        />
       </div>
-      <div className="flex-1 overflow-y-auto flex flex-col space-y-4 p-4">
-        <div className="flex-1 overflow-y-auto space-y-6 w-full">
-          {messages.current.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <MessageSquare className="h-12 w-12 mb-4 opacity-40" />
-              <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
-              <p className="text-sm mt-2">Select a bot and type a message below</p>
-            </div>
-          ) : (
-            messages.current.map((m, i) => (
-              <ChatMessage key={i} message={m} isWaiting={state.isSending} />
-            ))
-          )}
-          {state.isSending && (
-            <div className="flex justify-start w-fit">
-              <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
-                <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
-                <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
-                <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Input Area */}
-      <div className="sticky bottom-0 border-t bg-white p-4">
-        {hasSelectedBots ? (
-          <SearchInput 
-            onSearch={onSend} 
-            disabled={state.isSending}
-            openFileDialog={() => setShowFileDialog(true)}
-          />
-        ) : (
-          <div className="flex justify-center items-center py-4 text-gray-500">
-            <MessageSquare className="h-5 w-5 mr-2 opacity-70" />
-            <span>Please select a bot to start chatting</span>
+            <div className="flex-1 flex flex-col">
+        <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
+          <h2 className="text-lg font-bold">
+            Playground
+          </h2>
+          <div className="flex-grow flex px-4">
+            <Select onValueChange={onSelectBot}>
+              <SelectTrigger className="h-9 border-gray-300 bg-white hover:bg-gray-50">
+                <SelectValue placeholder={
+                  state.selectedBots.length > 0 
+                    ? state.bots[state.selectedBots[0]]?.name || "Please select Bots"
+                    : "Please select Bots"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(state.bots).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {state.bots[k].name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
-      </div>
+          <Button onClick={onModeChanged} size="icon" variant="outline">
+            {state.audioMode ? (
+              <MessageSquare className="size-5" />
+            ) : (
+              <Mic className="size-5" />
+            )}
+          </Button>
+        </div>
 
-      {/* File Dialog - Kept in parent component */}
+        <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto flex flex-col space-y-4">
+            {!state.audioMode && (
+              <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto flex flex-col space-y-6 w-full">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <MessageSquare className="h-12 w-12 mb-4 opacity-40" />
+                      <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
+                      <p className="text-sm mt-2">Select a bot and type a message below</p>
+                    </div>
+                  ) : (
+                    messages.map((m, i) => (
+                      <ChatMessage key={i} message={m} isWaiting={state.isSending} />
+                    ))
+                  )}
+                  {state.isSending && (
+                    <div className="flex justify-start w-fit">
+                      <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {state.audioMode && hasSelectedBots && (
+              <Comm bot={state.selectedBots[0] ? state.selectedBots[0] : null} />
+            )}
+          </div>
+        </div>
+        <div className="sticky bottom-0 border-t bg-white p-4">
+          {hasSelectedBots && !state.audioMode ? (
+            <SearchInput 
+              onSearch={onSend} 
+              disabled={state.isSending} 
+              openFileDialog={() => setShowFileDialog(true)}
+            />
+          ) : (
+            <div className="flex justify-center items-center py-4 text-gray-500">
+              <MessageSquare className="h-5 w-5 mr-2 opacity-70" />
+              <span>Please select a bot to start chatting</span>
+            </div>
+          )}
+        </div>
+      </div>
       <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -260,7 +423,6 @@ function SearchInput(props: {
   const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
   const [tts, setTts] = useState<boolean>(false)
   const [showSettings, setShowSettings] = useState(false)
-  
   const [isRecordingMode, setIsRecordingMode] = useState(false)
 
   const {
@@ -271,7 +433,7 @@ function SearchInput(props: {
     clearBlobUrl,
   } = useReactMediaRecorder({ audio: true })
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   
   useEffect(() => {
     if (textareaRef.current) {
@@ -280,7 +442,7 @@ function SearchInput(props: {
     }
   }, [value])
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value)
   }
 
@@ -292,7 +454,7 @@ function SearchInput(props: {
   }
 
   const handleSearch = (v: string) => {
-    if (!v.trim()) return;
+    if (!v.trim()) return
     props.onSearch(v, '', tts)
     setValue("")
   }
@@ -311,10 +473,10 @@ function SearchInput(props: {
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result);
+      reader.onloadend = () => resolve(reader.result)
       reader.onerror = reject
       reader.readAsDataURL(blob)
-    });
+    })
   }
 
   const handleSendRecording = async () => {
@@ -323,7 +485,7 @@ function SearchInput(props: {
       const blob = await response.blob()
       const base64Data = await blobToBase64(blob)
       props.onSearch(undefined, base64Data, true)
-      clearBlobUrl();
+      clearBlobUrl()
       setRecordingComplete(false)
       setIsRecordingMode(false)
     }
@@ -339,7 +501,6 @@ function SearchInput(props: {
 
   return (
     <div className="w-full">
-      {/* Settings Panel */}
       {showSettings && (
         <div className="mb-4 bg-white rounded-lg p-4 shadow-md border border-gray-200">
           <h3 className="font-medium mb-3 text-gray-700">Chat Settings</h3>
@@ -358,8 +519,6 @@ function SearchInput(props: {
           </div>
         </div>
       )}
-
-      {/* Voice Recording Mode */}
       {isRecordingMode ? (
         <div className="relative">
           <div className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -375,7 +534,7 @@ function SearchInput(props: {
                 }`}
               >
                 {status === "recording" ? 
-                  <Circle  /> : 
+                  <Circle className="h-8 w-8 text-white" /> : 
                   <AudioWaveform className="h-8 w-8 text-gray-800" />
                 }
               </button>
@@ -395,7 +554,7 @@ function SearchInput(props: {
                     className="mt-4 px-4 py-2 bg-black text-white rounded-full flex items-center hover:bg-gray-900"
                   >
                     <ArrowUp className="h-5 w-5 mr-2" />
-                    Send
+                    <span>Send</span>
                   </button>
                 </>
               )}
@@ -413,8 +572,8 @@ function SearchInput(props: {
         <div className="relative">
           <form
             onSubmit={(e) => {
-              e.preventDefault();
-              handleSearch(value);
+              e.preventDefault()
+              handleSearch(value)
             }}
             className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
           >
@@ -456,8 +615,7 @@ function SearchInput(props: {
                   className="p-2 rounded-full bg-black text-white hover:bg-gray-900"
                 >
                   {value.trim() ? 
-                    <ArrowUp className="h-5 w-5" />
-                    : 
+                    <ArrowUp className="h-5 w-5" /> : 
                     <AudioWaveform className="h-5 w-5" />
                   }
                 </button>
@@ -476,7 +634,7 @@ interface MessageProps {
 }
 
 function ChatMessage(props: MessageProps) {
-  const { isWaiting } = props;
+  const { isWaiting } = props
   let { type, message, messages, needsRebuild, rebuild } = props.message
   messages = messages || []
 
@@ -486,8 +644,8 @@ function ChatMessage(props: MessageProps) {
     return (
       <div className="flex w-full max-w-3xl">
         <div className="flex gap-3 w-full">
-          <div className="flex-grow">
-            {hasBots ? (
+          {hasBots && (
+            <div className="flex-grow">
               <div className="space-y-6 w-full">
                 {messages.map((m) => (
                   <div key={m.id} className="w-full">
@@ -498,21 +656,22 @@ function ChatMessage(props: MessageProps) {
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-gray-800 rounded-lg max-w-full prose prose-sm">
-                <div>{message}</div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+          {!hasBots && message && (
+            <div className="text-gray-800 rounded-lg max-w-full prose prose-sm">
+              <div>{message}</div>
+            </div>
+          )}
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="flex w-full max-w-3xl ml-auto justify-end">
       <div className="flex gap-3">
-        <div className="bg-gray-100 text-black p-2 rounded-lg max-w-md">
+        <div className="bg-gray-100 text-black p-4 rounded-lg max-w-md">
           <div>{message}</div>
           
           {!isWaiting && needsRebuild && (
@@ -528,5 +687,5 @@ function ChatMessage(props: MessageProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }
