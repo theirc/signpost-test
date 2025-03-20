@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react"
 import { BotHistory, ChatMessage } from "@/types/types.ai"
 
 const LOCAL_STORAGE_KEY = "chatHistory"
@@ -14,45 +13,40 @@ interface ChatHistoryProps {
     setActiveChat: (chat: ChatSession | null) => void
     onSelectBot?: (botId: string) => void
     bots: Record<number, {name: string; history: BotHistory[]}>
+    chatHistory: ChatSession[]
 }
-export function ChatHistory  ({setActiveChat, onSelectBot, bots}: ChatHistoryProps)  {
-    const [chatHistory, setChatHistory] = useState<ChatSession[]>([])
-
-    useEffect(() => {
-      const savedChats = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]");
-      console.log("Loading chat history from LocalStorage:", savedChats)
-      if (Array.isArray(savedChats)) {
-        setChatHistory(savedChats)
-      }
-    }, [])
-  
-    return (
-      <div className="w-full">
-        <h3 className="text-sm font-semibold mb-1">Chat History</h3>
-        <div className="h-64 overflow-y-auto border p-2 rounded bg-gray-50">
-          {chatHistory.length === 0 ? (
-            <p className="text-xs text-gray-500">No past chats</p>
-          ) : (
-            chatHistory.map((chat) => {
-              const botEntry = Object.entries(bots).find(([id, bot]) => bot.name === chat.botName)
-             return (
-            <div
-              key={chat.id}
-              className="p-2 text-xs cursor-pointer border-b hover:bg-gray-200"
-              onClick={() => {
-                setActiveChat(chat);
-                if (botEntry) {
-                  onSelectBot(botEntry[0])
-                  }
-                }}
+export function ChatHistory  ({setActiveChat, onSelectBot, bots, chatHistory}: ChatHistoryProps)  {
+  return (
+    <div className="w-full h-full flex flex-col p-4">
+      <h2 className="text-1xl font-bold mb-6 text-left">Chat History</h2>
+      
+      <div className="flex-1 overflow-y-auto">
+        {chatHistory.length === 0 ? (
+          <p className="text-gray-500 text-left">No past chats</p>
+        ) : (
+          <div className="space-y-4">
+            {chatHistory.map((chat) => {
+              const firstMessage = chat.messages && chat.messages.length > 0 ? chat.messages[0].message : "New Conversation"
+              const botEntry = Object.entries(bots).find(([_, bot]) => bot.name === chat.botName)
+              
+              return (
+                <button
+                  key={chat.id}
+                  className="w-full text-left p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => {
+                    setActiveChat(chat);
+                    if (botEntry && onSelectBot) {
+                      onSelectBot(botEntry[0])
+                    }
+                  }}
                 >
-                  <p className="truncate font-semibold">{chat.botName || "Chat"}</p>
-                  <span className="text-xs text-gray-500">{chat.timestamp}</span>
-                </div>
-              );
-            })
-          )}
-        </div>
+                  <p className="text-md text-left pl-2">{firstMessage}</p>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
-    )
-  }
+    </div>
+  )
+}

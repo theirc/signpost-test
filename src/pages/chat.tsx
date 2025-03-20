@@ -1,11 +1,11 @@
-"use client";
+"use client"
+const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useState } from 'react'
 import { api } from '@/api/getBots'
 import { Paperclip, Mic, Loader2, MessageSquare, StopCircle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
@@ -56,62 +56,79 @@ export default function Chat () {
         bots[Number(key)] = { name: sb[key], history: [] }
       }
       setState({ bots })
-    });
+    })
   }, [])
 
   useEffect(()=> {
     setSources(availableSources)
   }, [availableSources])
+
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedChats = localStorage.getItem(LOCAL_STORAGE_KEY)
+        if (savedChats) {
+          const parsedChats = JSON.parse(savedChats)
+          console.log("Initializing chat history from localStorage:", parsedChats)
+          return Array.isArray(parsedChats) ? parsedChats : []
+        }
+      } catch (error) {
+        console.error("Error loading initial chat history:", error)
+      }
+    }
+    return []
+  })
+
+  useEffect(()=> {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
+  }, [chatHistory])
   
   const handleLoadChatHistory = (chatSession: ChatSession) => {
     console.log("Loading chat history session:", chatSession)
     
-    setActiveChat(chatSession);
-    
+    setActiveChat(chatSession)
+    console.log("Chat session messages:", chatSession.messages)
+
     setTimeout(() => {
-      setMessages([...chatSession.messages])
+      if (chatSession.messages && chatSession.messages.length > 0) {
+        setMessages([...chatSession.messages])
+      } else {
+        setMessages([])
+      }
       
       if (chatSession.botName) {
         const botEntry = Object.entries(state.bots).find(
           ([_, bot]) => bot.name === chatSession.botName
         )
-
+  
         if (botEntry) {
           const botId = Number(botEntry[0])
           setState({ selectedBots: [botId] })
         }
       }
-        setMessage(prev => prev + "")
+      setMessage(prev => prev + "")
     }, 50)
-  }
-
-  const handleNewConversation = () => {
-    console.log("Starting new conversation");
-    setActiveChat(null);
-    setMessages([{
-      type: "bot",
-      message: "Hello, how can I assist you today?"
-    }])
-
-    setState({
-      selectedBots: []
-    })
-    
   }
 
   const onSelectBot = (e: string[] | string) => {
     console.log("Selecting bot:", e)
+  
+    const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
     
     if (!e || e.length == 0) {
       setState({ selectedBots: [] })
       return
     }
-
+  
+    let newSelectedBotId: number
+    
     if (typeof e == "string") {
-      setState({ selectedBots: [Number(e)] })
+      newSelectedBotId = Number(e)
+      setState({ selectedBots: [newSelectedBotId] })
     } else {
       const bots = e.map(Number)
-
+      newSelectedBotId = bots[0]
+      
       for (const b of bots) {
         const bot = state.bots[b]
         if (!bot) continue
@@ -119,58 +136,115 @@ export default function Chat () {
         state.selectedBots.push(b)
         bot.history = []
       }
-
+  
       setState({ selectedBots: bots })
     }
-    if (!activeChat) {
+    
+    if (previousSelectedBot !== newSelectedBotId) {
       setMessages([])
+      
+      setActiveChat(null)
     }
   }
 
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
     message ||= "where can i find english classes in athens?"
-  
+    
     if (!message && !audio) return
-  
+    
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-  
+    
+    const currentBotName = state.selectedBots.length > 0 ? state.bots[state.selectedBots[0]].name : "Chat"
+    
+    const userMessage: ChatMessage = { type: "human", message: message || "" }
+    
     if (message) {
-      setMessages(prev => [...prev, { type: "human", message }]);
+      setMessages(prev => [...prev, userMessage])
     }
+    
+    let currentActiveChat: ChatSession
+    
+    if (!activeChat) {
+      currentActiveChat = {
+        id: new Date().toISOString(),
+        botName: currentBotName,
+        messages: [userMessage],
+        timestamp: new Date().toLocaleString(),
+      }
+      setActiveChat(currentActiveChat)
+      
+      setChatHistory(prevHistory => [currentActiveChat, ...prevHistory])
+    } else {
+      currentActiveChat = {
+        ...activeChat,
+        messages: [...activeChat.messages, userMessage]
+      }
+      setActiveChat(currentActiveChat)
+      
+      setChatHistory(prevHistory => 
+        prevHistory.map(chat => 
+          chat.id === currentActiveChat.id ? currentActiveChat : chat
+        )
+      )
+    }
+    
     setState({ isSending: true })
-  
-    const response = message ? await api.askbot({ message }, tts, selectedBots) : await api.askbot({ audio }, tts, selectedBots)
-  
+    
+    const response = message ? 
+      await api.askbot({ message }, tts, selectedBots) : 
+      await api.askbot({ audio }, tts, selectedBots)
+    
     if (!response.error) {
       for (const m of response.messages) {
         const rbot = state.bots[m.id]
         if (!rbot) continue
-        const messageRegistered = rbot.history.find(h => h.message == message && h.isHuman)
-        if (!messageRegistered) rbot.history.push({ isHuman: true, message })
+        
+        const messageRegistered = rbot.history.find(h => h.message === message && h.isHuman)
+        if (!messageRegistered) rbot.history.push({ isHuman: true, message: message || "" })
+        
         if (!m.needsRebuild && !m.error) {
-          const messageRegistered = rbot.history.find(h => h.message == m.message && !h.isHuman)
+          const messageRegistered = rbot.history.find(h => h.message === m.message && !h.isHuman)
           if (!messageRegistered) rbot.history.push({ isHuman: false, message: m.message })
         }
       }
     }
-  
+    
     response.rebuild = async () => {
       setState({ isSending: true })
       response.needsRebuild = false
       await onRebuild()
       setState({ isSending: false })
     }
-  
-    setMessages(prev => [...prev, response]);
-    setState({ isSending: false })
     
+    const botResponseForHistory: ChatMessage = {
+      type: "bot",
+      message: response.message || "",
+      messages: response.messages || [],
+      needsRebuild: response.needsRebuild || false
+    }
+    
+    setMessages(prev => [...prev, response as ChatMessage])
+    
+    const updatedChatWithResponse: ChatSession = {
+      ...currentActiveChat,
+      messages: [...currentActiveChat.messages, botResponseForHistory]
+    }
+    
+    setActiveChat(updatedChatWithResponse)
+    
+    setChatHistory(prevHistory => 
+      prevHistory.map(chat => 
+        chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat
+      )
+    )
+      setState({ isSending: false })
   }
 
   const onRebuild = async () => {
     setState({ isSending: true })
     const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
     const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
-    setMessages(prev => [...prev, response]);
+    setMessages(prev => [...prev, response])
     setState({ isSending: false })
   }
 
@@ -212,18 +286,18 @@ export default function Chat () {
         <ChatHistory 
           setActiveChat={handleLoadChatHistory} 
           onSelectBot={(botId) => {
-            console.log("ChatHistory selected bot ID:", botId);
-            onSelectBot(botId);
+            console.log("ChatHistory selected bot ID:", botId)
+            onSelectBot(botId)
           }} 
           bots={state.bots}
+          chatHistory={chatHistory}
         />
-        <Button onClick={handleNewConversation} className="mt-4">New Conversation</Button>
       </div>
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-md">
           <h2 className="text-lg font-bold">
-            {activeChat?.botName ? `Chat with ${activeChat.botName}` : "Signpost Bot"}
+            Playground
           </h2>
           {/* Bot Selector */}
           <div className="flex-grow flex px-4">
@@ -377,8 +451,8 @@ export default function Chat () {
         {!isVoiceMode ? (
         <form
         onSubmit={(e) => {
-          e.preventDefault();
-          handleSearch(value);
+          e.preventDefault()
+          handleSearch(value)
         }}
         className="flex items-center border border-gray-300 rounded-lg p-2 bg-white shadow-sm w-full"
       >
@@ -477,7 +551,7 @@ export default function Chat () {
   }
 
   function ChatMessage(props: MessageProps) {
-    const { isWaiting } = props;
+    const { isWaiting } = props
     let { type, message, messages, needsRebuild, rebuild } = props.message
     messages = messages || []
 
@@ -497,7 +571,7 @@ export default function Chat () {
           ))}
         </div>
       )}
-      {!hasBots && (
+      {!hasBots && message && (
         <div className="bg-white text-black p-3 rounded-lg max-w-xs">
           <div className="">{message}</div>
         </div>
