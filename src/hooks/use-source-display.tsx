@@ -30,21 +30,26 @@ export function useSourceDisplay(sources: Source[], loading: boolean) {
   useEffect(() => {
     if (loading) return;
     
-    // Process tags logic moved here
     const displaySources = sources.map(source => {
+      // Process tags: convert from string or string[] to string[]
       let tags: string[] = [];
       if (source.tags) {
         if (typeof source.tags === 'string') {
-          tags = source.tags.replace('{', '').replace('}', '').split(',');
+          // Handle PostgreSQL array format: '{tag1,tag2}'
+          tags = source.tags
+            .replace('{', '')
+            .replace('}', '')
+            .split(',')
+            .filter(tag => tag.length > 0);
         } else if (Array.isArray(source.tags)) {
           tags = source.tags;
         }
       }
-      
+
       return {
         id: source.id,
         name: source.name,
-        type: source.type_id,
+        type: source.type,
         lastUpdated: source.last_updated || source.created_at,
         content: source.content,
         tags: tags

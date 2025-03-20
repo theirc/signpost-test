@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import React, { useEffect, useState, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SourcesTable, type Source as SourceDisplay } from "@/components/sources-table"
 import { useCollections, Collection } from "@/hooks/use-collections"
@@ -14,7 +14,7 @@ import { useSupabase } from "@/hooks/use-supabase"
 
 export function CollectionsManagement() {
   // Supabase hooks
-  const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection } = useCollections()
+  const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection, generateCollectionVector } = useCollections()
   const { 
     getSourcesForCollection, 
     addSourceToCollection, 
@@ -145,15 +145,36 @@ export function CollectionsManagement() {
         // Process in batches to avoid UI blocking
         for (let i = 0; i < sources.length; i++) {
           const source = sources[i];
-          const sourceTags = await getTagsForSource(source.id);
+          
+          // Parse tags from the database format
+          let tags: string[] = [];
+          if (source.tags) {
+            if (typeof source.tags === 'string') {
+              // Handle PostgreSQL array format: '{tag1,tag2}' or '["tag1","tag2"]'
+              try {
+                // First try JSON parse for ["tag1","tag2"] format
+                tags = JSON.parse(source.tags);
+              } catch {
+                // If that fails, try PostgreSQL {tag1,tag2} format
+                tags = source.tags
+                  .replace('{', '')
+                  .replace('}', '')
+                  .split(',')
+                  .map(tag => tag.trim())
+                  .filter(tag => tag.length > 0);
+              }
+            } else if (Array.isArray(source.tags)) {
+              tags = source.tags;
+            }
+          }
           
           displaySources.push({
             id: source.id,
             name: source.name,
-            type: source.type_id,
+            type: source.type,
             lastUpdated: source.last_updated || source.created_at,
             content: source.content,
-            tags: sourceTags.map((tag: any) => tag.name)
+            tags: tags
           });
         }
         
@@ -378,6 +399,29 @@ export function CollectionsManagement() {
     handleEditCollection(collection);
   };
 
+  const handleGenerateVector = async (collection: Collection) => {
+    if (!collectionSources[collection.id]?.length) {
+      console.log('No sources in collection to process')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const success = await generateCollectionVector(
+        collection.id, 
+        collectionSources[collection.id]
+      )
+
+      if (success) {
+        console.log('Vector generated successfully')
+      }
+    } catch (error) {
+      console.error('Error generating vector:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto py-6 space-y-8">
       <div className="flex justify-between items-center">
@@ -445,14 +489,32 @@ export function CollectionsManagement() {
                 <div className="text-sm text-muted-foreground">No sources</div>
               )}
               
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 w-full"
-                onClick={() => viewCollectionDetails(collection)}
-              >
-                View Details
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 flex-1"
+                  onClick={() => viewCollectionDetails(collection)}
+                >
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 flex-1 min-w-0"
+                  onClick={() => handleGenerateVector(collection)}
+                  disabled={!collectionSources[collection.id]?.length || loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Database className="h-4 w-4 mr-2" />
+                  )}
+                  <span className="truncate">
+                    Build
+                  </span>
+                </Button>
+              </div>
             </div>
           ))}
         </div>
@@ -466,7 +528,7 @@ export function CollectionsManagement() {
           setIsEditModalOpen(open);
         }
       }}>
-        <DialogContent className="sm:max-w-[800px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingCollection ? `Edit Collection: ${editingCollection.name}` : 'Create New Collection'}
@@ -475,33 +537,35 @@ export function CollectionsManagement() {
               {editingCollection ? "Modify the collection name and select sources to include." : "Create a new collection by adding a name and selecting sources."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="collection-name">Name</Label>
-              <Input
-                id="collection-name"
-                value={newCollectionName}
-                onChange={(e) => setNewCollectionName(e.target.value)}
-                placeholder="Enter collection name"
-              />
-            </div>
-            {sourcesLoading ? (
-              <div className="flex justify-center items-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex-1 overflow-y-auto py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="collection-name">Name</Label>
+                <Input
+                  id="collection-name"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  placeholder="Enter collection name"
+                />
               </div>
-            ) : (
-              <SourcesTable 
-                sources={sourcesDisplay}
-                selectedSources={selectedSources}
-                onToggleSelect={handleToggleSelect}
-                onSelectAll={handleSelectAll}
-                showCheckboxes={true}
-                showActions={false}
-                showAddButton={false}
-              />
-            )}
+              {sourcesLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <SourcesTable 
+                  sources={sourcesDisplay}
+                  selectedSources={selectedSources}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  showCheckboxes={true}
+                  showActions={false}
+                  showAddButton={false}
+                />
+              )}
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={resetEditState}>
               Cancel
             </Button>

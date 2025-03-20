@@ -16,10 +16,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSupabase } from './use-supabase'
 
-export type Source = {
+export interface Source {
   id: string
   name: string
-  type_id: string
+  type: string
   content: string
   url?: string
   tags?: string[] | string
@@ -57,53 +57,30 @@ export function useSources() {
   }, [fetchSources])
 
   const addSource = async (sourceData: Partial<Source>): Promise<Source | null> => {
+    if (!sourceData.name || !sourceData.type || !sourceData.content) {
+      throw new Error('Name, type, and content are required')
+    }
+
+    // If no tags provided, use the type as the only tag
+    if (!sourceData.tags) {
+      sourceData.tags = `{${sourceData.type}}`;
+    }
+
     try {
-      setLoading(true)
-      
-      console.log("Adding source with data:", sourceData)
-      
-      // Make sure we have all required fields
-      if (!sourceData.name || !sourceData.type_id || !sourceData.content) {
-        console.error("Missing required fields for source:", sourceData)
-        return null
-      }
-      
-      // Ensure tags is properly formatted for PostgreSQL
-      if (!sourceData.tags) {
-        // Format as PostgreSQL array format: {tag1,tag2}
-        sourceData.tags = `{${sourceData.type_id}}`;
-      } else if (Array.isArray(sourceData.tags)) {
-        // Convert JavaScript array to PostgreSQL array format
-        sourceData.tags = `{${sourceData.tags.join(',')}}`;
-      }
-      
-      // Insert the source into the database
       const { data, error } = await supabase
         .from('sources')
         .insert([sourceData])
-        .select('*')
+        .select()
         .single()
-        
-      if (error) {
-        console.error("Supabase error:", error)
-        throw error
-      }
-      
-      if (!data) {
-        console.error("No data returned from insert")
-        return null
-      }
-      
-      // Update local state
-      setSources(prev => [data as Source, ...prev])
-      
-      console.log("Source inserted successfully:", data)
-      return data as Source
-    } catch (err) {
-      console.error("Error in addSource:", err)
-      return null
-    } finally {
-      setLoading(false)
+
+      if (error) throw error
+
+      // Add new source to state
+      setSources(prev => [...prev, data])
+      return data
+    } catch (error) {
+      console.error('Error adding source:', error)
+      throw error
     }
   }
 

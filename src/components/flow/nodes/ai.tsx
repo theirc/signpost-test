@@ -1,52 +1,69 @@
-import { useCallback, useState } from 'react'
-import { Handle, NodeProps, Position, XYPosition } from '@xyflow/react'
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cn } from '@/lib/utils'
-import { Slider } from '@/components/ui/slider'
-import { Brain, Settings } from "lucide-react"
-import { NodeTitle } from '../title'
-import { NodeLayout } from './node'
-import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from '@/components/ui/select'
-import { app } from '@/lib/app'
-import { useWorker } from '../hooks'
-import { NodeHandlers } from '../handles'
+import { Input, InputTextArea, Row, Select, Slider, useForm } from '@/components/forms'
 import { workerRegistry } from '@/lib/agents/registry'
+import { createModel } from '@/lib/data/model'
+import { NodeProps } from '@xyflow/react'
+import { Sparkles } from "lucide-react"
+import { InlineHandles, WorkerLabeledHandle } from '../handles'
+import { useWorker } from '../hooks'
+import { MemoizedWorker } from '../memoizedworkers'
+import { NodeLayout } from './node'
 const { ai } = workerRegistry
-ai.icon = Brain
 
-export function AINode(props: NodeProps) {
+ai.icon = Sparkles
 
-  const worker = useWorker(props.id)
+const list: FieldList = [
+  { value: "openai", label: "OpenAI" },
+]
 
-  return <NodeLayout>
-    <NodeTitle registry={ai} worker={worker} />
-    {/* <ExecuteNextHandle /> */}
-    {/* <LabeledHandle id="input" title="Input" type="target" position={Position.Left} /> */}
-    {/* <LabeledHandle id="prompt" title="Prompt" type="target" position={Position.Left} /> */}
-    <div className='p-4 nodrag'>
+const model = createModel({
+  fields: {
+    prompt: { title: "Prompt", type: "string", },
+    model: { title: "Model", type: "string", list },
+    temperature: { title: "Temperature", type: "number" },
+  }
+})
 
-      <div className='mb-4'>
-        <Select>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Model" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="light">OpenAI</SelectItem>
-            <SelectItem value="dark">Claude</SelectItem>
-            <SelectItem value="system">Gemini</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+function Parameters({ worker }: { worker: BotWorker }) {
+  const { form, m, watch } = useForm(model, {
+    values: {
+      prompt: worker.fields.prompt.value,
+      temperature: worker.parameters.temperature
+    }
+  })
 
-      <div className='text-gray-500 text-sm mb-3'>Temperature</div>
-      <Slider defaultValue={[50]} max={100} step={1} className="w-full" />
+  watch((value, { name }) => {
+    if (name === "prompt") worker.fields.prompt.value = value.prompt
+    if (name === "temperature") worker.parameters.temperature = value.temperature
+  })
 
-
+  return <form.context>
+    <div className='p-2 -mt-2 nodrag w-full flex-grow'>
+      <Row className='h-full'>
+        <InputTextArea field={m.prompt} span={12} hideLabel className='h-full' />
+      </Row>
     </div>
-    <NodeHandlers worker={worker} />
-  </NodeLayout>
+    <Row className='pb-8 px-2'>
+      <Input field={m.temperature} type="number" span={12} />
+    </Row>
+  </form.context>
 
 }
 
+export function AINode(props: NodeProps) {
+  const worker = useWorker<BotWorker>(props.id)
 
+  return <NodeLayout worker={worker} resizable minHeight={250}>
+
+    <div className='flex flex-col h-full'>
+      <InlineHandles>
+        <WorkerLabeledHandle handler={worker.fields.input} />
+        <WorkerLabeledHandle handler={worker.fields.answer} />
+      </InlineHandles>
+      <WorkerLabeledHandle handler={worker.fields.prompt} />
+      <MemoizedWorker worker={worker}>
+        <Parameters worker={worker} />
+      </MemoizedWorker>
+    </div>
+  </NodeLayout>
+
+}

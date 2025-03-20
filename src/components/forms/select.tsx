@@ -9,7 +9,7 @@ export function Select({ field, span, className, required, validate, ...props }:
   const { name } = field
 
   let childs = props.children
-  if (field.list) childs = field.list.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)
+  if (field.list) childs = (field.list || []).map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)
 
   const validateFn = v => validateValue(v, required, field, validate)
 
@@ -19,7 +19,8 @@ export function Select({ field, span, className, required, validate, ...props }:
       control={control}
       rules={{ validate: validateFn }}
       render={({ field: { name, value, onChange } }) => {
-        return <ShadcnSelect name={name} onValueChange={onChange} defaultValue={value}>
+
+        return <ShadcnSelect name={name} onValueChange={onChange} value={value || undefined}>
           <SelectTrigger className={cn("focus-visible:ring-transparent ring-0 focus:ring-0")}>
             <SelectValue className={cn("focus-visible:ring-transparent w-full h-full", className)}  {...props} />
           </SelectTrigger>

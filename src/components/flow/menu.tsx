@@ -1,11 +1,20 @@
 import { workerRegistry } from "@/lib/agents/registry"
-import { ChevronLast, EllipsisVertical, Play, Save, Square, StepForward, StopCircle, StopCircleIcon, User } from "lucide-react"
+import { ChevronLast, EllipsisVertical, Key, LoaderCircle, Play, Save, Square, StepForward, StopCircle, StopCircleIcon, User } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { Separator } from "../ui/separator"
+import { toast } from "sonner"
+import { agents } from "@/lib/data"
+import { app } from "@/lib/app"
+import { createModel } from "@/lib/data/model"
+import { Input, Modal, Row, useForm } from "../forms"
+import { useEffect, useState } from "react"
+import { title } from "process"
+import { cloneDeep } from "lodash"
 
 interface Props {
-  onSave?(): void
+  update?: () => void
 }
+
 
 function MenuDragger(props: { icon: any, title: string, type: string }) {
 
@@ -27,48 +36,156 @@ function MenuDragger(props: { icon: any, title: string, type: string }) {
 
 }
 
+const model = createModel({
+  fields: {
+    title: { type: 'string', title: 'Title' },
+    openai: { type: 'string', title: 'OpenAI' },
+  }
+}
+)
+
 export function Toolbar(props: Props) {
 
-  return <div className="flex gap-3 -mb-2 text-xs">
-    <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => props?.onSave()}>
-      <Save size={18} />
-    </div>
-    <Separator orientation="vertical" />
-    <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play">
-      <Play size={18} />
-    </div>
-    <div className="rounded-sm hover:text-rose-600  text-indigo-500 cursor-pointer" title="Step">
+  const { form, m, watch } = useForm(model, { defaultValues: { title: app.agent.title } })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    const subscription = watch((value, { name, type }) => {
+      console.log(value, name, type)
+      if (name == "title") {
+        app.agent.title = value.title || ""
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [watch])
+
+  form.onSubmit = async (data) => {
+    localStorage.setItem("openai-api-key", data.openai)
+  }
+
+
+  async function onSave() {
+    if (saving) return
+    setSaving(true)
+    const clonedAgent = cloneDeep(app.agent)
+    await agents.saveAgent(clonedAgent)
+    toast("The flow was saved", {
+      // description: "Not Implemented!",
+      action: {
+        label: "Ok",
+        onClick: () => console.log("Ok"),
+      },
+    })
+    setTimeout(() => {
+      setSaving(false)
+    }, 1000)
+  }
+
+  async function onPlay() {
+    console.log("Play")
+
+    const apiKey = localStorage.getItem("openai-api-key")
+
+    if (!apiKey) {
+      toast("Please set an OpenAI API Key", {
+        action: {
+          label: "Ok",
+          onClick: () => console.log("Ok"),
+        },
+      })
+      return
+    }
+
+
+    const { agent } = app
+
+    if (!agent.hasResponse()) {
+      toast("Add a Response Worker to execute", {
+        action: {
+          label: "Ok",
+          onClick: () => console.log("Ok"),
+        },
+      })
+    }
+
+    const p: AgentParameters = {
+      debug: true,
+      input: {
+        question: "Hello"
+      },
+    }
+
+    await agent.execute(p)
+
+    console.log("Result: ", p.output)
+  }
+
+  function onSetAPIKey() {
+    form.modal.show()
+  }
+
+  return <>
+    <div className="flex gap-3 mb-2 text-xs items-center">
+      <div className="flex flex-grow">
+        <form.context>
+          <Input className="h-3 px-1 p-3 pr-2 border-gray-100 hover:border-gray-300 text w-full" field={m.title} hideLabel maxLength={24} />
+        </form.context>
+      </div>
+      <Separator orientation="vertical" />
+      <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => onSave()}>
+        {saving && <LoaderCircle size={18} className="animate-spin" />}
+        {!saving && <Save size={18} />}
+      </div>
+      <Separator orientation="vertical" />
+      <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play" onClick={() => onPlay()}>
+        <Play size={18} />
+      </div>
+      {/* <div className="rounded-sm hover:text-rose-600  text-indigo-500 cursor-pointer" title="Step">
       <StepForward size={18} />
-    </div>
-    <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Stop">
+    </div> */}
+      {/* <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Stop">
       <Square size={18} />
+    </div> */}
+      <Separator orientation="vertical" />
+      {Object.entries(workerRegistry).map(([key, node]) => (
+        <MenuDragger title={node.title} type={key} icon={node.icon} key={key} />
+      ))}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <EllipsisVertical size={18} className="cursor-pointer" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={onSetAPIKey}>
+            <Key />
+            <span>Set API Keys</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Workers</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem>
+            <User />
+            <span>More</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <User />
+            <span>Workers</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <User />
+            <span>Here</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
-    <Separator orientation="vertical" />
-    {Object.entries(workerRegistry).map(([key, node]) => (
-      <MenuDragger title={node.title} type={key} icon={node.icon} key={key} />
-    ))}
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <EllipsisVertical size={18} className="cursor-pointer" />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuLabel>Workers</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <User />
-          <span>More</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <User />
-          <span>Workers</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <User />
-          <span>Here</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
+
+    <Modal form={form} title="API Keys">
+      <Row>
+        <Input span={12} field={m.openai} required />
+      </Row>
+    </Modal>
+
+
+  </>
 
 
 

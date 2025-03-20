@@ -273,6 +273,32 @@ export default function Chat () {
     setSelectedSources([])
   }
 
+  const handleToggleSelect = (id: string) => {
+    setSelectedSources(prev => 
+      prev.includes(id)
+      ? prev.filter(sourceId => sourceId !== id)
+      : [...prev, id]
+    )
+  }
+
+  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedSources(event.target.checked ? sources.map(source => source.id) : [])
+  }
+
+  const handleAttachFiles = () =>{
+    const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
+    .filter(Boolean)
+      .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
+      .join('\n\n');
+
+    if (selectedContent) {
+      setMessage(prevMessage => prevMessage + '\n\n' + selectedContent);
+    }
+    setShowFileDialog(false);
+    setSelectedSources([]);
+
+  }
+
   function onModeChanged() {
     setState({ audioMode: !state.audioMode })
   }
@@ -341,7 +367,6 @@ export default function Chat () {
             )}
           </Button>
         </div>
-
         <div className="flex-1 flex flex-col p-4 overflow-y-auto">
           <div className="flex-1 overflow-y-auto flex flex-col space-y-4">
             {!state.audioMode && (
@@ -571,6 +596,71 @@ export default function Chat () {
     const hasBots = messages.length > 0 
 
     if(type == "bot") {
+    return (
+    <div className="mt-8 flex w-full justify-start">
+    <div className="flex gap-4">
+      {hasBots && (
+        <div className="-mt-3 ml-4 w-full flex gap-4">
+          {messages.map((m) => (
+            <div key={m.id}>
+              <div className="font-medium text-xs text-blue-500 mb-1">{m.botName}</div>
+              <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
+            </div>
+          ))}
+        </div>
+      )}
+      {!hasBots && message && (
+        <div className="bg-white text-black p-3 rounded-lg max-w-xs">
+          <div className="">{message}</div>
+        </div>
+      )}
+      
+     <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Attach Files</DialogTitle>
+            </DialogHeader>
+            <div className="mt-4">
+              <SourcesTable 
+                sources={sources}
+                selectedSources={selectedSources}
+                onToggleSelect={handleToggleSelect}
+                onSelectAll={handleSelectAll}
+                showCheckboxes={true}
+              />
+              <div className="flex justify-end mt-4 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFileDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAttachFiles}
+                  disabled={selectedSources.length === 0}
+                >
+                  Attach Selected
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+  }
+
+interface MessageProps {
+  message: ChatMessage
+  isWaiting?: boolean
+}
+
+function ChatMessage(props: MessageProps) {
+  const { isWaiting } = props;
+  let { type, message, messages, needsRebuild, rebuild } = props.message
+  messages = messages || []
+
+  const hasBots = messages.length > 0 
+  if(type == "bot") {
     return (
     <div className="mt-8 flex w-full justify-start">
     <div className="flex gap-4">

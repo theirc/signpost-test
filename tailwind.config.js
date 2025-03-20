@@ -2,7 +2,7 @@
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   darkMode: ["class"],
-  important: true,
+  // important: true,
   theme: {
     extend: {
       fontFamily: {

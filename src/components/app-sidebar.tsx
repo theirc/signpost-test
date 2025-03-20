@@ -1,33 +1,46 @@
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
+import { Bot,MessagesSquare, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
 
 export function AppSidebar() {
   // This is sample data.
   const data = {
     user: {
-      name: "Guillermo Zambrino",
-      email: "email@example.com",
+      name: "User Name",
+      email: "email@signpost.com",
       avatar: "/avatars/shadcn.jpg",
     },
     navMain: [
-      {
-        title: "Designer",
-        url: "",
-        icon: SquareTerminal,
-        isActive: true,
-        items: [
-          { title: "History", url: "/", },
-          { title: "Starred", url: "/", },
-          { title: "Settings", url: "/", },
-        ],
-      },
       {
         title: "Bots",
         url: "bots",
         icon: Bot,
         isLink: true,
+      },
+      {
+        title: "Playground",
+        url: "chat",
+        icon: MessagesSquare,
+        isLink: true,
+      },
+      {
+        title: "Evaluation",
+        url: '#',
+        icon: Logs,
+        items: [
+          {title: "Logs", url: "logs"},
+          {title: "Scores", url: "scores"}
+        ]
+      },
+      {
+        title: "Knowledge",
+        url: "#",
+        icon: Book,
+        items: [
+          { title: "Collections", url: "rag" },
+          { title: "Data Sources", url: "sources" },
+        ],
       },
       {
         title: "Settings",
@@ -41,32 +54,7 @@ export function AppSidebar() {
           { title: "Access Control", url: "/settings/roles" },
         ],
       },
-      {
-        title: "Playground",
-        url: "chat",
-        icon: Bot,
-        isLink: true,
-      },
-      {
-        title: "Knowledge",
-        url: "#",
-        icon: Book,
-        items: [
-          { title: "Collections", url: "rag" },
-          { title: "Data Sources", url: "sources" },
-        ],
-      },
-      {
-        title: "Bot Logs",
-        url: "logs",
-        icon: Logs,
-        isLink: true,
-      },
-    ],
-    projects: [
-      { name: "Design Engineering", url: "/", icon: Frame },
-      { name: "Sales & Marketing", url: "/", icon: PieChart },
-      { name: "Travel", url: "/", icon: Map },
+
     ],
   }
 

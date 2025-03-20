@@ -6,14 +6,19 @@ import { useWorker } from '../hooks'
 import { NodeLayout } from './node'
 import { NodeTitle } from '../title'
 import { workerRegistry } from '@/lib/agents/registry'
+import { AddFieldsForm } from '../addfields'
 const { response } = workerRegistry
 
 response.icon = Forward
 
 export function ResponseNode(props: NodeProps) {
+
   const worker = useWorker(props.id)
-  return <NodeLayout>
-    <NodeTitle registry={response} worker={worker} />
+
+
+  return <NodeLayout worker={worker} >
     <NodeHandlers worker={worker} />
+    <AddFieldsForm direction="input" />
   </NodeLayout >
+
 }

@@ -2,63 +2,115 @@ import { buildWorker } from "./worker"
 import { ulid } from 'ulid'
 
 declare global {
-
   type LiteralUnion<KnownValues extends string> = (string & {}) | KnownValues
-
-  interface AgentConfig {
-    id: string
-    title: string
-    workers: { [index: string]: WorkerConfig }
-  }
-
   type Agent = ReturnType<typeof buildAgent>
+  type EdgeConnections = { [index: string]: { source: string, target: string, sourceHandle: string, targetHandle: string } }
 
+  interface AgentParameters {
+    debug?: boolean
+    input: any
+    output?: any
+    // update: (p: AgentParameters) => void
+    agent?: Agent
+    error?: string
+  }
 }
+
+
+
+const update = (p: AgentParameters) => { }
 
 export function buildAgent(config: AgentConfig) {
 
   const workers: { [index: string]: AIWorker } = {}
-
-  for (const key in config.workers) {
-    workers[key] = buildWorker(config.workers[key])
-  }
+  const edges: EdgeConnections = (config.edges as EdgeConnections) || {}
 
   const agent = {
-    config,
+
+    get id() { return config.id },
+    set id(v: number) { config.id = v },
+    get title() { return config.title },
+    set title(v: string) { config.title = v },
+    edges,
+    workers,
+
+    currentWorker: null as AIWorker,
+    update() {
+      //Used to update the UI in front end
+    },
+
+    getResponseWorker() {
+      for (const key in workers) {
+        if (workers[key].config.type === "response") return workers[key]
+      }
+      return null
+    },
+
     hasInput() {
       for (const key in workers) {
         if (workers[key].config.type === "request") return true
       }
       return false
     },
-    get workers() {
-      return workers
+
+    hasResponse() {
+      return agent.getResponseWorker() !== null
     },
 
+    reset() {
+      for (const key in workers) {
+        const w = workers[key]
+        for (const key in w.handles) {
+          const h = w.handles[key]
+          if (h.persistent) continue
+          h.value = undefined
+        }
+      }
+    },
 
-    addWorker(config: WorkerConfig): AIWorker {
-      config.id = `NODE_${ulid()}`
-      console.log(config)
+    async execute(p: AgentParameters) {
+      agent.reset()
+      p.input ||= {}
+      p.output ||= {}
+      p.input ||= {}
+      p.output ||= {}
+      // p.update = p.update || update
+      p.agent = agent
+      console.log("Executing agent...")
+      const worker = agent.getResponseWorker()
+      if (!worker) return
+      await worker.execute(p)
+      agent.currentWorker = null
+      agent.update()
+    },
 
-      // config.id = `NODE_${makeReadeableId()}`
-      config.handles ||= {}
-      const worker = buildWorker(config)
-      workers[config.id] = worker
+    initializeWorker(config: WorkerConfig, handlers: NodeIO[], registry: WorkerRegistryItem) {
+      const worker = agent.addWorker(config)
+      worker.registry = registry
+      for (const h of handlers) {
+        h.system = true
+      }
+      worker.addHandlers(handlers)
+      return worker
+    },
+
+    addWorker(w: WorkerConfig): AIWorker {
+      w.id ||= `NODE_${ulid()}`
+      w.handles ||= {}
+      const worker = buildWorker(w)
+      workers[w.id] = worker
       return worker
     },
 
     deleteWorker(id: string) {
       delete workers[id]
-      delete config.workers[id]
     },
-
-
   }
 
   return agent
 
-
 }
+
 
 
 
