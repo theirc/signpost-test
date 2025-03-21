@@ -62,7 +62,15 @@ const MODEL_MAPPING: Record<string, string> = {
   "default": "claude-3-sonnet-20240229"
 };
 
-export default async function handler(
+// Changed from "export default" to "export const" for ES modules
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
+// Changed from "export default async function" to "export async function"
+export async function handler(
   request: VercelRequest,
   response: VercelResponse
 ): Promise<void> {
