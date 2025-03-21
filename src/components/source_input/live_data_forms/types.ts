@@ -11,6 +11,12 @@ export interface FormState {
   map?: string
   prompt?: string
   bot_log?: string
+  chunk_size?: number
+  chunk_overlap?: number
+  max_token_limit?: number
+  include_urls?: boolean
+  extract_media_content?: boolean
+  retrieve_links?: boolean
 }
 
 export const DEFAULT_FORM_STATE: FormState = {
