@@ -1,7 +1,7 @@
 "use client"
 const LOCAL_STORAGE_KEY = "chatHistory"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
 import { Mic, MessageSquare, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
