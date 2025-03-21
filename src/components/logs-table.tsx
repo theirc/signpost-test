@@ -1,9 +1,7 @@
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
-import { ArrowUpDown, MoreHorizontal, Pencil, Search, Trash } from "lucide-react"
+import { Search } from "lucide-react"
 import { useState, useMemo, useCallback } from "react"
 import { Input } from "@/components/ui/input"
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
 import jsPDF from "jspdf"
 import "jspdf-autotable"
 import { cn } from "@/lib/utils"
@@ -11,7 +9,8 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { utils, writeFile } from "xlsx"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
+import CustomTable from "./ui/custom-table"
+import { ColumnDef } from "@tanstack/react-table"
 
 
 export type Log = {
@@ -33,36 +32,26 @@ interface LogsTableProps {
     onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
     onPreview?: (source: Log) => void
     onDelete?: (id: string) => void
-    pageSize?: number
 }
-
-const defaultPageSize = 10
 
 export function LogsTable({
     logs,
     selectedLogs = [],
     onToggleSelect,
     onSelectAll,
-    onPreview,
-    onDelete,
-    pageSize = defaultPageSize,
+    onDelete
 }: LogsTableProps) {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Log; direction: "asc" | "desc" }>({
-        key: "date_created",
-        direction: "desc",
-    })
     const [searchTerm, setSearchTerm] = useState("")
     const [botFilter, setBotFilter] = useState<string>("")
     const [languageFilter, setLanguageFilter] = useState<string>("")
     const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null } | undefined>(undefined)
-    const [currentPage, setCurrentPage] = useState(1)
+    const sortConfig: { key: keyof Log; direction: "asc" | "desc" } = {
+        key: "date_created",
+        direction: "desc",
+    }
 
     const uniqueBots = useMemo(() => Array.from(new Set(logs.map((log) => log.bot))), [logs])
     const uniqueLanguages = useMemo(() => Array.from(new Set(logs.map((log) => log.detectedLanguage))), [logs])
-
-    const handleSort = useCallback((key: keyof Log) => {
-        setSortConfig((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc", }))
-    }, [setSortConfig])
 
     const handleSearchTermChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value)
@@ -227,18 +216,6 @@ export function LogsTable({
         link.click()
     }, [selectedLogsData])
 
-    const pageCount = Math.ceil(filteredAndSortedLogs.length / pageSize)
-
-    const paginatedLogs = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize
-        const endIndex = startIndex + pageSize
-        return filteredAndSortedLogs.slice(startIndex, endIndex)
-    }, [filteredAndSortedLogs, currentPage, pageSize])
-
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
-    }
-
     const formatDateRange = () => {
         if (!dateRange) {
             return "Pick a date"
@@ -257,6 +234,17 @@ export function LogsTable({
 
         return "Pick a date"
     }
+
+    const columns: ColumnDef<any>[] = [
+        { id: "bot", accessorKey: "bot", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+        { id: "detectedLanguage", enableResizing: true, enableHiding: true, accessorKey: "detectedLanguage", header: "Detected Language", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "detectedLocation", enableResizing: true, enableHiding: true, accessorKey: "detectedLocation", header: "Detected Location", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "searchTerm", enableResizing: true, enableHiding: true, accessorKey: "searchTerm", header: "Search Term", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category", header: "Category", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "userMessage", enableResizing: true, enableHiding: true, accessorKey: "userMessage", header: "User Message", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "answer", enableResizing: true, enableHiding: true, accessorKey: "answer", header: "Answer", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "date_created", enableResizing: true, enableHiding: true, accessorKey: "date_created", header: "Date Created", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+    ]
 
     return (
         <div className="space-y-4">
@@ -357,111 +345,13 @@ export function LogsTable({
                     </Popover>}
                 </div>
             </div>
-            <div className="border rounded-md">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedLogs.length === filteredAndSortedLogs.length}
-                                    onChange={onSelectAll}
-                                    className="rounded border-gray-300"
-                                />
-                            </TableHead>
-                            <TableHead>
-                                <div className="flex items-center gap-2">
-                                    Date Created
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
-                            </TableHead>
-                            <TableHead
-                                className="cursor-pointer hover:bg-muted"
-                                onClick={() => handleSort("bot")}
-                            >
-                                <div className="flex items-center gap-2">
-                                    Bot
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
-                            </TableHead>
-                            <TableHead>Detected Language</TableHead>
-                            <TableHead>User Message</TableHead>
-                            <TableHead>Answer</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedLogs.map((log) => (
-                            <TableRow key={log.id}>
-                                <TableCell>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedLogs.includes(log.id)}
-                                        onChange={() => onToggleSelect?.(log.id)}
-                                        className="rounded border-gray-300"
-                                    />
-                                </TableCell>
-                                <TableCell>{format(new Date(log.date_created), "MMM dd, yyyy")}</TableCell>
-                                <TableCell>{log.bot}</TableCell>
-                                <TableCell>{log.detectedLanguage}</TableCell>
-                                <TableCell>{log.userMessage}</TableCell>
-                                <TableCell>{log.answer}</TableCell>
-                                <TableCell>{log.category}</TableCell>
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem>
-                                                <Pencil className="h-4 w-4 mr-2" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-500 focus:text-red-500">
-                                                <Trash className="h-4 w-4 mr-2" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-            <Pagination>
-                <PaginationContent>
-                    {currentPage === 1 ? (
-                        <span aria-disabled="true">
-                            <PaginationPrevious />
-                        </span>
-                    ) : (
-                        <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                    )}
-
-                    {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
-                        <PaginationItem key={page}>
-                            <PaginationLink
-                                onClick={() => handlePageChange(page)}
-                                isActive={currentPage === page}
-                            >
-                                {page}
-                            </PaginationLink>
-                        </PaginationItem>
-                    ))}
-
-                    {currentPage === pageCount ? (
-                        <span aria-disabled="true">
-                            <PaginationNext />
-                        </span>
-                    ) : (
-                        <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                    )}
-                </PaginationContent>
-            </Pagination>
+            <CustomTable
+                columns={columns}
+                data={filteredAndSortedLogs}
+                onToggleSelect={onToggleSelect}
+                selectedRows={selectedLogs}
+                onSelectAll={onSelectAll}
+            />
         </div>
     )
 }
