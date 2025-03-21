@@ -8,7 +8,7 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 // Import the shared sources and table component from their new location
-import { availableSources } from "@/components/old_forms/files-modal"
+import { availableSources } from "@/components/source_input/files-modal"
 import { SourcesTable } from "@/components/sources-table"
 
 export function DocumentUploadNode({ data, isConnectable }) {

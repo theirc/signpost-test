@@ -100,5 +100,33 @@ export function useSources() {
     }
   }
 
-  return { sources, loading, error, addSource, deleteSource, fetchSources }
+  const updateSource = async (id: string, updates: Partial<Source>) => {
+    try {
+      // Ensure tags are in the correct PostgreSQL array format if provided
+      if (updates.tags && Array.isArray(updates.tags)) {
+        updates.tags = `{${updates.tags.join(',')}}`;
+      }
+
+      const { data, error } = await supabase
+        .from('sources')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Update the source in state
+      setSources(prev => 
+        prev.map(source => source.id === id ? { ...source, ...data } : source)
+      );
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating source:', error);
+      throw error;
+    }
+  };
+
+  return { sources, loading, error, addSource, deleteSource, updateSource, fetchSources }
 } 

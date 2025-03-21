@@ -8,6 +8,29 @@ const PARSER_CDNS = {
   csv: "https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"
 }
 
+// Common MIME types and their extensions
+const MIME_TYPES = {
+  // PDF
+  'application/pdf': '.pdf',
+  // Word
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/msword': '.doc',
+  // Text
+  'text/plain': '.txt',
+  'text/markdown': '.md',
+  'text/html': '.html',
+  'text/css': '.css',
+  'text/javascript': '.js',
+  // CSV
+  'text/csv': '.csv',
+  'application/vnd.ms-excel': '.csv',
+  // JSON
+  'application/json': '.json',
+  // Other common formats
+  'application/xml': '.xml',
+  'text/xml': '.xml'
+}
+
 // Load a script from CDN if not already loaded
 const loadScript = async (url: string): Promise<void> => {
   if (document.querySelector(`script[src="${url}"]`)) return
@@ -26,6 +49,7 @@ export interface ParsedFile {
   id: string
   name: string
   content: string
+  originalPath?: string
 }
 
 export function useFileParser() {
@@ -90,6 +114,25 @@ export function useFileParser() {
 
   const parseText = (file: File): Promise<string> => file.text()
 
+  // Detect file type based on MIME type or extension
+  const detectFileType = (file: File): string => {
+    // First try by MIME type
+    if (file.type && Object.keys(MIME_TYPES).includes(file.type)) {
+      return file.type
+    }
+    
+    // Then try by extension
+    const extension = `.${file.name.split('.').pop()?.toLowerCase()}`
+    const mimeType = Object.entries(MIME_TYPES).find(([_, ext]) => ext === extension)?.[0]
+    
+    if (mimeType) return mimeType
+    
+    // Default to text/plain for unknown types with .txt, .md extensions
+    if (['.txt', '.md'].includes(extension)) return 'text/plain'
+    
+    return file.type || 'application/octet-stream'
+  }
+
   const parseFiles = async (files: File[]): Promise<ParsedFile[]> => {
     if (!dependenciesLoaded || files.length === 0) return []
     
@@ -100,31 +143,36 @@ export function useFileParser() {
       for (const file of files) {
         try {
           let content = ""
-          switch (file.type) {
-            case 'application/pdf':
-              content = await parsePDF(file)
-              break
-            case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-              content = await parseDocx(file)
-              break
-            case 'text/csv':
-              content = await parseCSV(file)
-              break
-            case 'text/plain':
-            case 'text/markdown':
-            default:
-              if (file.type.startsWith('text/')) {
-                content = await parseText(file)
-              } else {
-                continue
-              }
+          const fileType = detectFileType(file)
+          
+          // Handle different file types
+          if (fileType === 'application/pdf') {
+            content = await parsePDF(file)
+          } else if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+                     fileType === 'application/msword') {
+            content = await parseDocx(file)
+          } else if (fileType === 'text/csv' || fileType === 'application/vnd.ms-excel') {
+            content = await parseCSV(file)
+          } else if (fileType.startsWith('text/') || fileType === 'application/json') {
+            content = await parseText(file)
+          } else {
+            console.warn(`Unsupported file type: ${fileType} for file ${file.name}`)
+            continue
           }
 
-          parsedFiles.push({
+          // Create parsed file object with original path if available
+          const parsedFile: ParsedFile = {
             id: Math.random().toString(36).substring(7),
             name: file.name,
             content
-          })
+          }
+          
+          // Add path if available (from folder crawler)
+          if ('path' in file) {
+            parsedFile.originalPath = (file as any).path
+          }
+
+          parsedFiles.push(parsedFile)
         } catch (error) {
           console.error(`Error processing ${file.name}:`, error)
         }
@@ -136,10 +184,23 @@ export function useFileParser() {
     }
   }
 
+  // Get all supported file extensions
+  const getSupportedExtensions = () => {
+    return Object.values(MIME_TYPES)
+  }
+
+  // Get file extensions as string for input accept attribute
+  const getAcceptString = () => {
+    return getSupportedExtensions().join(',')
+  }
+
   return {
     isLoading,
     parseFiles,
-    supportedTypes: ['.pdf', '.docx', '.txt', '.md', '.csv']
+    supportedTypes: ['.pdf', '.docx', '.txt', '.md', '.csv', '.json', '.xml', '.html', '.js', '.css'],
+    supportedMimeTypes: Object.keys(MIME_TYPES),
+    getSupportedExtensions,
+    getAcceptString
   }
 }
 
