@@ -16,15 +16,21 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSupabase } from './use-supabase'
 
-export interface Bot {
+export type Bot = {
   id: string
   name: string
-  collection?: string
   model: string
+  collection?: string
+  knowledge_collections?: string[]
+  knowledge_sources?: string[]
   system_prompt?: string
-  temperature: number
+  temperature?: number
   created_at: string
-  updated_at?: string
+  updated_at: string
+  creator?: string
+  average_speed?: number
+  last_run?: string
+  archived?: boolean
 }
 
 export function useBots() {

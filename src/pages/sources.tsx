@@ -71,65 +71,67 @@ export default function Sources() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">All Sources</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => setFilesModalOpen(true)}>
-            Upload Files
-          </Button>
-          <Button onClick={() => setLiveDataModalOpen(true)} variant="outline">
-            Add Live Data
-          </Button>
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCcw className="h-4 w-4 mr-2" />
-            Refresh Sources
-          </Button>
-        </div>
-      </div>
-
-      {loading || sourcesLoading ? (
-        <div className="w-full h-64 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      ) : (
-        <SourcesTable
-          sources={sourcesDisplay}
-          showCheckboxes={false}
-          showActions={true}
-          onPreview={handlePreview}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {/* Content Preview Dialog */}
-      <Dialog open={!!previewContent} onOpenChange={() => setPreviewContent(null)}>
-        <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>{previewContent?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 mt-4 min-h-0">
-            <div className="bg-muted p-4 rounded-md h-full overflow-y-auto">
-              <pre className="text-sm font-mono whitespace-pre-wrap break-words" style={{ maxWidth: '100%' }}>
-                {previewContent?.content}
-              </pre>
-            </div>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold tracking-tight">All Sources</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => setFilesModalOpen(true)}>
+              Upload Files
+            </Button>
+            <Button onClick={() => setLiveDataModalOpen(true)} variant="outline">
+              Add Live Data
+            </Button>
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Refresh Sources
+            </Button>
           </div>
-          <DialogFooter className="mt-4 border-t pt-4">
-            <Button variant="outline" onClick={() => setPreviewContent(null)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
 
-      <FilesModal
-        open={filesModalOpen}
-        onOpenChange={handleFilesModalOpenChange}
-      />
+        {loading || sourcesLoading ? (
+          <div className="w-full h-64 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        ) : (
+          <SourcesTable
+            sources={sourcesDisplay}
+            showCheckboxes={false}
+            showActions={true}
+            onPreview={handlePreview}
+            onDelete={handleDelete}
+          />
+        )}
 
-      <LiveDataModal
-        open={liveDataModalOpen}
-        onOpenChange={handleLiveDataModalOpenChange}
-      />
+        {/* Content Preview Dialog */}
+        <Dialog open={!!previewContent} onOpenChange={() => setPreviewContent(null)}>
+          <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>{previewContent?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 mt-4 min-h-0">
+              <div className="bg-muted p-4 rounded-md h-full overflow-y-auto">
+                <pre className="text-sm font-mono whitespace-pre-wrap break-words" style={{ maxWidth: '100%' }}>
+                  {previewContent?.content}
+                </pre>
+              </div>
+            </div>
+            <DialogFooter className="mt-4 border-t pt-4">
+              <Button variant="outline" onClick={() => setPreviewContent(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <FilesModal
+          open={filesModalOpen}
+          onOpenChange={handleFilesModalOpenChange}
+        />
+
+        <LiveDataModal
+          open={liveDataModalOpen}
+          onOpenChange={handleLiveDataModalOpenChange}
+        />
+      </div>
     </div>
   )
 } 

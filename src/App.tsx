@@ -8,6 +8,7 @@ import Chat from "./pages/chat"
 import { CollectionsManagement } from "./pages/knowledge"
 import { BotLogsTable } from "./pages/logs"
 import { BotManagement } from "./pages/bots"
+import SystemPrompts from "./pages/bots/prompts"
 import Sources from './pages/sources.tsx'
 import { SettingsLayout } from "./pages/settings/layout"
 import { ProjectsSettings } from "./pages/settings/projects"
@@ -27,6 +28,7 @@ const routeNames: Record<string, string> = {
   '/sources': 'Data Sources',
   '/logs': 'Bot Logs',
   '/bots': 'Bots',
+  '/bots/prompts': 'System Prompts',
   '/settings/projects': 'Settings / Projects',
   '/settings/team': 'Settings / Team',
   '/settings/billing': 'Settings / Billing',
@@ -80,6 +82,7 @@ function AppContent() {
             <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
             <Route path="/bots" element={<BotManagement />} />
+            <Route path="/bots/prompts" element={<SystemPrompts />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route path="projects" element={<ProjectsSettings />} />
               <Route path="team" element={<TeamSettings />} />
