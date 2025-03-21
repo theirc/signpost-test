@@ -25,10 +25,13 @@ export function AppSidebar() {
         isLink: true,
       },
       {
-        title: "Bot Logs",
-        url: "logs",
+        title: "Evaluation",
+        url: '#',
         icon: Logs,
-        isLink: true,
+        items: [
+          {title: "Logs", url: "logs"},
+          {title: "Scores", url: "scores"}
+        ]
       },
       {
         title: "Knowledge",

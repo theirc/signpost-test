@@ -1,7 +1,7 @@
 "use client"
 const LOCAL_STORAGE_KEY = "chatHistory"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '@/api/getBots'
 import { Mic, MessageSquare, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,7 +43,7 @@ export default function Chat () {
     isSending: false,
     rebuilding: false,
     loadingBotList: false,
-    bots: {} as Bots,
+    bots: {} as Record<number, {name: string; history: any[]}>,
     selectedBots: [] as number[],
     audioMode: false,
   })
@@ -276,7 +276,7 @@ export default function Chat () {
   const hasSelectedBots = state.selectedBots.length > 0
 
   return ( 
-    <div className="flex h-screen">
+      <div className="flex h-screen">
       <div className="w-1/4 border-r p-4">
         <div className='flex justify-end mb-4'>
           <Button 
