@@ -3,6 +3,33 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 
+// Define interfaces for our data structures
+interface LiveDataElement {
+  id: string;
+  title: string;
+  lastUpdated: string;
+  contentPreview: string;
+}
+
+interface SourceDetail {
+  id: string;
+  name: string;
+  tags: string[];
+  contentPreview: string;
+  liveDataElements?: LiveDataElement[];
+}
+
+// Define interface for Supabase collection source response
+interface CollectionSourceItem {
+  source_id: string;
+  sources: {
+    id: string;
+    name: string;
+    content: string;
+    tags: string[] | null;
+  };
+}
+
 // Map of internal model IDs to Claude model identifiers
 const MODEL_MAPPING: Record<string, string> = {
   // Add your known model mappings here, for example:
@@ -82,7 +109,7 @@ export default async function handler(
 
     // Create an enhanced system prompt that includes knowledge base info
     let enhancedSystemPrompt = systemPrompt as string || 'You are a helpful AI assistant.';
-    let sourceDetails = [];
+    let sourceDetails: SourceDetail[] = [];
     
     // Fetch knowledge base sources if a collection is specified
     if (collectionId) {
@@ -96,7 +123,10 @@ export default async function handler(
             source_id,
             sources:source_id(id, name, content, tags)
           `)
-          .eq('collection_id', collectionId);
+          .eq('collection_id', collectionId) as { 
+            data: CollectionSourceItem[] | null; 
+            error: any 
+          };
 
         if (sourcesError) {
           console.error('Error fetching collection sources:', sourcesError);
