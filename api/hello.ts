@@ -3,6 +3,25 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 
+// Helper function to add timeout to promises
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> => {
+  let timeoutId: NodeJS.Timeout;
+  
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`Timeout after ${timeoutMs}ms: ${errorMsg}`));
+    }, timeoutMs);
+  });
+  
+  return Promise.race([
+    promise.then(result => {
+      clearTimeout(timeoutId);
+      return result;
+    }),
+    timeoutPromise
+  ]);
+};
+
 // Define interfaces for our data structures
 interface LiveDataElement {
   id: string;
@@ -48,6 +67,12 @@ export default async function handler(
   response: VercelResponse
 ): Promise<void> {
   try {
+    // Set explicit CORS headers to allow cross-origin requests and prevent middleware interference
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    response.setHeader('Content-Type', 'application/json');
+    
     // Log environment info for debugging
     console.log('Vercel environment:', process.env.VERCEL_ENV);
     console.log('Node environment:', process.env.NODE_ENV);
@@ -77,6 +102,7 @@ export default async function handler(
     });
     
     if (!botId) {
+      response.setHeader('Content-Type', 'application/json');
       response.status(400).json({
         error: 'Missing required parameter: botId'
       });
@@ -88,6 +114,7 @@ export default async function handler(
     const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
     
     if (!CLAUDE_API_KEY) {
+      response.setHeader('Content-Type', 'application/json');
       response.status(500).json({
         error: 'Missing Claude API key in environment variables'
       });
@@ -95,6 +122,7 @@ export default async function handler(
     }
 
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      response.setHeader('Content-Type', 'application/json');
       response.status(500).json({
         error: 'Missing Supabase credentials in environment variables',
         details: {
@@ -116,6 +144,7 @@ export default async function handler(
       console.log('Supabase client initialized successfully');
     } catch (supabaseInitError) {
       console.error('Error initializing Supabase client:', supabaseInitError);
+      response.setHeader('Content-Type', 'application/json');
       response.status(500).json({
         error: 'Failed to initialize database connection',
         details: (supabaseInitError as Error).message,
@@ -288,26 +317,42 @@ export default async function handler(
 
     // Make the Claude API call
     console.log('Making Claude API call with model:', claudeModel);
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: claudeModel,
-        max_tokens: 1000,
-        temperature: parseFloat(temperature as string) || 0.7,
-        system: enhancedSystemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: userPrompt || 'Hello! Can you introduce yourself?'
-          }
-        ]
-      })
-    });
+    let claudeResponse;
+    try {
+      claudeResponse = await withTimeout(
+        fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': CLAUDE_API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: claudeModel,
+            max_tokens: 1000,
+            temperature: parseFloat(temperature as string) || 0.7,
+            system: enhancedSystemPrompt,
+            messages: [
+              {
+                role: 'user',
+                content: userPrompt || 'Hello! Can you introduce yourself?'
+              }
+            ]
+          })
+        }),
+        15000, // 15 second timeout
+        'Claude API request timed out'
+      );
+    } catch (timeoutError) {
+      console.error('Claude API timeout:', timeoutError);
+      response.setHeader('Content-Type', 'application/json');
+      response.status(504).json({
+        error: 'API Gateway Timeout',
+        message: 'The Claude API request timed out',
+        timeAllowed: '15 seconds'
+      });
+      return;
+    }
 
     console.log('Claude API response status:', claudeResponse.status);
     console.log('Claude API response headers:', Object.fromEntries([...claudeResponse.headers.entries()]));
@@ -328,6 +373,7 @@ export default async function handler(
         }
       }
       
+      response.setHeader('Content-Type', 'application/json');
       response.status(claudeResponse.status).json({
         error: 'Claude API error',
         details: errorDetails,
@@ -348,6 +394,7 @@ export default async function handler(
       const rawResponse = await claudeResponse.text();
       console.error('Raw Claude API response:', rawResponse.substring(0, 500)); // Log first 500 chars
       
+      response.setHeader('Content-Type', 'application/json');
       response.status(500).json({
         error: 'Failed to parse Claude API response',
         details: {
@@ -382,6 +429,7 @@ export default async function handler(
     };
     
     console.log('Successfully generated response');
+    response.setHeader('Content-Type', 'application/json');
     response.status(200).json(safeResponse);
     
   } catch (error) {
@@ -407,6 +455,7 @@ export default async function handler(
       }
     };
     
+    response.setHeader('Content-Type', 'application/json');
     response.status(500).json(errorResponse);
   }
 }
