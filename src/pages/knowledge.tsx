@@ -11,6 +11,7 @@ import { useCollectionSources } from "@/hooks/use-collection-sources"
 import { useSources, Source } from "@/hooks/use-sources"
 import { useSourceTags } from "@/hooks/use-source-tags"
 import { useSupabase } from "@/hooks/use-supabase"
+import { formatDate } from "@/components/source_input/utils"
 
 export function CollectionsManagement() {
   // Supabase hooks
@@ -478,7 +479,7 @@ export function CollectionsManagement() {
               </div>
               
               <div className="text-sm text-muted-foreground mb-4">
-                Created: {new Date(collection.created_at).toLocaleDateString()}
+                Created: {formatDate(collection.created_at)}
               </div>
 
               {collectionSources[collection.id]?.length ? (

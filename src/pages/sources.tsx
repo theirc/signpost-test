@@ -2,32 +2,38 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import React, { useState, useCallback, useMemo } from "react"
-import { FilesModal } from "../components/old_forms/files-modal"
-import { LiveDataModal } from "../components/old_forms/live-data-modal"
+import { FilesModal } from "@/components/source_input/files-modal"
+import { LiveDataModal } from "@/components/source_input/live-data-modal"
 import { SourcesTable } from "@/components/sources-table"
-import { Loader2, RefreshCcw, Book, MoreHorizontal, Pencil, Trash, Database } from "lucide-react"
+import { Loader2, RefreshCcw, Book, MoreHorizontal, Pencil, Trash, Database, Plus, X } from "lucide-react"
 import { useSources, Source } from "@/hooks/use-sources"
 import { useSourceDisplay } from "@/hooks/use-source-display"
 import { useSourceConfig, LiveDataElement } from "@/hooks/use-source-config"
+import { formatDate } from "@/components/source_input/utils"
+import { useTags, Tag } from "@/hooks/use-tags"
 
 
 interface PreviewContent {
+  id: string;
   name: string;
   content: string;
+  tags?: string[];
   liveDataElements?: LiveDataElement[];
   isLiveData?: boolean;
 }
 
 export default function Sources() {
-  const { sources, loading: sourcesLoading, fetchSources, deleteSource } = useSources()
+  const { sources, loading: sourcesLoading, fetchSources, deleteSource, updateSource } = useSources()
   const { sourcesDisplay, setSourcesDisplay } = useSourceDisplay(sources, sourcesLoading)
   const { getConfigForSource, getLiveDataElements } = useSourceConfig()
+  const { tags, loading: tagsLoading, addTag } = useTags()
   const [loading, setLoading] = useState(false)
   const [previewContent, setPreviewContent] = React.useState<PreviewContent | null>(null)
   const [selectedElement, setSelectedElement] = React.useState<LiveDataElement | null>(null)
   const [filesModalOpen, setFilesModalOpen] = React.useState(false)
   const [liveDataModalOpen, setLiveDataModalOpen] = React.useState(false)
-
+  const [newTag, setNewTag] = useState("")
+  const [savingTags, setSavingTags] = useState(false)
 
   const refreshSources = useCallback(() => {
     setLoading(true)
@@ -53,19 +59,82 @@ export default function Sources() {
       const config = await getConfigForSource(source.id)
       const elements = config ? await getLiveDataElements(source.id) : []
       setPreviewContent({
+        id: source.id,
         name: source.name,
         content: config ? JSON.stringify(config, null, 2) : 'No configuration found',
+        tags: source.tags,
         liveDataElements: elements,
         isLiveData: true
       })
     } else {
       setPreviewContent({
+        id: source.id,
         name: source.name,
         content: source.content,
+        tags: source.tags,
         isLiveData: false
       })
     }
   }, [getConfigForSource, getLiveDataElements])
+
+  // Handle adding a tag to the source
+  const handleAddTag = async () => {
+    if (!previewContent || !newTag.trim()) return;
+    
+    try {
+      setSavingTags(true);
+      
+      // Ensure the tag exists in the tags table
+      await addTag(newTag.trim());
+      
+      // Get the current tags and add the new one if not already present
+      const currentTags = previewContent.tags || [];
+      if (!currentTags.includes(newTag.trim())) {
+        const updatedTags = [...currentTags, newTag.trim()];
+        
+        // Update the source with the new tags
+        const updatedSource = await updateSource(previewContent.id, { tags: updatedTags });
+        
+        // Update the preview content and sources display
+        setPreviewContent(prev => prev ? { ...prev, tags: updatedTags } : null);
+        setSourcesDisplay(prev => prev.map(source => 
+          source.id === previewContent.id ? { ...source, tags: updatedTags } : source
+        ));
+      }
+      
+      setNewTag("");
+    } catch (error) {
+      console.error("Error adding tag:", error);
+    } finally {
+      setSavingTags(false);
+    }
+  };
+
+  // Handle removing a tag from the source
+  const handleRemoveTag = async (tagToRemove: string) => {
+    if (!previewContent) return;
+    
+    try {
+      setSavingTags(true);
+      
+      // Get the current tags and remove the specified one
+      const currentTags = previewContent.tags || [];
+      const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
+      
+      // Update the source with the new tags
+      const updatedSource = await updateSource(previewContent.id, { tags: updatedTags });
+      
+      // Update the preview content and sources display
+      setPreviewContent(prev => prev ? { ...prev, tags: updatedTags } : null);
+      setSourcesDisplay(prev => prev.map(source => 
+        source.id === previewContent.id ? { ...source, tags: updatedTags } : source
+      ));
+    } catch (error) {
+      console.error("Error removing tag:", error);
+    } finally {
+      setSavingTags(false);
+    }
+  };
 
   // Memoize modal handlers
   const handleFilesModalOpenChange = useCallback((open: boolean) => {
@@ -136,7 +205,55 @@ export default function Sources() {
         <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{previewContent?.name}</DialogTitle>
+            <DialogDescription>
+              {previewContent?.isLiveData ? 'Live data elements for this source' : 'Source content preview'}
+            </DialogDescription>
           </DialogHeader>
+
+          {/* Tag Management Section */}
+          <div className="border-b pb-3">
+            <h3 className="text-sm font-semibold mb-2">Tags</h3>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {previewContent?.tags?.map(tag => (
+                <div key={tag} className="flex items-center bg-muted px-2 py-1 rounded text-sm">
+                  <span>{tag}</span>
+                  <button 
+                    className="ml-1 text-muted-foreground hover:text-foreground"
+                    onClick={() => handleRemoveTag(tag)}
+                    disabled={savingTags}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+              {!previewContent?.tags?.length && (
+                <div className="text-sm text-muted-foreground">No tags</div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Input 
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                placeholder="Add a new tag"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && newTag.trim()) {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
+                className="max-w-xs"
+              />
+              <Button 
+                size="sm" 
+                onClick={handleAddTag}
+                disabled={!newTag.trim() || savingTags}
+              >
+                {savingTags ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                Add
+              </Button>
+            </div>
+          </div>
+
           <div className="flex-1 mt-4 min-h-0">
             {previewContent?.isLiveData ? (
               <div className="h-full">
@@ -151,7 +268,7 @@ export default function Sources() {
                       >
                         <div className="font-medium">{element.metadata?.title || 'Untitled'}</div>
                         <div className="text-sm text-muted-foreground mt-1">
-                          Last updated: {new Date(element.last_updated || '').toLocaleString()}
+                          Last updated: {formatDate(element.last_updated)}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           Version: {element.version}

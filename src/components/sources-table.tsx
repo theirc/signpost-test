@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowUpDown, Plus, Search, Tag, X } from "lucide-react"
 import { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
+import { formatLastUpdated } from "@/components/source_input/utils"
 
 export type Source = {
   id: string
@@ -241,7 +242,7 @@ export function SourcesTable({
                 )}
                 <TableCell>{source.name}</TableCell>
                 <TableCell>{source.type}</TableCell>
-                <TableCell>{source.lastUpdated}</TableCell>
+                <TableCell>{formatLastUpdated(source.lastUpdated)}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {(source.tags || []).map(tag => {

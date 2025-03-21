@@ -14,9 +14,10 @@ import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
 import { SourcesTable } from '@/components/sources-table'
-import { availableSources } from "@/components/old_forms/files-modal"
+import { availableSources } from "@/components/source_input/files-modal"
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import "../index.css"
+import { formatDate } from "@/components/source_input/utils"
 
 interface Bots {
   [index: number]: {
@@ -169,7 +170,7 @@ export default function Chat () {
         id: new Date().toISOString(),
         botName: currentBotName,
         messages: [userMessage],
-        timestamp: new Date().toLocaleString(),
+        timestamp: formatDate(new Date().toISOString()),
       }
       setActiveChat(currentActiveChat)
       

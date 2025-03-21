@@ -15,7 +15,6 @@ import { useEffect, useState } from 'react'
 import { useSupabase } from './use-supabase'
 
 export type SourceConfig = {
-  id: string
   source: string
   enabled: number
   url?: string
@@ -64,9 +63,9 @@ export function useSourceConfig() {
         .from('source_configs')
         .select('*')
         .eq('source', sourceId)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code !== 'PGRST116') throw error // PGRST116 is "no rows returned"
+      if (error) throw error
       return data as SourceConfig | null
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)))
@@ -81,17 +80,12 @@ export function useSourceConfig() {
       setLoading(true)
       console.log('Starting updateSourceConfig with config:', config);
       
-      // Check if config exists
-      console.log('Checking if config exists for source:', config.source);
+      // Check if config exists directly by source
       const { data: existingConfig, error: checkError } = await supabase
         .from('source_configs')
-        .select('id')
+        .select('*')
         .eq('source', config.source)
-        .single()
-
-      if (checkError) {
-        console.log('Error checking existing config:', checkError);
-      }
+        .maybeSingle();
       
       console.log('Existing config check result:', existingConfig);
       
@@ -103,31 +97,31 @@ export function useSourceConfig() {
           .from('source_configs')
           .update(config)
           .eq('source', config.source)
-          .select('*')
+          .select('*');
         
         if (error) {
           console.error('Error updating config:', error);
           throw error;
         }
         console.log('Update response:', data);
-        result = data?.[0]
+        result = data?.[0];
       } else {
         console.log('Inserting new config:', config);
         const { data, error } = await supabase
           .from('source_configs')
           .insert([config])
-          .select('*')
+          .select('*');
         
         if (error) {
           console.error('Error inserting config:', error);
           throw error;
         }
         console.log('Insert response:', data);
-        result = data?.[0]
+        result = data?.[0];
       }
       
       console.log('Final result:', result);
-      return result as SourceConfig
+      return result as SourceConfig;
     } catch (err) {
       console.error('Error in updateSourceConfig:', err);
       if (err instanceof Error) {
@@ -136,10 +130,10 @@ export function useSourceConfig() {
           stack: err.stack
         });
       }
-      setError(err instanceof Error ? err : new Error(String(err)))
-      return null
+      setError(err instanceof Error ? err : new Error(String(err)));
+      return null;
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
