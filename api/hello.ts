@@ -48,6 +48,15 @@ export default async function handler(
   response: VercelResponse
 ): Promise<void> {
   try {
+    // Log environment info for debugging
+    console.log('Vercel environment:', process.env.VERCEL_ENV);
+    console.log('Node environment:', process.env.NODE_ENV);
+    console.log('Available environment variables:', 
+      Object.keys(process.env)
+        .filter(key => !key.includes('KEY') && !key.includes('SECRET') && !key.includes('TOKEN') && !key.includes('PASSWORD'))
+        .sort()
+    );
+    
     // Get bot parameters from the request
     const { 
       botId, 
@@ -60,6 +69,12 @@ export default async function handler(
       collectionId,
       collectionName
     } = request.query;
+    
+    console.log('Request query parameters:', {
+      botId, botName, model, modelName, collectionId, collectionName,
+      hasSystemPrompt: !!systemPrompt,
+      hasUserPrompt: !!userPrompt
+    });
     
     if (!botId) {
       response.status(400).json({
@@ -92,7 +107,25 @@ export default async function handler(
     }
 
     // Initialize Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabase;
+    try {
+      console.log('Initializing Supabase client with URL:', 
+        SUPABASE_URL?.substring(0, 10) + '...' // Don't log full URL for security
+      );
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('Supabase client initialized successfully');
+    } catch (supabaseInitError) {
+      console.error('Error initializing Supabase client:', supabaseInitError);
+      response.status(500).json({
+        error: 'Failed to initialize database connection',
+        details: (supabaseInitError as Error).message,
+        env: {
+          hasSupabaseUrl: !!SUPABASE_URL,
+          hasSupabaseAnonKey: !!SUPABASE_ANON_KEY
+        }
+      });
+      return;
+    }
 
     // Determine the actual Claude model to use
     let claudeModel = "claude-3-sonnet-20240229"; // default model
@@ -116,7 +149,21 @@ export default async function handler(
       try {
         console.log(`Fetching sources for collection: ${collectionId}`);
         
+        // Test Supabase connection before trying to fetch data
+        const { data: testData, error: testError } = await supabase
+          .from('collection_sources')
+          .select('count')
+          .limit(1);
+          
+        if (testError) {
+          console.error('Error testing Supabase connection:', testError);
+          throw new Error(`Database connection test failed: ${testError.message}`);
+        }
+        
+        console.log('Database connection successful, proceeding with query');
+        
         // Get all sources for this collection using the collection_sources table
+        console.log('Querying collection_sources table...');
         const { data: collectionSources, error: sourcesError } = await supabase
           .from('collection_sources')
           .select(`
@@ -132,6 +179,8 @@ export default async function handler(
           console.error('Error fetching collection sources:', sourcesError);
           throw sourcesError;
         }
+
+        console.log(`Query result: Found ${collectionSources?.length || 0} sources`);
 
         if (collectionSources && collectionSources.length > 0) {
           // Transform the response to extract the sources
@@ -238,6 +287,7 @@ export default async function handler(
     console.log('Enhanced system prompt length:', enhancedSystemPrompt.length);
 
     // Make the Claude API call
+    console.log('Making Claude API call with model:', claudeModel);
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -259,48 +309,104 @@ export default async function handler(
       })
     });
 
+    console.log('Claude API response status:', claudeResponse.status);
+    console.log('Claude API response headers:', Object.fromEntries([...claudeResponse.headers.entries()]));
+    
     if (!claudeResponse.ok) {
-      const errorData = await claudeResponse.json();
+      let errorDetails: any = { status: claudeResponse.status, statusText: claudeResponse.statusText };
+      
+      try {
+        // Try to parse error response as JSON
+        errorDetails = await claudeResponse.json();
+      } catch (parseError) {
+        // If JSON parsing fails, get the raw text
+        try {
+          errorDetails.rawResponse = await claudeResponse.text();
+          console.error('Non-JSON error response from Claude API:', errorDetails.rawResponse);
+        } catch (textError) {
+          console.error('Failed to get error text from Claude API response');
+        }
+      }
+      
       response.status(claudeResponse.status).json({
         error: 'Claude API error',
-        details: errorData,
+        details: errorDetails,
         requestedModel: model,
         mappedModel: claudeModel
       });
       return;
     }
 
-    const data = await claudeResponse.json();
+    let data;
+    try {
+      data = await claudeResponse.json();
+      console.log('Claude API response parsed successfully');
+    } catch (parseError) {
+      console.error('Error parsing Claude API response as JSON:', parseError);
+      
+      // Get the raw response text for debugging
+      const rawResponse = await claudeResponse.text();
+      console.error('Raw Claude API response:', rawResponse.substring(0, 500)); // Log first 500 chars
+      
+      response.status(500).json({
+        error: 'Failed to parse Claude API response',
+        details: {
+          message: (parseError as Error).message,
+          responsePreview: rawResponse.substring(0, 200) // Include preview of the response
+        }
+      });
+      return;
+    }
     
     // Successfully processed the request
-    response.status(200).json({
+    const safeResponse = {
       success: true,
       message: 'Claude API response successful',
       botId: botId,
       botName: botName,
-      prompt: userPrompt,
+      prompt: userPrompt || null,
       timestamp: new Date().toISOString(),
       modelUsed: claudeModel,
-      modelName: modelName,
+      modelName: modelName || null,
       collectionId: collectionId || null,
       collectionName: collectionName !== 'None' ? collectionName : null,
-      sourceCount: sourceDetails.length,
-      sources: sourceDetails.map(s => ({
+      sourceCount: sourceDetails?.length || 0,
+      sources: sourceDetails?.map(s => ({
         id: s.id,
         name: s.name,
-        tags: s.tags,
+        tags: s.tags || [],
         hasLiveData: !!(s.liveDataElements && s.liveDataElements.length > 0)
-      })),
-      systemPrompt: enhancedSystemPrompt,
+      })) || [],
+      systemPrompt: enhancedSystemPrompt || null,
       response: data
-    });
+    };
+    
+    console.log('Successfully generated response');
+    response.status(200).json(safeResponse);
     
   } catch (error) {
     console.error('Error in Claude API handler:', error);
-    response.status(500).json({
+    
+    // Create a safe error response
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorResponse = {
       success: false,
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+      message: errorMessage,
+      timestamp: new Date().toISOString(),
+      // Include debug info that might help troubleshoot
+      debug: {
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
+        hasClaudeKey: !!process.env.CLAUDE_API_KEY,
+        hasSupabaseUrl: !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL),
+        hasSupabaseKey: !!(process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY),
+        errorName: error instanceof Error ? error.name : 'Non-Error exception',
+        // Include stack only in development
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : null
+      }
+    };
+    
+    response.status(500).json(errorResponse);
   }
 }
