@@ -3,7 +3,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 
-// Define interfaces for our data structures 
+// Define interfaces for our data structures AASD
 interface LiveDataElement {
   id: string;
   title: string;
