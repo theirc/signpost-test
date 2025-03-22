@@ -145,9 +145,6 @@ export async function handler(
     // Initialize Supabase client
     let supabase;
     try {
-      console.log('Initializing Supabase client with URL:', 
-        SUPABASE_URL?.substring(0, 10) + '...' // Don't log full URL for security
-      );
       supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       console.log('Supabase client initialized successfully');
     } catch (supabaseInitError) {
@@ -467,3 +464,5 @@ export async function handler(
     response.status(500).json(errorResponse);
   }
 }
+
+export default handler;
