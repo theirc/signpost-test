@@ -4,9 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "target": "ES2020",
-    "outDir": "dist",
+    "outDir": "api",
     "isolatedModules": true,
-    "noEmit": false
+    "noEmit": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "include": ["api/**/*.ts"]
 }
