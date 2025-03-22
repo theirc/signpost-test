@@ -1,6 +1,6 @@
 // api/hello.ts
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import fetch from 'node-fetch';
+import fetch, { Response as FetchResponse } from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 
 // Helper function to add timeout to promises
@@ -324,7 +324,7 @@ export default async function handler(
 
     // Make the Claude API call
     console.log('Making Claude API call with model:', claudeModel);
-    let claudeResponse;
+    let claudeResponse: FetchResponse;
     try {
       claudeResponse = await withTimeout(
         fetch('https://api.anthropic.com/v1/messages', {

@@ -1,19 +1,24 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2022",
-    "useDefineForClassFields": true,
-    "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "module": "NodeNext",
+    "lib": ["ES2023"],
+    "module": "ESNext",
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "moduleResolution": "NodeNext",
-    "allowSyntheticDefaultImports": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
   },
-  "include": ["api/**/*.ts", "vite.config.ts"],
-  "exclude": ["node_modules"]
+  "include": ["vite.config.ts"]
 }
