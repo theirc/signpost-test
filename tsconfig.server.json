@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2020",
+    "outDir": "dist",
+    "isolatedModules": true,
+    "noEmit": false
+  },
+  "include": ["api/**/*.ts"]
+}
