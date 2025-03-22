@@ -9,8 +9,6 @@
     }
   ],
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
     "baseUrl": ".",
     "paths": {
       "@/*": [
