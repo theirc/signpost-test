@@ -1,14 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "NodeNext",     // Change to NodeNext
+    "moduleResolution": "NodeNext",  // Change to NodeNext
     "target": "ES2020",
-    "outDir": "api",
+    "outDir": "dist",
     "isolatedModules": true,
-    "noEmit": false,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "noEmit": false
   },
   "include": ["api/**/*.ts"]
 }
