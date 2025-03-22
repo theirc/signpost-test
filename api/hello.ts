@@ -1,4 +1,4 @@
-// api/hello.cjs.ts
+// api/hello.ts
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
@@ -62,15 +62,15 @@ const MODEL_MAPPING: Record<string, string> = {
   "default": "claude-3-sonnet-20240229"
 };
 
-// Changed from "export default" to "export const" for ES modules
-module.exports.config = {
+// Export config for Vercel API
+export const config = {
   api: {
     bodyParser: true,
   },
 };
 
-// Changed from "export default async function" to "export async function"
-module.exports = async function handler(
+// Export the handler function
+async function handler(
   request: VercelRequest,
   response: VercelResponse
 ): Promise<void> {
@@ -464,3 +464,6 @@ module.exports = async function handler(
     response.status(500).json(errorResponse);
   }
 }
+
+// Default export for Vercel API routes
+export default handler;
