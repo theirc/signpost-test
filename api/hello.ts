@@ -47,9 +47,6 @@ export default async function handler(
   response: VercelResponse
 ): Promise<void> {
   try {
-    // Use dynamic import for node-fetch
-    const { default: fetch } = await import('node-fetch');
-    
     // Log environment info for debugging
     console.log('Vercel environment:', process.env.VERCEL_ENV);
     console.log('Node environment:', process.env.NODE_ENV);
@@ -288,6 +285,9 @@ export default async function handler(
     console.log('Using Claude model:', claudeModel);
     console.log('Enhanced system prompt length:', enhancedSystemPrompt.length);
 
+    // Use dynamic import for node-fetch
+    const { default: fetch } = await import('node-fetch');
+    
     // Make the Claude API call
     console.log('Making Claude API call with model:', claudeModel);
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
