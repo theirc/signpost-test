@@ -62,15 +62,17 @@ const MODEL_MAPPING: Record<string, string> = {
   "default": "claude-3-sonnet-20240229"
 };
 
-// Export config for Vercel API
+// Change from CommonJS to ES module export
 export const config = {
   api: {
-    bodyParser: true,
+    bodyParser: {
+      sizeLimit: '1mb',
+    },
   },
 };
 
-// Export the handler function
-async function handler(
+// Export the handler as default export
+export default async function handler(
   request: VercelRequest,
   response: VercelResponse
 ): Promise<void> {
@@ -464,6 +466,3 @@ async function handler(
     response.status(500).json(errorResponse);
   }
 }
-
-// Default export for Vercel API routes
-export default handler;
