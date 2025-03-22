@@ -1,6 +1,5 @@
 // api/hello.ts
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import fetch from 'node-fetch';
 import { createClient } from '@supabase/supabase-js';
 
 // Define interfaces for our data structures AASD
@@ -48,6 +47,9 @@ export default async function handler(
   response: VercelResponse
 ): Promise<void> {
   try {
+    // Use dynamic import for node-fetch
+    const { default: fetch } = await import('node-fetch');
+    
     // Log environment info for debugging
     console.log('Vercel environment:', process.env.VERCEL_ENV);
     console.log('Node environment:', process.env.NODE_ENV);
