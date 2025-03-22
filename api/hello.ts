@@ -62,7 +62,7 @@ const MODEL_MAPPING: Record<string, string> = {
   "default": "claude-3-sonnet-20240229"
 };
 
-// Change from CommonJS to ES module export
+// Move config export to be before the handler function
 export const config = {
   api: {
     bodyParser: {
@@ -71,7 +71,7 @@ export const config = {
   },
 };
 
-// Export the handler as default export
+// Then your handler function
 export default async function handler(
   request: VercelRequest,
   response: VercelResponse
