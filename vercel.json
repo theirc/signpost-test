@@ -1,6 +1,11 @@
 {
+    "functions": {
+      "api/*.js": {
+        "runtime": "nodejs18.x"
+      }
+    },
     "routes": [
-        { "src": "/api/(.*)", "dest": "/api/$1" },
-        { "src": "/[^.]+", "dest": "/", "status": 200 }
+      { "src": "/api/(.*)", "dest": "/api/$1" },
+      { "src": "/[^.]+", "dest": "/", "status": 200 }
     ]
-}
+  }
