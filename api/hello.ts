@@ -1,5 +1,6 @@
 // api/hello.ts
 import { VercelRequest, VercelResponse } from '@vercel/node';
+import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 
 // Define interfaces for our data structures AASD
@@ -285,19 +286,17 @@ export default async function handler(
     console.log('Using Claude model:', claudeModel);
     console.log('Enhanced system prompt length:', enhancedSystemPrompt.length);
 
-    // Use dynamic import for node-fetch
-    const { default: fetch } = await import('node-fetch');
-    
-    // Make the Claude API call
+    // Replace fetch with axios for the Claude API call
     console.log('Making Claude API call with model:', claudeModel);
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+    const claudeResponse = await axios({
       method: 'POST',
+      url: 'https://api.anthropic.com/v1/messages',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': CLAUDE_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({
+      data: {
         model: claudeModel,
         max_tokens: 1000,
         temperature: parseFloat(temperature as string) || 0.7,
@@ -308,27 +307,20 @@ export default async function handler(
             content: userPrompt || 'Hello! Can you introduce yourself?'
           }
         ]
-      })
+      }
     });
 
     console.log('Claude API response status:', claudeResponse.status);
-    console.log('Claude API response headers:', Object.fromEntries([...claudeResponse.headers.entries()]));
+    console.log('Claude API response headers:', claudeResponse.headers);
     
-    if (!claudeResponse.ok) {
-      let errorDetails: any = { status: claudeResponse.status, statusText: claudeResponse.statusText };
+    if (claudeResponse.status !== 200) {
+      let errorDetails: any = { 
+        status: claudeResponse.status, 
+        statusText: claudeResponse.statusText 
+      };
       
-      try {
-        // Try to parse error response as JSON
-        errorDetails = await claudeResponse.json();
-      } catch (parseError) {
-        // If JSON parsing fails, get the raw text
-        try {
-          errorDetails.rawResponse = await claudeResponse.text();
-          console.error('Non-JSON error response from Claude API:', errorDetails.rawResponse);
-        } catch (textError) {
-          console.error('Failed to get error text from Claude API response');
-        }
-      }
+      // Error data is directly available in claudeResponse.data
+      errorDetails = claudeResponse.data;
       
       response.status(claudeResponse.status).json({
         error: 'Claude API error',
@@ -339,26 +331,9 @@ export default async function handler(
       return;
     }
 
-    let data;
-    try {
-      data = await claudeResponse.json();
-      console.log('Claude API response parsed successfully');
-    } catch (parseError) {
-      console.error('Error parsing Claude API response as JSON:', parseError);
-      
-      // Get the raw response text for debugging
-      const rawResponse = await claudeResponse.text();
-      console.error('Raw Claude API response:', rawResponse.substring(0, 500)); // Log first 500 chars
-      
-      response.status(500).json({
-        error: 'Failed to parse Claude API response',
-        details: {
-          message: (parseError as Error).message,
-          responsePreview: rawResponse.substring(0, 200) // Include preview of the response
-        }
-      });
-      return;
-    }
+    // With axios, the response data is already parsed as JSON
+    let data = claudeResponse.data;
+    console.log('Claude API response parsed successfully');
     
     // Successfully processed the request
     const safeResponse = {

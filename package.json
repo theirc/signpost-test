@@ -36,6 +36,7 @@
     "@xenova/transformers": "^2.17.2",
     "@xyflow/react": "^12.3.6",
     "ai": "^4.1.40",
+    "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
