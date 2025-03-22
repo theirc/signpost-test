@@ -1,13 +1,12 @@
-// api/hello.ts
-import { VercelRequest, VercelResponse } from '@vercel/node';
-import fetch, { Response as FetchResponse } from 'node-fetch';
-import { createClient } from '@supabase/supabase-js';
+// api/hello.cjs
+const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
 
 // Helper function to add timeout to promises
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, errorMsg: string): Promise<T> => {
-  let timeoutId: NodeJS.Timeout;
+const withTimeout = (promise, timeoutMs, errorMsg) => {
+  let timeoutId;
   
-  const timeoutPromise = new Promise<never>((_, reject) => {
+  const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
       reject(new Error(`Timeout after ${timeoutMs}ms: ${errorMsg}`));
     }, timeoutMs);
@@ -22,35 +21,8 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, errorMsg: string
   ]);
 };
 
-// Define interfaces for our data structures
-interface LiveDataElement {
-  id: string;
-  title: string;
-  lastUpdated: string;
-  contentPreview: string;
-}
-
-interface SourceDetail {
-  id: string;
-  name: string;
-  tags: string[];
-  contentPreview: string;
-  liveDataElements?: LiveDataElement[];
-}
-
-// Define interface for Supabase collection source response
-interface CollectionSourceItem {
-  source_id: string;
-  sources: {
-    id: string;
-    name: string;
-    content: string;
-    tags: string[] | null;
-  };
-}
-
 // Map of internal model IDs to Claude model identifiers
-const MODEL_MAPPING: Record<string, string> = {
+const MODEL_MAPPING = {
   // Add your known model mappings here, for example:
   // "your-internal-id": "claude-3-opus-20240229",
   // Default mappings for common Claude models
@@ -62,8 +34,8 @@ const MODEL_MAPPING: Record<string, string> = {
   "default": "claude-3-sonnet-20240229"
 };
 
-// Move config export to be before the handler function
-export const config = {
+// Config for API
+const config = {
   api: {
     bodyParser: {
       sizeLimit: '1mb',
@@ -71,11 +43,8 @@ export const config = {
   },
 };
 
-// Then your handler function
-export default async function handler(
-  request: VercelRequest,
-  response: VercelResponse
-): Promise<void> {
+// Handler function
+async function handler(request, response) {
   try {
     // Set explicit CORS headers to allow cross-origin requests and prevent middleware interference
     response.setHeader('Access-Control-Allow-Origin', '*');
@@ -154,7 +123,7 @@ export default async function handler(
       response.setHeader('Content-Type', 'application/json');
       response.status(500).json({
         error: 'Failed to initialize database connection',
-        details: (supabaseInitError as Error).message,
+        details: supabaseInitError.message,
         env: {
           hasSupabaseUrl: !!SUPABASE_URL,
           hasSupabaseAnonKey: !!SUPABASE_ANON_KEY
@@ -168,17 +137,17 @@ export default async function handler(
     
     if (model) {
       // Check if this is a UUID (likely your internal ID)
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(model as string);
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(model);
       
       if (!isUUID) {
         // If it's not a UUID, check if it's a known model name
-        claudeModel = MODEL_MAPPING[model as string] || MODEL_MAPPING.default;
+        claudeModel = MODEL_MAPPING[model] || MODEL_MAPPING.default;
       }
     }
 
     // Create an enhanced system prompt that includes knowledge base info
-    let enhancedSystemPrompt = systemPrompt as string || 'You are a helpful AI assistant.';
-    let sourceDetails: SourceDetail[] = [];
+    let enhancedSystemPrompt = systemPrompt || 'You are a helpful AI assistant.';
+    let sourceDetails = [];
     
     // Fetch knowledge base sources if a collection is specified
     if (collectionId) {
@@ -206,10 +175,7 @@ export default async function handler(
             source_id,
             sources:source_id(id, name, content, tags)
           `)
-          .eq('collection_id', collectionId) as { 
-            data: CollectionSourceItem[] | null; 
-            error: any 
-          };
+          .eq('collection_id', collectionId);
 
         if (sourcesError) {
           console.error('Error fetching collection sources:', sourcesError);
@@ -324,7 +290,7 @@ export default async function handler(
 
     // Make the Claude API call
     console.log('Making Claude API call with model:', claudeModel);
-    let claudeResponse: FetchResponse;
+    let claudeResponse;
     try {
       claudeResponse = await withTimeout(
         fetch('https://api.anthropic.com/v1/messages', {
@@ -337,7 +303,7 @@ export default async function handler(
           body: JSON.stringify({
             model: claudeModel,
             max_tokens: 1000,
-            temperature: parseFloat(temperature as string) || 0.7,
+            temperature: parseFloat(temperature) || 0.7,
             system: enhancedSystemPrompt,
             messages: [
               {
@@ -365,7 +331,7 @@ export default async function handler(
     console.log('Claude API response headers:', Object.fromEntries([...claudeResponse.headers.entries()]));
     
     if (!claudeResponse.ok) {
-      let errorDetails: any = { status: claudeResponse.status, statusText: claudeResponse.statusText };
+      let errorDetails = { status: claudeResponse.status, statusText: claudeResponse.statusText };
       
       try {
         // Try to parse error response as JSON
@@ -405,7 +371,7 @@ export default async function handler(
       response.status(500).json({
         error: 'Failed to parse Claude API response',
         details: {
-          message: (parseError as Error).message,
+          message: parseError.message,
           responsePreview: rawResponse.substring(0, 200) // Include preview of the response
         }
       });
@@ -466,3 +432,7 @@ export default async function handler(
     response.status(500).json(errorResponse);
   }
 }
+
+// Export with CommonJS syntax
+module.exports = handler;
+module.exports.config = config;
