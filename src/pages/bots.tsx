@@ -141,13 +141,6 @@ export function BotManagement() {
         try {
             const bot = currentTestBot;
             
-            // Get the session
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (!session?.access_token) {
-                throw new Error('Not authenticated');
-            }
-            
             // Create params object first
             const paramsObj = {
                 botId: bot.id,
@@ -161,17 +154,16 @@ export function BotManagement() {
             
             // Build URL with properly encoded parameters
             const url = new URL('/api/botResponse', window.location.origin);
+            
+            // Manually encode each parameter to ensure proper space handling
             Object.entries(paramsObj).forEach(([key, value]) => {
+                // Use encodeURIComponent to properly handle spaces and special characters
                 url.searchParams.append(key, value);
             });
             
             console.log('Testing bot function with params:', paramsObj);
             
-            const response = await fetch(url.toString(), {
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`
-                }
-            });
+            const response = await fetch(url.toString());
             console.log('Response status:', response.status);
             
             const data = await response.json();
