@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import React, { useEffect, useState, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SourcesTable, type Source as SourceDisplay } from "@/components/sources-table"
 import { useCollections, Collection } from "@/hooks/use-collections"
@@ -11,10 +11,11 @@ import { useCollectionSources } from "@/hooks/use-collection-sources"
 import { useSources, Source } from "@/hooks/use-sources"
 import { useSourceTags } from "@/hooks/use-source-tags"
 import { useSupabase } from "@/hooks/use-supabase"
+import { formatDate } from "@/components/source_input/utils"
 
 export function CollectionsManagement() {
   // Supabase hooks
-  const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection } = useCollections()
+  const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection, generateCollectionVector } = useCollections()
   const { 
     getSourcesForCollection, 
     addSourceToCollection, 
@@ -31,8 +32,6 @@ export function CollectionsManagement() {
   const [collectionSources, setCollectionSources] = useState<{ [key: string]: Source[] }>({})
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isFilesModalOpen, setIsFilesModalOpen] = useState(false)
-  const [isLiveDataModalOpen, setIsLiveDataModalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [sourcesDisplay, setSourcesDisplay] = useState<SourceDisplay[]>([])
   const [refreshTrigger, setRefreshTrigger] = useState(0)
@@ -401,161 +400,192 @@ export function CollectionsManagement() {
     handleEditCollection(collection);
   };
 
+  const handleGenerateVector = async (collection: Collection) => {
+    if (!collectionSources[collection.id]?.length) {
+      console.log('No sources in collection to process')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const success = await generateCollectionVector(
+        collection.id, 
+        collectionSources[collection.id]
+      )
+
+      if (success) {
+        console.log('Vector generated successfully')
+      }
+    } catch (error) {
+      console.error('Error generating vector:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Knowledge Base</h1>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={handleRefreshSources}>
-              <RefreshCcw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={() => setIsLiveDataModalOpen(true)}>
-              Add Live Data
-            </Button>
-            <Button onClick={() => {
-              setIsEditModalOpen(true)
-              setEditingCollection(null)
-              setNewCollectionName("")
-              setSelectedSources([])
-            }}>
-              Create Collection
-            </Button>
-            <Button variant="outline" onClick={() => {
-              setIsFilesModalOpen(true);
-            }}>
-              Add Files
-            </Button>
-          </div>
+    <div className="container mx-auto py-6 space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Knowledge Base</h1>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleRefreshSources}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => {
+            setIsEditModalOpen(true)
+            setEditingCollection(null)
+            setNewCollectionName("")
+            setSelectedSources([])
+          }}>
+            Create Collection
+          </Button>
         </div>
+      </div>
 
-        {collectionsLoading ? (
-          <div className="w-full h-64 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {collections.map(collection => (
-              <div 
-                key={collection.id}
-                className="border rounded-lg p-6 shadow-sm hover:shadow transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center">
-                    <Book className="h-5 w-5 mr-2 text-primary" />
-                    <h3 className="font-semibold text-lg">{collection.name}</h3>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEditCollection(collection)}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDeleteCollection(collection.id)}>
-                        <Trash className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      {collectionsLoading ? (
+        <div className="w-full h-64 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {collections.map(collection => (
+            <div 
+              key={collection.id}
+              className="border rounded-lg p-6 shadow-sm hover:shadow transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center">
+                  <Book className="h-5 w-5 mr-2 text-primary" />
+                  <h3 className="font-semibold text-lg">{collection.name}</h3>
                 </div>
-                
-                <div className="text-sm text-muted-foreground mb-4">
-                  Created: {new Date(collection.created_at).toLocaleDateString()}
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditCollection(collection)}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDeleteCollection(collection.id)}>
+                      <Trash className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              
+              <div className="text-sm text-muted-foreground mb-4">
+                Created: {formatDate(collection.created_at)}
+              </div>
 
-                {collectionSources[collection.id]?.length ? (
-                  <div className="text-sm">
-                    {collectionSources[collection.id].length} sources
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">No sources</div>
-                )}
-                
+              {collectionSources[collection.id]?.length ? (
+                <div className="text-sm">
+                  {collectionSources[collection.id].length} sources
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">No sources</div>
+              )}
+              
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-4 w-full"
+                  className="mt-4 flex-1"
                   onClick={() => viewCollectionDetails(collection)}
                 >
                   View Details
                 </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <Dialog open={isEditModalOpen} onOpenChange={(open) => {
-          if (!open) {
-            // When closing the dialog, make sure to reset all states
-            resetEditState();
-          } else {
-            setIsEditModalOpen(open);
-          }
-        }}>
-          <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCollection ? `Edit Collection: ${editingCollection.name}` : 'Create New Collection'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCollection ? "Modify the collection name and select sources to include." : "Create a new collection by adding a name and selecting sources."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex-1 overflow-y-auto py-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="collection-name">Name</Label>
-                  <Input
-                    id="collection-name"
-                    value={newCollectionName}
-                    onChange={(e) => setNewCollectionName(e.target.value)}
-                    placeholder="Enter collection name"
-                  />
-                </div>
-                {sourcesLoading ? (
-                  <div className="flex justify-center items-center p-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <SourcesTable 
-                    sources={sourcesDisplay}
-                    selectedSources={selectedSources}
-                    onToggleSelect={handleToggleSelect}
-                    onSelectAll={handleSelectAll}
-                    showCheckboxes={true}
-                    showActions={false}
-                    showAddButton={false}
-                  />
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 flex-1 min-w-0"
+                  onClick={() => handleGenerateVector(collection)}
+                  disabled={!collectionSources[collection.id]?.length || loading}
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Database className="h-4 w-4 mr-2" />
+                  )}
+                  <span className="truncate">
+                    Build
+                  </span>
+                </Button>
               </div>
             </div>
-            <DialogFooter className="flex-shrink-0">
-              <Button variant="outline" onClick={resetEditState}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={editingCollection ? handleUpdateCollection : handleSaveCollection}
-                disabled={!newCollectionName || selectedSources.length === 0 || loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  editingCollection ? 'Save Changes' : 'Create Collection'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={isEditModalOpen} onOpenChange={(open) => {
+        if (!open) {
+          // When closing the dialog, make sure to reset all states
+          resetEditState();
+        } else {
+          setIsEditModalOpen(open);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCollection ? `Edit Collection: ${editingCollection.name}` : 'Create New Collection'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCollection ? "Modify the collection name and select sources to include." : "Create a new collection by adding a name and selecting sources."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto py-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="collection-name">Name</Label>
+                <Input
+                  id="collection-name"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  placeholder="Enter collection name"
+                />
+              </div>
+              {sourcesLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <SourcesTable 
+                  sources={sourcesDisplay}
+                  selectedSources={selectedSources}
+                  onToggleSelect={handleToggleSelect}
+                  onSelectAll={handleSelectAll}
+                  showCheckboxes={true}
+                  showActions={false}
+                  showAddButton={false}
+                />
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex-shrink-0">
+            <Button variant="outline" onClick={resetEditState}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={editingCollection ? handleUpdateCollection : handleSaveCollection}
+              disabled={!newCollectionName || selectedSources.length === 0 || loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                editingCollection ? 'Save Changes' : 'Create Collection'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

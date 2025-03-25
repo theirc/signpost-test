@@ -2,6 +2,7 @@ import { buildAgent } from "@/lib/agents"
 import { supabase } from "../db"
 import { createSupabaseModel } from "../model"
 import { workers } from "./workers"
+import { workerRegistry } from "@/lib/agents/registry"
 
 declare global {
   type AgentConfig = Partial<typeof model.defaultValue>
@@ -27,41 +28,58 @@ const model: SupabaseModel<"agents"> = {
 
 async function saveAgent(agent: Agent) {
 
-  for (const key in agent.workers) {
-    const w = agent.workers[key].config
-    const wc = {
-      id: w.id,
-      type: w.type,
-      handles: {},
-      x: w.x,
-      y: w.y,
-      agent: agent.id
-    }
-    for (const key in w.handles) {
-      const h = w.handles[key]
-      const { worker, ...rest } = h
-      wc.handles[key] = rest
-    }
-    const { data, error } = await workers.upsert(wc as any).select()
-  }
+  const { data: existingWorkers, error } = await workers.data.select()
+  const existingWorkerbyKey = existingWorkers?.reduce((a, b) => ({ ...a, [b.id]: true }), {})
 
-  const updateAgent: AgentConfig = {
+  const agentData: AgentConfig = {
     title: agent.title,
     edges: agent.edges
   }
 
   if (agent.id) {
-    await agents.update(updateAgent).eq("id", agent.id)
+    await agents.data.update(agentData).eq("id", agent.id)
   } else {
-    const { data } = await agents.insert(updateAgent).select()
+    const { data } = await agents.data.insert(agentData).select()
     agent.id = data[0].id
+  }
+
+  for (const key in existingWorkerbyKey) {
+    if (!agent.workers[key]) {
+      console.log("delete worker: ", key)
+      await workers.data.delete().eq("id", key)
+    }
+  }
+
+  for (const key in agent.workers) {
+    const w = agent.workers[key].config
+    const wc: WorkerConfig = {
+      id: w.id,
+      type: w.type,
+      handles: {},
+      x: w.x,
+      y: w.y,
+      agent: agent.id,
+      parameters: w.parameters || {}
+    }
+    for (const key in w.handles) {
+      const h = w.handles[key]
+      if (!h.persistent) delete h.value
+      wc.handles[key] = h
+    }
+
+
+    await workers.data.upsert(wc as any)
+
   }
 
 }
 
 async function loadAgent(id: number): Promise<Agent> {
 
-  const { data } = await agents.select(`
+  console.log("Loading agent: ", id)
+
+
+  const { data } = await agents.data.select(`
     *,
     workers (
       *
@@ -75,12 +93,38 @@ async function loadAgent(id: number): Promise<Agent> {
   workers = workers || []
 
   for (const w of workers) {
-    const { handles, ...rest } = w
-    const wrk = agent.addWorker(rest as WorkerConfig)
+    const { handles, agent: agentId, created_at, ...rest } = w
+
+    // const wrk = agent.addWorker(rest as WorkerConfig)
+    const factory = (workerRegistry[w.type] as WorkerRegistryItem)
+    if (!factory) continue
+    const wrk = factory.create(agent)
+    Object.assign(wrk.config, rest)
+
+    wrk.parameters = w.parameters || {}
+
     for (const key in (handles as unknown as WorkerHandles)) {
       const h = handles[key] as NodeIO
+      const existingHandler = wrk.fields[h.name]
+      if (existingHandler) {
+        existingHandler.id = h.id
+        if (h.persistent) existingHandler.value = h.value
+        continue
+      }
       wrk.addHandler(h)
     }
+
+    for (const key in wrk.handles) {
+      const h = wrk.handles[key]
+      delete wrk.handles[key]
+      wrk.handles[h.id] = h
+    }
+  }
+
+  for (const key in agent.workers) {
+    const ew = agent.workers[key]
+    delete agent.workers[key]
+    agent.workers[ew.config.id] = ew
   }
 
 
@@ -89,7 +133,7 @@ async function loadAgent(id: number): Promise<Agent> {
 
 
 
-export const agents = createSupabaseModel(model, supabase.from("agents")).withFunctions({
+export const agents = createSupabaseModel(model, supabase.from("agents"), "agents").withFunctions({
   saveAgent,
   loadAgent,
 })

@@ -5,17 +5,22 @@ interface InputWorker extends AIWorker {
 
 function create(agent: Agent) {
 
-  const worker = agent.addWorker({ type: "request" })
-
-  worker.addHandlers([
-    { type: "execute", direction: "output", title: "Next", name: "next" },
-  ])
-
-  return worker
+  return agent.initializeWorker(
+    { type: "request" },
+    [
+      // { type: "execute", direction: "output", title: "Next", name: "next" },
+    ],
+    request
+  )
 
 }
 
-async function execute(worker: InputWorker) {
+async function execute(worker: InputWorker, p: AgentParameters) {
+
+  for (const key in worker.handles) {
+    const h = worker.handles[key]
+    h.value = p.input[h.name]
+  }
 
 }
 

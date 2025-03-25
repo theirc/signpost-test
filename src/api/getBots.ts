@@ -1,3 +1,4 @@
+import { ChatSession } from "@/bot/history";
 import { ChatMessage, BotHistory, BotQualification } from "@/types/types.ai";
 
 export const serverurl = "https://directus-qa-support.azurewebsites.net";
@@ -52,6 +53,8 @@ export const api = {
       answer.messages.push(a);
     }
 
+    saveChatHistory(req, answer)
+
     return answer;
   },
 
@@ -69,7 +72,76 @@ export const api = {
       console.log("Error Scoring Bot", error);
     }
   }
-};
+}
+
+const saveChatHistory = (userMessage: ChatMessage, botResponse: ChatMessage) => {
+  const LOCAL_STORAGE_KEY = "chatHistory"
+
+  let existingHistory: ChatSession [] = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || "[]")
+  console.log("Existing Chat History:", existingHistory)
+
+  const currentBotName = botResponse.messages[0]?.botName
+
+  let activeSession = existingHistory.find(session => 
+    session.botName === currentBotName
+  );
+  
+  if (activeSession) {
+    
+    if (userMessage.message) {
+      activeSession.messages.push({
+        type: "human",
+        message: userMessage.message
+      })
+    }
+    
+    botResponse.messages.forEach(msg => {
+      if (msg.message) {
+        activeSession.messages.push({
+          type: "bot",
+          botName: msg.botName,
+          message: msg.message,
+          id: msg.id
+        })
+      }
+    })
+    
+    activeSession.timestamp = new Date().toLocaleString();
+  } else {
+    console.log("Creating a new chat session...");
+    
+    const formattedMessages: ChatMessage[] = [];
+    
+    if (userMessage.message) {
+      formattedMessages.push({
+        type: "human",
+        message: userMessage.message
+      })
+    }
+    
+    botResponse.messages.forEach(msg => {
+      if (msg.message) {
+        formattedMessages.push({
+          type: "bot",
+          botName: msg.botName,
+          message: msg.message,
+          id: msg.id
+        })
+      }
+    })
+      
+      const newChat: ChatSession = {
+      id: new Date().toISOString(),
+      botName: currentBotName,
+      messages: formattedMessages,
+      timestamp: new Date().toLocaleString()
+    }
+    existingHistory.unshift(newChat)
+  }
+    
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existingHistory));
+  console.log("Saved Chat History in LocalStorage")
+}
 
 async function getFromServer<T>(url: string): Promise<Awaited<T>> {
   let ret: any = null;

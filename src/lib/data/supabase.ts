@@ -186,6 +186,50 @@ export type Database = {
         }
         Relationships: []
       }
+      live_data_elements: {
+        Row: {
+          content: string
+          created_at: string
+          fetch_timestamp: string
+          id: string
+          last_updated: string
+          metadata: Json | null
+          source_config_id: string
+          status: string
+          version: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          fetch_timestamp?: string
+          id?: string
+          last_updated?: string
+          metadata?: Json | null
+          source_config_id: string
+          status?: string
+          version?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          fetch_timestamp?: string
+          id?: string
+          last_updated?: string
+          metadata?: Json | null
+          source_config_id?: string
+          status?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_source_config"
+            columns: ["source_config_id"]
+            isOneToOne: false
+            referencedRelation: "source_configs"
+            referencedColumns: ["source"]
+          },
+        ]
+      }
       models: {
         Row: {
           created_at: string | null
@@ -212,6 +256,7 @@ export type Database = {
       }
       source_configs: {
         Row: {
+          api_token: string | null
           bot_log: string | null
           crawl_depth: number | null
           enabled: number
@@ -228,6 +273,7 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          api_token?: string | null
           bot_log?: string | null
           crawl_depth?: number | null
           enabled?: number
@@ -244,6 +290,7 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          api_token?: string | null
           bot_log?: string | null
           crawl_depth?: number | null
           enabled?: number
@@ -320,6 +367,7 @@ export type Database = {
           created_at: string
           handles: Json | null
           id: string
+          parameters: Json | null
           type: string | null
           x: number | null
           y: number | null
@@ -329,6 +377,7 @@ export type Database = {
           created_at?: string
           handles?: Json | null
           id: string
+          parameters?: Json | null
           type?: string | null
           x?: number | null
           y?: number | null
@@ -338,6 +387,7 @@ export type Database = {
           created_at?: string
           handles?: Json | null
           id?: string
+          parameters?: Json | null
           type?: string | null
           x?: number | null
           y?: number | null

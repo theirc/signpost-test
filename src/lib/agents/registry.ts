@@ -1,12 +1,14 @@
 import { ai } from "./workers/ai"
-import { background } from "./workers/background"
-import { condition } from "./workers/condition"
+import { combine } from "./workers/combine"
+import { display } from "./workers/display"
 import { request } from "./workers/input"
+import { mock } from "./workers/mock"
 import { response } from "./workers/response"
 import { schema } from "./workers/schema"
-import { select } from "./workers/select"
 import { text } from "./workers/text"
-import { stt } from "./workers/tts"
+// import { stt } from "./workers/tts"
+// import { background } from "./workers/background"
+// import { condition } from "./workers/condition"
 
 declare global {
 
@@ -15,7 +17,7 @@ declare global {
   interface WorkerRegistryItem {
     title: string
     icon?: any
-    execute(worker: AIWorker): void
+    execute(worker: AIWorker, p: AgentParameters): Promise<void>
     create(agent: Agent): AIWorker
     registry?: this
   }
@@ -25,11 +27,13 @@ declare global {
 export const workerRegistry = {
   request,
   schema,
-  select,
   response,
-  condition,
+  // condition,
   text,
   ai,
-  stt,
-  background,
+  // stt,
+  // background,
+  combine,
+  display,
+  mock,
 } satisfies { [index: string]: WorkerRegistryItem }

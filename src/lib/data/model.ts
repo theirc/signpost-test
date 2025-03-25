@@ -1,5 +1,6 @@
 import { ZodType } from "zod"
 import { Database } from "./supabase"
+import { supabase } from "."
 
 type FieldTypes = "string" | "number" | "boolean" | "json"
 
@@ -42,7 +43,8 @@ declare global {
     fields?: FieldsOfType<T>
     defaultValue?: T
     type?: "local" | "supabase"
-    supabaseQuery?: any
+    withFunctions?<F>(fn: F): this & F
+    data?: unknown
   }
 
   export interface ModelDeclaration<T extends { [key: string]: Field }> {
@@ -62,16 +64,27 @@ declare global {
 }
 
 
-export function createSupabaseModel<T, M extends SupabaseModel>(modelDeclaration: M, pgb: T): T & { model: M } & FunctionExtender {
+export function createSupabaseModel_OLD<T, M extends SupabaseModel>(modelDeclaration: M, pgb: T): T & { model: M, data: T } & FunctionExtender {
   const model = createModel({
     fields: modelDeclaration.fields,
     defaultValue: modelDeclaration.defaultValue
   })
   model.type = "supabase"
-  model.supabaseQuery = pgb
+  // model.supabaseQuery = pgb
   pgb["model"] = model
   pgb["withFunctions"] = fn => Object.assign(pgb, fn)
   return pgb as any
+}
+
+
+export function createSupabaseModel<T, M extends SupabaseModel, K extends TableKeys>(modelDeclaration: M, pgb: T, table: K): M & { data: T } {
+  const model = createModel({
+    fields: modelDeclaration.fields,
+    defaultValue: modelDeclaration.defaultValue
+  })
+  Object.defineProperty(model, "data", { get: () => supabase.from(table) })
+  model.type = "supabase"
+  return model as any
 }
 
 
@@ -84,6 +97,7 @@ export function createModel<T extends { [key: string]: Field }>(d: ModelDeclarat
     const field: Field = model.fields[key] as any
     field.name = field.name || key
   }
+  model.withFunctions = fn => Object.assign(model, fn)
   return model as any
 }
 

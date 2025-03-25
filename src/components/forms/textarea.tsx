@@ -11,12 +11,12 @@ interface Props extends TextareaProps {
 
 export function InputTextArea(props: Props & DefaultInputProps) {
 
-  const { className, field, span, required, validate, ...rest } = props
+  const { className, field, span, required, validate, hideLabel, ...rest } = props
   const { register } = useFormContext()
   const validateFn = v => validateValue(v, required, field, validate)
 
   return <Control {...props}>
-    <Textarea className={cn("focus-visible:ring-transparent h-full", className)} {...register(field.name, { validate: validateFn })}  {...rest} />
+    <Textarea className={cn("focus-visible:ring-transparent h-full nodrag", className)} {...register(field.name, { validate: validateFn })}  {...rest} />
   </Control>
 
 }

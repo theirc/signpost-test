@@ -44,7 +44,7 @@ export function Control({ field, span, required, hideLabel, ...props }: DefaultI
     error = errorObject.message as string
   }
 
-  return <Col span={span || 4} className="flex flex-col" >
+  return <Col span={span || 4} className="flex flex-col w-full" >
     {!hideLabel && <div className="flex items-center gap-1 pb-1">
       {title && <div className="text-sm ml-[2px]">{title}</div>}
       {required && <div className="text-red-500 text-sm">●</div>}
