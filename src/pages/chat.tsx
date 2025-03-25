@@ -273,6 +273,11 @@ export default function Chat () {
     setState({ audioMode: !state.audioMode })
   }
 
+  function onExitAudioMode() {
+    setState({ audioMode: false })
+    console.log("Exiting audio mode")
+  }
+
   const hasSelectedBots = state.selectedBots.length > 0
 
   return ( 
@@ -323,63 +328,71 @@ export default function Chat () {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={onModeChanged} size="icon" variant="outline">
+          {/* <Button onClick={onModeChanged} size="icon" variant="outline">
             {state.audioMode ? (
               <MessageSquare className="size-5" />
             ) : (
-              <Mic className="size-5" />
+              <AudioWaveform className="size-5" />
             )}
-          </Button>
+          </Button> */}
         </div>
 
         <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-          <div className="flex-1 overflow-y-auto flex flex-col space-y-4">
-            {!state.audioMode && (
-              <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-                <div className="flex-1 overflow-y-auto flex flex-col space-y-6 w-full">
-                  {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <MessageSquare className="h-12 w-12 mb-4 opacity-40" />
-                      <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
-                      <p className="text-sm mt-2">Select a bot and type a message below</p>
-                    </div>
-                  ) : (
-                    messages.map((m, i) => (
-                      <ChatMessage key={i} message={m} isWaiting={state.isSending} />
-                    ))
-                  )}
-                  {state.isSending && (
-                    <div className="flex justify-start w-fit">
-                      <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
-                        <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
-                        <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
-                        <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
-                      </div>
-                    </div>
-                  )}
+      <div className="flex-1 overflow-y-auto flex flex-col space-y-4">
+        {!state.audioMode && (
+          <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto flex flex-col space-y-6 w-full">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  {/* <MessageSquare className="h-12 w-12 mb-4 opacity-40" /> */}
+                  <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
+                  <p className="text-sm mt-2">Select a bot and type a message below</p>
                 </div>
-              </div>
-            )}
-            {state.audioMode && hasSelectedBots && (
-              <Comm bot={state.selectedBots[0] ? state.selectedBots[0] : null} />
-            )}
-          </div>
-        </div>
-        <div className="sticky bottom-0 border-t bg-white p-4">
-          {hasSelectedBots && !state.audioMode ? (
-            <SearchInput 
-              onSearch={onSend} 
-              disabled={state.isSending} 
-              openFileDialog={() => setShowFileDialog(true)}
-            />
-          ) : (
-            <div className="flex justify-center items-center py-4 text-gray-500">
-              <MessageSquare className="h-5 w-5 mr-2 opacity-70" />
-              <span>Please select a bot to start chatting</span>
+              ) : (
+                messages.map((m, i) => (
+                  <ChatMessage key={i} message={m} isWaiting={state.isSending} />
+                ))
+              )}
+              {state.isSending && (
+                <div className="flex justify-start w-fit">
+                  <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
+                    <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                    <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+                    <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        {state.audioMode && hasSelectedBots && (
+          <Comm 
+            bot={state.selectedBots[0]} 
+            onSend={onSend}
+            onExit={onExitAudioMode} 
+          />
+        )}
       </div>
+    </div>
+    
+    {!state.audioMode && (
+      <div className="sticky bottom-0 border-t bg-white p-4">
+        {hasSelectedBots ? (
+          <SearchInput 
+            onSearch={onSend} 
+            disabled={state.isSending} 
+            openFileDialog={() => setShowFileDialog(true)}
+            audioMode={state.audioMode}
+            onModeChanged={onModeChanged}
+          />
+        ) : (
+          <div className="flex justify-center items-center py-4 text-gray-500">
+            <span>Please select a bot to start chatting</span>
+          </div>
+        )}
+      </div>
+    )}
+  </div>
       <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -417,7 +430,9 @@ export default function Chat () {
 function SearchInput(props: { 
   onSearch: (message?: string, audio?: any, tts?: boolean) => void, 
   disabled: boolean,
-  openFileDialog: () => void
+  openFileDialog: () => void,
+  audioMode: boolean,
+  onModeChanged: () => void
 }) {
   const [value, setValue] = useState("")
   const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
@@ -470,6 +485,11 @@ function SearchInput(props: {
     }
   }
 
+  const handleSendMessage = () => {
+    if (value.trim()) {
+      handleSearch(value)
+    }
+  }
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -501,24 +521,6 @@ function SearchInput(props: {
 
   return (
     <div className="w-full">
-      {showSettings && (
-        <div className="mb-4 bg-white rounded-lg p-4 shadow-md border border-gray-200">
-          <h3 className="font-medium mb-3 text-gray-700">Chat Settings</h3>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Voice Response</span>
-              <Button 
-                onClick={() => setTts(!tts)} 
-                variant="outline" 
-                size="sm"
-                className="h-8"
-              >
-                {tts ? "Enabled" : "Disabled"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
       {isRecordingMode ? (
         <div className="relative">
           <div className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -600,19 +602,12 @@ function SearchInput(props: {
                 />
               </div>
               
-              <div className="flex items-center pr-2">
+              <div className="flex items-center pr-2 gap-2">
+              
                 <button
                   type="button"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="p-2 mr-1 hover:text-gray-700 hover:bg-gray-100 rounded-full bg-black text-white"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handleActionButton}
-                  className="p-2 rounded-full bg-black text-white hover:bg-gray-900"
+                  onClick={value.trim() ? handleSendMessage : props.onModeChanged}
+                  className={`p-2 rounded-full ${value.trim() ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
                   {value.trim() ? 
                     <ArrowUp className="h-5 w-5" /> : 

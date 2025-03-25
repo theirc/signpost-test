@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import { Mic, StopCircle } from "lucide-react"
+import { Mic, X } from "lucide-react"
 import { useReactMediaRecorder } from "react-media-recorder"
 import { api } from "@/api/getBots"
 import "./comm.css"
@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button"
 
 interface Props {
   bot: number
+  onSend?: (message?: string, audio?: any, tts?: boolean) => void
+  onExit?: () => void
 }
 
 export function Comm(props: Props) {
-
-  const { bot } = props
-  const [state, setState] = useState<"ready" | "recoding" | "waiting" | "playing">("ready")
+  const { bot, onExit, onSend } = props
+  const [state, setState] = useState<"ready" | "recording" | "waiting" | "playing">("ready")
   const [audio, setAudio] = useState<string>(null)
 
   const {
@@ -25,10 +26,8 @@ export function Comm(props: Props) {
     clearBlobUrl,
   } = useReactMediaRecorder({ audio: true })
 
-
-
   async function onStart() {
-    setState("recoding")
+    setState("recording")
     clearBlobUrl()
     startRecording()
   }
@@ -62,30 +61,47 @@ export function Comm(props: Props) {
     }
   }, [status, mediaBlobUrl])
 
-
-  let classNameColor = state === "recoding" ? "bg-red-500" : "bg-blue-500"
-
-  if (state == "recoding" || state == "ready") {
-    return <div className="w-full h-full bg-black text-white flex flex-col items-center justify-center content-center backgrad" >
-      <div className="text-center flex-grow grid justify-center content-center">
-        <div className={`shadow rounded-full p-4 mb-4 cursor-pointer ${classNameColor}`} onMouseDown={onStart} onMouseUp={onStop}>
-          <Mic size={128} />
-        </div>
-        <div className="font-semibold tracking-wider shadow">
-          PUSH TO TALK
+  if (state == "recording" || state == "ready") {
+    return (
+      <div className="w-full h-full bg-white text-gray-800 flex flex-col items-center justify-center content-center">
+        <div className="text-center flex flex-col items-center justify-center">
+          <div 
+            className={`p-8 cursor-pointer mic-button ${
+              state === "recording" ? 'mic-button-recording' : 'mic-button-ready'
+            }`} 
+            onMouseDown={onStart} 
+            onMouseUp={onStop}
+          >
+            <div className="mic-inner-circle">
+              <Mic size={100} className="mic-icon" />
+            </div>
+          </div>
+          <div className="font-semibold tracking-wider text-gray-800 mb-8 mt-8">
+            Push to talk
+          </div>
+          <div className="exit-button-container">
+            <Button 
+            onClick={onExit} 
+            variant="outline" 
+            size="sm"
+            className="exit-button" >
+            <X size={20} />
+          </Button>
+          </div>
         </div>
       </div>
-    </div>
+    )
   }
 
   if (state === "waiting") {
-    return <div className="w-full h-full text-white flex flex-col items-center justify-center content-center backgrad">
-      <div className="">
+    return (
+      <div className="w-full h-full bg-white text-gray-800 flex flex-col items-center justify-center content-center">
+      <div className="flex flex-col items-center justify-center">
         <svg
-          className="svgDots w-full h-full ml-[20%]"
+          className="mb-8 w-40 h-20 waiting-dots"
           x="0px" y="0px"
-          viewBox="0 0 100 100">
-          <circle fill="#fff" stroke="none" cx="6" cy="50" r="6">
+          viewBox="0 0 120 40">
+          <circle cx="20" cy="20" r="12" fill="#a5b4fc">
             <animate
               attributeName="opacity"
               dur="1s"
@@ -93,7 +109,7 @@ export function Comm(props: Props) {
               repeatCount="indefinite"
               begin="0.1" />
           </circle>
-          <circle fill="#fff" stroke="none" cx="26" cy="50" r="6">
+          <circle cx="60" cy="20" r="12" fill="#a5b4fc">
             <animate
               attributeName="opacity"
               dur="1s"
@@ -101,7 +117,7 @@ export function Comm(props: Props) {
               repeatCount="indefinite"
               begin="0.2" />
           </circle>
-          <circle fill="#fff" stroke="none" cx="46" cy="50" r="6">
+          <circle cx="100" cy="20" r="12" fill="#a5b4fc">
             <animate
               attributeName="opacity"
               dur="1s"
@@ -110,14 +126,36 @@ export function Comm(props: Props) {
               begin="0.3" />
           </circle>
         </svg>
+        <div className="exit-button-container">
+        <Button 
+          onClick={onExit} 
+          variant="outline" 
+          size="sm"
+          className="exit-button" >
+          <X size={20} />
+        </Button>
+        </div>
       </div>
     </div>
-  }
+  )
+}
 
-  return <div className="w-full h-full bg-black text-white flex flex-col items-center justify-center content-center backgrad" >
-    <SpeechVisualizer audio={audio} onEnd={() => setState("ready")} />
-  </div>
-
+  return (
+    <div className="w-full h-full bg-white text-gray-800 flex flex-col items-center justify-center content-center">
+      <div className="flex flex-col items-center w-full max-w-2xl">
+        <SpeechVisualizer audio={audio} onEnd={() => setState("ready")} />
+          <div className="exit-button-container">
+        <Button 
+          onClick={onExit} 
+          variant="outline" 
+          size="sm"
+          className="exit-button">
+          <X size={20} className="bg-gray-50" />
+        </Button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 interface SpeechVisualizerProps {
@@ -126,7 +164,6 @@ interface SpeechVisualizerProps {
 }
 
 function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
-
   const [frequencyData, setFrequencyData] = useState<Uint8Array | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
@@ -167,11 +204,8 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
 
   const setupAudio = async () => {
     if (audioRef.current && !analyserRef.current && !dataArrayRef.current) {
-
       const player = audioRef.current
-
       const blob = base64ToBlob(audio)
-
       player.pause()
       player.src = blob
 
@@ -197,7 +231,6 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
     }
   }
 
-
   const size = useWindowSize()
 
   useEffect(() => {
@@ -208,16 +241,13 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
         audioRef.current.pause()
       } catch (error) { }
       setupAudio().then(() => {
-        audioRef.current.play().then(() => {
-
-        })
+        audioRef.current.play().then(() => {})
       })
     }
 
     return () => {
       mounted.current = false
     }
-
   }, [])
 
   let bars = Math.floor(size[0] / 64)
@@ -227,22 +257,28 @@ function SpeechVisualizer({ audio, onEnd }: SpeechVisualizerProps) {
 
   const ambars = Array.from({ length: bars }, (_, i) => i)
 
-  return <div className="w-full h-full flex flex-col" >
+  return (
+    <div className="w-full h-full flex flex-col">
     <div className="flex-grow flex justify-center items-center transition-all">
-      {/* {ambars.map((i) => <div key={i} id={`sq${i + 1}`} style={{ height: frequencyData ? frequencyData[i] : 0 }} className="bg-white w-[24px] rounded-lg mx-2"></div>)} */}
-      {ambars.map((i) => <div key={i} id={`sq${i + 1}`} style={{ height: frequencyData ? frequencyData[i] : 0, width: width }} className="bg-white rounded-lg mx-2"></div>)}
+      {ambars.map((i) => (
+        <div 
+          key={i} 
+          id={`sq${i + 1}`} 
+          style={{ 
+            height: frequencyData ? frequencyData[i] : 0, 
+            width: width,
+            backgroundColor: "#a5b4fc"
+          }} 
+          className="rounded-lg mx-1"
+        ></div>
+      ))}
     </div>
-    <div>
-      <div className="grid justify-center content-center mb-4 cursor-pointer" onClick={onStop}>
-        <StopCircle size={64} color="red" className="shadow" />
-      </div>
+    <div className="text-center">
       <audio className="hidden" ref={audioRef} controls onEnded={onStop} />
     </div>
   </div>
-
-
+)
 }
-
 
 function useWindowSize() {
   const [size, setSize] = useState([0, 0])
