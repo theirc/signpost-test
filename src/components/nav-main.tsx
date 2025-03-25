@@ -23,24 +23,25 @@ export function NavMain({ items }: Props) {
     <SidebarGroupLabel>Platform</SidebarGroupLabel>
 
     <SidebarMenu>
-
-      <Link to={"/"}>
-        <SidebarMenuItem >
+      <SidebarMenuItem>
+        <Link to="/" className="w-full">
           <SidebarMenuButton tooltip="Agents">
-            <Brain />Agents
+            <Brain />
+            <span>Agents</span>
           </SidebarMenuButton>
-        </SidebarMenuItem>
-      </Link>
+        </Link>
+      </SidebarMenuItem>
+
       {items.map((item) => {
         if (item.isLink) {
           return (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <Link to={item.url}>
+              <Link to={item.url} className="w-full">
+                <SidebarMenuButton tooltip={item.title}>
+                  {item.icon && <item.icon />}
                   <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
           )
         }
