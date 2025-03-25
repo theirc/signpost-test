@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 // Import the shared sources and table component from their new location
 import { availableSources } from "@/components/source_input/files-modal"
-import { SourcesTable } from "@/components/sources-table"
+// import { SourcesTable } from "@/components/sources-table"
 
 export function DocumentUploadNode({ data, isConnectable }) {
   const [showOutput, setShowOutput] = useState(false)
@@ -106,7 +106,7 @@ export function DocumentUploadNode({ data, isConnectable }) {
             </Button>
           </div>
 
-          <SourcesTable
+          {/* <SourcesTable
             sources={sources}
             selectedSources={selectedSources}
             onToggleSelect={handleToggleSelect}
@@ -116,7 +116,7 @@ export function DocumentUploadNode({ data, isConnectable }) {
               content: source.content
             })}
             showCheckboxes={true}
-          />
+          /> */}
 
           <div className="text-sm text-gray-500">
             {selectedSources.length} sources selected

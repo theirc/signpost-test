@@ -5,27 +5,33 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { SourcesTable, type Source as SourceDisplay } from "@/components/sources-table"
 import { useCollections, Collection } from "@/hooks/use-collections"
 import { useCollectionSources } from "@/hooks/use-collection-sources"
 import { useSources, Source } from "@/hooks/use-sources"
 import { useSourceTags } from "@/hooks/use-source-tags"
 import { useSupabase } from "@/hooks/use-supabase"
 import { formatDate } from "@/components/source_input/utils"
+import { format } from "date-fns"
+import SearchFilter from "@/components/ui/search-filter"
+import SelectFilter from "@/components/ui/select-filter"
+import TagsFilter from "@/components/ui/tags-filter"
+import { ColumnDef } from "@tanstack/react-table"
+import CustomTable from "@/components/ui/custom-table"
+import { SourceDisplay } from "@/hooks/use-source-display"
 
 export function CollectionsManagement() {
   // Supabase hooks
   const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection, generateCollectionVector } = useCollections()
-  const { 
-    getSourcesForCollection, 
-    addSourceToCollection, 
-    removeSourceFromCollection, 
-    loading: collectionSourcesLoading 
+  const {
+    getSourcesForCollection,
+    addSourceToCollection,
+    removeSourceFromCollection,
+    loading: collectionSourcesLoading
   } = useCollectionSources()
   const { sources, loading: sourcesLoading, fetchSources, deleteSource } = useSources()
   const { getTagsForSource } = useSourceTags()
   const supabase = useSupabase()
-  
+
   // Local state
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [newCollectionName, setNewCollectionName] = useState("")
@@ -40,35 +46,35 @@ export function CollectionsManagement() {
   // Define loadCollectionSources at component level using useCallback
   const loadCollectionSources = useCallback(async (collectionId?: string) => {
     console.log(`[loadCollectionSources] ${collectionId ? 'Loading specific collection: ' + collectionId : 'Loading all collections'}`);
-    
+
     try {
       setLoading(true);
-      
+
       if (collectionId) {
         // Load just one collection
         console.log(`[loadCollectionSources] Loading sources for collection: ${collectionId}`);
         const sources = await getSourcesForCollection(collectionId);
         console.log(`[loadCollectionSources] Found ${sources.length} sources for collection ${collectionId}`);
-        
+
         setCollectionSources(prev => ({
           ...prev,
           [collectionId]: sources
         }));
       } else if (collections.length > 0) {
         // Initial load of collections that haven't been loaded yet
-        const pendingCollections = collections.filter(collection => 
+        const pendingCollections = collections.filter(collection =>
           !collectionSources[collection.id] || collectionSources[collection.id].length === 0
         );
-        
+
         console.log(`[loadCollectionSources] Loading ${pendingCollections.length} pending collections`);
-        
+
         if (pendingCollections.length === 0) {
           console.log("[loadCollectionSources] No pending collections to load");
           return;
         }
-        
-        const newCollectionSources = {...collectionSources};
-        
+
+        const newCollectionSources = { ...collectionSources };
+
         // Load each collection one by one
         for (const collection of pendingCollections) {
           try {
@@ -80,7 +86,7 @@ export function CollectionsManagement() {
             console.error(`[loadCollectionSources] Error loading sources for collection ${collection.id}:`, error);
           }
         }
-        
+
         setCollectionSources(newCollectionSources);
       }
     } catch (error) {
@@ -94,10 +100,10 @@ export function CollectionsManagement() {
   useEffect(() => {
     if (collections.length > 0 && !collectionsLoading) {
       // Only load collections once when they are first loaded
-      const pendingCollections = collections.filter(collection => 
+      const pendingCollections = collections.filter(collection =>
         !collectionSources[collection.id]
       );
-      
+
       if (pendingCollections.length > 0) {
         console.log(`[Initial Load] Loading sources for ${pendingCollections.length} new collections`);
         loadCollectionSources();
@@ -110,8 +116,8 @@ export function CollectionsManagement() {
     // Subscribe to changes in the sources table
     const channel = supabase
       .channel('sources-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'sources' }, 
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'sources' },
         payload => {
           console.log('Real-time update received:', payload);
           // Refresh sources when changes occur
@@ -129,24 +135,24 @@ export function CollectionsManagement() {
   useEffect(() => {
     // Skip if already in the middle of mapping
     if (isMapping) return;
-    
+
     const mapSources = async () => {
       if (sourcesLoading || !sources.length) {
         console.log("Skipping mapping - sources loading or empty");
         return;
       }
-      
+
       try {
         console.log("Starting source mapping", { count: sources.length });
         setIsMapping(true);
         setLoading(true);
-        
+
         const displaySources: SourceDisplay[] = [];
-        
+
         // Process in batches to avoid UI blocking
         for (let i = 0; i < sources.length; i++) {
           const source = sources[i];
-          
+
           // Parse tags from the database format
           let tags: string[] = [];
           if (source.tags) {
@@ -168,7 +174,7 @@ export function CollectionsManagement() {
               tags = source.tags;
             }
           }
-          
+
           displaySources.push({
             id: source.id,
             name: source.name,
@@ -178,7 +184,7 @@ export function CollectionsManagement() {
             tags: tags
           });
         }
-        
+
         console.log("Mapping complete, setting display sources", { count: displaySources.length });
         setSourcesDisplay(displaySources);
       } catch (error) {
@@ -188,7 +194,7 @@ export function CollectionsManagement() {
         setIsMapping(false);
       }
     };
-    
+
     // Only map if we have sources to map
     if (sources.length > 0 && !sourcesLoading) {
       mapSources();
@@ -197,8 +203,8 @@ export function CollectionsManagement() {
 
   // Handle collection toggle selection
   const handleToggleSelect = (id: string) => {
-    setSelectedSources(prev => 
-      prev.includes(id) 
+    setSelectedSources(prev =>
+      prev.includes(id)
         ? prev.filter(sourceId => sourceId !== id)
         : [...prev, id]
     );
@@ -208,7 +214,7 @@ export function CollectionsManagement() {
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     // Get the checkbox checked value from the event
     const isSelected = event.target.checked;
-    
+
     if (isSelected) {
       setSelectedSources(sourcesDisplay.map(source => source.id));
     } else {
@@ -227,17 +233,17 @@ export function CollectionsManagement() {
     if (newCollectionName && selectedSources.length > 0) {
       setLoading(true)
       console.log(`[Save Collection] Starting to save collection: ${newCollectionName} with ${selectedSources.length} sources`)
-      
+
       try {
         // Add collection to database
         console.log(`[Save Collection] Adding collection to database: ${newCollectionName}`)
         const newCollection = await addCollection(newCollectionName)
         console.log(`[Save Collection] Collection created with ID: ${newCollection?.id}`)
-        
+
         if (newCollection) {
           // Use Promise.all to add sources in parallel rather than sequentially
           console.log(`[Save Collection] Adding ${selectedSources.length} sources to collection ${newCollection.id}`)
-          
+
           // Track individual source additions
           const addPromises = selectedSources.map(sourceId => {
             console.log(`[Save Collection] Starting to add source ${sourceId} to collection ${newCollection.id}`)
@@ -251,16 +257,16 @@ export function CollectionsManagement() {
                 return false;
               })
           });
-          
+
           const results = await Promise.all(addPromises);
           console.log(`[Save Collection] All source additions completed. Results:`, results);
-          
+
           // Load sources for this specific collection
           console.log(`[Save Collection] Loading sources for new collection ${newCollection.id}`)
           await loadCollectionSources(newCollection.id);
           console.log(`[Save Collection] Collection sources loaded`)
         }
-        
+
         console.log(`[Save Collection] Process completed successfully`)
         // Use resetEditState instead of manually resetting each state
         resetEditState()
@@ -274,17 +280,17 @@ export function CollectionsManagement() {
   const handleEditCollection = async (collection: Collection) => {
     setEditingCollection(collection)
     setNewCollectionName(collection.name)
-    
+
     // Load sources for this collection if not already loaded
     if (!collectionSources[collection.id]) {
       console.log(`[Edit Collection] Loading sources for collection ${collection.id}`);
       await loadCollectionSources(collection.id);
     }
-    
+
     // Set selected sources based on collection's sources
     const collectionSourceIds = collectionSources[collection.id]?.map(source => source.id) || []
     setSelectedSources(collectionSourceIds)
-    
+
     setIsEditModalOpen(true)
   }
 
@@ -293,7 +299,7 @@ export function CollectionsManagement() {
 
     try {
       setLoading(true)
-      
+
       // Update collection name if it has changed
       if (newCollectionName !== editingCollection.name) {
         console.log(`[Update Collection] Updating collection name from "${editingCollection.name}" to "${newCollectionName}"`)
@@ -304,17 +310,17 @@ export function CollectionsManagement() {
           return
         }
       }
-      
+
       // Get current sources for this collection
       const currentSources = collectionSources[editingCollection.id] || []
       const currentSourceIds = currentSources.map(source => source.id)
       console.log(`[Update Collection] Current sources: ${currentSourceIds.length}, Selected sources: ${selectedSources.length}`)
-      
+
       // Find sources to add and remove
       const sourcesToAdd = selectedSources.filter(id => !currentSourceIds.includes(id))
       const sourcesToRemove = currentSourceIds.filter(id => !selectedSources.includes(id))
       console.log(`[Update Collection] Sources to add: ${sourcesToAdd.length}, Sources to remove: ${sourcesToRemove.length}`)
-      
+
       // Add new sources in parallel
       if (sourcesToAdd.length > 0) {
         console.log(`[Update Collection] Adding ${sourcesToAdd.length} sources`)
@@ -333,7 +339,7 @@ export function CollectionsManagement() {
         const addResults = await Promise.all(addPromises)
         console.log(`[Update Collection] Add operations completed with results:`, addResults)
       }
-      
+
       // Remove unselected sources in parallel
       if (sourcesToRemove.length > 0) {
         console.log(`[Update Collection] Removing ${sourcesToRemove.length} sources`)
@@ -352,12 +358,12 @@ export function CollectionsManagement() {
         const removeResults = await Promise.all(removePromises)
         console.log(`[Update Collection] Remove operations completed with results:`, removeResults)
       }
-      
+
       // Refresh collection sources for this specific collection
       console.log(`[Update Collection] Refreshing sources for collection ${editingCollection.id}`)
       await loadCollectionSources(editingCollection.id);
       console.log(`[Update Collection] Collection sources refreshed.`)
-      
+
       console.log(`[Update Collection] Process completed successfully`)
       resetEditState()
     } catch (error) {
@@ -376,7 +382,7 @@ export function CollectionsManagement() {
 
   const handleDeleteCollection = async (id: string) => {
     setLoading(true)
-    
+
     try {
       await deleteCollection(id)
       // Update local state
@@ -409,7 +415,7 @@ export function CollectionsManagement() {
     setLoading(true)
     try {
       const success = await generateCollectionVector(
-        collection.id, 
+        collection.id,
         collectionSources[collection.id]
       )
 
@@ -422,6 +428,61 @@ export function CollectionsManagement() {
       setLoading(false)
     }
   }
+
+  const columns: ColumnDef<any>[] = [
+    { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+    { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: true, cell: (info) => info.getValue() },
+    { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+    {
+      id: "tags",
+      accessorKey: "tags",
+      header: "Tags",
+      enableResizing: true,
+      enableHiding: true,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {(row.original.tags || []).map(tag => {
+            let tagStyle = "bg-muted"
+            if (tag === 'File Upload') {
+              tagStyle = "bg-blue-100 text-blue-800"
+            } else if (tag === 'Live Data') {
+              tagStyle = "bg-purple-100 text-purple-800"
+            }
+            return (
+              <span
+                key={tag}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
+              >
+                {tag}
+              </span>
+            )
+          })}
+        </div>
+      ),
+    }
+  ]
+
+  const filters = [
+    {
+      id: "search",
+      label: "Search",
+      component: SearchFilter,
+      props: { filterKey: "search", placeholder: "Search sources..." },
+    },
+    {
+      id: "types",
+      label: "Types",
+      component: SelectFilter,
+      props: { filterKey: "type", placeholder: "All Types" },
+    },
+    {
+      id: "tags",
+      label: "Tags",
+      component: TagsFilter,
+      props: { filterKey: "tags", placeholder: "All Tags" },
+    }
+  ]
 
   return (
     <div className="container mx-auto py-6 space-y-8">
@@ -450,7 +511,7 @@ export function CollectionsManagement() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {collections.map(collection => (
-            <div 
+            <div
               key={collection.id}
               className="border rounded-lg p-6 shadow-sm hover:shadow transition-shadow"
             >
@@ -477,7 +538,7 @@ export function CollectionsManagement() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-              
+
               <div className="text-sm text-muted-foreground mb-4">
                 Created: {formatDate(collection.created_at)}
               </div>
@@ -489,7 +550,7 @@ export function CollectionsManagement() {
               ) : (
                 <div className="text-sm text-muted-foreground">No sources</div>
               )}
-              
+
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -554,15 +615,7 @@ export function CollectionsManagement() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <SourcesTable 
-                  sources={sourcesDisplay}
-                  selectedSources={selectedSources}
-                  onToggleSelect={handleToggleSelect}
-                  onSelectAll={handleSelectAll}
-                  showCheckboxes={true}
-                  showActions={false}
-                  showAddButton={false}
-                />
+                <CustomTable tableId="knowledge-table" selectedRows={selectedSources} columns={columns as any} data={sourcesDisplay} filters={filters} placeholder="No sources found" onToggleSelect={handleToggleSelect} onSelectAll={handleSelectAll} />
               )}
             </div>
           </div>
@@ -570,7 +623,7 @@ export function CollectionsManagement() {
             <Button variant="outline" onClick={resetEditState}>
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={editingCollection ? handleUpdateCollection : handleSaveCollection}
               disabled={!newCollectionName || selectedSources.length === 0 || loading}
             >
