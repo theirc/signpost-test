@@ -1,59 +1,25 @@
-import {
-    flexRender,
-    getCoreRowModel,
-    getSortedRowModel,
-    useReactTable,
-    ColumnDef,
-    ColumnOrderState,
-    VisibilityState,
-    getFacetedRowModel,
-    getFacetedUniqueValues,
-    getPaginationRowModel,
-    Header,
-    Cell,
-} from "@tanstack/react-table"
-import { useState, useMemo, useCallback, CSSProperties } from "react"
-import {
-    Table,
-    TableHeader,
-    TableRow,
-    TableHead,
-    TableBody,
-    TableCell,
-} from "@/components/ui/table"
+import React, { useState, useMemo, useCallback, useEffect, } from "react"
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, } from "@tanstack/react-table"
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from "@/components/ui/table"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
-import {
-    ArrowUpDown,
-    MoreHorizontal,
-    Pencil,
-    Trash,
-    SlidersHorizontal,
-} from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash, SlidersHorizontal, GripVertical, } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import React from "react"
-import {
-    DndContext,
-    KeyboardSensor,
-    MouseSensor,
-    TouchSensor,
-    closestCenter,
-    type DragEndEvent,
-    useSensor,
-    useSensors,
-} from '@dnd-kit/core'
-import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
-import {
-    arrayMove,
-    SortableContext,
-    horizontalListSortingStrategy,
-    useSortable,
-} from '@dnd-kit/sortable'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
+import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors, } from "@dnd-kit/core"
+import { restrictToHorizontalAxis } from "@dnd-kit/modifiers"
+import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable, } from "@dnd-kit/sortable"
+
+interface FilterComponentProps<T> {
+    data: T[]
+    onFilterChange: (filterKey: keyof T, filterValue: any) => void
+}
+
+type FilterDefinition<T> = {
+    id: string
+    label: string
+    component: React.ComponentType<FilterComponentProps<T>>
+    props: any
+}
 
 interface CustomTableProps<T extends { id: any }> {
     columns: ColumnDef<T>[]
@@ -62,61 +28,56 @@ interface CustomTableProps<T extends { id: any }> {
     pageSize?: number
     onToggleSelect: (rowId: any) => void
     onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
+    onDelete?: (rowId: any) => void
+    onEdit?: (rowId: any) => void
+    tableId: string
+    filters?: FilterDefinition<T>[]
 }
 
-const DraggableTableHeader = ({
-    header,
-}: {
-    header: Header<any, unknown>
-}) => {
-    const { attributes, isDragging, listeners, setNodeRef, transform } =
-        useSortable({
-            id: header.column.id,
-        })
-
-    const style: CSSProperties = {
-        opacity: isDragging ? 0.8 : 1,
-        position: "relative",
-        transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : "none",
-        transition: "width transform 0.2s ease-in-out",
-        width: header.column.getSize(),
-        maxWidth: header.column.getSize(),
-        overflow: "hidden",
-        zIndex: isDragging ? 1 : 0,
-    }
+const DraggableTableHeader = ({ header }: { header: Header<any, unknown> }) => {
+    const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({ id: header.column.id })
 
     return (
-        <TableHead key={header.id} className="relative" colSpan={header.colSpan} ref={setNodeRef} style={style}>
-            <div className="flex w-full items-center justify-between overflow-hidden text-ellipsis whitespace-nowrap">
-                <div className="m-2 w-full">
+        <TableHead
+            key={header.id}
+            className={`relative overflow-hidden ${isDragging ? "opacity-80 z-[1]" : "opacity-100 z-0"}`}
+            colSpan={header.colSpan}
+            ref={setNodeRef}
+            style={{
+                transform: transform
+                    ? `translate(${transform.x}px, ${transform.y}px)`
+                    : "none",
+                width: header.column.getSize(),
+                maxWidth: `${header.column.getSize()}px`,
+            }}
+        >
+            <div className="flex w-full items-center justify-between">
+                <div className="m-2 w-full overflow-hidden text-ellipsis whitespace-nowrap">
                     <div
-                        className={`flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap ${
-                            header.column.getCanSort() ? "cursor-pointer" : ""
-                        }`}
+                        className={`flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap ${header.column.getCanSort() ? "cursor-pointer" : ""
+                            }`}
                         {...(header.column.getCanSort()
                             ? { onClick: header.column.getToggleSortingHandler() }
                             : {})}
                     >
-                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                        </span>
                         {header.column.getCanSort() && <ArrowUpDown className="h-4 w-4" />}
                     </div>
                 </div>
                 <button {...attributes} {...listeners}>
-                    🟰
+                    <GripVertical className="h-4 w-4" />
                 </button>
                 {header.column.getCanResize() && (
                     <div
                         onMouseDown={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            header.getResizeHandler()(e);
+                            header.getResizeHandler()(e)
                         }}
                         onTouchStart={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            header.getResizeHandler()(e);
+                            header.getResizeHandler()(e)
                         }}
-                        className="absolute right-0 top-0 h-full w-[1px] cursor-col-resize bg-gray-400 opacity-50"
+                        className="absolute right-0 top-0 h-full w-[2px] cursor-col-resize bg-gray-400 opacity-50"
                     />
                 )}
             </div>
@@ -125,25 +86,20 @@ const DraggableTableHeader = ({
 }
 
 const DragAlongCell = ({ cell }: { cell: Cell<any, unknown> }) => {
-    const { isDragging, setNodeRef, transform } = useSortable({
-        id: cell.column.id,
-    })
-
-    const style: CSSProperties = {
-        opacity: isDragging ? 0.8 : 1,
-        position: 'relative',
-        transform: transform ? `translate(${transform.x}px, ${transform.y}px)` : 'none',
-        transition: 'width transform 0.2s ease-in-out',
-        width: cell.column.getSize(),
-        maxWidth: cell.column.getSize(),
-        zIndex: isDragging ? 1 : 0,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    }
+    const { isDragging, setNodeRef, transform } = useSortable({ id: cell.column.id })
 
     return (
-        <TableCell style={style} ref={setNodeRef}>
+        <TableCell
+            className={`relative overflow-hidden text-ellipsis whitespace-nowrap ${isDragging ? "opacity-80 z-[1]" : "opacity-100 z-0"}`}
+            style={{
+                transform: transform
+                    ? `translate(${transform.x}px, ${transform.y}px)`
+                    : "none",
+                width: cell.column.getSize(),
+                maxWidth: `${cell.column.getSize()}px`,
+            }}
+            ref={setNodeRef}
+        >
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </TableCell>
     )
@@ -156,28 +112,33 @@ function CustomTable<T extends { id: any }>({
     pageSize = 10,
     onToggleSelect,
     onSelectAll,
+    onDelete,
+    onEdit,
+    tableId,
+    filters,
 }: CustomTableProps<T>) {
-    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
-        columns?.map((col) => col.id as string)
-    )
+    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(columns?.map((col) => col.id as string))
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [currentPage, setCurrentPage] = useState(1)
+    const [columnSizingInfo, setColumnSizingInfo] = useState<ColumnSizingInfoState>({} as ColumnSizingInfoState)
+    const [filtersState, setFiltersState] = useState<Record<string, any>>({});
+    const [filteredData, setFilteredData] = useState<T[]>(data);
 
-    const pageCount = Math.ceil(data.length / pageSize)
+    const pageCount = Math.ceil(filteredData.length / pageSize)
 
-    const paginatedLogs = useMemo(() => {
+    const paginatedData = useMemo(() => {
         const startIndex = (currentPage - 1) * pageSize
         const endIndex = startIndex + pageSize
-        return data.slice(startIndex, endIndex)
-    }, [data, currentPage, pageSize])
+        return filteredData?.slice(startIndex, endIndex)
+    }, [filteredData, currentPage, pageSize])
 
     const table = useReactTable<T>({
-        data: paginatedLogs,
+        data: paginatedData,
         columns,
         defaultColumn: {
-            minSize: 0
+            minSize: 10,
         },
-        state: { columnOrder, columnVisibility },
+        state: { columnOrder, columnVisibility, columnSizingInfo },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -186,6 +147,9 @@ function CustomTable<T extends { id: any }>({
         onColumnOrderChange: setColumnOrder,
         onColumnVisibilityChange: setColumnVisibility,
         columnResizeMode: "onChange",
+        onColumnSizingInfoChange: (updatedColumnSizingInfo: ColumnSizingInfoState) => {
+            setColumnSizingInfo(updatedColumnSizingInfo)
+        },
     })
 
     const memoizedHeaderGroups = useMemo(
@@ -207,12 +171,16 @@ function CustomTable<T extends { id: any }>({
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event
         if (active && over && active.id !== over.id) {
-            setColumnOrder(columnOrder => {
+            setColumnOrder((columnOrder) => {
                 const oldIndex = columnOrder.indexOf(active.id as string)
                 const newIndex = columnOrder.indexOf(over.id as string)
                 return arrayMove(columnOrder, oldIndex, newIndex)
             })
         }
+    }
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page)
     }
 
     const sensors = useSensors(
@@ -221,9 +189,92 @@ function CustomTable<T extends { id: any }>({
         useSensor(KeyboardSensor, {})
     )
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
-    }
+    const applyFilters = useCallback(() => {
+        let newFilteredData = data;
+
+        Object.entries(filtersState).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+                newFilteredData = newFilteredData.filter((item) => {
+                    if (key === "date_created") {
+                        if (!value.from && !value.to) return true;
+                        if (value.from && value.to) {
+                            const valueDate = new Date(item[key])
+                            const fromDate = new Date(value.from)
+                            const toDate = new Date(value.to)
+                            fromDate.setHours(0, 0, 0, 0)
+                            toDate.setHours(23, 59, 59, 999)
+                            return valueDate >= fromDate && valueDate <= toDate
+                        }
+                        if (value.from && !value.to) {
+                            const valueDate = new Date(item[key]).setHours(0, 0, 0, 0)
+                            const fromDate = new Date(value.from).setHours(0, 0, 0, 0)
+                            return valueDate == fromDate
+                        }
+                        return true
+                    } else if (key === "search") {
+                        for (const key in item) {
+                            if (Object.prototype.hasOwnProperty.call(item, key)) {
+                                const val = item[key as keyof T]
+                                if (typeof val === "string" &&
+                                    val.toLowerCase().includes(value.toLowerCase())) {
+                                    return true
+                                }
+                            }
+                        }
+                        return false
+                    } else {
+                        return item[key] === value;
+                    }
+                });
+            }
+        });
+        setFilteredData(newFilteredData);
+    }, [filtersState, data]);
+
+    const handleFilterChange = useCallback(
+        (filterKey: string, filterValue: any) => {
+            setFiltersState((prev) => {
+                if (prev[filterKey] === filterValue) return prev;
+                return { ...prev, [filterKey]: filterValue };
+            });
+        },
+        []
+    );
+
+    useEffect(() => {
+        if (!tableId) {
+            console.warn("tableId is required to persist column sizes.")
+            return
+        }
+
+        const storedColumnSizes = localStorage.getItem(
+            `columnSizes-${tableId}`
+        )
+        if (storedColumnSizes) {
+            try {
+                setColumnSizingInfo(JSON.parse(storedColumnSizes))
+            } catch (error) {
+                console.error("Error parsing column sizes from localStorage:", error)
+            }
+        }
+    }, [tableId])
+
+    useEffect(() => {
+        if (tableId && columnSizingInfo) {
+            try {
+                localStorage.setItem(
+                    `columnSizes-${tableId}`,
+                    JSON.stringify(columnSizingInfo)
+                )
+            } catch (error) {
+                console.error("Error saving column sizes to localStorage:", error)
+            }
+        }
+    }, [columnSizingInfo, tableId])
+
+    useEffect(() => {
+        applyFilters();
+    }, [filtersState, applyFilters])
 
     return (
         <DndContext
@@ -232,33 +283,47 @@ function CustomTable<T extends { id: any }>({
             onDragEnd={handleDragEnd}
             sensors={sensors}
         >
-            <div className="flex flex-col items-end">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <strong>Toggle Columns</strong>
-                        {table.getAllLeafColumns().map((column) => {
-                            return (
-                                <DropdownMenuItem key={column.id} onSelect={(e) => e.preventDefault()}>
-                                    <label className="flex items-center gap-2 w-full cursor-pointer">
-                                        <input
-                                            {...{
-                                                type: "checkbox",
-                                                checked: column.getIsVisible(),
-                                                onChange: column.getToggleVisibilityHandler(),
-                                            }}
-                                        />
-                                        {column.id}
-                                    </label>
-                                </DropdownMenuItem>
-                            )
-                        })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+            <div className="flex flex-col gap-4 overflow-x-auto p-1">
+                <div className="flex items-center gap-4 mb-4">
+                    {filters?.map((filter) => (
+                        <filter.component
+                            key={filter.id}
+                            data={data}
+                            onFilterChange={handleFilterChange}
+                            {...filter.props}
+                        />
+                    ))
+                    }
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                                <SlidersHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <strong className="flex justify-center">Toggle Columns</strong>
+                            {table.getAllLeafColumns().map((column) => {
+                                return (
+                                    <DropdownMenuItem
+                                        key={column.id}
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
+                                        <label className="flex items-center gap-2 w-full cursor-pointer">
+                                            <input
+                                                {...{
+                                                    type: "checkbox",
+                                                    checked: column.getIsVisible(),
+                                                    onChange: column.getToggleVisibilityHandler(),
+                                                }}
+                                            />
+                                            {column.id}
+                                        </label>
+                                    </DropdownMenuItem>
+                                )
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
                 <Table className="border rounded-md">
                     <TableHeader>
                         {memoizedHeaderGroups.map((headerGroup) => (
@@ -279,7 +344,6 @@ function CustomTable<T extends { id: any }>({
                                         <DraggableTableHeader key={header.id} header={header} />
                                     ))}
                                 </SortableContext>
-                                <TableHead>Actions</TableHead>
                             </TableRow>
                         ))}
                     </TableHeader>
@@ -303,23 +367,32 @@ function CustomTable<T extends { id: any }>({
                                         <DragAlongCell key={cell.id} cell={cell} />
                                     </SortableContext>
                                 ))}
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem>
-                                                <Pencil className="h-4 w-4 mr-2" /> Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="text-red-500 focus:text-red-500">
-                                                <Trash className="h-4 w-4 mr-2" /> Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
+                                {(onEdit || onDelete) && (
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="sm">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {onEdit && (
+                                                    <DropdownMenuItem onClick={() => onEdit(row.id)}>
+                                                        <Pencil className="h-4 w-4 mr-2" /> Edit
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {onDelete && (
+                                                    <DropdownMenuItem
+                                                        className="text-red-500 focus:text-red-500"
+                                                        onClick={() => onDelete(row.id)}
+                                                    >
+                                                        <Trash className="h-4 w-4 mr-2" /> Delete
+                                                    </DropdownMenuItem>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                )}
                             </TableRow>
                         ))}
                     </TableBody>
