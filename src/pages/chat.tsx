@@ -368,7 +368,6 @@ export default function Chat () {
         {state.audioMode && hasSelectedBots && (
           <Comm 
             bot={state.selectedBots[0]} 
-            onSend={onSend}
             onExit={onExitAudioMode} 
           />
         )}
@@ -607,7 +606,7 @@ function SearchInput(props: {
                 <button
                   type="button"
                   onClick={value.trim() ? handleSendMessage : props.onModeChanged}
-                  className={`p-2 rounded-full ${value.trim() ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-black text-white hover:bg-gray-800'}`}
+                  className={`p-2 rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
                   {value.trim() ? 
                     <ArrowUp className="h-5 w-5" /> : 
