@@ -14,6 +14,8 @@ interface FilterComponentProps<T> {
     onFilterChange: (filterKey: keyof T, filterValue: any) => void
 }
 
+export type FilterValueType = string | (string | number)[]
+
 type FilterDefinition<T> = {
     id: string
     label: string
@@ -24,17 +26,21 @@ type FilterDefinition<T> = {
 interface CustomTableProps<T extends { id: any }> {
     columns: ColumnDef<T>[]
     data: T[]
-    selectedRows: any[]
+    selectedRows?: any[]
     pageSize?: number
-    onToggleSelect: (rowId: any) => void
+    onToggleSelect?: (rowId: any) => void
     onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
     onDelete?: (rowId: any) => void
     onEdit?: (rowId: any) => void
     tableId: string
     filters?: FilterDefinition<T>[]
+    placeholder?: string
 }
 
 const DraggableTableHeader = ({ header }: { header: Header<any, unknown> }) => {
+    if (!header || header.id === 'action') {
+        return null
+    }
     const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({ id: header.column.id })
 
     return (
@@ -52,7 +58,7 @@ const DraggableTableHeader = ({ header }: { header: Header<any, unknown> }) => {
             }}
         >
             <div className="flex w-full items-center justify-between">
-                <div className="m-2 w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                <div className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
                     <div
                         className={`flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap ${header.column.getCanSort() ? "cursor-pointer" : ""
                             }`}
@@ -116,13 +122,14 @@ function CustomTable<T extends { id: any }>({
     onEdit,
     tableId,
     filters,
+    placeholder
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(columns?.map((col) => col.id as string))
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [currentPage, setCurrentPage] = useState(1)
     const [columnSizingInfo, setColumnSizingInfo] = useState<ColumnSizingInfoState>({} as ColumnSizingInfoState)
-    const [filtersState, setFiltersState] = useState<Record<string, any>>({});
-    const [filteredData, setFilteredData] = useState<T[]>(data);
+    const [filtersState, setFiltersState] = useState<Record<string, any>>({})
+    const [filteredData, setFilteredData] = useState<T[]>(data)
 
     const pageCount = Math.ceil(filteredData.length / pageSize)
 
@@ -190,13 +197,13 @@ function CustomTable<T extends { id: any }>({
     )
 
     const applyFilters = useCallback(() => {
-        let newFilteredData = data;
+        let newFilteredData = data
 
         Object.entries(filtersState).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
                 newFilteredData = newFilteredData.filter((item) => {
                     if (key === "date_created") {
-                        if (!value.from && !value.to) return true;
+                        if (!value.from && !value.to) return true
                         if (value.from && value.to) {
                             const valueDate = new Date(item[key])
                             const fromDate = new Date(value.from)
@@ -222,24 +229,26 @@ function CustomTable<T extends { id: any }>({
                             }
                         }
                         return false
+                    } else if (key === "tags") {
+                        return value.every((tag: string) => item[key].includes(tag))
                     } else {
-                        return item[key] === value;
+                        return item[key] === value
                     }
-                });
+                })
             }
-        });
-        setFilteredData(newFilteredData);
-    }, [filtersState, data]);
+        })
+        setFilteredData(newFilteredData)
+    }, [filtersState, data])
 
     const handleFilterChange = useCallback(
-        (filterKey: string, filterValue: any) => {
+        (filterKey: string, filterValue: FilterValueType) => {
             setFiltersState((prev) => {
-                if (prev[filterKey] === filterValue) return prev;
-                return { ...prev, [filterKey]: filterValue };
-            });
+                if (prev[filterKey] === filterValue) return prev
+                return { ...prev, [filterKey]: filterValue }
+            })
         },
-        []
-    );
+        [setFiltersState]
+    )
 
     useEffect(() => {
         if (!tableId) {
@@ -273,8 +282,10 @@ function CustomTable<T extends { id: any }>({
     }, [columnSizingInfo, tableId])
 
     useEffect(() => {
-        applyFilters();
+        applyFilters()
     }, [filtersState, applyFilters])
+
+    const tagFilter = filters?.find(filter => filter.id === "tags")
 
     return (
         <DndContext
@@ -285,7 +296,7 @@ function CustomTable<T extends { id: any }>({
         >
             <div className="flex flex-col gap-4 overflow-x-auto p-1">
                 <div className="flex items-center gap-4 mb-4">
-                    {filters?.map((filter) => (
+                    {filters?.filter(x => x.id !== "tags").map((filter) => (
                         <filter.component
                             key={filter.id}
                             data={data}
@@ -324,80 +335,96 @@ function CustomTable<T extends { id: any }>({
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
-                <Table className="border rounded-md">
-                    <TableHeader>
-                        {memoizedHeaderGroups.map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                <TableHead className="w-12">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedRows.length === data.length}
-                                        onChange={onSelectAll}
-                                        className="rounded border-gray-300"
-                                    />
-                                </TableHead>
-                                <SortableContext
-                                    items={columnOrder}
-                                    strategy={horizontalListSortingStrategy}
-                                >
-                                    {headerGroup.headers.map((header) => (
-                                        <DraggableTableHeader key={header.id} header={header} />
-                                    ))}
-                                </SortableContext>
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {memoizedRows.map((row) => (
-                            <TableRow key={row.id}>
-                                <TableCell>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedRows.includes(row.original.id)}
-                                        onChange={() => handleToggleSelect(row.original.id)}
-                                        className="rounded border-gray-300"
-                                    />
-                                </TableCell>
-                                {row.getVisibleCells().map((cell) => (
+                {tagFilter && <div className="flex flex-wrap gap-2 items-center">
+                    <tagFilter.component
+                        key={tagFilter.id}
+                        data={data}
+                        onFilterChange={handleFilterChange}
+                        {...tagFilter.props}
+                    />
+                </div>}
+                <div className="border rounded-md">
+                    <Table>
+                        <TableHeader>
+                            {memoizedHeaderGroups.map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {onToggleSelect && <TableHead className="w-12">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRows?.length === data?.length}
+                                            onChange={onSelectAll}
+                                            className="rounded border-gray-300"
+                                        />
+                                    </TableHead>}
                                     <SortableContext
-                                        key={cell.id}
                                         items={columnOrder}
                                         strategy={horizontalListSortingStrategy}
                                     >
-                                        <DragAlongCell key={cell.id} cell={cell} />
+                                        {headerGroup.headers.map((header) => (
+                                            <DraggableTableHeader key={header.id} header={header} />
+                                        ))}
                                     </SortableContext>
-                                ))}
-                                {(onEdit || onDelete) && (
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                {onEdit && (
-                                                    <DropdownMenuItem onClick={() => onEdit(row.id)}>
-                                                        <Pencil className="h-4 w-4 mr-2" /> Edit
-                                                    </DropdownMenuItem>
-                                                )}
-                                                {onDelete && (
-                                                    <DropdownMenuItem
-                                                        className="text-red-500 focus:text-red-500"
-                                                        onClick={() => onDelete(row.id)}
-                                                    >
-                                                        <Trash className="h-4 w-4 mr-2" /> Delete
-                                                    </DropdownMenuItem>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {memoizedRows.length ? memoizedRows.map((row) => (
+                                <TableRow key={row.id}>
+                                    {onToggleSelect && <TableCell>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedRows?.includes(row.original.id)}
+                                            onChange={() => handleToggleSelect(row.original.id)}
+                                            className="rounded border-gray-300"
+                                        />
+                                    </TableCell>}
+                                    {row.getVisibleCells().map((cell) => (
+                                        <SortableContext
+                                            key={cell.id}
+                                            items={columnOrder}
+                                            strategy={horizontalListSortingStrategy}
+                                        >
+                                            <DragAlongCell key={cell.id} cell={cell} />
+                                        </SortableContext>
+                                    ))}
+                                    {(onEdit || onDelete) && (
+                                        <TableCell className="text-right min-w-[40px] max-w-[80px] w-[40px] overflow-hidden text-ellipsis whitespace-nowrap" >
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    {onEdit && (
+                                                        <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
+                                                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {onDelete && (
+                                                        <DropdownMenuItem
+                                                            className="text-red-500 focus:text-red-500"
+                                                            onClick={() => onDelete(row.original.id)}
+                                                        >
+                                                            <Trash className="h-4 w-4 mr-2" /> Delete
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8">
+                                        {placeholder || "No data found"}
                                     </TableCell>
-                                )}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Pagination>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+                {data?.length > pageSize &&<Pagination>
                     <PaginationContent>
                         {currentPage === 1 ? (
                             <span aria-disabled="true">
@@ -426,7 +453,7 @@ function CustomTable<T extends { id: any }>({
                             <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
                         )}
                     </PaginationContent>
-                </Pagination>
+                </Pagination>}
             </div>
         </DndContext>
     )

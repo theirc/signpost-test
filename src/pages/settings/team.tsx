@@ -1,9 +1,11 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import CustomTable from "@/components/ui/custom-table"
+import { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
 import { ChevronUp, ChevronDown } from "lucide-react"
 import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 interface Team {
   id: string
@@ -24,6 +26,13 @@ interface TeamMember {
 
 export function TeamSettings() {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([])
+  const navigate = useNavigate();
+
+  const handleEdit = (id: string) => {
+    const member = teams.find(team => team.members.find(member => member.id === id))?.members.find(member => member.id === id)
+    if (!member) return;
+    navigate(`users/${member.id}`);
+  }
 
   const toggleTeam = (teamId: string) => {
     setExpandedTeams((prevExpanded) =>
@@ -93,6 +102,26 @@ export function TeamSettings() {
     }
   ]
 
+  const columns: ColumnDef<any>[] = [
+    {
+      id: "member", accessorKey: "member", header: "Member", enableResizing: true, enableHiding: true, enableSorting: false, cell: ({ row }) => (
+        <>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={`https://avatar.vercel.sh/${row.original.email}`} />
+            <AvatarFallback>{row.original.name[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{row.original.name}</div>
+            <div className="text-sm text-muted-foreground">{row.original.email}</div>
+          </div>
+        </>
+      )
+    },
+    { id: "role", enableResizing: true, enableHiding: true, accessorKey: "role", header: "Role", enableSorting: false, cell: (info) => info.getValue() },
+    { id: "joined", enableResizing: true, enableHiding: true, accessorKey: "joined", header: "Joined", enableSorting: false, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+    { id: "lastLogin", enableResizing: true, enableHiding: true, accessorKey: "lastLogin", header: "Last Login", enableSorting: false, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+  ]
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -123,42 +152,7 @@ export function TeamSettings() {
           </div>
 
           {isTeamExpanded(team.id) && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {team.members.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={`https://avatar.vercel.sh/${member.email}`} />
-                        <AvatarFallback>{member.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-muted-foreground">{member.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="capitalize">{member.role}</span>
-                    </TableCell>
-                    <TableCell>{new Date(member.joined).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(member.lastLogin).toLocaleDateString()}</TableCell>
-                    <TableCell className="text-right">
-                      <Link to={`users/${member.id}`}>Edit User</Link>
-                      <Button variant="ghost" size="sm" className="text-red-600">Remove</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <CustomTable tableId="team-members-table" columns={columns as any} data={team.members} placeholder="No members found" onEdit={handleEdit} />
           )}
         </div>
       ))}

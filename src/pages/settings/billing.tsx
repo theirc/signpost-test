@@ -1,7 +1,45 @@
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import CustomTable from "@/components/ui/custom-table"
+import { ColumnDef } from "@tanstack/react-table"
 
 export function BillingSettings() {
+  const mockBillingData = [
+    {
+      id: "1",
+      date: "Mar 1, 2024",
+      description: "Enterprise Plan - Monthly",
+      amount: "$499.00",
+      status: "paid"
+    },
+    {
+      id: "2",
+      date: "Feb 1, 2024",
+      description: "Enterprise Plan - Monthly",
+      amount: "$499.00",
+      status: "paid"
+    },
+    {
+      id: "3",
+      date: "Jan 1, 2024",
+      description: "Enterprise Plan - Monthly",
+      amount: "$499.00",
+      status: "paid"
+    }
+  ]
+
+  const columns: ColumnDef<any>[] = [
+    { id: "date", accessorKey: "date", header: "Date", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
+    { id: "description", enableResizing: true, enableHiding: true, accessorKey: "description", header: "Description", enableSorting: false, cell: (info) => info.getValue() },
+    { id: "amount", enableResizing: true, enableHiding: true, accessorKey: "amount", header: "Amount", enableSorting: false, cell: (info) => info.getValue() },
+    {
+      id: "status", enableResizing: true, enableHiding: true, accessorKey: "status", header: "Status", enableSorting: false, cell: ({ row }) => (
+        <span className={`capitalize ${row.original.status === 'paid' ? 'text-green-600' : 'text-gray-500'}`}>
+          {row.original.status}
+        </span>
+      )
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -28,52 +66,7 @@ export function BillingSettings() {
 
         <div>
           <h4 className="text-sm font-medium mb-4">Billing History</h4>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Invoice</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>Mar 1, 2024</TableCell>
-                <TableCell>Enterprise Plan - Monthly</TableCell>
-                <TableCell>$499.00</TableCell>
-                <TableCell>
-                  <span className="text-green-600">Paid</span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">Download</Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Feb 1, 2024</TableCell>
-                <TableCell>Enterprise Plan - Monthly</TableCell>
-                <TableCell>$499.00</TableCell>
-                <TableCell>
-                  <span className="text-green-600">Paid</span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">Download</Button>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Jan 1, 2024</TableCell>
-                <TableCell>Enterprise Plan - Monthly</TableCell>
-                <TableCell>$499.00</TableCell>
-                <TableCell>
-                  <span className="text-green-600">Paid</span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="sm">Download</Button>
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <CustomTable tableId="billing-history-table" columns={columns as any} data={mockBillingData} placeholder="No billing history found" />
         </div>
       </div>
     </div>

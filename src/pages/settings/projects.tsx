@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
+import { ColumnDef } from "@tanstack/react-table"
+import CustomTable from "@/components/ui/custom-table"
 
 interface Project {
   id: string
@@ -61,6 +62,27 @@ export function ProjectsSettings() {
     return teams.find(team => team.id === teamId)?.name || 'Unassigned'
   }
 
+  const projectData = projects.map(project => ({
+    id: project.id,
+    name: project.name,
+    team: getTeamName(project.teamId),
+    createdAt: new Date(project.createdAt).toLocaleDateString(),
+    status: project.status
+  }))
+
+  const columns: ColumnDef<any>[] = [
+    { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+    { id: "team", enableResizing: true, enableHiding: true, accessorKey: "team", header: "Team", enableSorting: false, cell: (info) => info.getValue() },
+    { id: "createdAt", enableResizing: true, enableHiding: true, accessorKey: "createdAt", header: "Created", enableSorting: false, cell: (info) => info.getValue() },
+    {
+      id: "status", enableResizing: true, enableHiding: true, accessorKey: "status", header: "Status", enableSorting: true, cell: ({ row }) => (
+        <span className={`capitalize ${row.original.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}>
+          {row.original.status}
+        </span>
+      )
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -103,36 +125,7 @@ export function ProjectsSettings() {
           </DialogContent>
         </Dialog>
       </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Team</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {projects.map((project) => (
-            <TableRow key={project.id}>
-              <TableCell>{project.name}</TableCell>
-              <TableCell>{getTeamName(project.teamId)}</TableCell>
-              <TableCell>{new Date(project.createdAt).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <span className={`capitalize ${project.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}>
-                  {project.status}
-                </span>
-              </TableCell>
-              <TableCell className="text-right">
-                <Button variant="ghost" size="sm">Edit</Button>
-                <Button variant="ghost" size="sm" className="text-red-600">Archive</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <CustomTable tableId="projects-table" columns={columns as any} data={projectData} placeholder="No projects found" />
     </div>
   )
 } 
