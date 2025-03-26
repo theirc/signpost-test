@@ -37,9 +37,8 @@ export default async function handler(
 
     console.log('[API] Generating embedding for search query...');
     
-    // Use Function constructor to delay import until runtime
-    const TransformersApi = Function('return import("@xenova/transformers")')();
-    const { pipeline } = await TransformersApi;
+    // Use dynamic import for transformers
+    const { pipeline } = await import('@xenova/transformers');
     
     // Use the same embedding pipeline as in the frontend
     const generateEmbedding = await pipeline('feature-extraction', 'Supabase/gte-small', {
