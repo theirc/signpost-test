@@ -13,11 +13,23 @@ import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
 
+// Remove the useSimilaritySearch import and add this interface
+interface SimilaritySearchResult {
+  id: string
+  content: string
+  name: string
+  similarity: number
+  source_type: 'source' | 'live_data'
+}
+
 export function BotManagement() {
     const { bots, loading: botsLoading, addBot, deleteBot, fetchBots, updateBot } = useBots()
     const { models, loading: modelsLoading } = useModels()
     const { collections, loading: collectionsLoading } = useCollections()
     const supabase = useSupabase()
+    
+    // Remove the useSimilaritySearch hook
+    // const { searchSimilarContent } = useSimilaritySearch()
     
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -30,6 +42,7 @@ export function BotManagement() {
     const [testPrompt, setTestPrompt] = useState<string>("Hello! Can you introduce yourself?")
     const [testDialogOpen, setTestDialogOpen] = useState(false)
     const [currentTestBot, setCurrentTestBot] = useState<Bot | null>(null)
+    const [currentStep, setCurrentStep] = useState<string | null>(null)
 
     // Real-time subscription to bots
     useEffect(() => {
@@ -139,9 +152,43 @@ export function BotManagement() {
         setTestResultOpen(true);
         
         try {
+            // Step 1: Embedding the search query
+            setCurrentStep('Generating embedding for search query...');
+            console.log('[BotManagement] Performing similarity search for:', testPrompt);
+            const searchResponse = await fetch('/api/similarity-search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: testPrompt
+                })
+            });
+
+            if (!searchResponse.ok) {
+                throw new Error(`Similarity search failed: ${searchResponse.statusText}`);
+            }
+
+            // Step 2: Processing search results
+            setCurrentStep('Processing search results...');
+            const searchData = await searchResponse.json();
+            const similarContent = searchData.results;
+            
+            // Log detailed similarity information
+            console.log('[BotManagement] Similar content found:');
+            similarContent.forEach((result: SimilaritySearchResult, index: number) => {
+                console.log(`\nResult ${index + 1}:
+                    Source: ${result.source_type}
+                    Name: ${result.name}
+                    Similarity: ${(result.similarity * 100).toFixed(2)}%
+                    Content Preview: ${result.content.substring(0, 100)}...`
+                );
+            });
+            
             const bot = currentTestBot;
             
-            // Create params object first
+            // Step 3: Preparing AI request
+            setCurrentStep('Preparing AI request...');
             const paramsObj = {
                 botId: bot.id,
                 botName: bot.name,
@@ -149,47 +196,45 @@ export function BotManagement() {
                 modelName: getModelName(bot.model),
                 temperature: bot.temperature?.toString() || '0.7',
                 systemPrompt: bot.system_prompt || '',
-                userPrompt: testPrompt
+                userPrompt: testPrompt,
+                similarContent: similarContent
             };
             
-            // Build URL with properly encoded parameters
-            const url = new URL('/api/botResponse', window.location.origin);
+            console.log('Current bot:', bot);
+            console.log('Testing bot function with params:', JSON.stringify(paramsObj, null, 2));
             
-            // Manually encode each parameter to ensure proper space handling
-            Object.entries(paramsObj).forEach(([key, value]) => {
-                // Use encodeURIComponent to properly handle spaces and special characters
-                url.searchParams.append(key, value);
+            // Step 4: Getting AI response
+            setCurrentStep('Getting AI response...');
+            const response = await fetch('/api/botResponse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paramsObj)
             });
             
-            console.log('Testing bot function with params:', paramsObj);
-            
-            const response = await fetch(url.toString());
             console.log('Response status:', response.status);
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
             
-            const data = await response.json();
-            console.log('Response data:', data);
-            
-            if (data.error) {
-                throw new Error(`API error: ${JSON.stringify(data)}`);
+            // Step 5: Processing response
+            setCurrentStep('Processing response...');
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse response as JSON:', e);
+                throw new Error(`Invalid JSON response: ${responseText}`);
             }
             
-            // Store the original prompt in the result
             data.originalPrompt = testPrompt;
+            data.similarContent = similarContent;
             setTestResult(JSON.stringify(data, null, 2));
+            setCurrentStep(null);
         } catch (error) {
-            console.error('Error testing function:', error);
-            
-            let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            
-            if (errorMessage.startsWith('API error: {')) {
-                try {
-                    errorMessage = errorMessage.substring('API error: '.length);
-                } catch (e) {
-                    // Keep the original message if parsing fails
-                }
-            }
-            
-            setTestResult(errorMessage);
+            console.error('Error in handleRunTest:', error);
+            setTestResult(error instanceof Error ? error.message : 'Unknown error occurred');
+            setCurrentStep(null);
         } finally {
             setTestLoading(false);
         }
@@ -319,6 +364,7 @@ export function BotManagement() {
                 result={testResult}
                 loading={testLoading}
                 bot={currentTestBot}
+                currentStep={currentStep}
                 onEditPrompt={() => {
                     setTestResultOpen(false);
                     setTimeout(() => setTestDialogOpen(true), 100);

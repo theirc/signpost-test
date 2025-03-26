@@ -9,6 +9,7 @@ interface TestResultDialogProps {
     result: string | null
     loading: boolean
     bot: Bot | null
+    currentStep: string | null
     onEditPrompt: () => void
 }
 
@@ -18,11 +19,12 @@ export default function TestResultDialog({
     result,
     loading,
     bot,
+    currentStep,
     onEditPrompt
 }: TestResultDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Test Results</DialogTitle>
                     <DialogDescription>
@@ -30,7 +32,7 @@ export default function TestResultDialog({
                     </DialogDescription>
                 </DialogHeader>
                 
-                <div className="flex-1 overflow-y-auto py-4">
+                <div className="flex-1 overflow-y-auto py-4 min-h-0 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                     {result && (
                         <>
                             {(() => {
@@ -129,7 +131,7 @@ export default function TestResultDialog({
                     {!result && loading && (
                         <div className="flex flex-col items-center justify-center py-8">
                             <Loader2 className="h-8 w-8 animate-spin text-purple-500 mb-4" />
-                            <p className="text-gray-500">Getting response from AI...</p>
+                            <p className="text-gray-500">{currentStep || 'Getting response from AI...'}</p>
                         </div>
                     )}
                 </div>
