@@ -17,10 +17,10 @@ interface ChatHistoryProps {
 }
 export function ChatHistory  ({setActiveChat, onSelectBot, bots, chatHistory}: ChatHistoryProps)  {
   return (
-    <div className="w-full h-full flex flex-col p-4">
+    <div className="w-full h-full flex flex-col p-4 overflow-y-auto">
       <h2 className="text-1xl font-bold mb-6 text-left">Chat History</h2>
       
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {chatHistory.length === 0 ? (
           <p className="text-gray-500 text-left">No past chats</p>
         ) : (

@@ -282,7 +282,7 @@ export default function Chat () {
 
   return ( 
     <div className="flex h-screen">
-      <div className="w-1/4 border-r p-4">
+      <div className="w-1/4 border-r flex flex-col">
         <div className='flex justify-end mb-4'>
           <Button 
             onClick={() => {
@@ -291,11 +291,12 @@ export default function Chat () {
               setState({ selectedBots: [] })
             }} 
             size="sm" 
-            className="flex items-center gap-1"
+            className="flex items-center gap-1 mr-2"
           >
             <MessageSquarePlus/>
           </Button>
         </div>
+        <div className='flex-1 overflow-y-auto'>
         <ChatHistory 
           setActiveChat={handleLoadChatHistory} 
           onSelectBot={(botId) => {
@@ -304,6 +305,7 @@ export default function Chat () {
           bots={state.bots}
           chatHistory={chatHistory}
         />
+        </div>
       </div>
             <div className="flex-1 flex flex-col">
         <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
@@ -337,11 +339,12 @@ export default function Chat () {
           </Button> */}
         </div>
 
-        <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-      <div className="flex-1 overflow-y-auto flex flex-col space-y-4">
+        <div className="flex-1 overflow-hidden">
+      <div className="h-full overflow-y-auto">
+        <div className='p-4 space-y-4'>
         {!state.audioMode && (
-          <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-            <div className="flex-1 overflow-y-auto flex flex-col space-y-6 w-full">
+          <div className="flex-1 flex flex-col p-4">
+            <div className="flex-1 flex flex-col space-y-6 w-full">
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                   {/* <MessageSquare className="h-12 w-12 mb-4 opacity-40" /> */}
@@ -372,10 +375,11 @@ export default function Chat () {
           />
         )}
       </div>
+      </div>
     </div>
     
     {!state.audioMode && (
-      <div className="sticky bottom-0 border-t bg-white p-4">
+      <div className="border-t bg-white p-4">
         {hasSelectedBots ? (
           <SearchInput 
             onSearch={onSend} 
@@ -669,7 +673,7 @@ function ChatMessage(props: MessageProps) {
           
           {!isWaiting && needsRebuild && (
             <Button
-              className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
+              className="mt-2 bg-gray-700 hover:bg-gray-600 text-white mr-"
               onClick={rebuild}
               disabled={isWaiting}
               size="sm"
