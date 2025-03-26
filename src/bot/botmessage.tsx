@@ -24,81 +24,162 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
     mediaBlobUrl,
     clearBlobUrl,
   } = useReactMediaRecorder({ audio: true })
-
+  
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
-
+  const utteranceRef = useRef(null)
+  
   useEffect(() => {
-    if (speechSynthesis.getVoices().length === 0) {
-      speechSynthesis.onvoiceschanged = () => {
-        // console.log("Voices loaded:", speechSynthesis.getVoices())
+    if (window.speechSynthesis) {
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = () => {
+          console.log("Voices loaded:", speechSynthesis.getVoices().length)
+        }
+      }
+    }
+    return () => {
+      if (window.speechSynthesis && isSpeaking) {
+        speechSynthesis.cancel()
       }
     }
   }, [])
   
-  // function detectLanguage(text: string): string {
-
-  //   const patterns: Record<string, RegExp> = {
-  //     en: /^[a-zA-Z0-9\s.,!?'";:)(]+$/,  // English 
-  //     es: /[áéíóúüñ¿¡]/i,                // Spanish
-  //     fr: /[àâäæçéèêëîïôœùûüÿ]/i,         // French
-  //     ar: /[\u0600-\u06FF]/,             // Arabic
-  //     hi: /[\u0900-\u097F]/              // Hindi
-  //   }
-  //   for(const[lang, pattern] of Object.entries(patterns)) {
-  //     if(pattern.test(text)) {
-  //       return lang
-  //     }
-  //   }
-  //   return 'en'
-  // }
-
-  // function findVoiceForLanguage(language: string, voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
-  //   const exactMatch = voices.find(voice => voice.lang.toLowerCase().startsWith(language));
-  //   if (exactMatch) return exactMatch
-
-  //   const partialMatch = voices.find(voice => voice.lang.toLowerCase().startsWith(language.split("-")[0]))
-  //   if (partialMatch) return partialMatch
-
-  //   return voices.find(voice => voice.default) || voices[0]
-  // }
-
-  function speakMessage(text: string) {
-    if (isSpeaking) {
-      speechSynthesis.cancel()
-      setIsSpeaking(false)
-      return
+  function detectLanguage(text) {
+    const patterns = {
+      'en-US': /^[a-zA-Z0-9\s.,!?'";:)(]+$/,
+      'es-ES': /[áéíóúüñ¿¡]/i,
+      'fr-FR': /[àâäæçéèêëîïôœùûüÿ]/i,
+      'de-DE': /[äöüß]/i,
+      'zh-CN': /[\u4e00-\u9fff]/,
+      'ja-JP': /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/,
+      'ko-KR': /[\uAC00-\uD7AF\u1100-\u11FF]/,
+      'ar-SA': /[\u0600-\u06FF]/,
+      'hi-IN': /[\u0900-\u097F]/,
+      'ru-RU': /[\u0400-\u04FF]/,
+    };
+  
+    for (const [lang, pattern] of Object.entries(patterns)) {
+      if (pattern.test(text)) {
+        return lang
+      }
     }
+    return 'en-US'
+  }
   
-    const utterance = new SpeechSynthesisUtterance(text)
-    utteranceRef.current = utterance;
-  
+  function getBestVoiceForLanguage(language) {
     const voices = speechSynthesis.getVoices()
-    
-    let chosenVoice = voices.find(v => v.name === "Google UK English Female")
-    
-    if (!chosenVoice) {
-      chosenVoice = voices.find(v => v.name === "Daniel") 
-     || voices.find(v => v.default) 
-    || voices[0]
+    if (!voices || voices.length === 0) return null
+  
+    const preferredVoicePatterns = [
+      { contains: ["Google", language.split('-')[0]], isGoogle: true },
+      { contains: ["Neural", language.split('-')[0]], isNeural: true },
+      { contains: ["Daniel"], forLang: "en" },
+      { contains: ["Samantha"], forLang: "en" },
+      { contains: ["Allison"], forLang: "en" },
+      { contains: ["Jorge"], forLang: "es" },
+      { contains: ["Thomas"], forLang: "fr" },
+      { contains: ["Yuna"], forLang: "ko" }
+    ];
+  
+    const langCode = language.split('-')[0].toLowerCase()
+  
+    for (const pattern of preferredVoicePatterns) {
+      if (pattern.forLang && pattern.forLang !== langCode) continue
+  
+      for (const voice of voices) {
+        const voiceLang = voice.lang.toLowerCase()
+        const voiceName = voice.name.toLowerCase()
+  
+        if (!voiceLang.startsWith(langCode)) continue
+  
+        if (pattern.contains.every(term => voiceName.includes(term.toLowerCase()))) {
+          return voice
+        }
+      }
     }
   
-    if (chosenVoice) {
-      utterance.voice = chosenVoice;
+    const exactMatch = voices.find(voice => voice.lang.toLowerCase() === language.toLowerCase())
+    if (exactMatch) return exactMatch
+  
+    const langMatch = voices.find(voice => voice.lang.toLowerCase().startsWith(langCode))
+    if (langMatch) return langMatch
+
+    return voices.find(voice => voice.default) || voices[0]
+  }
+  
+  function splitTextIntoChunks(text, maxChunkLength = 300) {
+    const sentences = text.match(/[^\.!\?؟]+[\.!\?؟]+/gu) || [text]
+    const chunks = []
+    let currentChunk = ""
+  
+    sentences.forEach(sentence => {
+      if ((currentChunk + sentence).length <= maxChunkLength) {
+        currentChunk += sentence + " "
+      } else {
+        if (currentChunk.trim().length > 0) {
+          chunks.push(currentChunk.trim())
+        }
+        currentChunk = sentence + " "
+      }
+    });
+  
+    if (currentChunk.trim().length > 0) {
+      chunks.push(currentChunk.trim())
+    }
+    return chunks
+  }
+  
+  function speakChunks(chunks, detectedLang) {
+    if (chunks.length === 0) return
+  
+    const chunk = chunks.shift()
+    const utterance = new SpeechSynthesisUtterance(chunk)
+    utterance.lang = detectedLang
+  
+    const bestVoice = getBestVoiceForLanguage(detectedLang)
+    if (bestVoice) {
+      utterance.voice = bestVoice
     }
   
     utterance.rate = 1.1
     utterance.pitch = 1.0
     utterance.volume = 1.0
   
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
+    utterance.onend = () => {
+      if (chunks.length > 0) {
+        speakChunks(chunks, detectedLang)
+      } else {
+        setIsSpeaking(false)
+      }
+    };
   
-    setIsSpeaking(true);
+    utterance.onerror = (event) => {
+      console.error("Speech synthesis error:", event)
+      setIsSpeaking(false)
+    };
+  
     speechSynthesis.speak(utterance)
   }
-
-  console.log('MESSAGE ', m);
+  
+  function speakMessage(text) {
+    if (!window.speechSynthesis) {
+      console.error("Speech synthesis not supported in this browser")
+      return
+    }
+  
+    if (isSpeaking) {
+      speechSynthesis.cancel()
+      setIsSpeaking(false)
+      return
+    }
+  
+    const detectedLang = detectLanguage(text)
+    const chunks = splitTextIntoChunks(text)
+  
+    setIsSpeaking(true)
+    speakChunks(chunks, detectedLang)
+  }
+    
+  console.log('MESSAGE ', m)
   const [state, setState] = useMultiState({
     open: false,
     positivie: "fail" as AI_SCORES,

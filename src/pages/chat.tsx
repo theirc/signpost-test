@@ -436,7 +436,6 @@ function SearchInput(props: {
   const [value, setValue] = useState("")
   const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
   const [tts, setTts] = useState<boolean>(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [isRecordingMode, setIsRecordingMode] = useState(false)
 
   const {
