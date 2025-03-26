@@ -19,18 +19,18 @@ export function ChatHistory  ({setActiveChat, onSelectBot, bots, chatHistory}: C
 
   const formatTimestamp = (timestamp: string) => {
     try {
-      const date = new Date(timestamp);
+      const date = new Date(timestamp)
       
       const today = new Date();
-      const isToday = date.getDate() === today.getDate() &&  date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+      const isToday = date.getDate() === today.getDate() &&  date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear()
       
       if (isToday) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       } else {
-        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' })
       }
     } catch (e) {
-      return timestamp;
+      return timestamp
     }
   }
   return (
@@ -42,8 +42,8 @@ export function ChatHistory  ({setActiveChat, onSelectBot, bots, chatHistory}: C
         {chatHistory.map((chat) => {
           const firstMessage = chat.messages && chat.messages.length > 0 
             ? chat.messages[0].message 
-            : "New Conversation";
-          const botEntry = Object.entries(bots).find(([_, bot]) => bot.name === chat.botName);
+            : "New Conversation"
+          const botEntry = Object.entries(bots).find(([_, bot]) => bot.name === chat.botName)
           
           return (
             <button
@@ -52,7 +52,7 @@ export function ChatHistory  ({setActiveChat, onSelectBot, bots, chatHistory}: C
               onClick={() => {
                 setActiveChat(chat);
                 if (botEntry && onSelectBot) {
-                  onSelectBot(botEntry[0]);
+                  onSelectBot(botEntry[0])
                 }
               }}
             >
@@ -68,7 +68,7 @@ export function ChatHistory  ({setActiveChat, onSelectBot, bots, chatHistory}: C
                 </span>
               </div>
             </button>
-          );
+          )
         })}
       </div>
     )}

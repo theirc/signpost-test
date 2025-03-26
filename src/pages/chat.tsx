@@ -57,7 +57,6 @@ export default function Chat () {
     setMessages([])
     setActiveChat(null)
     setState({ selectedBots: [] })
-    // Collapse sidebar when creating a new chat
     setSidebarVisible(false)
   }
 
@@ -295,13 +294,10 @@ export default function Chat () {
 
   return ( 
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
-      {/* Main flex container */}
       <div className="flex h-full">
-        {/* Sidebar */}
         <div className={`border-r flex flex-col transition-all duration-300 ${
             sidebarVisible ? 'w-1/4' : 'w-0 overflow-hidden'
           }`}>
-          {/* Fixed sidebar header */}
           <div className="p-4 border-b">
             <div className="flex justify-end mb-4">
               <Button 
@@ -395,7 +391,6 @@ export default function Chat () {
             </div>
           </div>
           
-          {/* Fixed input area */}
           {!state.audioMode && (
             <div className="border-t bg-white p-4">
               {hasSelectedBots ? (
@@ -550,7 +545,7 @@ function SearchInput(props: {
                 {status === "recording" ? "Recording..." : "Ready to record"}
               </div>
 
-              <button 
+              <Button 
                 onClick={handleToggleRecording}
                 className={`h-20 w-20 rounded-full flex items-center justify-center transition-colors ${
                   status === "recording" ? 'bg-red-500' : 'bg-gray-200 hover:bg-gray-300'
@@ -560,7 +555,7 @@ function SearchInput(props: {
                   <Circle className="h-8 w-8 text-white" /> : 
                   <AudioWaveform className="h-8 w-8 text-gray-800" />
                 }
-              </button>
+              </Button>
 
               {mediaBlobUrl && (
                 <>
@@ -572,22 +567,22 @@ function SearchInput(props: {
                     />
                   </div>
                   
-                  <button
+                  <Button
                     onClick={handleSendRecording}
                     className="mt-4 px-4 py-2 bg-black text-white rounded-full flex items-center hover:bg-gray-900"
                   >
                     <ArrowUp className="h-5 w-5 mr-2" />
                     <span>Send</span>
-                  </button>
+                  </Button>
                 </>
               )}
               
-              <button
+              <Button
                 onClick={() => setIsRecordingMode(false)}
                 className="mt-6 text-gray-600 hover:text-gray-900"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -602,13 +597,13 @@ function SearchInput(props: {
           >
             <div className="flex items-center w-full p-2">
               <div className="flex-shrink-0 pl-2">
-                <button
+                <Button
                   type="button"
                   onClick={props.openFileDialog}
                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
                 >
                   <CirclePlus className="h-6 w-6" />
-                </button>
+                </Button>
               </div>
               <div className="flex-grow px-2 py-3 max-h-48 overflow-y-auto">
                 <textarea
@@ -625,7 +620,7 @@ function SearchInput(props: {
               
               <div className="flex items-center pr-2 gap-2">
               
-                <button
+                <Button
                   type="button"
                   onClick={value.trim() ? handleSendMessage : props.onModeChanged}
                   className={`p-2 rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
@@ -634,7 +629,7 @@ function SearchInput(props: {
                     <ArrowUp className="h-5 w-5" /> : 
                     <AudioWaveform className="h-5 w-5" />
                   }
-                </button>
+                </Button>
               </div>
             </div>
           </form>
