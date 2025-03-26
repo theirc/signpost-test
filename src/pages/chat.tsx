@@ -3,7 +3,7 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import { Mic, MessageSquare, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
 import { useMultiState } from '@/hooks/use-multistate'
@@ -27,6 +27,7 @@ interface Bots {
 }
 
 export default function Chat () {
+  const [sidebarVisible, setSidebarVisible] = useState(false)
   const [showFileDialog, setShowFileDialog] = useState(false)
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [sources, setSources] = useState(availableSources)
@@ -47,6 +48,18 @@ export default function Chat () {
     selectedBots: [] as number[],
     audioMode: false,
   })
+
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible)
+  }
+
+  const handleResetChat = () => {
+    setMessages([])
+    setActiveChat(null)
+    setState({ selectedBots: [] })
+    // Collapse sidebar when creating a new chat
+    setSidebarVisible(false)
+  }
 
   useEffect(() => {
     api.getBots().then((sb) => {
@@ -164,7 +177,7 @@ export default function Chat () {
         id: new Date().toISOString(),
         botName: currentBotName,
         messages: [userMessage],
-        timestamp: new Date().toLocaleString(),
+        timestamp: new Date().toISOString(),
       }
       setActiveChat(currentActiveChat)
       
@@ -281,121 +294,127 @@ export default function Chat () {
   const hasSelectedBots = state.selectedBots.length > 0
 
   return ( 
-    <div className="flex h-screen">
-      <div className="w-1/4 border-r flex flex-col">
-        <div className='flex justify-end mb-4'>
-          <Button 
-            onClick={() => {
-              setMessages([])
-              setActiveChat(null)
-              setState({ selectedBots: [] })
-            }} 
-            size="sm" 
-            className="flex items-center gap-1 mr-2"
-          >
-            <MessageSquarePlus/>
-          </Button>
-        </div>
-        <div className='flex-1 overflow-y-auto'>
-        <ChatHistory 
-          setActiveChat={handleLoadChatHistory} 
-          onSelectBot={(botId) => {
-            onSelectBot(botId)
-          }} 
-          bots={state.bots}
-          chatHistory={chatHistory}
-        />
-        </div>
-      </div>
-            <div className="flex-1 flex flex-col">
-        <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
-          <h2 className="text-lg font-bold">
-            Playground
-          </h2>
-          <div className="flex-grow flex px-4">
-            <Select onValueChange={onSelectBot}>
-              <SelectTrigger className="h-9 border-gray-300 bg-white hover:bg-gray-50">
-                <SelectValue placeholder={
-                  state.selectedBots.length > 0 
-                    ? state.bots[state.selectedBots[0]]?.name || "Please select Bots"
-                    : "Please select Bots"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(state.bots).map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {state.bots[k].name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
+      {/* Main flex container */}
+      <div className="flex h-full">
+        {/* Sidebar */}
+        <div className={`border-r flex flex-col transition-all duration-300 ${
+            sidebarVisible ? 'w-1/4' : 'w-0 overflow-hidden'
+          }`}>
+          {/* Fixed sidebar header */}
+          <div className="p-4 border-b">
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={handleResetChat}
+                size="sm" 
+                className="flex items-center gap-1"
+              >
+                <MessageSquarePlus/>
+              </Button>
+            </div>
+            <h2 className="text-1xl font-bold text-left">Chat History</h2>
           </div>
-          {/* <Button onClick={onModeChanged} size="icon" variant="outline">
-            {state.audioMode ? (
-              <MessageSquare className="size-5" />
-            ) : (
-              <AudioWaveform className="size-5" />
-            )}
-          </Button> */}
+          
+          <div 
+            className="overflow-y-auto" 
+            style={{ height: "calc(100% - 100px)" }}
+          >
+            <div className="p-4">
+              <ChatHistory 
+                setActiveChat={handleLoadChatHistory} 
+                onSelectBot={(botId) => {
+                  onSelectBot(botId)
+                }} 
+                bots={state.bots}
+                chatHistory={chatHistory}
+              />
+            </div>
+          </div>
         </div>
-
-        <div className="flex-1 overflow-hidden">
-      <div className="h-full overflow-y-auto">
-        <div className='p-4 space-y-4'>
-        {!state.audioMode && (
-          <div className="flex-1 flex flex-col p-4">
-            <div className="flex-1 flex flex-col space-y-6 w-full">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  {/* <MessageSquare className="h-12 w-12 mb-4 opacity-40" /> */}
-                  <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
-                  <p className="text-sm mt-2">Select a bot and type a message below</p>
+        <div className="flex-1 flex flex-col">
+          <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
+          <Button onClick={toggleSidebar}className="mr-3 p-1 bg-grey-100 text-black rounded hover:bg-gray-100">
+              {sidebarVisible ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+             </Button>
+            <h2 className="text-lg font-bold">
+              Playground
+            </h2>
+            <div className="flex-grow flex px-4">
+              <Select onValueChange={onSelectBot}>
+                <SelectTrigger className="h-9 border-gray-300 bg-white hover:bg-gray-50">
+                  <SelectValue placeholder={
+                    state.selectedBots.length > 0 
+                      ? state.bots[state.selectedBots[0]]?.name || "Please select Bots"
+                      : "Please select Bots"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(state.bots).map((k) => (
+                    <SelectItem key={k} value={k}>
+                      {state.bots[k].name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div 
+            className="overflow-y-auto" 
+            style={{ height: "calc(100% - 137px)" }} 
+          >
+            <div className="p-4 space-y-4">
+              {!state.audioMode && (
+                <div className="flex flex-col space-y-6 w-full">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
+                      <p className="text-sm mt-2">Select a bot and type a message below</p>
+                    </div>
+                  ) : (
+                    messages.map((m, i) => (
+                      <ChatMessage key={i} message={m} isWaiting={state.isSending} />
+                    ))
+                  )}
+                  {state.isSending && (
+                    <div className="flex justify-start w-fit">
+                      <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                messages.map((m, i) => (
-                  <ChatMessage key={i} message={m} isWaiting={state.isSending} />
-                ))
               )}
-              {state.isSending && (
-                <div className="flex justify-start w-fit">
-                  <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
-                    <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
-                    <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
-                    <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
-                  </div>
-                </div>
+              {state.audioMode && hasSelectedBots && (
+                <Comm 
+                  bot={state.selectedBots[0]} 
+                  onExit={onExitAudioMode} 
+                />
               )}
             </div>
           </div>
-        )}
-        {state.audioMode && hasSelectedBots && (
-          <Comm 
-            bot={state.selectedBots[0]} 
-            onExit={onExitAudioMode} 
-          />
-        )}
+          
+          {/* Fixed input area */}
+          {!state.audioMode && (
+            <div className="border-t bg-white p-4">
+              {hasSelectedBots ? (
+                <SearchInput 
+                  onSearch={onSend} 
+                  disabled={state.isSending} 
+                  openFileDialog={() => setShowFileDialog(true)}
+                  audioMode={state.audioMode}
+                  onModeChanged={onModeChanged}
+                />
+              ) : (
+                <div className="flex justify-center items-center py-4 text-gray-500">
+                  <span>Please select a bot to start chatting</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      </div>
-    </div>
-    
-    {!state.audioMode && (
-      <div className="border-t bg-white p-4">
-        {hasSelectedBots ? (
-          <SearchInput 
-            onSearch={onSend} 
-            disabled={state.isSending} 
-            openFileDialog={() => setShowFileDialog(true)}
-            audioMode={state.audioMode}
-            onModeChanged={onModeChanged}
-          />
-        ) : (
-          <div className="flex justify-center items-center py-4 text-gray-500">
-            <span>Please select a bot to start chatting</span>
-          </div>
-        )}
-      </div>
-    )}
-  </div>
       <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
