@@ -37,48 +37,41 @@ export default async function handler(
 
     console.log('[API] Generating embedding for search query...');
     
-    // Use .then() syntax for dynamic import
-    import('@xenova/transformers')
-      .then(({ pipeline }) => {
-        return pipeline('feature-extraction', 'Supabase/gte-small', {
-          revision: 'main',
-          quantized: true
-        });
-      })
-      .then(generateEmbedding => {
-        return generateEmbedding(text, {
-          pooling: 'mean',
-          normalize: true,
-        });
-      })
-      .then(output => {
-        const queryVector = Array.from(output.data);
-        
-        // Call the existing similarity_search function
-        return supabase.rpc('similarity_search', {
-          query_vector: queryVector
-        }).then(result => result as { data: SimilaritySearchResult[] | null, error: any });
-      })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('[API] Error:', error);
-          response.status(500).json({ error: 'Database error', details: error });
-          return;
-        }
+    // More explicit dynamic import with error handling
+    const transformers = await import('@xenova/transformers').catch(error => {
+      console.error('Failed to import transformers:', error);
+      throw error;
+    });
+    
+    const pipeline = transformers.pipeline;
+    const generateEmbedding = await pipeline('feature-extraction', 'Supabase/gte-small', {
+      revision: 'main',
+      quantized: true
+    });
+    
+    const output = await generateEmbedding(text, {
+      pooling: 'mean',
+      normalize: true,
+    });
+    
+    const queryVector = Array.from(output.data);
+    
+    // Call the existing similarity_search function
+    const { data, error } = await supabase.rpc('similarity_search', {
+      query_vector: queryVector
+    }) as { data: SimilaritySearchResult[] | null, error: any };
 
-        // Return the results
-        response.status(200).json({
-          success: true,
-          results: data || []
-        });
-      })
-      .catch(error => {
-        console.error('[API] Error:', error);
-        response.status(500).json({ 
-          error: 'Internal server error',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        });
-      });
+    if (error) {
+      console.error('[API] Error:', error);
+      response.status(500).json({ error: 'Database error', details: error });
+      return;
+    }
+
+    // Return the results
+    response.status(200).json({
+      success: true,
+      results: data || []
+    });
 
   } catch (error) {
     console.error('[API] Error:', error);
