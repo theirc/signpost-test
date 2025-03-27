@@ -1,4 +1,6 @@
-// api/hello.ts
+// api/botResponse.ts
+
+// Takes as an input the content from similarity search if present ... selects the model and calls the AI API. NOTE: It only uses Claude models and the mappings aren't quite right. I'm waiting to see if we want to use a model gateway like the one in Databricks before finalizing this mapping and setting up the API routes for OpenAI and others.
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 
@@ -8,7 +10,7 @@ const MODEL_MAPPING: Record<string, string> = {
   "claude-3-sonnet": "claude-3-sonnet-20240229",
   "claude-3-haiku": "claude-3-haiku-20240307",
   "claude-2": "claude-2.1",
-  "default": "claude-3-sonnet-20240229"
+  "default":  "claude-3-5-sonnet-latest"
 };
 
 export default async function handler(
