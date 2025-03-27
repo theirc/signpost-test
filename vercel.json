@@ -6,7 +6,7 @@
     "functions": {
         "api/**/*": {
             "runtime": "@vercel/node@2.0.0",
-            "includeFiles": "node_modules/@xenova/transformers/**"
+            "includeFiles": "node_modules/@xenova/transformers/**,node_modules/@huggingface/jinja/**"
         }
     }
 }
