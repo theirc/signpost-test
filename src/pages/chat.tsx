@@ -600,7 +600,7 @@ function SearchInput(props: {
                 <Button
                   type="button"
                   onClick={props.openFileDialog}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                  className="p-2 text-white hover:text-gray-700 hover:bg-gray-100 rounded-full"
                 >
                   <CirclePlus className="h-6 w-6" />
                 </Button>

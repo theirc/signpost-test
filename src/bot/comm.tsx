@@ -1,11 +1,35 @@
 "use client"
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
-import { Mic, X } from "lucide-react"
+import { Mic, MicOff, X } from "lucide-react"
 import { useReactMediaRecorder } from "react-media-recorder"
 import { api } from "@/api/getBots"
 import "./comm.css"
 import { Button } from "@/components/ui/button"
+import * as motion from "motion/react-client"
+
+function PulsatingCircle({ color = "#a5b4fc " }: { color?: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ 
+        opacity: [1, 0.7, 1], 
+        scale: [1, 1.1, 1] 
+      }}
+      transition={{
+        duration: 1.5,
+        repeat: Infinity,
+        repeatType: "loop",
+      }}
+      style={{
+        width: 100,
+        height: 100,
+        backgroundColor: color,
+        borderRadius: "50%",
+      }}
+    />
+  )
+}
 
 function useSilenceDetection({ onSilenceDetected, active, silenceThreshold = 0.01, silenceDuration = 1500, detectionDelay = 500, speechStartMultiplier = 3, minRecordingDuration = 1000, }: { onSilenceDetected: () => void
   active: boolean
@@ -165,6 +189,13 @@ export function Comm({ bot, onExit }: Props) {
     }
   }
 
+  function handleManualStop(){
+    if(state === "recording") {
+      setState("waiting")
+      stopRecording()
+    }
+  }
+
   async function handleRecordingStop() {
     if (!mediaBlobUrl) return
     try {
@@ -191,39 +222,34 @@ export function Comm({ bot, onExit }: Props) {
     }
   }, [status, mediaBlobUrl])
 
+  let micIcon = <Mic size={20} color="gray"/>
+  let micDisabled = false
+  let micOnClick = () => {}
 
-  if (state === "recording" || state === "ready") {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center relative backgrad">
-        <div className="text-center flex flex-col items-center justify-center">
-          <div
-            className={`p-8 cursor-pointer mic-button ${
-              state === "recording" ? "mic-button-recording" : "mic-button-ready"
-            }`}
-            onClick={handleStartRecording}
-          >
-            <div className="mic-inner-circle">
-              <Mic size={100} className="mic-icon" />
-            </div>
-          </div>
-          <div className="font-semibold text-gray-800 mb-8 mt-8">
-            Click to talk (then silence to submit)
-          </div>
-        </div>
-
-        <div className="fixed bottom-4 w-full flex justify-center z-10">
-          <Button onClick={onExit} variant="outline" size="sm">
-            <X size={20} />
-          </Button>
-        </div>
-      </div>
-    )
+  if (state === "ready") {
+    micIcon = <Mic size={20} color="gray" />
+    micOnClick = handleStartRecording
+  } else if (state === "recording") {
+    micIcon = <Mic size={20} color="red" />
+    micOnClick = handleManualStop // allow manual stop if desired
+  } else if (state === "waiting") {
+    // still show a gray mic, but disabled
+    micIcon = <Mic size={20} color="gray" />
+    micDisabled = true
+  } else if (state === "playing") {
+    // show mic slash in red
+    micIcon = <MicOff size={20} color="red" />
+    micDisabled = true
   }
 
-  if (state === "waiting") {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center relative backgrad">
-        <div className="flex flex-col items-center justify-center">
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center relative backgrad mt-60">
+      <div className="flex flex-col items-center justify-center">
+        {state === "ready" || state === "recording" ? (
+          <PulsatingCircle color={state === "recording" ? "#a5b4fc" : "#a5b4fc"} />
+        ) : null}
+
+        {state === "waiting" ? (
           <svg
             className="mb-8 w-40 h-20 waiting-dots"
             x="0px"
@@ -258,28 +284,27 @@ export function Comm({ bot, onExit }: Props) {
               />
             </circle>
           </svg>
-        </div>
+        ) : null}
 
-        <div className="fixed bottom-4 w-full flex justify-center z-10">
-          <Button onClick={onExit} variant="outline" size="sm">
-            <X size={20} />
-          </Button>
-        </div>
+        {state === "playing" ? (
+          // Bot's response audio + visualization
+          <SpeechVisualizer
+            audio={audio}
+            onEnd={() => {
+              setState("ready")
+            }}
+          />
+        ) : null}
       </div>
-    )
-  }
-  return (
-    <div className="w-full h-full flex flex-col items-center justify-center relative backgrad">
-      <div className="flex flex-col items-center w-full max-w-2xl">
-        <SpeechVisualizer
-          audio={audio}
-          onEnd={() => {
-            setState("ready")
-          }}
-        />
-      </div>
-
-      <div className="fixed bottom-4 w-full flex justify-center z-10">
+      <div className="fixed bottom-4 w-full flex items-center justify-center gap-2 z-10">
+        <Button
+          onClick={!micDisabled ? micOnClick : undefined}
+          variant="outline"
+          size="sm"
+          disabled={micDisabled}
+        >
+          {micIcon}
+        </Button>
         <Button onClick={onExit} variant="outline" size="sm">
           <X size={20} />
         </Button>
