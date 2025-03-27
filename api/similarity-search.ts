@@ -37,13 +37,10 @@ export default async function handler(
 
     console.log('[API] Generating embedding for search query...');
     
-    // More explicit dynamic import with error handling
-    const transformers = await import('@xenova/transformers').catch(error => {
-      console.error('Failed to import transformers:', error);
-      throw error;
-    });
+    // Use Function constructor for dynamic import
+    const TransformersApi = Function('return import("@xenova/transformers")')();
+    const { pipeline } = await TransformersApi;
     
-    const pipeline = transformers.pipeline;
     const generateEmbedding = await pipeline('feature-extraction', 'Supabase/gte-small', {
       revision: 'main',
       quantized: true
