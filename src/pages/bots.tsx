@@ -1,23 +1,26 @@
+import { Log, LogsTable } from "@/components/logs-table"
 import React, { useState, useEffect } from "react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Play, RefreshCcw } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Play, RefreshCcw } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useBots, Bot } from "@/hooks/use-bots"
 import { useModels } from "@/hooks/use-models"
 import { useCollections } from "@/hooks/use-collections"
 import { useSupabase } from "@/hooks/use-supabase"
+import { useSimilaritySearch, SimilaritySearchResult } from "@/hooks/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
-import CustomTable from "@/components/ui/custom-table"
-import { ColumnDef } from "@tanstack/react-table"
 
 export function BotManagement() {
     const { bots, loading: botsLoading, addBot, deleteBot, fetchBots, updateBot } = useBots()
     const { models, loading: modelsLoading } = useModels()
     const { collections, loading: collectionsLoading } = useCollections()
+    const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
-
+    
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [newBot, setNewBot] = useState<Partial<Bot>>({})
@@ -29,13 +32,14 @@ export function BotManagement() {
     const [testPrompt, setTestPrompt] = useState<string>("Hello! Can you introduce yourself?")
     const [testDialogOpen, setTestDialogOpen] = useState(false)
     const [currentTestBot, setCurrentTestBot] = useState<Bot | null>(null)
+    const [currentStep, setCurrentStep] = useState<string | null>(null)
 
     // Real-time subscription to bots
     useEffect(() => {
         const channel = supabase
             .channel('bots-changes')
-            .on('postgres_changes',
-                { event: '*', schema: 'public', table: 'bots' },
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'bots' }, 
                 payload => {
                     console.log('Real-time update received:', payload);
                     fetchBots();
@@ -105,9 +109,7 @@ export function BotManagement() {
         }
     }
 
-    const startEdit = (id: string) => {
-        const bot = bots.find(bot => bot.id === id);
-        if (!bot) return;
+    const startEdit = (bot: Bot) => {
         setEditingBot(bot);
         setIsEditDialogOpen(true);
     }
@@ -133,16 +135,33 @@ export function BotManagement() {
 
     const handleRunTest = async () => {
         if (!currentTestBot || !testPrompt.trim()) return;
-
+        
         setTestLoading(true);
         setTestResult(null);
         setTestDialogOpen(false);
         setTestResultOpen(true);
-
+        
         try {
+            // Step 1: Performing similarity search
+            setCurrentStep('Performing similarity search...');
+            console.log('[BotManagement] Performing similarity search for:', testPrompt);
+            const similarContent = await searchSimilarContent(testPrompt);
+            
+            // Log detailed similarity information
+            console.log('[BotManagement] Similar content found:');
+            similarContent.forEach((result: SimilaritySearchResult, index: number) => {
+                console.log(`\nResult ${index + 1}:
+                    Source: ${result.source_type}
+                    Name: ${result.name}
+                    Similarity: ${(result.similarity * 100).toFixed(2)}%
+                    Content Preview: ${result.content.substring(0, 100)}...`
+                );
+            });
+            
             const bot = currentTestBot;
-
-            // Create params object first
+            
+            // Step 2: Preparing AI request
+            setCurrentStep('Preparing AI request...');
             const paramsObj = {
                 botId: bot.id,
                 botName: bot.name,
@@ -150,88 +169,49 @@ export function BotManagement() {
                 modelName: getModelName(bot.model),
                 temperature: bot.temperature?.toString() || '0.7',
                 systemPrompt: bot.system_prompt || '',
-                userPrompt: testPrompt
+                userPrompt: testPrompt,
+                similarContent: similarContent
             };
-
-            // Build URL with properly encoded parameters
-            const url = new URL('/api/botResponse', window.location.origin);
-
-            // Manually encode each parameter to ensure proper space handling
-            Object.entries(paramsObj).forEach(([key, value]) => {
-                // Use encodeURIComponent to properly handle spaces and special characters
-                url.searchParams.append(key, value);
+            
+            console.log('Current bot:', bot);
+            console.log('Testing bot function with params:', JSON.stringify(paramsObj, null, 2));
+            
+            // Step 3: Getting AI response
+            setCurrentStep('Getting AI response...');
+            const response = await fetch('/api/botResponse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(paramsObj)
             });
-
-            console.log('Testing bot function with params:', paramsObj);
-
-            const response = await fetch(url.toString());
+            
             console.log('Response status:', response.status);
-
-            const data = await response.json();
-            console.log('Response data:', data);
-
-            if (data.error) {
-                throw new Error(`API error: ${JSON.stringify(data)}`);
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
+            
+            // Step 4: Processing response
+            setCurrentStep('Processing response...');
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (e) {
+                console.error('Failed to parse response as JSON:', e);
+                throw new Error(`Invalid JSON response: ${responseText}`);
             }
-
-            // Store the original prompt in the result
+            
             data.originalPrompt = testPrompt;
+            data.similarContent = similarContent;
             setTestResult(JSON.stringify(data, null, 2));
+            setCurrentStep(null);
         } catch (error) {
-            console.error('Error testing function:', error);
-
-            let errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-
-            if (errorMessage.startsWith('API error: {')) {
-                try {
-                    errorMessage = errorMessage.substring('API error: '.length);
-                } catch (e) {
-                    // Keep the original message if parsing fails
-                }
-            }
-
-            setTestResult(errorMessage);
+            console.error('Error in handleRunTest:', error);
+            setTestResult(error instanceof Error ? error.message : 'Unknown error occurred');
+            setCurrentStep(null);
         } finally {
             setTestLoading(false);
         }
     }
-
-    const botsData = bots.map(bot => ({
-        id: bot.id,
-        name: bot.name,
-        collection: getCollectionName(bot.collection),
-        model: getModelName(bot.model),
-    }))
-
-    const columns: ColumnDef<any>[] = [
-        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        { id: "collection", accessorKey: "collection", header: "Knowledge Base", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        { id: "model", accessorKey: "model", header: "Model", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        {
-            id: "action",
-            accessorKey: "action",
-            header: () => null,
-            enableResizing: false,
-            enableHiding: false,
-            enableSorting: false,
-            cell: ({ row }) => (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenTestDialog(row.original)} // Access the row data
-                    disabled={testLoading && currentTestBot?.id === row.original.id}
-                >
-                    {testLoading && currentTestBot?.id === row.original.id ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                    ) : (
-                        <Play className="h-4 w-4" />
-                    )}
-                    <span className="ml-1">Test</span>
-                </Button>
-            ),
-        }
-    ]
 
     return (
         <div className="flex flex-col h-full">
@@ -266,9 +246,64 @@ export function BotManagement() {
                             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
                         </div>
                     ) : (
-                        <div>
-                            <CustomTable tableId="bots-table" columns={columns as any} data={botsData} onDelete={(id) => handleDelete(id)} onEdit={(id) => startEdit(id)} />
-                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Knowledge Base</TableHead>
+                                    <TableHead>Model</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {bots.map((bot) => (
+                                    <TableRow key={bot.id}>
+                                        <TableCell>{bot.name}</TableCell>
+                                        <TableCell>{bot.id}</TableCell>
+                                        <TableCell>{getCollectionName(bot.collection)}</TableCell>
+                                        <TableCell>{getModelName(bot.model)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end items-center space-x-1">
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={() => handleOpenTestDialog(bot)}
+                                                    disabled={testLoading && currentTestBot?.id === bot.id}
+                                                >
+                                                    {testLoading && currentTestBot?.id === bot.id ? (
+                                                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                                                    ) : (
+                                                        <Play className="h-4 w-4" />
+                                                    )}
+                                                    <span className="ml-1">Test</span>
+                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="sm">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => startEdit(bot)}>
+                                                            <Pencil className="h-4 w-4 mr-2" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem 
+                                                            onClick={() => handleDelete(bot.id)}
+                                                            className="text-red-500 focus:text-red-500"
+                                                        >
+                                                            <Trash className="h-4 w-4 mr-2" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     )}
                 </div>
             </div>
@@ -302,6 +337,7 @@ export function BotManagement() {
                 result={testResult}
                 loading={testLoading}
                 bot={currentTestBot}
+                currentStep={currentStep}
                 onEditPrompt={() => {
                     setTestResultOpen(false);
                     setTimeout(() => setTestDialogOpen(true), 100);

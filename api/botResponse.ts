@@ -28,13 +28,15 @@ export default async function handler(
       modelName, 
       temperature, 
       systemPrompt, 
-      userPrompt
-    } = request.query;
+      userPrompt,
+      similarContent
+    } = request.body;
     
-    console.log('Request query parameters:', {
+    console.log('Request body parameters:', {
       botId, botName, model, modelName,
       hasSystemPrompt: !!systemPrompt,
-      hasUserPrompt: !!userPrompt
+      hasUserPrompt: !!userPrompt,
+      hasSimilarContent: !!similarContent
     });
     
     if (!botId) {
@@ -68,8 +70,33 @@ export default async function handler(
 
     console.log('Using Claude model:', claudeModel);
 
-    // Make the Claude API call
-    console.log('Making Claude API call with model:', claudeModel);
+    // Format similar content into context if available
+    let enhancedPrompt = userPrompt || 'Hello! Can you introduce yourself?';
+    if (similarContent && Array.isArray(similarContent)) {
+      try {
+        if (similarContent.length > 0) {
+          const contextString = `
+Here is some relevant information that might help with your response:
+
+${similarContent.map((item: any) => `
+[Source: ${item.source_type} - ${item.name}]
+[Similarity: ${(item.similarity * 100).toFixed(1)}%]
+${item.content}
+---`).join('\n')}
+
+Based on this context, please respond to the following:
+${enhancedPrompt}`;
+          
+          enhancedPrompt = contextString;
+          console.log('Enhanced prompt with context:', contextString);
+        }
+      } catch (e) {
+        console.error('Error processing similar content:', e);
+        // Continue with original prompt if processing fails
+      }
+    }
+
+    // Make the Claude API call with enhanced prompt
     const claudeResponse = await axios({
       method: 'POST',
       url: 'https://api.anthropic.com/v1/messages',
@@ -86,7 +113,7 @@ export default async function handler(
         messages: [
           {
             role: 'user',
-            content: userPrompt || 'Hello! Can you introduce yourself?'
+            content: enhancedPrompt
           }
         ]
       }
