@@ -8,28 +8,18 @@ import { useBots, Bot } from "@/hooks/use-bots"
 import { useModels } from "@/hooks/use-models"
 import { useCollections } from "@/hooks/use-collections"
 import { useSupabase } from "@/hooks/use-supabase"
+import { useSimilaritySearch, SimilaritySearchResult } from "@/hooks/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
 
-// Remove the useSimilaritySearch import and add this interface
-interface SimilaritySearchResult {
-  id: string
-  content: string
-  name: string
-  similarity: number
-  source_type: 'source' | 'live_data'
-}
-
 export function BotManagement() {
     const { bots, loading: botsLoading, addBot, deleteBot, fetchBots, updateBot } = useBots()
     const { models, loading: modelsLoading } = useModels()
     const { collections, loading: collectionsLoading } = useCollections()
+    const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
-    
-    // Remove the useSimilaritySearch hook
-    // const { searchSimilarContent } = useSimilaritySearch()
     
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -152,27 +142,10 @@ export function BotManagement() {
         setTestResultOpen(true);
         
         try {
-            // Step 1: Embedding the search query
-            setCurrentStep('Generating embedding for search query...');
+            // Step 1: Performing similarity search
+            setCurrentStep('Performing similarity search...');
             console.log('[BotManagement] Performing similarity search for:', testPrompt);
-            const searchResponse = await fetch('/api/similarity-search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    text: testPrompt
-                })
-            });
-
-            if (!searchResponse.ok) {
-                throw new Error(`Similarity search failed: ${searchResponse.statusText}`);
-            }
-
-            // Step 2: Processing search results
-            setCurrentStep('Processing search results...');
-            const searchData = await searchResponse.json();
-            const similarContent = searchData.results;
+            const similarContent = await searchSimilarContent(testPrompt);
             
             // Log detailed similarity information
             console.log('[BotManagement] Similar content found:');
@@ -187,7 +160,7 @@ export function BotManagement() {
             
             const bot = currentTestBot;
             
-            // Step 3: Preparing AI request
+            // Step 2: Preparing AI request
             setCurrentStep('Preparing AI request...');
             const paramsObj = {
                 botId: bot.id,
@@ -203,7 +176,7 @@ export function BotManagement() {
             console.log('Current bot:', bot);
             console.log('Testing bot function with params:', JSON.stringify(paramsObj, null, 2));
             
-            // Step 4: Getting AI response
+            // Step 3: Getting AI response
             setCurrentStep('Getting AI response...');
             const response = await fetch('/api/botResponse', {
                 method: 'POST',
@@ -217,7 +190,7 @@ export function BotManagement() {
             const responseText = await response.text();
             console.log('Raw response:', responseText);
             
-            // Step 5: Processing response
+            // Step 4: Processing response
             setCurrentStep('Processing response...');
             let data;
             try {

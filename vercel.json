@@ -2,11 +2,5 @@
     "routes": [
         { "src": "/api/(.*)", "dest": "/api/$1" },
         { "src": "/[^.]+", "dest": "/", "status": 200 }
-    ],
-    "functions": {
-        "api/**/*": {
-            "runtime": "@vercel/node@2.0.0",
-            "includeFiles": "node_modules/@xenova/transformers/**,node_modules/@huggingface/jinja/**"
-        }
-    }
+    ]
 }
