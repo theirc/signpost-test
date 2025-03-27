@@ -13,11 +13,15 @@ import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
-import { SourcesTable } from '@/components/sources-table'
 import { availableSources } from "@/components/source_input/files-modal"
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import "../index.css"
 import { formatDate } from "@/components/source_input/utils"
+import { ColumnDef } from '@tanstack/react-table'
+import { format } from 'date-fns'
+import SearchFilter from '@/components/ui/search-filter'
+import SelectFilter from '@/components/ui/select-filter'
+import CustomTable from '@/components/ui/custom-table'
 
 interface Bots {
   [index: number]: {
@@ -276,6 +280,55 @@ export default function Chat () {
 
   const hasSelectedBots = state.selectedBots.length > 0
 
+  const columns: ColumnDef<any>[] = [
+      { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+      { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: false, cell: (info) => info.getValue() },
+      { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+      {
+        id: "tags",
+        accessorKey: "tags",
+        header: "Tags",
+        enableResizing: true,
+        enableHiding: true,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            {(row.original.tags || []).map(tag => {
+              let tagStyle = "bg-muted"
+              if (tag === 'File Upload') {
+                tagStyle = "bg-blue-100 text-blue-800"
+              } else if (tag === 'Live Data') {
+                tagStyle = "bg-purple-100 text-purple-800"
+              }
+              return (
+                <span
+                  key={tag}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
+                >
+                  {tag}
+                </span>
+              )
+            })}
+          </div>
+        ),
+      }
+    ]
+  
+    const filters = [
+      {
+        id: "search",
+        label: "Search",
+        component: SearchFilter,
+        props: { filterKey: "search", placeholder: "Search sources..." },
+      },
+      {
+        id: "types",
+        label: "Types",
+        component: SelectFilter,
+        props: { filterKey: "type", placeholder: "All Types" },
+      },
+    ]
+
   return ( 
       <div className="flex h-screen">
       <div className="w-1/4 border-r p-4">
@@ -387,13 +440,7 @@ export default function Chat () {
             <DialogTitle>Attach Files</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <SourcesTable 
-              sources={sources}
-              selectedSources={selectedSources}
-              onToggleSelect={handleToggleSelect}
-              onSelectAll={handleSelectAll}
-              showCheckboxes={true}
-            />
+            <CustomTable tableId='chat-table' columns={columns as any} data={sources} filters={filters} placeholder="No sources found" onToggleSelect={handleToggleSelect} onSelectAll={handleSelectAll} />
             <div className="flex justify-end mt-4 gap-2">
               <Button
                 variant="outline"

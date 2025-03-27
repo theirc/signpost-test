@@ -1,23 +1,29 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import React, { useState, useCallback, useMemo } from "react"
+import React, { useState, useCallback, useMemo, ReactNode } from "react"
 import { FilesModal } from "@/components/source_input/files-modal"
 import { LiveDataModal } from "@/components/source_input/live-data-modal"
-import { SourcesTable } from "@/components/sources-table"
-import { Loader2, RefreshCcw, Book, MoreHorizontal, Pencil, Trash, Database, Plus, X } from "lucide-react"
-import { useSources, Source } from "@/hooks/use-sources"
+import { Loader2, RefreshCcw, Plus, X } from "lucide-react"
+import { useSources } from "@/hooks/use-sources"
 import { useSourceDisplay } from "@/hooks/use-source-display"
 import { useSourceConfig, LiveDataElement } from "@/hooks/use-source-config"
 import { formatDate } from "@/components/source_input/utils"
-import { useTags, Tag } from "@/hooks/use-tags"
+import { useTags } from "@/hooks/use-tags"
+import DateFilter from "@/components/ui/date-filter"
+import SearchFilter from "@/components/ui/search-filter"
+import SelectFilter from "@/components/ui/select-filter"
+import TagsFilter from "@/components/ui/tags-filter"
+import { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
+import CustomTable from "@/components/ui/custom-table"
 
 
 interface PreviewContent {
   id: string;
   name: string;
   content: string;
-  tags?: string[];
+  tags?: string[] | string;
   liveDataElements?: LiveDataElement[];
   isLiveData?: boolean;
 }
@@ -34,6 +40,7 @@ export default function Sources() {
   const [liveDataModalOpen, setLiveDataModalOpen] = React.useState(false)
   const [newTag, setNewTag] = useState("")
   const [savingTags, setSavingTags] = useState(false)
+  console.log('sources:', sourcesDisplay);
 
   const refreshSources = useCallback(() => {
     setLoading(true)
@@ -53,7 +60,9 @@ export default function Sources() {
   }, [deleteSource, setSourcesDisplay])
 
   // Memoize the preview handler
-  const handlePreview = useCallback(async (source: { id: string; name: string; content: string; tags?: string[] }) => {
+  const handlePreview = useCallback(async (id: string) => {
+    const source = sources.find(source => source.id === id)
+    if (!source) return
     const isLiveData = source.tags?.includes('Live Data')
     if (isLiveData) {
       const config = await getConfigForSource(source.id)
@@ -80,28 +89,28 @@ export default function Sources() {
   // Handle adding a tag to the source
   const handleAddTag = async () => {
     if (!previewContent || !newTag.trim()) return;
-    
+
     try {
       setSavingTags(true);
-      
+
       // Ensure the tag exists in the tags table
       await addTag(newTag.trim());
-      
+
       // Get the current tags and add the new one if not already present
       const currentTags = previewContent.tags || [];
       if (!currentTags.includes(newTag.trim())) {
         const updatedTags = [...currentTags, newTag.trim()];
-        
+
         // Update the source with the new tags
         const updatedSource = await updateSource(previewContent.id, { tags: updatedTags });
-        
+
         // Update the preview content and sources display
         setPreviewContent(prev => prev ? { ...prev, tags: updatedTags } : null);
-        setSourcesDisplay(prev => prev.map(source => 
+        setSourcesDisplay(prev => prev.map(source =>
           source.id === previewContent.id ? { ...source, tags: updatedTags } : source
         ));
       }
-      
+
       setNewTag("");
     } catch (error) {
       console.error("Error adding tag:", error);
@@ -113,20 +122,22 @@ export default function Sources() {
   // Handle removing a tag from the source
   const handleRemoveTag = async (tagToRemove: string) => {
     if (!previewContent) return;
-    
+
     try {
       setSavingTags(true);
-      
+
       // Get the current tags and remove the specified one
       const currentTags = previewContent.tags || [];
-      const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
-      
+      const updatedTags = Array.isArray(currentTags)
+        ? currentTags.filter((tag) => tag !== tagToRemove)
+        : []
+
       // Update the source with the new tags
       const updatedSource = await updateSource(previewContent.id, { tags: updatedTags });
-      
+
       // Update the preview content and sources display
       setPreviewContent(prev => prev ? { ...prev, tags: updatedTags } : null);
-      setSourcesDisplay(prev => prev.map(source => 
+      setSourcesDisplay(prev => prev.map(source =>
         source.id === previewContent.id ? { ...source, tags: updatedTags } : source
       ));
     } catch (error) {
@@ -167,6 +178,67 @@ export default function Sources() {
     }
   }, [selectedElement])
 
+  const columns: ColumnDef<any>[] = [
+    { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+    { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: false, cell: (info) => info.getValue() },
+    { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+    {
+      id: "tags",
+      accessorKey: "tags",
+      header: "Tags",
+      enableResizing: true,
+      enableHiding: true,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {(row.original.tags || []).map(tag => {
+            let tagStyle = "bg-muted"
+            if (tag === 'File Upload') {
+              tagStyle = "bg-blue-100 text-blue-800"
+            } else if (tag === 'Live Data') {
+              tagStyle = "bg-purple-100 text-purple-800"
+            }
+            return (
+              <span
+                key={tag}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
+              >
+                {tag}
+              </span>
+            )
+          })}
+        </div>
+      ),
+    }
+  ]
+
+  const filters = [
+    {
+      id: "search",
+      label: "Search",
+      component: SearchFilter,
+      props: { filterKey: "search", placeholder: "Search sources..." },
+    },
+    {
+      id: "types",
+      label: "Types",
+      component: SelectFilter,
+      props: { filterKey: "type", placeholder: "All Types" },
+    },
+    {
+      id: "range",
+      label: "Date Created",
+      component: DateFilter,
+      props: { filterKey: "date_created", placeholder: "Pick a date" },
+    },
+    {
+      id: "tags",
+      label: "Tags",
+      component: TagsFilter,
+      props: { filterKey: "tags", placeholder: "All Tags" },
+    }
+  ]
+
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -191,13 +263,9 @@ export default function Sources() {
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       ) : (
-        <SourcesTable
-          sources={sourcesDisplay}
-          showCheckboxes={false}
-          showActions={true}
-          onPreview={handlePreview}
-          onDelete={handleDelete}
-        />
+        <div className="space-y-4">
+          <CustomTable tableId="sources-table" columns={columns as any} data={sourcesDisplay} filters={filters} placeholder="No sources found" onEdit={handlePreview} onDelete={handleDelete} />
+        </div>
       )}
 
       {/* Content Preview Dialog */}
@@ -214,10 +282,10 @@ export default function Sources() {
           <div className="border-b pb-3">
             <h3 className="text-sm font-semibold mb-2">Tags</h3>
             <div className="flex flex-wrap gap-2 mb-3">
-              {previewContent?.tags?.map(tag => (
+              {Array.isArray(previewContent?.tags) && previewContent?.tags?.map(tag => (
                 <div key={tag} className="flex items-center bg-muted px-2 py-1 rounded text-sm">
                   <span>{tag}</span>
-                  <button 
+                  <button
                     className="ml-1 text-muted-foreground hover:text-foreground"
                     onClick={() => handleRemoveTag(tag)}
                     disabled={savingTags}
@@ -231,7 +299,7 @@ export default function Sources() {
               )}
             </div>
             <div className="flex gap-2">
-              <Input 
+              <Input
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 placeholder="Add a new tag"
@@ -243,8 +311,8 @@ export default function Sources() {
                 }}
                 className="max-w-xs"
               />
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={handleAddTag}
                 disabled={!newTag.trim() || savingTags}
               >

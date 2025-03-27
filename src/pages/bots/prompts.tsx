@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, MoreHorizontal, Pencil, Trash, Search, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Loader2 } from "lucide-react"
 import { useSystemPrompts, type SystemPrompt } from "@/hooks/use-system-prompts"
+import { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
+import SearchFilter from "@/components/ui/search-filter"
+import SelectFilter from "@/components/ui/select-filter"
+import DateFilter from "@/components/ui/date-filter"
+import CustomTable from "@/components/ui/custom-table"
 
 export function SystemPrompts() {
     const { fetchPrompts, addPrompt, updatePrompt, deletePrompt, loading: promptsLoading } = useSystemPrompts()
@@ -97,6 +101,42 @@ export function SystemPrompts() {
     const currentPrompts = filteredPrompts.slice(startIndex, endIndex)
     const pageCount = Math.ceil(filteredPrompts.length / promptRowsPerPage)
 
+    const columns: ColumnDef<any>[] = [
+        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+        { id: "version", enableResizing: true, enableHiding: true, accessorKey: "version", header: "Version", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "language", enableResizing: true, enableHiding: true, accessorKey: "language", header: "Language", enableSorting: true, cell: (info) => info.getValue() },
+        { id: "updated_at", enableResizing: true, enableHiding: true, accessorKey: "updated_at", header: "Last Modified", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+        { id: "created_by", enableResizing: true, enableHiding: true, accessorKey: "created_by", header: "Modified By", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "status", enableResizing: true, enableHiding: true, accessorKey: "status", header: "Status", enableSorting: true, cell: (info) => info.getValue() },
+    ]
+
+    const filters = [
+        {
+            id: "search",
+            label: "Search",
+            component: SearchFilter,
+            props: { filterKey: "search", placeholder: "Search Prompts" },
+        },
+        {
+            id: "language",
+            label: "Language",
+            component: SelectFilter,
+            props: { filterKey: "language", placeholder: "All Languages" },
+        },
+        {
+            id: "range",
+            label: "Date Created",
+            component: DateFilter,
+            props: { filterKey: "updated_at", placeholder: "Pick a date" },
+        },
+    ]
+
+    const handleEdit = (id: string) => {
+        const prompt = currentPrompts.find(p => p.id === id)
+        if (!prompt) return
+        setSelectedPrompt(prompt)
+    }
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 space-y-4 p-8 pt-6">
@@ -108,150 +148,7 @@ export function SystemPrompts() {
                 </div>
 
                 <div className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                            <Input
-                                placeholder="Search Prompts"
-                                value={promptSearchQuery}
-                                onChange={(e) => setPromptSearchQuery(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    Version
-                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem>Latest First</DropdownMenuItem>
-                                <DropdownMenuItem>Oldest First</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    Language
-                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem>All Languages</DropdownMenuItem>
-                                <DropdownMenuItem>English</DropdownMenuItem>
-                                <DropdownMenuItem>Spanish</DropdownMenuItem>
-                                <DropdownMenuItem>French</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Version</TableHead>
-                                <TableHead>Language</TableHead>
-                                <TableHead>Last Modified</TableHead>
-                                <TableHead>Modified By</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="w-12"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {promptsLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8">
-                                        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : currentPrompts.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8">
-                                        No prompts found
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                currentPrompts.map((prompt) => (
-                                    <TableRow key={prompt.id}>
-                                        <TableCell>{prompt.name}</TableCell>
-                                        <TableCell>{prompt.version}</TableCell>
-                                        <TableCell>{prompt.language}</TableCell>
-                                        <TableCell>{new Date(prompt.updated_at).toLocaleString()}</TableCell>
-                                        <TableCell>{prompt.created_by || "System"}</TableCell>
-                                        <TableCell>{prompt.status}</TableCell>
-                                        <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => setSelectedPrompt(prompt)}>
-                                                        <Pencil className="h-4 w-4 mr-2" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        View History
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        Translate
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem 
-                                                        className="text-red-500"
-                                                        onClick={() => handleDeletePrompt(prompt.id)}
-                                                    >
-                                                        <Trash className="h-4 w-4 mr-2" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-
-                    {/* Pagination */}
-                    <div className="flex items-center justify-end space-x-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setPromptCurrentPage(1)}
-                            disabled={promptCurrentPage === 1}
-                        >
-                            <ChevronsLeft className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setPromptCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={promptCurrentPage === 1}
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm">
-                            Page {promptCurrentPage} of {pageCount}
-                        </span>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setPromptCurrentPage(p => Math.min(pageCount, p + 1))}
-                            disabled={promptCurrentPage === pageCount}
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setPromptCurrentPage(pageCount)}
-                            disabled={promptCurrentPage === pageCount}
-                        >
-                            <ChevronsRight className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <CustomTable tableId="prompts-table" columns={columns as any} data={currentPrompts} filters={filters} onEdit={handleEdit} onDelete={handleDeletePrompt} placeholder="No prompts found" />
                 </div>
             </div>
 
@@ -311,7 +208,7 @@ export function SystemPrompts() {
                         <Button variant="outline" onClick={() => setIsPromptDialogOpen(false)}>
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={handleCreatePrompt}
                             disabled={!newPrompt.name || !newPrompt.content || loading}
                         >
