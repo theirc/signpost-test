@@ -231,13 +231,11 @@ export function Comm({ bot, onExit }: Props) {
     micOnClick = handleStartRecording
   } else if (state === "recording") {
     micIcon = <Mic size={20} color="red" />
-    micOnClick = handleManualStop // allow manual stop if desired
+    micOnClick = handleManualStop 
   } else if (state === "waiting") {
-    // still show a gray mic, but disabled
     micIcon = <Mic size={20} color="gray" />
     micDisabled = true
   } else if (state === "playing") {
-    // show mic slash in red
     micIcon = <MicOff size={20} color="red" />
     micDisabled = true
   }
