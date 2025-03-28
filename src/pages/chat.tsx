@@ -722,18 +722,18 @@ function ChatMessage(props: MessageProps) {
   let { type, message, messages, needsRebuild, rebuild } = props.message
   messages = messages || []
 
-  if (type === "bot") {
-    const hasBots = messages.length > 0
 
-    if (hasBots && messages.length > 1) {
+  if (type === "bot") {
+    if (messages.length > 1) {
       return (
         <div className="w-full mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+          <div className="flex gap-4 w-full">
             {messages.map((m) => (
-              <div key={m.id} className="border border-gray-300 rounded-lg p-3">
-                <div className="font-medium text-xs mb-1">
-                  {m.botName}
-                </div>
+              <div
+                key={m.id}
+                className="flex-1 border border-gray-300 rounded-lg p-3"
+              >
+                <div className="font-medium text-xs mb-1">{m.botName}</div>
                 <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
               </div>
             ))}
@@ -741,12 +741,12 @@ function ChatMessage(props: MessageProps) {
         </div>
       )
     }
-    if (hasBots && messages.length === 1) {
+    if (messages.length === 1) {
       const single = messages[0]
       return (
         <div className="mt-4">
-          <div className="rounded-lg p-3">
-            <div className="inline-block px-2 py-1 border border-gray-300 rounded text-sm font-medium mb-1">{single.botName}</div>
+          <div className="p-3">
+            <div className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-1">{single.botName}</div>
             <BotChatMessage m={single} isWaiting={isWaiting} rebuild={rebuild} />
           </div>
         </div>
