@@ -3,9 +3,10 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
+import { ChevronLeft, X, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Checkbox } from '@radix-ui/react-checkbox'
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
@@ -25,6 +26,86 @@ interface Bots {
     history: BotHistory[]
   }
 }
+
+interface Option {
+  label: string
+  value: string
+}
+
+export function MultiSelectDropdown({
+  options,
+  selected,
+  onChange,
+}: {
+  options: Option[]
+  selected: number[]
+  onChange: (selected: number[]) => void
+}) {
+  const removeBot = (botValue: number) => {
+    onChange(selected.filter((v) => v !== botValue))
+  }
+
+  const toggleSelection = (botValue: number) => {
+    if (selected.includes(botValue)) {
+      removeBot(botValue)
+    } else if (selected.length < 3) {
+      onChange([...selected, botValue])
+    }
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <div className="relative w-full min-h-[2.5rem] border border-gray-300 rounded-md px-2 py-1 flex items-center gap-2 cursor-pointer">
+          {selected.length === 0 && (
+            <span className="text-gray-400">Select Bots</span>
+          )}
+          {selected.map((val) => {
+            const opt = options.find((o) => o.value === val.toString())
+            if (!opt) return null
+            return (
+              <div
+                key={opt.value}
+                className="flex items-center bg-gray-200 text-sm px-2 py-1 rounded"
+              >
+                <span className="mr-1">{opt.label}</span>
+                <X
+                  className="h-4 w-4 cursor-pointer text-gray-600 hover:text-gray-800"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    removeBot(val)
+                  }}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </PopoverTrigger>
+      <PopoverContent align="start"
+      className="w-auto min-w-[var(--radix-popover-trigger-width)] max-w-[20rem] max-h-60 overflow-y-auto text-sm">
+        {options.map((opt) => {
+          const botValue = Number(opt.value)
+          const isChecked = selected.includes(botValue)
+          return (
+            <div
+              key={opt.value}
+              className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => toggleSelection(botValue)}
+            >
+              <Checkbox
+                checked={isChecked}
+                onCheckedChange={() => {}}
+                className=""
+              />
+              <span>{opt.label}</span>
+            </div>
+          )
+        })}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 
 export default function Chat () {
   const [sidebarVisible, setSidebarVisible] = useState(false)
@@ -116,6 +197,14 @@ export default function Chat () {
       }
       setMessage(prev => prev + "")
     }, 50)
+  }
+
+  const onMultiSelectBot = (selected: number[]) => {
+    if (JSON.stringify(state.selectedBots) !== JSON.stringify(selected)) {
+      setState({ selectedBots: selected })
+      setMessages([])
+      setActiveChat(null)
+    }
   }
 
   const onSelectBot = (e: string[] | string) => {
@@ -290,8 +379,12 @@ export default function Chat () {
     console.log("Exiting audio mode")
   }
 
-  const hasSelectedBots = state.selectedBots.length > 0
-
+const hasSelectedBots = state.selectedBots.length > 0
+  const options: Option[] = Object.keys(state.bots).map((k) => ({
+    label: state.bots[Number(k)].name,
+    value: k,
+  }))
+  
   return ( 
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
       <div className="flex h-full">
@@ -336,22 +429,11 @@ export default function Chat () {
               Playground
             </h2>
             <div className="flex-grow flex px-4">
-              <Select onValueChange={onSelectBot}>
-                <SelectTrigger className="h-9 border-gray-300 bg-white hover:bg-gray-50">
-                  <SelectValue placeholder={
-                    state.selectedBots.length > 0 
-                      ? state.bots[state.selectedBots[0]]?.name || "Please select Bots"
-                      : "Please select Bots"
-                  } />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(state.bots).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {state.bots[k].name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <MultiSelectDropdown options={options} selected={state.selectedBots} onChange={(selected) => {
+                  setState({ selectedBots: selected })
+                  setMessages([])
+                  setActiveChat(null)
+                }} />
             </div>
           </div>
           <div 
@@ -526,15 +608,6 @@ function SearchInput(props: {
       setIsRecordingMode(false)
     }
   }
-
-  const handleActionButton = () => {
-    if (value.trim()) {
-      handleSearch(value)
-    } else {
-      setIsRecordingMode(true)
-    }
-  }
-
   return (
     <div className="w-full">
       {isRecordingMode ? (
@@ -649,53 +722,58 @@ function ChatMessage(props: MessageProps) {
   let { type, message, messages, needsRebuild, rebuild } = props.message
   messages = messages || []
 
-  const hasBots = messages.length > 0
+  if (type === "bot") {
+    const hasBots = messages.length > 0
 
-  if (type == "bot") {
-    return (
-      <div className="flex w-full max-w-3xl">
-        <div className="flex gap-3 w-full">
-          {hasBots && (
-            <div className="flex-grow">
-              <div className="space-y-6 w-full">
-                {messages.map((m) => (
-                  <div key={m.id} className="w-full">
-                    <div className="font-medium text-xs mb-1 border border-gray-300 rounded-lg p-3 px-4 w-fit">
-                      {m.botName}
-                    </div>
-                    <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
-                  </div>
-                ))}
+    if (hasBots && messages.length > 1) {
+      return (
+        <div className="w-full mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+            {messages.map((m) => (
+              <div key={m.id} className="border border-gray-300 rounded-lg p-3">
+                <div className="font-medium text-xs mb-1">
+                  {m.botName}
+                </div>
+                <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
               </div>
-            </div>
-          )}
-          {!hasBots && message && (
-            <div className="text-gray-800 rounded-lg max-w-full prose prose-sm">
-              <div>{message}</div>
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+      )
+    }
+    if (hasBots && messages.length === 1) {
+      const single = messages[0]
+      return (
+        <div className="mt-4">
+          <div className="rounded-lg p-3">
+            <div className="inline-block px-2 py-1 border border-gray-300 rounded text-sm font-medium mb-1">{single.botName}</div>
+            <BotChatMessage m={single} isWaiting={isWaiting} rebuild={rebuild} />
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div className="w-full mt-4">
+        <div className="border border-gray-300 rounded-lg p-3">
+          {message}
         </div>
       </div>
     )
   }
-
   return (
-    <div className="flex w-full max-w-3xl ml-auto justify-end">
-      <div className="flex gap-3">
-        <div className="bg-gray-100 text-black p-4 rounded-lg max-w-md">
-          <div>{message}</div>
-          
-          {!isWaiting && needsRebuild && (
-            <Button
-              className="mt-2 bg-gray-700 hover:bg-gray-600 text-white mr-"
-              onClick={rebuild}
-              disabled={isWaiting}
-              size="sm"
-            >
-              <span className="mr-1">↻</span> Rebuild
-            </Button>
-          )}
-        </div>
+    <div className="w-full flex justify-end mt-4">
+      <div className="bg-gray-100 text-black p-4 rounded-lg max-w-md">
+        <div>{message}</div>
+        {!isWaiting && needsRebuild && (
+          <Button
+            className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
+            onClick={rebuild}
+            disabled={isWaiting}
+            size="sm"
+          >
+            <span className="mr-1">↻</span> Rebuild
+          </Button>
+        )}
       </div>
     </div>
   )
