@@ -1,18 +1,15 @@
-import { Log, LogsTable } from "@/components/logs-table"
-import React, { useState, useEffect } from "react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Pencil, Trash, Play, RefreshCcw } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useBots, Bot } from "@/hooks/use-bots"
-import { useModels } from "@/hooks/use-models"
-import { useCollections } from "@/hooks/use-collections"
+import { Play, RefreshCcw } from "lucide-react"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
+import { fetchBots, addBot, updateBot, deleteBot, Bot, fetchCollections, Collection, fetchModels, Model } from '@/lib/data/supabaseFunctions'
+import CustomTable from "@/components/ui/custom-table"
+import { ColumnDef } from "@tanstack/react-table"
 
 export function BotManagement() {
     const [models, setModels] = useState<Model[]>([])
@@ -22,6 +19,9 @@ export function BotManagement() {
     const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
     
+    const [bots, setBots] = useState<Bot[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<Error | null>(null)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [newBot, setNewBot] = useState<Partial<Bot>>({})
@@ -90,7 +90,7 @@ export function BotManagement() {
         fetchBotsData()
         fetchCollectionsData()
         fetchModelsData() // Fetch models on mount
-    }, [])
+    }, [fetchCollectionsData, fetchModelsData])
 
     // Real-time subscription to bots
     useEffect(() => {
@@ -108,7 +108,7 @@ export function BotManagement() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase, fetchBotsData]);
+    }, [supabase]);
 
     // Add real-time subscription for collections
     useEffect(() => {
@@ -240,12 +240,12 @@ export function BotManagement() {
 
     const handleRunTest = async () => {
         if (!currentTestBot || !testPrompt.trim()) return;
-
+        
         setTestLoading(true);
         setTestResult(null);
         setTestDialogOpen(false);
         setTestResultOpen(true);
-
+        
         try {
             // Step 1: Performing similarity search
             setCurrentStep('Performing similarity search...');
@@ -324,6 +324,7 @@ export function BotManagement() {
         }
     }
 
+    // Prepare data for the CustomTable component
     const botsData = bots.map(bot => ({
         id: bot.id,
         name: bot.name,
@@ -331,6 +332,7 @@ export function BotManagement() {
         model: getModelName(bot.model),
     }))
 
+    // Define columns for the CustomTable
     const columns: ColumnDef<any>[] = [
         { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
         { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
@@ -343,21 +345,27 @@ export function BotManagement() {
             enableResizing: false,
             enableHiding: false,
             enableSorting: false,
-            cell: ({ row }) => (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenTestDialog(row.original)} // Access the row data
-                    disabled={testLoading && currentTestBot?.id === row.original.id}
-                >
-                    {testLoading && currentTestBot?.id === row.original.id ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                    ) : (
-                        <Play className="h-4 w-4" />
-                    )}
-                    <span className="ml-1">Test</span>
-                </Button>
-            ),
+            cell: ({ row }) => {
+                // Find the original bot object based on the ID
+                const originalBot = bots.find(bot => bot.id === row.original.id);
+                if (!originalBot) return null;
+                
+                return (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenTestDialog(originalBot)}
+                        disabled={testLoading && currentTestBot?.id === originalBot.id}
+                    >
+                        {testLoading && currentTestBot?.id === originalBot.id ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        ) : (
+                            <Play className="h-4 w-4" />
+                        )}
+                        <span className="ml-1">Test</span>
+                    </Button>
+                );
+            }
         }
     ]
 
