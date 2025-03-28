@@ -1,16 +1,18 @@
 import { Log, LogsTable } from "@/components/logs-table"
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, Pencil, Trash, Play, RefreshCcw } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useBots, Bot } from "@/hooks/use-bots"
+import { useModels } from "@/hooks/use-models"
+import { useCollections } from "@/hooks/use-collections"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
-import { fetchBots, addBot, updateBot, deleteBot, Bot, fetchCollections, Collection, fetchModels, Model } from '@/lib/data/supabaseFunctions'
 
 export function BotManagement() {
     const [models, setModels] = useState<Model[]>([])
@@ -20,9 +22,6 @@ export function BotManagement() {
     const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
     
-    const [bots, setBots] = useState<Bot[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<Error | null>(null)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [newBot, setNewBot] = useState<Partial<Bot>>({})
@@ -97,8 +96,8 @@ export function BotManagement() {
     useEffect(() => {
         const channel = supabase
             .channel('bots-changes')
-            .on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'bots' }, 
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'bots' },
                 payload => {
                     console.log('Real-time update received:', payload);
                     fetchBotsData();
@@ -211,7 +210,9 @@ export function BotManagement() {
         }
     }
 
-    const startEdit = (bot: Bot) => {
+    const startEdit = (id: string) => {
+        const bot = bots.find(bot => bot.id === id);
+        if (!bot) return;
         setEditingBot(bot);
         setIsEditDialogOpen(true);
     }
@@ -239,12 +240,12 @@ export function BotManagement() {
 
     const handleRunTest = async () => {
         if (!currentTestBot || !testPrompt.trim()) return;
-        
+
         setTestLoading(true);
         setTestResult(null);
         setTestDialogOpen(false);
         setTestResultOpen(true);
-        
+
         try {
             // Step 1: Performing similarity search
             setCurrentStep('Performing similarity search...');
@@ -323,6 +324,43 @@ export function BotManagement() {
         }
     }
 
+    const botsData = bots.map(bot => ({
+        id: bot.id,
+        name: bot.name,
+        collection: getCollectionName(bot.collection),
+        model: getModelName(bot.model),
+    }))
+
+    const columns: ColumnDef<any>[] = [
+        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
+        { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
+        { id: "collection", accessorKey: "collection", header: "Knowledge Base", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
+        { id: "model", accessorKey: "model", header: "Model", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
+        {
+            id: "action",
+            accessorKey: "action",
+            header: () => null,
+            enableResizing: false,
+            enableHiding: false,
+            enableSorting: false,
+            cell: ({ row }) => (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenTestDialog(row.original)} // Access the row data
+                    disabled={testLoading && currentTestBot?.id === row.original.id}
+                >
+                    {testLoading && currentTestBot?.id === row.original.id ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                    ) : (
+                        <Play className="h-4 w-4" />
+                    )}
+                    <span className="ml-1">Test</span>
+                </Button>
+            ),
+        }
+    ]
+
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 space-y-4 p-8 pt-6">
@@ -356,64 +394,9 @@ export function BotManagement() {
                             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Knowledge Base</TableHead>
-                                    <TableHead>Model</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {bots.map((bot) => (
-                                    <TableRow key={bot.id}>
-                                        <TableCell>{bot.name}</TableCell>
-                                        <TableCell>{bot.id}</TableCell>
-                                        <TableCell>{getCollectionName(bot.collection)}</TableCell>
-                                        <TableCell>{getModelName(bot.model)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end items-center space-x-1">
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm" 
-                                                    onClick={() => handleOpenTestDialog(bot)}
-                                                    disabled={testLoading && currentTestBot?.id === bot.id}
-                                                >
-                                                    {testLoading && currentTestBot?.id === bot.id ? (
-                                                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                                                    ) : (
-                                                        <Play className="h-4 w-4" />
-                                                    )}
-                                                    <span className="ml-1">Test</span>
-                                                </Button>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onClick={() => startEdit(bot)}>
-                                                            <Pencil className="h-4 w-4 mr-2" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem 
-                                                            onClick={() => handleDelete(bot.id)}
-                                                            className="text-red-500 focus:text-red-500"
-                                                        >
-                                                            <Trash className="h-4 w-4 mr-2" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                        <div>
+                            <CustomTable tableId="bots-table" columns={columns as any} data={botsData} onDelete={(id) => handleDelete(id)} onEdit={(id) => startEdit(id)} />
+                        </div>
                     )}
                 </div>
             </div>

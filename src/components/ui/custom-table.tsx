@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, } from "react"
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from "@/components/ui/table"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
-import { ArrowUpDown, MoreHorizontal, Pencil, Trash, SlidersHorizontal, GripVertical, } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Pencil, Trash, SlidersHorizontal, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors, } from "@dnd-kit/core"
@@ -125,9 +125,18 @@ function CustomTable<T extends { id: any }>({
     placeholder
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(columns?.map((col) => col.id as string))
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
+        if (!tableId) return {}
+        const stored = localStorage.getItem(`columnVisibility-${tableId}`)
+        return stored ? JSON.parse(stored) : {}
+    })
     const [currentPage, setCurrentPage] = useState(1)
     const [columnSizingInfo, setColumnSizingInfo] = useState<ColumnSizingInfoState>({} as ColumnSizingInfoState)
+    const [columnSizes, setColumnSizes] = useState<Record<string, number>>(() => {
+        if (!tableId) return {}
+        const stored = localStorage.getItem(`columnSizes-${tableId}`)
+        return stored ? JSON.parse(stored) : {}
+    })
     const [filtersState, setFiltersState] = useState<Record<string, any>>({})
     const [filteredData, setFilteredData] = useState<T[]>(data)
 
@@ -156,8 +165,31 @@ function CustomTable<T extends { id: any }>({
         columnResizeMode: "onChange",
         onColumnSizingInfoChange: (updatedColumnSizingInfo: ColumnSizingInfoState) => {
             setColumnSizingInfo(updatedColumnSizingInfo)
+            if (!updatedColumnSizingInfo.isResizingColumn) {
+                const newSizes = table.getAllLeafColumns().reduce((acc, column) => {
+                    acc[column.id] = column.getSize()
+                    return acc
+                }, {} as Record<string, number>)
+                setColumnSizes(newSizes)
+            }
         },
+        initialState: {
+            columnSizing: columnSizes
+        }
     })
+
+    // Apply saved column sizes when columns change
+    useEffect(() => {
+        if (Object.keys(columnSizes).length > 0) {
+            const newSizingInfo = table.getAllLeafColumns().reduce((acc, column) => {
+                if (columnSizes[column.id]) {
+                    acc[column.id] = columnSizes[column.id]
+                }
+                return acc
+            }, {} as ColumnSizingInfoState)
+            setColumnSizingInfo(newSizingInfo)
+        }
+    }, [table, columns])
 
     const memoizedHeaderGroups = useMemo(
         () => table.getHeaderGroups(),
@@ -252,38 +284,41 @@ function CustomTable<T extends { id: any }>({
 
     useEffect(() => {
         if (!tableId) {
-            console.warn("tableId is required to persist column sizes.")
+            console.warn("tableId is required to persist column sizes and visibility.")
             return
-        }
-
-        const storedColumnSizes = localStorage.getItem(
-            `columnSizes-${tableId}`
-        )
-        if (storedColumnSizes) {
-            try {
-                setColumnSizingInfo(JSON.parse(storedColumnSizes))
-            } catch (error) {
-                console.error("Error parsing column sizes from localStorage:", error)
-            }
         }
     }, [tableId])
 
+    // Update effect to persist column visibility
     useEffect(() => {
-        if (tableId && columnSizingInfo) {
+        if (tableId) {
+            try {
+                localStorage.setItem(
+                    `columnVisibility-${tableId}`,
+                    JSON.stringify(columnVisibility)
+                )
+            } catch (error) {
+                console.error("Error saving column visibility to localStorage:", error)
+            }
+        }
+    }, [columnVisibility, tableId])
+
+    useEffect(() => {
+        applyFilters()
+    }, [filtersState, applyFilters])
+
+    useEffect(() => {
+        if (tableId) {
             try {
                 localStorage.setItem(
                     `columnSizes-${tableId}`,
-                    JSON.stringify(columnSizingInfo)
+                    JSON.stringify(columnSizes)
                 )
             } catch (error) {
                 console.error("Error saving column sizes to localStorage:", error)
             }
         }
-    }, [columnSizingInfo, tableId])
-
-    useEffect(() => {
-        applyFilters()
-    }, [filtersState, applyFilters])
+    }, [columnSizes, tableId])
 
     const tagFilter = filters?.find(filter => filter.id === "tags")
 
@@ -307,7 +342,7 @@ function CustomTable<T extends { id: any }>({
                     }
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" className="ml-auto">
                                 <SlidersHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
