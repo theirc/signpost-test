@@ -1,13 +1,25 @@
+<<<<<<< HEAD:src/pages/bots/bots.tsx
 import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Play, RefreshCcw } from "lucide-react"
+=======
+import React, { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Play, RefreshCcw } from "lucide-react"
+import { useBots, Bot } from "@/hooks/use-bots"
+import { useModels } from "@/hooks/use-models"
+import { useCollections } from "@/hooks/use-collections"
+>>>>>>> main:src/pages/bots.tsx
 import { useSupabase } from "@/hooks/use-supabase"
 import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
+<<<<<<< HEAD:src/pages/bots/bots.tsx
 import { fetchBots, addBot, updateBot, deleteBot, Bot, fetchCollections, Collection, fetchModels, Model } from '@/lib/data/supabaseFunctions'
+=======
+>>>>>>> main:src/pages/bots.tsx
 import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
 
@@ -18,10 +30,14 @@ export function BotManagement() {
     const [collectionsLoading, setCollectionsLoading] = useState(true)
     const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
+<<<<<<< HEAD:src/pages/bots/bots.tsx
     
     const [bots, setBots] = useState<Bot[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
+=======
+
+>>>>>>> main:src/pages/bots.tsx
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [newBot, setNewBot] = useState<Partial<Bot>>({})
@@ -324,7 +340,10 @@ export function BotManagement() {
         }
     }
 
+<<<<<<< HEAD:src/pages/bots/bots.tsx
     // Prepare data for the CustomTable component
+=======
+>>>>>>> main:src/pages/bots.tsx
     const botsData = bots.map(bot => ({
         id: bot.id,
         name: bot.name,
@@ -332,7 +351,10 @@ export function BotManagement() {
         model: getModelName(bot.model),
     }))
 
+<<<<<<< HEAD:src/pages/bots/bots.tsx
     // Define columns for the CustomTable
+=======
+>>>>>>> main:src/pages/bots.tsx
     const columns: ColumnDef<any>[] = [
         { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
         { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
@@ -345,6 +367,7 @@ export function BotManagement() {
             enableResizing: false,
             enableHiding: false,
             enableSorting: false,
+<<<<<<< HEAD:src/pages/bots/bots.tsx
             cell: ({ row }) => {
                 // Find the original bot object based on the ID
                 const originalBot = bots.find(bot => bot.id === row.original.id);
@@ -366,6 +389,23 @@ export function BotManagement() {
                     </Button>
                 );
             }
+=======
+            cell: ({ row }) => (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenTestDialog(row.original)} // Access the row data
+                    disabled={testLoading && currentTestBot?.id === row.original.id}
+                >
+                    {testLoading && currentTestBot?.id === row.original.id ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                    ) : (
+                        <Play className="h-4 w-4" />
+                    )}
+                    <span className="ml-1">Test</span>
+                </Button>
+            ),
+>>>>>>> main:src/pages/bots.tsx
         }
     ]
 
