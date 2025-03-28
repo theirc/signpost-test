@@ -1,31 +1,32 @@
 import { Log, LogsTable } from "@/components/logs-table"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, Pencil, Trash, Play, RefreshCcw } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useBots, Bot } from "@/hooks/use-bots"
-import { useModels } from "@/hooks/use-models"
-import { useCollections } from "@/hooks/use-collections"
 import { useSupabase } from "@/hooks/use-supabase"
-import { useSimilaritySearch, SimilaritySearchResult } from "@/hooks/use-similarity-search"
+import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
+import { fetchBots, addBot, updateBot, deleteBot, Bot, fetchCollections, Collection, fetchModels, Model } from '@/lib/data/supabaseFunctions'
 
 export function BotManagement() {
-    const { bots, loading: botsLoading, addBot, deleteBot, fetchBots, updateBot } = useBots()
-    const { models, loading: modelsLoading } = useModels()
-    const { collections, loading: collectionsLoading } = useCollections()
+    const [models, setModels] = useState<Model[]>([])
+    const [modelsLoading, setModelsLoading] = useState(true)
+    const [collections, setCollections] = useState<Collection[]>([])
+    const [collectionsLoading, setCollectionsLoading] = useState(true)
     const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
     
+    const [bots, setBots] = useState<Bot[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<Error | null>(null)
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [newBot, setNewBot] = useState<Partial<Bot>>({})
     const [editingBot, setEditingBot] = useState<Bot | null>(null)
-    const [loading, setLoading] = useState(false)
     const [testLoading, setTestLoading] = useState(false)
     const [testResult, setTestResult] = useState<string | null>(null)
     const [testResultOpen, setTestResultOpen] = useState(false)
@@ -33,6 +34,64 @@ export function BotManagement() {
     const [testDialogOpen, setTestDialogOpen] = useState(false)
     const [currentTestBot, setCurrentTestBot] = useState<Bot | null>(null)
     const [currentStep, setCurrentStep] = useState<string | null>(null)
+
+    const fetchBotsData = async () => {
+        try {
+            setLoading(true)
+            const { data, error } = await fetchBots()
+            if (error) throw error
+            setBots(data)
+        } catch (error) {
+            setError(error instanceof Error ? error : new Error(String(error)))
+            console.error('Failed to fetch bots:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Fetch collections data function
+    const fetchCollectionsData = useCallback(async () => {
+      setCollectionsLoading(true)
+      try {
+        const { data, error } = await fetchCollections()
+        if (error) {
+          console.error('Error fetching collections:', error)
+          setCollections([])
+        } else {
+          setCollections(data || [])
+        }
+      } catch (err) {
+        console.error('Error fetching collections:', err)
+        setCollections([])
+      } finally {
+        setCollectionsLoading(false)
+      }
+    }, [])
+
+    // Fetch models data function
+    const fetchModelsData = useCallback(async () => {
+      setModelsLoading(true)
+      try {
+        const { data, error } = await fetchModels()
+        if (error) {
+          console.error('Error fetching models:', error)
+          setModels([])
+        } else {
+          setModels(data || [])
+        }
+      } catch (err) {
+        console.error('Error fetching models:', err)
+        setModels([])
+      } finally {
+        setModelsLoading(false)
+      }
+    }, [])
+
+    useEffect(() => {
+        fetchBotsData()
+        fetchCollectionsData()
+        fetchModelsData() // Fetch models on mount
+    }, [])
 
     // Real-time subscription to bots
     useEffect(() => {
@@ -42,7 +101,7 @@ export function BotManagement() {
                 { event: '*', schema: 'public', table: 'bots' }, 
                 payload => {
                     console.log('Real-time update received:', payload);
-                    fetchBots();
+                    fetchBotsData();
                 }
             )
             .subscribe();
@@ -50,61 +109,104 @@ export function BotManagement() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase, fetchBots]);
+    }, [supabase, fetchBotsData]);
+
+    // Add real-time subscription for collections
+    useEffect(() => {
+        const channel = supabase
+            .channel('collections-changes-bots-page') // Use a unique channel name
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'collections' }, 
+                payload => {
+                    console.log('Collections real-time update received (Bots Page):', payload);
+                    fetchCollectionsData(); // Refresh collections on change
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [supabase, fetchCollectionsData]);
+
+    // Add real-time subscription for models
+    useEffect(() => {
+        const channel = supabase
+            .channel('models-changes-bots-page') // Unique channel name
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'models' }, 
+                payload => {
+                    console.log('Models real-time update received (Bots Page):', payload);
+                    fetchModelsData(); // Refresh models on change
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [supabase, fetchModelsData]);
 
     const handleRefresh = () => {
-        fetchBots();
+        fetchBotsData();
+        fetchCollectionsData();
+        fetchModelsData(); // Also refresh models
     };
 
     const handleDelete = async (id: string) => {
-        setLoading(true);
         try {
-            await deleteBot(id);
+            const { success, error } = await deleteBot(id)
+            if (error) throw error
+            if (success) {
+                setBots(prev => prev.filter(bot => bot.id !== id))
+            }
         } catch (error) {
-            console.error('Error deleting bot:', error);
-        } finally {
-            setLoading(false);
+            console.error('Failed to delete bot:', error)
         }
     }
 
     const handleAddBot = async () => {
         if (newBot.name && newBot.model) {
-            setLoading(true);
             try {
-                await addBot({
+                const { data, error } = await addBot({
                     name: newBot.name,
                     model: newBot.model,
                     collection: newBot.collection,
                     system_prompt: newBot.system_prompt,
+                    system_prompt_id: newBot.system_prompt_id,
                     temperature: newBot.temperature || 0.7
-                });
-                setNewBot({});
-                setIsAddDialogOpen(false);
+                })
+                if (error) throw error
+                if (data) {
+                    setBots(prev => [...prev, data])
+                    setNewBot({})
+                    setIsAddDialogOpen(false)
+                }
             } catch (error) {
-                console.error('Error adding bot:', error);
-            } finally {
-                setLoading(false);
+                console.error('Failed to add bot:', error)
             }
         }
     }
 
     const handleEditBot = async () => {
         if (editingBot && editingBot.name && editingBot.model) {
-            setLoading(true);
             try {
-                await updateBot(editingBot.id, {
+                const { data, error } = await updateBot(editingBot.id, {
                     name: editingBot.name,
                     model: editingBot.model,
                     collection: editingBot.collection,
                     system_prompt: editingBot.system_prompt,
+                    system_prompt_id: editingBot.system_prompt_id,
                     temperature: editingBot.temperature
-                });
-                setEditingBot(null);
-                setIsEditDialogOpen(false);
+                })
+                if (error) throw error
+                if (data) {
+                    setBots(prev => prev.map(bot => bot.id === editingBot.id ? data : bot))
+                    setEditingBot(null)
+                    setIsEditDialogOpen(false)
+                }
             } catch (error) {
-                console.error('Error updating bot:', error);
-            } finally {
-                setLoading(false);
+                console.error('Failed to update bot:', error)
             }
         }
     }
@@ -114,15 +216,17 @@ export function BotManagement() {
         setIsEditDialogOpen(true);
     }
 
-    // Helper function to get collection name
+    // Helper function to get collection name (uses state now)
     const getCollectionName = (collectionId: string | undefined) => {
         if (!collectionId) return 'None';
+        // Find collection from the 'collections' state variable
         const collection = collections.find(c => c.id === collectionId);
         return collection ? collection.name : 'Unknown';
     }
 
     // Helper function to get model name
     const getModelName = (modelId: string) => {
+        // Find model from the 'models' state variable
         const model = models.find(m => m.id === modelId || m.model_id === modelId);
         return model ? model.name : modelId;
     }
@@ -162,6 +266,12 @@ export function BotManagement() {
             
             // Step 2: Preparing AI request
             setCurrentStep('Preparing AI request...');
+
+            // Check if system prompt content might be missing
+            if (!bot.system_prompt && bot.system_prompt_id) {
+                console.warn(`[BotManagement] Warning: Bot "${bot.name}" has a system_prompt_id but the system_prompt content is missing. The test might not use the intended system prompt unless fetchBots resolves it.`);
+            }
+
             const paramsObj = {
                 botId: bot.id,
                 botName: bot.name,
@@ -231,7 +341,7 @@ export function BotManagement() {
                             onBotChange={setNewBot}
                             models={models}
                             collections={collections}
-                            loading={loading}
+                            loading={loading || collectionsLoading || modelsLoading}
                         />
                     </div>
                 </div>
@@ -241,7 +351,7 @@ export function BotManagement() {
                         Manage your AI models and their configurations.
                     </div>
 
-                    {botsLoading ? (
+                    {loading ? (
                         <div className="w-full h-64 flex items-center justify-center">
                             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
                         </div>
@@ -316,7 +426,7 @@ export function BotManagement() {
                 onBotChange={setEditingBot}
                 models={models}
                 collections={collections}
-                loading={loading}
+                loading={loading || collectionsLoading || modelsLoading}
             />
 
             <TestBotDialog

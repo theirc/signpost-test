@@ -1,286 +1,228 @@
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Loader2, FolderOpen, File as FileIcon, CheckCircle } from "lucide-react"
-import { useFileParser } from "@/hooks/use-file-parser"
-import { useSourceUpload } from "@/hooks/use-source-upload"
-
-// TypeScript declarations for File System Access API
-declare global {
-  interface Window {
-    showDirectoryPicker: (options?: {
-      id?: string;
-      mode?: 'read' | 'readwrite';
-      startIn?: 'desktop' | 'documents' | 'downloads' | 'music' | 'pictures' | 'videos';
-    }) => Promise<FileSystemDirectoryHandle>;
-  }
-  
-  interface FileSystemDirectoryHandle {
-    values(): AsyncIterable<FileSystemHandle>;
-    readonly kind: 'directory';
-    readonly name: string;
-  }
-  
-  interface FileSystemFileHandle {
-    readonly kind: 'file';
-    readonly name: string;
-    getFile(): Promise<File>;
-  }
-}
-
-interface FileWithPath extends File {
-  path: string;
-}
+import { useState } from "react"
+import { useSupabase } from "@/hooks/use-supabase"
+import { uploadSources, ParsedFile } from '@/lib/data/supabaseFunctions'
 
 interface FolderCrawlerProps {
-  onSourcesUpdated: () => void
-  onComplete: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export function FolderCrawler({ onSourcesUpdated, onComplete }: FolderCrawlerProps) {
+export function FolderCrawler({ open, onOpenChange }: FolderCrawlerProps) {
+  const supabase = useSupabase()
   const [isLoading, setIsLoading] = useState(false)
-  const [isCrawling, setIsCrawling] = useState(false)
-  const [foundFiles, setFoundFiles] = useState<FileWithPath[]>([])
-  const [selectedFiles, setSelectedFiles] = useState<FileWithPath[]>([])
-  const [fileExtensions, setFileExtensions] = useState(".pdf,.docx,.txt,.md")
-  const [processingStatus, setProcessingStatus] = useState<string>("")
-  const [processedCount, setProcessedCount] = useState(0)
-  
-  const { parseFiles, supportedTypes } = useFileParser()
-  const { handleProcessedFiles, uploadSources } = useSourceUpload()
+  const [progress, setProgress] = useState<string>('')
+  const [processedSources, setProcessedSources] = useState<ParsedFile[]>([])
+  const [sourceNames, setSourceNames] = useState<Record<string, string>>({})
+  const [tags, setTags] = useState<string[]>([])
 
-  // Function to recursively read a directory
-  const crawlDirectory = async (dirHandle: FileSystemDirectoryHandle, path = "") => {
-    setIsCrawling(true)
-    const extensions = fileExtensions.split(",").map(ext => ext.trim().toLowerCase())
-    const files: FileWithPath[] = []
-
-    try {
-      // Process all entries in the directory
-      for await (const entry of dirHandle.values()) {
-        const entryPath = path ? `${path}/${entry.name}` : entry.name
-        
-        if (entry.kind === "file") {
-          // Check if file has a supported extension
-          const fileExt = `.${entry.name.split('.').pop()?.toLowerCase()}`
-          if (extensions.includes(fileExt) || extensions.includes("*")) {
-            const fileHandle = entry as FileSystemFileHandle
-            const file = await fileHandle.getFile()
-            // Create a File object with the proper path information
-            const fileWithPath = file as FileWithPath
-            fileWithPath.path = entryPath
-            files.push(fileWithPath)
-          }
-        } else if (entry.kind === "directory") {
-          // Recursively process subdirectories
-          setProcessingStatus(`Scanning folder: ${entryPath}`)
-          const subFiles = await crawlDirectory(entry as FileSystemDirectoryHandle, entryPath)
-          files.push(...subFiles)
-        }
-      }
-    } catch (error) {
-      console.error("Error crawling directory:", error)
-    }
-
-    setIsCrawling(false)
-    return files
+  const resetState = () => {
+    setProcessedSources([])
+    setSourceNames({})
+    setTags([])
+    setProgress('')
   }
 
-  // Handle directory selection
-  const handleSelectDirectory = async () => {
-    try {
-      // Request directory access with minimal restrictions
-      const dirHandle = await window.showDirectoryPicker({
-        mode: 'read',
-        // Remove the startIn option to let user choose any accessible folder
-      })
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files) return
 
-      setIsLoading(true)
-      setFoundFiles([])
-      setProcessingStatus("Starting folder scan...")
-      
-      // Crawl the directory recursively
-      const files = await crawlDirectory(dirHandle)
-      setFoundFiles(files)
-      setSelectedFiles(files) // Select all files by default
-      
-      setProcessingStatus(`Found ${files.length} files`)
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error selecting directory:", error)
-        if (error.name === 'AbortError') {
-          setProcessingStatus("Directory selection canceled")
-        } else if (error.message?.includes('system files')) {
-          setProcessingStatus("Can't access system folders. Please choose a different folder.")
-        } else {
-          setProcessingStatus(`Error: ${error.message || "Could not access folder"}`)
-        }
-      } else {
-        setProcessingStatus("Directory selection canceled")
+    setIsLoading(true)
+    setProgress('Processing files...')
+
+    try {
+      const newProcessedSources: ParsedFile[] = []
+      const newSourceNames: Record<string, string> = {}
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const content = await file.text()
+        const name = file.name.replace(/\.[^/.]+$/, '') // Remove file extension
+
+        newProcessedSources.push({
+          id: Math.random().toString(36).substring(7), // Generate a random ID
+          name,
+          content,
+          type: 'text'
+        })
+        newSourceNames[name] = name
       }
+
+      setProcessedSources(newProcessedSources)
+      setSourceNames(newSourceNames)
+      setProgress(`${files.length} files processed successfully`)
+    } catch (error) {
+      console.error('Error processing files:', error)
+      setProgress('Error processing files')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle file selection
-  const toggleFileSelection = (file: FileWithPath) => {
-    setSelectedFiles(prev => 
-      prev.some(f => f.path === file.path)
-        ? prev.filter(f => f.path !== file.path)
-        : [...prev, file]
-    )
+  const updateSourceName = (originalName: string, newName: string) => {
+    setSourceNames(prev => ({
+      ...prev,
+      [originalName]: newName
+    }))
   }
 
-  // Handle "Select All" checkbox
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedFiles(checked ? [...foundFiles] : [])
+  const handleAddTag = (tag: string) => {
+    if (!tag.trim()) return
+    setTags(prev => [...new Set([...prev, tag.trim()])])
   }
 
-  // Import selected files
-  const importSelectedFiles = async () => {
-    if (selectedFiles.length === 0) return
-    
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(prev => prev.filter(tag => tag !== tagToRemove))
+  }
+
+  const handleAddSources = async () => {
+    if (processedSources.length === 0) return
+
     setIsLoading(true)
-    setProcessingStatus("Parsing files...")
-    setProcessedCount(0)
-    
+    setProgress('Adding sources...')
+
     try {
-      // Parse files in batches to prevent UI blocking
-      const batchSize = 5
-      for (let i = 0; i < selectedFiles.length; i += batchSize) {
-        const batch = selectedFiles.slice(i, i + batchSize)
-        
-        // Parse the current batch
-        setProcessingStatus(`Parsing files ${i+1}-${Math.min(i+batchSize, selectedFiles.length)} of ${selectedFiles.length}...`)
-        const parsedFiles = await parseFiles(batch)
-        
-        // Process parsed content
-        setProcessingStatus(`Processing files ${i+1}-${Math.min(i+batchSize, selectedFiles.length)} of ${selectedFiles.length}...`)
-        await handleProcessedFiles(parsedFiles)
-        
-        setProcessedCount(prev => prev + batch.length)
+      // Create tags if they don't exist
+      if (tags.length > 0) {
+        const { error: tagError } = await supabase
+          .from('tags')
+          .upsert(
+            tags.map(tag => ({ name: tag })),
+            { onConflict: 'name' }
+          )
+
+        if (tagError) throw tagError
       }
-      
-      // Actually upload the sources to the database
-      setProcessingStatus(`Uploading ${processedCount} files to database...`)
-      const success = await uploadSources()
-      
-      if (success) {
-        // Notify parent component that sources have been updated
-        onSourcesUpdated()
-        setProcessingStatus(`Successfully imported ${processedCount} files`)
-        
-        // Reset state after successful import
-        setTimeout(() => {
-          setFoundFiles([])
-          setSelectedFiles([])
-          onComplete()
-        }, 2000)
-      } else {
-        setProcessingStatus("Error: Failed to upload files to database")
-      }
+
+      // Upload sources with tags
+      const { error: uploadError } = await uploadSources(processedSources, sourceNames, tags)
+      if (uploadError) throw uploadError
+
+      setProgress('Sources added successfully')
+      resetState()
+      onOpenChange(false)
     } catch (error) {
-      console.error("Error importing files:", error)
-      setProcessingStatus(`Error importing files: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('Error adding sources:', error)
+      setProgress('Error adding sources')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Supported file types</Label>
-        <Input 
-          value={fileExtensions} 
-          onChange={(e) => setFileExtensions(e.target.value)} 
-          placeholder=".pdf,.docx,.txt,.md"
-        />
-        <p className="text-xs text-muted-foreground">
-          Enter comma-separated file extensions (e.g., .pdf,.docx,.txt) or * for all files
-        </p>
-      </div>
-      
-      <Button 
-        onClick={handleSelectDirectory} 
-        className="w-full"
-        disabled={isLoading || isCrawling}
-      >
-        {isLoading || isCrawling ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <FolderOpen className="mr-2 h-4 w-4" />
-        )}
-        Select Folder to Import
-      </Button>
-      
-      {processingStatus && (
-        <div className="bg-secondary/30 p-2 rounded text-sm text-center">
-          {processingStatus}
-        </div>
-      )}
-      
-      {foundFiles.length > 0 && (
-        <div className="border rounded-md">
-          <div className="flex items-center justify-between p-2 border-b bg-muted/50">
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="select-all" 
-                checked={selectedFiles.length === foundFiles.length}
-                onCheckedChange={handleSelectAll}
-              />
-              <Label htmlFor="select-all" className="text-sm font-medium">
-                Select All ({foundFiles.length} files)
-              </Label>
+    <Dialog open={open} onOpenChange={(open) => {
+      if (!open) resetState()
+      onOpenChange(open)
+    }}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Upload Folder</DialogTitle>
+          <DialogDescription>
+            Upload multiple files from a folder to create sources.
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading && progress && (
+          <div className="h-8 bg-secondary/50 flex items-center justify-center border-y">
+            <div className="text-sm text-muted-foreground">
+              {progress}
             </div>
-            <span className="text-sm text-muted-foreground">
-              {selectedFiles.length} selected
-            </span>
           </div>
-          
-          <div className="max-h-60 overflow-y-auto">
-            {foundFiles.map((file, index) => (
-              <div 
-                key={index} 
-                className="flex items-center p-2 hover:bg-muted/50 border-b last:border-0"
-              >
-                <Checkbox 
-                  id={`file-${index}`}
-                  checked={selectedFiles.some(f => f.path === file.path)}
-                  onCheckedChange={() => toggleFileSelection(file)}
-                  className="mr-2"
-                />
-                <Label htmlFor={`file-${index}`} className="flex items-center cursor-pointer flex-1">
-                  <FileIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="text-sm truncate">{file.path}</span>
-                </Label>
-                <span className="text-xs text-muted-foreground">
-                  {(file.size / 1024).toFixed(1)} KB
-                </span>
+        )}
+
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="folder-upload" className="text-right">Folder</Label>
+            <input
+              id="folder-upload"
+              type="file"
+              multiple
+              onChange={handleFileChange}
+              className="col-span-3"
+            />
+          </div>
+
+          {processedSources.length > 0 && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Source Names</Label>
+                <div className="col-span-3 space-y-2">
+                  {processedSources.map((source) => (
+                    <div key={source.name} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={sourceNames[source.name]}
+                        onChange={(e) => updateSourceName(source.name, e.target.value)}
+                        className="flex-1"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      
-      {foundFiles.length > 0 && (
-        <Button 
-          onClick={importSelectedFiles} 
-          disabled={selectedFiles.length === 0 || isLoading}
-          className="w-full"
-          variant="default"
-        >
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <CheckCircle className="mr-2 h-4 w-4" />
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Tags</Label>
+                <div className="col-span-3 space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-secondary"
+                      >
+                        {tag}
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          className="ml-1 hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add tag"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddTag(e.currentTarget.value)
+                          e.currentTarget.value = ''
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder="Add tag"]') as HTMLInputElement
+                        if (input) {
+                          handleAddTag(input.value)
+                          input.value = ''
+                        }
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
-          Import {selectedFiles.length} Selected Files
-        </Button>
-      )}
-    </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddSources}
+            disabled={isLoading || processedSources.length === 0}
+          >
+            {isLoading ? 'Adding...' : 'Add Sources'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 } 

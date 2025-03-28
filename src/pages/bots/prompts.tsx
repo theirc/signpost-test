@@ -1,115 +1,157 @@
-import React, { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
-import { useSystemPrompts, type SystemPrompt } from "@/hooks/use-system-prompts"
-import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
-import SearchFilter from "@/components/ui/search-filter"
-import SelectFilter from "@/components/ui/select-filter"
-import DateFilter from "@/components/ui/date-filter"
-import CustomTable from "@/components/ui/custom-table"
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
+import { useSystemPrompts, type SystemPrompt } from '@/hooks/use-system-prompts';
+import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
+import SearchFilter from '@/components/ui/search-filter';
+import SelectFilter from '@/components/ui/select-filter';
+import DateFilter from '@/components/ui/date-filter';
+import CustomTable from '@/components/ui/custom-table';
+
+// Default prompt structure for form
+const defaultPrompt = {
+    name: "",
+    content: "",
+    language: "en",
+    version: "1.0",
+    status: "active"
+};
 
 export function SystemPrompts() {
-    const { fetchPrompts, addPrompt, updatePrompt, deletePrompt, loading: promptsLoading } = useSystemPrompts()
-    const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([])
-    const [selectedPrompt, setSelectedPrompt] = useState<SystemPrompt | null>(null)
-    const [isPromptDialogOpen, setIsPromptDialogOpen] = useState(false)
-    const [promptSearchQuery, setPromptSearchQuery] = useState("")
-    const [promptCurrentPage, setPromptCurrentPage] = useState(1)
-    const [promptRowsPerPage, setPromptRowsPerPage] = useState(10)
-    const [loading, setLoading] = useState(false)
+    const { fetchPrompts, addPrompt, updatePrompt, deletePrompt } = useSystemPrompts();
+    const [prompts, setPrompts] = useState<SystemPrompt[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [currentPrompt, setCurrentPrompt] = useState(defaultPrompt);
+    const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
 
-    // Form state
-    const [newPrompt, setNewPrompt] = useState({
-        name: "",
-        content: "",
-        language: "en",
-        version: "1.0"
-    })
-
-    // Load prompts on mount and when dependencies change
+    // Load prompts on mount
     useEffect(() => {
-        console.log("Loading prompts...")
-        loadPrompts()
-    }, [fetchPrompts]) // Add fetchPrompts as dependency
+        loadPrompts();
+    }, []);
 
     const loadPrompts = async () => {
-        console.log("Fetching prompts from database...")
-        const prompts = await fetchPrompts()
-        console.log("Fetched prompts:", prompts)
-        setSystemPrompts(prompts)
-    }
-
-    const handleCreatePrompt = async () => {
-        if (!newPrompt.name || !newPrompt.content) return
-
-        setLoading(true)
+        setLoading(true);
         try {
-            console.log("Creating new prompt:", newPrompt)
+            const fetchedPrompts = await fetchPrompts();
+            console.log("Loaded prompts:", fetchedPrompts);
+            setPrompts(fetchedPrompts);
+        } catch (error) {
+            console.error("Error loading prompts:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Handle opening the create dialog
+    const handleOpenCreateDialog = () => {
+        setCurrentPrompt(defaultPrompt);
+        setCurrentPromptId(null);
+        setIsEditMode(false);
+        setIsDialogOpen(true);
+    };
+
+    // Handle opening the edit dialog
+    const handleEdit = (id: string) => {
+        const promptToEdit = prompts.find(p => p.id === id);
+        if (!promptToEdit) return;
+        
+        setCurrentPrompt({
+            name: promptToEdit.name,
+            content: promptToEdit.content,
+            language: promptToEdit.language,
+            version: promptToEdit.version,
+            status: promptToEdit.status || "active"
+        });
+        setCurrentPromptId(id);
+        setIsEditMode(true);
+        setIsDialogOpen(true);
+    };
+
+    const handleDialogClose = () => {
+        setIsDialogOpen(false);
+        // Reset after dialog closes
+        setTimeout(() => {
+            setCurrentPrompt(defaultPrompt);
+            setCurrentPromptId(null);
+            setIsEditMode(false);
+        }, 300);
+    };
+
+    // Create a new prompt
+    const handleCreatePrompt = async () => {
+        if (!currentPrompt.name || !currentPrompt.content) return;
+
+        try {
             const prompt = await addPrompt({
-                name: newPrompt.name,
-                content: newPrompt.content,
-                language: newPrompt.language,
-                version: newPrompt.version,
-                status: 'active'
-            })
-            console.log("Created prompt:", prompt)
+                name: currentPrompt.name,
+                content: currentPrompt.content,
+                language: currentPrompt.language,
+                version: currentPrompt.version,
+                status: currentPrompt.status
+            });
 
             if (prompt) {
-                console.log("Updating local state with new prompt")
-                setSystemPrompts(prev => {
-                    console.log("Previous prompts:", prev)
-                    const updated = [prompt, ...prev]
-                    console.log("Updated prompts:", updated)
-                    return updated
-                })
-                setIsPromptDialogOpen(false)
-                setNewPrompt({
-                    name: "",
-                    content: "",
-                    language: "en",
-                    version: "1.0"
-                })
-                // Reload prompts to ensure we have the latest data
-                loadPrompts()
+                // Add to state and close dialog
+                setPrompts(prev => [prompt, ...prev]);
+                handleDialogClose();
             }
         } catch (error) {
-            console.error('Error creating prompt:', error)
-        } finally {
-            setLoading(false)
+            console.error('Error creating prompt:', error);
         }
-    }
+    };
+
+    // Update an existing prompt
+    const handleUpdatePrompt = async () => {
+        if (!currentPromptId || !currentPrompt.name || !currentPrompt.content) return;
+
+        try {
+            const updatedPrompt = await updatePrompt(currentPromptId, {
+                name: currentPrompt.name,
+                content: currentPrompt.content,
+                language: currentPrompt.language,
+                version: currentPrompt.version,
+                status: currentPrompt.status
+            });
+
+            if (updatedPrompt) {
+                // Update in state and close dialog
+                setPrompts(prev => 
+                    prev.map(p => p.id === currentPromptId ? updatedPrompt : p)
+                );
+                handleDialogClose();
+            }
+        } catch (error) {
+            console.error('Error updating prompt:', error);
+        }
+    };
 
     const handleDeletePrompt = async (id: string) => {
-        const success = await deletePrompt(id)
-        if (success) {
-            setSystemPrompts(prev => prev.filter(p => p.id !== id))
+        try {
+            const success = await deletePrompt(id);
+            if (success) {
+                setPrompts(prev => prev.filter(p => p.id !== id));
+            }
+        } catch (error) {
+            console.error("Error deleting prompt:", error);
         }
-    }
+    };
 
-    // Filter prompts based on search query
-    const filteredPrompts = systemPrompts.filter(prompt =>
-        prompt.name.toLowerCase().includes(promptSearchQuery.toLowerCase())
-    )
+    // Table columns definition
+    const columns: ColumnDef<SystemPrompt>[] = [
+        { id: "name", accessorKey: "name", header: "Name" },
+        { id: "version", accessorKey: "version", header: "Version" },
+        { id: "language", accessorKey: "language", header: "Language" },
+        { id: "updated_at", accessorKey: "updated_at", header: "Last Modified", cell: info => info.getValue() ? format(new Date(info.getValue<string>()), "MMM dd, yyyy") : "" },
+        { id: "status", accessorKey: "status", header: "Status", cell: info => info.getValue() || "active" },
+    ];
 
-    // Calculate pagination
-    const startIndex = (promptCurrentPage - 1) * promptRowsPerPage
-    const endIndex = startIndex + promptRowsPerPage
-    const currentPrompts = filteredPrompts.slice(startIndex, endIndex)
-    const pageCount = Math.ceil(filteredPrompts.length / promptRowsPerPage)
-
-    const columns: ColumnDef<any>[] = [
-        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-        { id: "version", enableResizing: true, enableHiding: true, accessorKey: "version", header: "Version", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "language", enableResizing: true, enableHiding: true, accessorKey: "language", header: "Language", enableSorting: true, cell: (info) => info.getValue() },
-        { id: "updated_at", enableResizing: true, enableHiding: true, accessorKey: "updated_at", header: "Last Modified", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
-        { id: "created_by", enableResizing: true, enableHiding: true, accessorKey: "created_by", header: "Modified By", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "status", enableResizing: true, enableHiding: true, accessorKey: "status", header: "Status", enableSorting: true, cell: (info) => info.getValue() },
-    ]
-
+    // Table filters
     const filters = [
         {
             id: "search",
@@ -123,42 +165,50 @@ export function SystemPrompts() {
             component: SelectFilter,
             props: { filterKey: "language", placeholder: "All Languages" },
         },
-        {
-            id: "range",
-            label: "Date Created",
-            component: DateFilter,
-            props: { filterKey: "updated_at", placeholder: "Pick a date" },
-        },
-    ]
-
-    const handleEdit = (id: string) => {
-        const prompt = currentPrompts.find(p => p.id === id)
-        if (!prompt) return
-        setSelectedPrompt(prompt)
-    }
+    ];
 
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 space-y-4 p-8 pt-6">
+                {/* Header and Create Button */}
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold tracking-tight">System Prompts</h1>
-                    <Button variant="secondary" onClick={() => setIsPromptDialogOpen(true)}>
+                    <Button variant="secondary" onClick={handleOpenCreateDialog}>
                         Create Prompt
                     </Button>
                 </div>
 
+                {/* Table */}
                 <div className="space-y-4">
-                    <CustomTable tableId="prompts-table" columns={columns as any} data={currentPrompts} filters={filters} onEdit={handleEdit} onDelete={handleDeletePrompt} placeholder="No prompts found" />
+                    {loading ? (
+                        <div className="w-full h-64 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : (
+                        <CustomTable
+                            tableId="prompts-table"
+                            columns={columns as any}
+                            data={prompts}
+                            filters={filters}
+                            onEdit={handleEdit}
+                            onDelete={handleDeletePrompt}
+                            placeholder="No prompts found"
+                        />
+                    )}
                 </div>
             </div>
 
-            {/* Create System Prompt Dialog */}
-            <Dialog open={isPromptDialogOpen} onOpenChange={setIsPromptDialogOpen}>
+            {/* Create/Edit Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                        <DialogTitle>Create System Prompt</DialogTitle>
+                        <DialogTitle>
+                            {isEditMode ? 'Edit System Prompt' : 'Create System Prompt'}
+                        </DialogTitle>
                         <DialogDescription>
-                            Create a new system prompt template that can be used across multiple bots.
+                            {isEditMode 
+                                ? 'Edit existing system prompt settings and content.' 
+                                : 'Create a new system prompt template.'}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -167,8 +217,8 @@ export function SystemPrompts() {
                             <Input
                                 id="prompt-name"
                                 placeholder="Enter prompt name"
-                                value={newPrompt.name}
-                                onChange={(e) => setNewPrompt(prev => ({ ...prev, name: e.target.value }))}
+                                value={currentPrompt.name}
+                                onChange={(e) => setCurrentPrompt(prev => ({ ...prev, name: e.target.value }))}
                             />
                         </div>
                         <div className="space-y-2">
@@ -177,8 +227,8 @@ export function SystemPrompts() {
                                 id="prompt-content"
                                 className="w-full min-h-[200px] p-2 border rounded-md"
                                 placeholder="Enter your system prompt template..."
-                                value={newPrompt.content}
-                                onChange={(e) => setNewPrompt(prev => ({ ...prev, content: e.target.value }))}
+                                value={currentPrompt.content}
+                                onChange={(e) => setCurrentPrompt(prev => ({ ...prev, content: e.target.value }))}
                             />
                         </div>
                         <div className="space-y-2">
@@ -186,8 +236,8 @@ export function SystemPrompts() {
                             <select
                                 id="prompt-language"
                                 className="w-full p-2 border rounded-md"
-                                value={newPrompt.language}
-                                onChange={(e) => setNewPrompt(prev => ({ ...prev, language: e.target.value }))}
+                                value={currentPrompt.language}
+                                onChange={(e) => setCurrentPrompt(prev => ({ ...prev, language: e.target.value }))}
                             >
                                 <option value="en">English</option>
                                 <option value="es">Spanish</option>
@@ -199,33 +249,38 @@ export function SystemPrompts() {
                             <Input
                                 id="prompt-version"
                                 placeholder="1.0"
-                                value={newPrompt.version}
-                                onChange={(e) => setNewPrompt(prev => ({ ...prev, version: e.target.value }))}
+                                value={currentPrompt.version}
+                                onChange={(e) => setCurrentPrompt(prev => ({ ...prev, version: e.target.value }))}
                             />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="prompt-status">Status</Label>
+                            <select
+                                id="prompt-status"
+                                className="w-full p-2 border rounded-md"
+                                value={currentPrompt.status}
+                                onChange={(e) => setCurrentPrompt(prev => ({ ...prev, status: e.target.value }))}
+                            >
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsPromptDialogOpen(false)}>
+                        <Button variant="outline" onClick={handleDialogClose}>
                             Cancel
                         </Button>
-                        <Button
-                            onClick={handleCreatePrompt}
-                            disabled={!newPrompt.name || !newPrompt.content || loading}
+                        <Button 
+                            onClick={isEditMode ? handleUpdatePrompt : handleCreatePrompt}
+                            disabled={!currentPrompt.name || !currentPrompt.content}
                         >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Creating...
-                                </>
-                            ) : (
-                                'Create Prompt'
-                            )}
+                            {isEditMode ? 'Save Changes' : 'Create Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
-    )
+    );
 }
 
 export default SystemPrompts; 

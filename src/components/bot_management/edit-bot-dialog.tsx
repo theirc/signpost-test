@@ -1,11 +1,11 @@
+import React, { useCallback } from "react";
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
-import { Bot } from "@/hooks/use-bots"
-import { Model } from "@/hooks/use-models"
-import { Collection } from "@/hooks/use-collections"
+import { Bot, Model, Collection } from "@/lib/data/supabaseFunctions"
+import SystemPromptSelector from "./system-prompt-selector"
 
 interface EditBotDialogProps {
     open: boolean
@@ -30,9 +30,19 @@ export default function EditBotDialog({
 }: EditBotDialogProps) {
     if (!bot) return null;
 
+    const handleCombinedPromptChange = useCallback((content: string | undefined) => {
+        if (!bot || content === bot.system_prompt) return;
+        
+        onBotChange({
+            ...bot,
+            system_prompt: content,
+            system_prompt_id: undefined
+        });
+    }, [bot, onBotChange]);
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Edit Bot</DialogTitle>
                     <DialogDescription>
@@ -100,18 +110,10 @@ export default function EditBotDialog({
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-systemPrompt">System Prompt</Label>
-                            <textarea
-                                id="edit-systemPrompt"
-                                className="w-full p-2 border rounded-md min-h-[100px]"
-                                value={bot.system_prompt || ''}
-                                onChange={(e) => onBotChange({
-                                    ...bot,
-                                    system_prompt: e.target.value
-                                })}
-                            />
-                        </div>
+                        <SystemPromptSelector
+                            initialCombinedPrompt={bot.system_prompt}
+                            onCombinedPromptChange={handleCombinedPromptChange}
+                        />
 
                         <div className="space-y-2">
                             <Label htmlFor="edit-temperature">

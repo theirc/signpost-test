@@ -2,13 +2,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { useState } from "react"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { useSupabase } from "@/hooks/use-supabase"
-import { useSources, Source } from "@/hooks/use-sources"
-import { useSourceConfig, SourceConfig } from "@/hooks/use-source-config"
 import { zendeskApi } from "@/api/getZendeskContent"
 import { 
   FormState, 
@@ -19,6 +14,13 @@ import {
   PromptForm,
   BotLogsForm
 } from "./live_data_forms"
+import { 
+  updateSourceConfig, 
+  createLiveDataElement,
+  SourceConfig,
+  addSource,
+  Source
+} from '@/lib/data/supabaseFunctions'
 
 interface LiveDataModalProps {
   open: boolean
@@ -27,8 +29,6 @@ interface LiveDataModalProps {
 
 export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
   const supabase = useSupabase()
-  const { addSource } = useSources()
-  const { updateSourceConfig, createLiveDataElement } = useSourceConfig()
   
   const [form, setForm] = useState<FormState>(DEFAULT_FORM_STATE)
   const [isLoading, setIsLoading] = useState(false)
@@ -52,8 +52,8 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
         tags: [form.type, 'Live Data']  // Add both type and Live Data tags
       }
 
-      const savedSource = await addSource(source)
-      if (!savedSource) throw new Error('Failed to create source')
+      const { data: savedSource, error: sourceError } = await addSource(source)
+      if (sourceError || !savedSource) throw new Error('Failed to create source')
 
       // Prepare config based on source type
       const config: Partial<SourceConfig> & { source: string } = {
@@ -69,10 +69,10 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
         try {
           // Save the config first - with better error logging
           console.log('Saving web scraping config:', config);
-          const savedConfig = await updateSourceConfig(config)
+          const { data: savedConfig, error: configError } = await updateSourceConfig(config)
           
-          if (!savedConfig) {
-            console.error('updateSourceConfig returned null');
+          if (configError || !savedConfig) {
+            console.error('updateSourceConfig failed:', configError);
             // Update source content with error message
             await supabase
               .from('sources')
@@ -94,81 +94,109 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
             try {
               setProgress('Fetching content from URL...')
               
-              // Import and use the web scraping hook for simple URL fetching
-              const { performWebScrape, htmlToPlainText } = await import('@/hooks/use-web-scraping')
-              
-              // Get HTML from the URL
-              setProgress('Connecting to website...')
-              const html = await performWebScrape(form.url)
-              if (!html) {
-                setProgress('Error: No content received from website')
-                throw new Error('No content received from website')
-              }
-              
-              setProgress('Processing content...')
-              // Convert HTML to plain text
-              const content = htmlToPlainText(html)
-              
-              if (!content || content.length < 10) {
-                setProgress('Error: Received content is too short or empty')
-                throw new Error('Received content is too short or empty')
-              }
-              
-              setProgress('Saving content...')
-              // Create a single live data element with the content
-              await createLiveDataElement({
-                source_config_id: savedConfig.source,
-                content: content,
-                metadata: {
-                  url: form.url,
-                  title: form.name,
-                  fetched_at: new Date().toISOString()
-                },
-                status: 'active',
-                version: '1'
-              })
-              
-              // Update source content with summary
-              const { error: updateError } = await supabase
-                .from('sources')
-                .update({
-                  content: `Content fetched from ${form.url} (${new Date().toLocaleString()})`
+              // Dynamically import scraping functions
+              setIsLoading(true)
+              try {
+                // CORRECTED import path
+                const { performWebScrape, htmlToPlainText } = await import('@/lib/fileUtilities/use-web-scraping')
+                
+                console.log(`Scraping URL: ${form.url}`)
+                
+                // Get HTML from the URL
+                setProgress('Connecting to website...')
+                const html = await performWebScrape(form.url)
+                if (!html) {
+                  setProgress('Error: No content received from website')
+                  throw new Error('No content received from website')
+                }
+                
+                setProgress('Processing content...')
+                // Convert HTML to plain text
+                const content = htmlToPlainText(html)
+                
+                if (!content || content.length < 10) {
+                  setProgress('Error: Received content is too short or empty')
+                  throw new Error('Received content is too short or empty')
+                }
+                
+                setProgress('Saving content...')
+                // Create a single live data element with the content
+                const { error: elementError } = await createLiveDataElement({
+                  source_config_id: savedConfig.source,
+                  content: content,
+                  metadata: {
+                    url: form.url,
+                    title: form.name,
+                    fetched_at: new Date().toISOString()
+                  },
+                  status: 'active',
+                  version: '1'
                 })
-                .eq('id', savedSource.id)
-              
-              if (updateError) {
-                console.error('Error updating source content:', updateError)
-                throw updateError
+
+                if (elementError) {
+                  throw elementError;
+                }
+                
+                // Update source content with summary
+                const { error: updateError } = await supabase
+                  .from('sources')
+                  .update({
+                    content: `Content fetched from ${form.url} (${new Date().toLocaleString()})`
+                  })
+                  .eq('id', savedSource.id)
+                
+                if (updateError) {
+                  console.error('Error updating source content:', updateError)
+                  throw updateError
+                }
+                
+                setProgress('URL content successfully imported!')
+              } catch (error) {
+                console.error('Error in web scraping process:', error)
+                // Update source content with error message
+                await supabase
+                  .from('sources')
+                  .update({
+                    content: `Error fetching content from ${form.url}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                  })
+                  .eq('id', savedSource.id)
+                
+                setProgress(`Error: ${error instanceof Error ? error.message : 'Failed to fetch content'}`)
+                // Don't throw here to allow the dialog to close
+                // But still allow a small delay so user can see the error
+                await new Promise(resolve => setTimeout(resolve, 2000))
+              } finally {
+                 setIsLoading(false); // Add finally block to ensure isLoading is reset
               }
-              
-              setProgress('URL content successfully imported!')
             } catch (error) {
-              console.error('Error in web scraping process:', error)
-              // Update source content with error message
+              // This outer catch handles errors from the config saving step before scraping
+              console.error('Error before or during web scraping initiation:', error);
+              // Update source content with configuration error message
               await supabase
                 .from('sources')
                 .update({
-                  content: `Error fetching content from ${form.url}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                  content: `Failed to configure web scraping: ${error instanceof Error ? error.message : 'Database error'}`
                 })
-                .eq('id', savedSource.id)
+                .eq('id', savedSource.id);
               
-              setProgress(`Error: ${error instanceof Error ? error.message : 'Failed to fetch content'}`)
-              // Don't throw here to allow the dialog to close
-              // But still allow a small delay so user can see the error
-              await new Promise(resolve => setTimeout(resolve, 2000))
+              setProgress(`Error: ${error instanceof Error ? error.message : 'Failed to configure'}`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
             }
           }
         } catch (error) {
-          console.error('Error in web scraping configuration:', error);
-          // Update source content with error message
-          await supabase
-            .from('sources')
-            .update({
-              content: `Failed to configure web scraping: ${error instanceof Error ? error.message : 'Database error'}`
-            })
-            .eq('id', savedSource.id);
+          console.error('Error saving web scraping configuration:', error);
+          // Update source content with error message if config saving failed
+          // Ensure savedSource exists before trying to update
+          if (savedSource?.id) { 
+            await supabase
+              .from('sources')
+              .update({
+                content: `Failed to save web scraping config: ${error instanceof Error ? error.message : 'Database error'}`
+              })
+              .eq('id', savedSource.id);
+          }
           
-          setProgress(`Error: ${error instanceof Error ? error.message : 'Failed to configure'}`);
+          setProgress(`Error: ${error instanceof Error ? error.message : 'Failed to save config'}`);
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
@@ -180,8 +208,8 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
         config.api_token = form.apiToken  // Save API token in config
         
         // Save the config first
-        const savedConfig = await updateSourceConfig(config)
-        if (!savedConfig) throw new Error('Failed to save source configuration')
+        const { data: savedConfig, error: configError } = await updateSourceConfig(config)
+        if (configError || !savedConfig) throw new Error('Failed to save source configuration')
         if (!savedConfig.source) throw new Error('Saved configuration is missing source ID')
 
         // If we have Zendesk credentials, fetch articles
@@ -228,7 +256,7 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
                   bodyLength: article.body.length
                 });
 
-                await createLiveDataElement({
+                const { error: elementError } = await createLiveDataElement({
                   source_config_id: savedConfig.source,
                   content: article.body,
                   metadata: {
@@ -241,6 +269,11 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
                   status: 'active',
                   version: String(article.id)
                 })
+
+                if (elementError) {
+                  throw elementError;
+                }
+
                 successCount++;
               } catch (error) {
                 console.error('Error creating live data element for article:', {
@@ -251,24 +284,34 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
               }
             }
 
-            setProgress('Finalizing import...')
-
-            // Update source content with summary using direct Supabase update
+            // Update source content with summary
             const { error: updateError } = await supabase
               .from('sources')
               .update({
-                content: `Imported ${successCount} articles from Zendesk (${errorCount} failed)`
+                content: `Imported ${successCount} Zendesk articles (${errorCount} failed)`
               })
               .eq('id', savedSource.id)
 
             if (updateError) {
-              console.error('Error updating source content:', updateError);
-              throw updateError;
+              console.error('Error updating source content:', updateError)
+              throw updateError
             }
 
+            setProgress(`Successfully imported ${successCount} articles (${errorCount} failed)`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+            onOpenChange(false)
           } catch (error) {
-            console.error('Error in Zendesk article processing:', error);
-            throw new Error('Failed to fetch Zendesk articles')
+            console.error('Error in Zendesk import:', error)
+            // Update source content with error message
+            await supabase
+              .from('sources')
+              .update({
+                content: `Error importing Zendesk articles: ${error instanceof Error ? error.message : 'Unknown error'}`
+              })
+              .eq('id', savedSource.id)
+            
+            setProgress(`Error: ${error instanceof Error ? error.message : 'Failed to import articles'}`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
           }
         }
       } else if (form.type === 'directus') {

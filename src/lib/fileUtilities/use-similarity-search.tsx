@@ -1,5 +1,5 @@
 import { pipeline, env } from '@xenova/transformers';
-import { useSupabase } from './use-supabase';
+import { useSupabase } from '@/hooks/use-supabase';
 
 // Configure transformers.js environment for browser
 env.useBrowserCache = false;

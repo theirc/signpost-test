@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Loader2, MoreHorizontal, Pencil, Play, Trash } from "lucide-react"
-import { Bot } from "@/hooks/use-bots"
+import { Bot } from "@/lib/data/supabaseFunctions"
 
 interface BotTableProps {
     bots: Bot[]

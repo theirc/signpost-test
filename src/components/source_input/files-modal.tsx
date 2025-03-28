@@ -5,10 +5,13 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { X, Loader2, Upload, FolderOpen } from "lucide-react"
 import React from "react"
-import { useFileParser } from "@/hooks/use-file-parser"
-import { useSourceUpload } from "@/hooks/use-source-upload"
+import { useFileParser } from "@/lib/fileUtilities/use-file-parser"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FolderCrawler } from "./folder-crawler"
+import { uploadSources, ParsedFile, fetchTags, addTag as addTagToDb } from '@/lib/data/supabaseFunctions'
+
+// Define Tag type if needed
+type Tag = { id: string; name: string; };
 
 interface FilesModalProps {
   open: boolean
@@ -19,25 +22,47 @@ interface FilesModalProps {
 export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { isLoading: parsingFiles, parseFiles, supportedTypes } = useFileParser()
-  const {
-    isLoading,
-    processedSources,
-    sourceNames,
-    currentTags,
-    handleProcessedFiles,
-    updateSourceName,
-    addTag: addCustomTag,
-    removeTag,
-    uploadSources
-  } = useSourceUpload()
+  const [tags, setTags] = useState<Tag[]>([])
+  const [tagsLoading, setTagsLoading] = useState(true)
   
+  const [isLoading, setIsLoading] = useState(false)
+  const [processedSources, setProcessedSources] = useState<ParsedFile[]>([])
+  const [sourceNames, setSourceNames] = useState<Record<string, string>>({})
+  const [currentTags, setCurrentTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
   const [activeTab, setActiveTab] = useState<string>("files")
+
+  // Fetch tags on mount
+  React.useEffect(() => {
+    const fetchTagsData = async () => {
+      setTagsLoading(true);
+      try {
+        const { data, error } = await fetchTags();
+        if (error) {
+          console.error("Error fetching tags:", error);
+          setTags([]);
+        } else {
+          setTags(data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching tags:", err);
+        setTags([]);
+      } finally {
+        setTagsLoading(false);
+      }
+    };
+    if (open) { // Only fetch when modal opens
+      fetchTagsData();
+    }
+  }, [open]);
 
   // Reset state when modal closes
   React.useEffect(() => {
     if (!open) {
       setTagInput("")
+      setProcessedSources([])
+      setSourceNames({})
+      setCurrentTags([])
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -48,14 +73,79 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
     if (!e.target.files?.length) return
     const files = Array.from(e.target.files)
     const parsedFiles = await parseFiles(files)
-    handleProcessedFiles(parsedFiles)
+    const names: Record<string, string> = {}
+    parsedFiles.forEach(file => {
+      names[file.id] = file.name
+    })
+    setProcessedSources(parsedFiles)
+    setSourceNames(names)
+  }
+
+  const updateSourceName = (sourceId: string, name: string) => {
+    setSourceNames(prev => ({
+      ...prev,
+      [sourceId]: name
+    }))
+  }
+
+  const addTag = (tag: string) => {
+    if (!tag.trim()) return
+    setCurrentTags(prev => [...new Set([...prev, tag.trim()])])
+  }
+
+  const removeTag = (tag: string) => {
+    setCurrentTags(prev => prev.filter(t => t !== tag))
   }
 
   const handleAddSources = async () => {
-    const success = await uploadSources()
-    if (success) {
-      onOpenChange(false)
-      onSourcesUpdated()
+    if (processedSources.length === 0) return false
+    
+    setIsLoading(true)
+    try {
+      // Ensure tags exist
+      const tagPromises = ['File Upload', ...currentTags].map(async tagName => {
+        const existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
+        if (existingTag) return existingTag.id
+        // Use imported addTag (renamed to addTagToDb) directly here, explicitly handle promise
+        try {
+          const result = await addTagToDb(tagName);
+          if (result.error) {
+            console.error(`Error creating tag ${tagName}:`, result.error);
+            throw result.error; // Propagate the error
+          }
+          return result.data?.id;
+        } catch (err) {
+          console.error(`Exception creating tag ${tagName}:`, err);
+          throw err; // Re-throw exception
+        }
+      })
+      // Filter out potential undefined IDs from failed tag creations
+      const tagIds = (await Promise.all(tagPromises)).filter(id => id !== undefined);
+
+      // Check if all required tags were successfully created/found
+      if (tagIds.length < ['File Upload', ...currentTags].length) {
+          console.error('Failed to create/find all required tags.');
+          throw new Error('Failed to create/find all required tags.');
+      }
+      
+      const { success, error } = await uploadSources(processedSources, sourceNames, currentTags)
+      if (error) {
+        console.error('Error uploading sources:', error)
+        return false
+      }
+      
+      if (success) {
+        onOpenChange(false)
+        onSourcesUpdated()
+        return true
+      }
+      
+      return false
+    } catch (error) {
+      console.error('Error uploading sources:', error)
+      return false
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -108,7 +198,7 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && tagInput.trim()) {
                         e.preventDefault()
-                        addCustomTag(tagInput.trim())
+                        addTag(tagInput.trim())
                         setTagInput("")
                       }
                     }}
@@ -164,8 +254,8 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
           
           <TabsContent value="folder" className="mt-4">
             <FolderCrawler 
-              onSourcesUpdated={onSourcesUpdated} 
-              onComplete={() => onOpenChange(false)} 
+              open={open} 
+              onOpenChange={onOpenChange}
             />
           </TabsContent>
         </Tabs>

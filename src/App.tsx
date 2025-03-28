@@ -7,7 +7,7 @@ import { BrowserRouter, Route, Routes, useLocation, Link, useNavigate } from "re
 import Chat from "./pages/chat"
 import { CollectionsManagement } from "./pages/knowledge"
 import { BotLogsTable } from "./pages/evaluation/logs.tsx"
-import { BotManagement } from "./pages/bots"
+import { BotManagement } from "./pages/bots/bots.tsx"
 import SystemPrompts from "./pages/bots/prompts"
 import Sources from './pages/sources.tsx'
 import { SettingsLayout } from "./pages/settings/layout"
