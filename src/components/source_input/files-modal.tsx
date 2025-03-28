@@ -254,8 +254,9 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
           
           <TabsContent value="folder" className="mt-4">
             <FolderCrawler 
-              open={open} 
+              open={activeTab === "folder"}
               onOpenChange={onOpenChange}
+              onSourcesUpdated={onSourcesUpdated}
             />
           </TabsContent>
         </Tabs>
@@ -263,12 +264,12 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
         <DialogFooter className="mt-6 border-t pt-4">
           {activeTab === "files" && (
             <div className="flex justify-between w-full items-center">
-              {(isLoading || parsingFiles) && (
-                <div className="flex items-center gap-2">
+              {(isLoading || parsingFiles) ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Processing...</span>
+                  <span>{parsingFiles ? 'Parsing files...' : 'Uploading...'}</span>
                 </div>
-              )}
+              ) : <div />}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                 {processedSources.length > 0 && !isLoading && !parsingFiles && (
