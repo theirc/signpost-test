@@ -39,11 +39,11 @@ async function generateEmbedding(text: string) {
     });
     
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+      const errorData = await response.json() as { error?: { message?: string } };
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
     
-    const data = await response.json();
+    const data = await response.json() as { data: Array<{ embedding: number[] }> };
     const embedding = data.data[0].embedding;
     
     console.log('[botResponse] OpenAI embedding generated successfully');
