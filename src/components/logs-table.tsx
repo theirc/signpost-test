@@ -1,24 +1,27 @@
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
-import { ArrowUpDown, Search } from "lucide-react"
-import { useState, useMemo, useCallback } from "react"
-import { Input } from "@/components/ui/input"
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
+import { useMemo, useCallback } from "react"
 import jsPDF from "jspdf"
 import "jspdf-autotable"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
+import { utils, writeFile } from "xlsx"
+import CustomTable from "./ui/custom-table"
+import { ColumnDef } from "@tanstack/react-table"
+import SearchFilter from "./ui/search-filter"
+import SelectFilter from "./ui/select-filter"
+import DateFilter from "./ui/date-filter"
+
 
 export type Log = {
     id: string
     bot: string
-    message: string
+    detectedLanguage: string
+    detectedLocation: string
+    searchTerm: string
+    category: string
+    userMessage: string
     answer: string
-    reporter: string
-    score: string
-    question: string
     date_created: string
 }
 
@@ -27,127 +30,44 @@ interface LogsTableProps {
     selectedLogs?: string[]
     onToggleSelect?: (id: string) => void
     onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
-    onPreview?: (source: Log) => void
+    onEdit?: (id: string) => void
     onDelete?: (id: string) => void
-    pageSize?: number
 }
-
-const defaultPageSize = 10
 
 export function LogsTable({
     logs,
     selectedLogs = [],
     onToggleSelect,
     onSelectAll,
-    onPreview,
     onDelete,
-    pageSize = defaultPageSize,
+    onEdit
 }: LogsTableProps) {
-    const [sortConfig, setSortConfig] = useState<{ key: keyof Log; direction: "asc" | "desc" }>({
-        key: "date_created",
-        direction: "desc",
-    })
-    const [searchTerm, setSearchTerm] = useState("")
-    const [scoreFilter, setScoreFilter] = useState<string>("")
-    const [reporterFilter, setReporterFilter] = useState<string>("")
-    const [dateRange, setDateRange] = useState<
-        { from: Date | null; to: Date | null } | undefined
-    >(undefined)
-    const [currentPage, setCurrentPage] = useState(1)
-
-    const uniqueScores = useMemo(() => Array.from(new Set(logs.map((log) => log.score))), [logs])
-
-    const uniqueReporters = useMemo(() => Array.from(new Set(logs.map((log) => log.reporter))), [logs])
-
-    const handleSort = useCallback((key: keyof Log) => {
-        setSortConfig((current) => ({ key, direction: current.key === key && current.direction === "asc" ? "desc" : "asc", }))
-    }, [setSortConfig])
-
-    const handleSearchTermChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value)
-    }, [setSearchTerm])
-
-    const handleScoreFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        setScoreFilter(e.target.value)
-    }, [setScoreFilter])
-
-    const handleReporterFilterChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-        setReporterFilter(e.target.value)
-    }, [setReporterFilter])
-
-    const filteredAndSortedLogs = useMemo(() => {
-        const searchTermLower = searchTerm.toLowerCase()
-
-        return logs.filter((log) => {
-            const matchesSearch =
-                searchTerm === "" ||
-                log.bot.toLowerCase().includes(searchTermLower) ||
-                log.message.toLowerCase().includes(searchTermLower) ||
-                log.answer.toLowerCase().includes(searchTermLower) ||
-                log.reporter.toLowerCase().includes(searchTermLower) ||
-                log.score.toLowerCase().includes(searchTermLower) ||
-                log.question.toLowerCase().includes(searchTermLower)
-
-            const matchesScore = scoreFilter === "" || log.score === scoreFilter
-            const matchesReporter = reporterFilter === "" || log.reporter === reporterFilter
-            let matchesDateRange = true
-
-            if (dateRange?.from && dateRange?.to) {
-                const logDate = new Date(log.date_created)
-                const fromDate = new Date(dateRange.from)
-                const toDate = new Date(dateRange.to)
-                fromDate.setHours(0, 0, 0, 0)
-                toDate.setHours(23, 59, 59, 999)
-                matchesDateRange = logDate >= fromDate && logDate <= toDate;
-            } else if (dateRange?.from) {
-                const logDate = new Date(log.date_created)
-                const fromDate = new Date(dateRange.from)
-                fromDate.setHours(0, 0, 0, 0)
-                matchesDateRange = logDate >= fromDate
-            } else if (dateRange?.to) {
-                const logDate = new Date(log.date_created)
-                const toDate = new Date(dateRange.to)
-                toDate.setHours(23, 59, 59, 999)
-                matchesDateRange = logDate <= toDate
-            }
-
-            return matchesSearch && matchesScore && matchesReporter && matchesDateRange
-        }).sort((a, b) => {
-            const aValue = a[sortConfig.key]
-            const bValue = b[sortConfig.key]
-
-            if (aValue < bValue) {
-                return sortConfig.direction === "asc" ? -1 : 1
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === "asc" ? 1 : -1
-            }
-            return 0
-        })
-    }, [logs, searchTerm, scoreFilter, sortConfig, reporterFilter, dateRange])
-
     const selectedLogsData = useMemo(() =>
-        filteredAndSortedLogs.filter((log) => selectedLogs.includes(log.id)),
-        [filteredAndSortedLogs, selectedLogs])
+        logs.filter((log) => selectedLogs.includes(log.id)),
+        [logs, selectedLogs])
 
     const handleExportPdf = useCallback(() => {
         const doc = new jsPDF()
 
         const headers = [
             "Bot",
-            "Message",
+            "Category",
+            "Detected Language",
+            "Detected Location",
+            "Search Term",
+            "User Message",
             "Answer",
-            "Reporter",
-            "Score",
             "Date Created",
         ]
 
         const body = selectedLogsData.map((log) => [
             log.bot,
-            log.message,
+            log.category,
+            log.detectedLanguage,
+            log.detectedLocation,
+            log.searchTerm,
+            log.userMessage,
             log.answer,
-            log.reporter,
-            log.score,
             format(new Date(log.date_created), "MMM dd, yyyy")
         ]);
 
@@ -159,239 +79,150 @@ export function LogsTable({
         doc.save("ai_bot_logs.pdf")
     }, [selectedLogsData])
 
-    const pageCount = Math.ceil(filteredAndSortedLogs.length / pageSize)
+    const handleExportExcel = useCallback(() => {
+        const headers = [
+            "Bot",
+            "Category",
+            "Detected Language",
+            "Detected Location",
+            "Search Term",
+            "User Message",
+            "Answer",
+            "Date Created"
+        ]
+        const data = selectedLogsData.map((log) => [
+            log.bot,
+            log.category,
+            log.detectedLanguage,
+            log.detectedLocation,
+            log.searchTerm,
+            log.userMessage,
+            log.answer,
+            format(new Date(log.date_created), "MMM dd, yyyy"),
+        ])
 
-    const paginatedLogs = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize
-        const endIndex = startIndex + pageSize
-        return filteredAndSortedLogs.slice(startIndex, endIndex)
-    }, [filteredAndSortedLogs, currentPage, pageSize])
+        const worksheet = utils.aoa_to_sheet([headers, ...data])
+        const workbook = utils.book_new()
+        utils.book_append_sheet(workbook, worksheet, "Logs")
+        writeFile(workbook, "ai_bot_logs.xlsx")
+    }, [selectedLogsData])
 
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
-    }
+    const handleExportJson = useCallback(() => {
+        const json = JSON.stringify(selectedLogsData, null, 2)
+        const blob = new Blob([json], { type: "application/json" })
+        const link = document.createElement("a")
+        link.href = URL.createObjectURL(blob)
+        link.download = "ai_bot_logs.json"
+        link.click()
+    }, [selectedLogsData])
 
-    const formatDateRange = () => {
-        if (!dateRange) {
-            return "Pick a date";
-        }
+    const handleExportXml = useCallback(() => {
+        const xml = `<logs>\n${selectedLogsData
+            .map(
+                (log) => `
+    <log>
+        <bot>${log.bot}</bot>
+        <category>${log.category}</category>
+        <detectedLanguage>${log.detectedLanguage}</detectedLanguage>
+        <detectedLocation>${log.detectedLocation}</detectedLocation>
+        <searchTerm>${log.searchTerm}</searchTerm>
+        <userMessage>${log.userMessage}</userMessage>
+        <answer>${log.answer}</answer>
+        <dateCreated>${format(new Date(log.date_created), "yyyy-MM-dd")}</dateCreated>
+    </log>`
+            )
+            .join("\n")}
+</logs>`
 
-        if (dateRange.from && dateRange.to) {
-            return `${format(dateRange.from, "MMM dd, yyyy")} - ${format(
-                dateRange.to,
-                "MMM dd, yyyy"
-            )}`
-        }
+        const blob = new Blob([xml], { type: "application/xml" })
+        const link = document.createElement("a")
+        link.href = URL.createObjectURL(blob)
+        link.download = "ai_bot_logs.xml"
+        link.click()
+    }, [selectedLogsData])
 
-        if (dateRange.from) {
-            return format(dateRange.from, "MMM dd, yyyy")
-        }
+    const columns: ColumnDef<any>[] = [
+        { id: "bot", accessorKey: "bot", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+        { id: "detectedLanguage", enableResizing: true, enableHiding: true, accessorKey: "detectedLanguage", header: "Detected Language", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "detectedLocation", enableResizing: true, enableHiding: true, accessorKey: "detectedLocation", header: "Detected Location", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "searchTerm", enableResizing: true, enableHiding: true, accessorKey: "searchTerm", header: "Search Term", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category", header: "Category", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "userMessage", enableResizing: true, enableHiding: true, accessorKey: "userMessage", header: "User Message", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "answer", enableResizing: true, enableHiding: true, accessorKey: "answer", header: "Answer", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "date_created", enableResizing: true, enableHiding: true, accessorKey: "date_created", header: "Date Created", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+    ]
 
-        return "Pick a date";
-    }
+    const filters = [
+        {
+            id: "search",
+            label: "Search",
+            component: SearchFilter,
+            props: { filterKey: "search", placeholder: "Search logs..." },
+        },
+        {
+            id: "bot",
+            label: "Bot",
+            component: SelectFilter,
+            props: { filterKey: "bot", placeholder: "All bots" },
+        },
+        {
+            id: "detectedLanguage",
+            label: "Language",
+            component: SelectFilter,
+            props: { filterKey: "detectedLanguage", placeholder: "All languages" },
+        },
+        {
+            id: "range",
+            label: "Date Created",
+            component: DateFilter,
+            props: { filterKey: "date_created", placeholder: "Pick a date" },
+        },
+    ]
 
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search logs..."
-                            value={searchTerm}
-                            onChange={handleSearchTermChange}
-                            className="pl-8"
-                        />
-                    </div>
-                    <select
-                        value={scoreFilter}
-                        onChange={handleScoreFilterChange}
-                        className="px-3 py-2 rounded-md border"
-                    >
-                        <option value="">All Scores</option>
-                        {uniqueScores.map((score) => (
-                            <option key={score} value={score}>
-                                {score}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        value={reporterFilter}
-                        onChange={handleReporterFilterChange}
-                        className="px-3 py-2 rounded-md border"
-                    >
-                        <option value="">All Reporters</option>
-                        {uniqueReporters.map((reporter) => (
-                            <option key={reporter} value={reporter}>
-                                {reporter}
-                            </option>
-                        ))}
-                    </select>
-                    <Popover>
+                    {!!selectedLogs.length && <Popover>
                         <PopoverTrigger asChild>
                             <Button
-                                id="date"
-                                variant={"outline"}
-                                className={cn(
-                                    "w-[300px] justify-start text-left font-normal",
-                                    !dateRange?.from && "text-muted-foreground"
-                                )}
+                                id="export"
+                                variant={"default"}
+                                className={cn("w-[150px] justify-start text-left font-normal")}
                             >
-                                {formatDateRange()}
+                                Export
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent
-                            className="w-auto p-0"
-                            align="start"
-                            side="bottom"
-                        >
-                            <Calendar
-                                mode="range"
-                                defaultMonth={dateRange?.from}
-                                selected={dateRange}
-                                onSelect={(range) => {
-                                    setDateRange({
-                                        from: range?.from || null,
-                                        to: range?.to || null,
-                                    })
-                                }}
-                                numberOfMonths={2}
-                            />
+                        <PopoverContent className="w-auto p-0" align="start" side="bottom">
+                            <div className="flex flex-col space-y-2">
+                                <Button variant="ghost" className="justify-start" onClick={handleExportPdf}>
+                                    Export as PDF
+                                </Button>
+                                <Button variant="ghost" className="justify-start" onClick={handleExportExcel}>
+                                    Export as Excel
+                                </Button>
+                                <Button variant="ghost" className="justify-start" onClick={handleExportJson}>
+                                    Export as JSON
+                                </Button>
+                                <Button variant="ghost" className="justify-start" onClick={handleExportXml}>
+                                    Export as XML
+                                </Button>
+                            </div>
                         </PopoverContent>
-                    </Popover>
-                    {!!selectedLogs.length && <Button onClick={handleExportPdf} disabled={selectedLogs.length === 0}>
-                        Export to PDF
-                    </Button>}
+                    </Popover>}
                 </div>
             </div>
-            <div className="border rounded-md">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12">
-                                <input
-                                    type="checkbox"
-                                    checked={selectedLogs.length === filteredAndSortedLogs.length}
-                                    onChange={onSelectAll}
-                                    className="rounded border-gray-300"
-                                />
-                            </TableHead>
-                            <TableHead
-                                className="cursor-pointer hover:bg-muted"
-                                onClick={() => handleSort("bot")}
-                            >
-                                <div className="flex items-center gap-2">
-                                    Bot
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
-                            </TableHead>
-                            <TableHead>Message</TableHead>
-                            <TableHead>Answer</TableHead>
-                            <TableHead
-                                className="cursor-pointer hover:bg-muted"
-                                onClick={() => handleSort("reporter")}
-                            >
-                                <div className="flex items-center gap-2">
-                                    Reporter
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
-                            </TableHead>
-                            <TableHead
-                                className="cursor-pointer hover:bg-muted"
-                                onClick={() => handleSort("score")}
-                            >
-                                <div className="flex items-center gap-2">
-                                    Score
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
-                            </TableHead>
-                            <TableHead
-                                className="cursor-pointer hover:bg-muted"
-                                onClick={() => handleSort("date_created")}
-                            >
-                                <div className="flex items-center gap-2">
-                                    Date Created
-                                    <ArrowUpDown className="h-4 w-4" />
-                                </div>
-                            </TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedLogs.map((log) => (
-                            <TableRow key={log.id}>
-                                <TableCell>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedLogs.includes(log.id)}
-                                        onChange={() => onToggleSelect?.(log.id)}
-                                        className="rounded border-gray-300"
-                                    />
-                                </TableCell>
-                                <TableCell>{log.bot}</TableCell>
-                                <TableCell>{log.message}</TableCell>
-                                <TableCell>{log.answer}</TableCell>
-                                <TableCell>{log.reporter}</TableCell>
-                                <TableCell>{log.score}</TableCell>
-                                <TableCell>{format(new Date(log.date_created), "MMM dd, yyyy")}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        {onPreview && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => onPreview(log)}
-                                            >
-                                                View Content
-                                            </Button>
-                                        )}
-                                        {onDelete && (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => onDelete(log.id)}
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                                            >
-                                                Delete
-                                            </Button>
-                                        )}
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-            <Pagination>
-                <PaginationContent>
-                    {currentPage === 1 ? (
-                        <span aria-disabled="true">
-                            <PaginationPrevious />
-                        </span>
-                    ) : (
-                        <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                    )}
-
-                    {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
-                        <PaginationItem key={page}>
-                            <PaginationLink
-                                onClick={() => handlePageChange(page)}
-                                isActive={currentPage === page}
-                            >
-                                {page}
-                            </PaginationLink>
-                        </PaginationItem>
-                    ))}
-
-                    {currentPage === pageCount ? (
-                        <span aria-disabled="true">
-                            <PaginationNext />
-                        </span>
-                    ) : (
-                        <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                    )}
-                </PaginationContent>
-            </Pagination>
+            <CustomTable
+                columns={columns as any}
+                data={logs}
+                onToggleSelect={onToggleSelect}
+                selectedRows={selectedLogs}
+                onSelectAll={onSelectAll}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                tableId="logs-table"
+                filters={filters}
+            />
         </div>
     )
 }

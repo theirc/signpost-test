@@ -1,7 +1,8 @@
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot,MessagesSquare, Book, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
+import { Bot, MessagesSquare, Book, Frame, Map, PieChart, Settings2, SquareTerminal, Logs } from "lucide-react"
+import logoImage from '@/assets/logo.png'
 
 export function AppSidebar() {
   // This is sample data.
@@ -14,9 +15,12 @@ export function AppSidebar() {
     navMain: [
       {
         title: "Bots",
-        url: "bots",
+        url: "#",
         icon: Bot,
-        isLink: true,
+        items: [
+          { title: "All Bots", url: "bots" },
+          { title: "System Prompts", url: "bots/prompts" },
+        ],
       },
       {
         title: "Playground",
@@ -25,10 +29,13 @@ export function AppSidebar() {
         isLink: true,
       },
       {
-        title: "Bot Logs",
-        url: "logs",
+        title: "Evaluation",
+        url: '#',
         icon: Logs,
-        isLink: true,
+        items: [
+          {title: "Logs", url: "logs"},
+          {title: "Scores", url: "scores"}
+        ]
       },
       {
         title: "Knowledge",
@@ -62,8 +69,12 @@ export function AppSidebar() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <GalleryVerticalEnd className="size-4" />
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                  <img 
+                    src={logoImage}
+                    alt="Signpost Logo" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">Signpost</span>

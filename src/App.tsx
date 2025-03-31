@@ -6,8 +6,9 @@ import { Separator } from "@radix-ui/react-separator"
 import { BrowserRouter, Route, Routes, useLocation, Link, useNavigate } from "react-router-dom"
 import Chat from "./pages/chat"
 import { CollectionsManagement } from "./pages/knowledge"
-import { BotLogsTable } from "./pages/logs"
-import { BotManagement } from "./pages/bots"
+import { BotLogsTable } from "./pages/evaluation/logs.tsx"
+import { BotManagement } from "./pages/bots/bots.tsx"
+import SystemPrompts from "./pages/bots/prompts"
 import Sources from './pages/sources.tsx'
 import { SettingsLayout } from "./pages/settings/layout"
 import { ProjectsSettings } from "./pages/settings/projects"
@@ -19,14 +20,17 @@ import { AccessControlSettings } from "./pages/settings/access-control"
 import { Roles } from "./pages/settings/roles"
 import { AgentList } from "./pages/flow/agents.tsx"
 import { Agent } from "./pages/flow/agent.tsx"
+import { BotScoresTable } from "./pages/evaluation/scores.tsx"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
   '/chat': 'Playground',
   '/rag': 'Collections',
   '/sources': 'Data Sources',
-  '/logs': 'Bot Logs',
+  '/logs': 'Logs',
+  '/scores': 'Scores',
   '/bots': 'Bots',
+  '/bots/prompts': 'System Prompts',
   '/settings/projects': 'Settings / Projects',
   '/settings/team': 'Settings / Team',
   '/settings/billing': 'Settings / Billing',
@@ -79,7 +83,9 @@ function AppContent() {
             <Route path="/rag" element={<CollectionsManagement />} />
             <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
+            <Route path="/scores" element={<BotScoresTable />} />
             <Route path="/bots" element={<BotManagement />} />
+            <Route path="/bots/prompts" element={<SystemPrompts />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route path="projects" element={<ProjectsSettings />} />
               <Route path="team" element={<TeamSettings />} />

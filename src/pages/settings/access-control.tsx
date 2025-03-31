@@ -1,8 +1,8 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
 import { useState, useMemo } from "react"
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
 import "jspdf-autotable"
 import { useNavigate } from "react-router-dom"
+import { ColumnDef } from "@tanstack/react-table"
+import CustomTable from "@/components/ui/custom-table"
 
 const testData = [
     {
@@ -65,58 +65,15 @@ export function AccessControlSettings() {
         setCurrentPage(page)
     }
 
+    const columns: ColumnDef<any>[] = [
+        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
+        { id: "users", enableResizing: true, enableHiding: true, accessorKey: "users", header: "Users", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "description", enableResizing: true, enableHiding: true, accessorKey: "description", header: "Description", enableSorting: false, cell: (info) => info.getValue() },
+    ]
+
     return (
         <div className="space-y-4">
-            <div className="border rounded-md">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Users</TableHead>
-                            <TableHead>Description</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {paginatedRoles.map((role) => (
-                            <TableRow key={role.id} onClick={() => handleRowClick(role.id)} className="cursor-pointer hover:bg-muted">
-                                <TableCell>{role.name}</TableCell>
-                                <TableCell>{role.users}</TableCell>
-                                <TableCell>{role.description}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-            <Pagination>
-                <PaginationContent>
-                    {currentPage === 1 ? (
-                        <span aria-disabled="true">
-                            <PaginationPrevious />
-                        </span>
-                    ) : (
-                        <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-                    )}
-
-                    {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
-                        <PaginationItem key={page}>
-                            <PaginationLink
-                                onClick={() => handlePageChange(page)}
-                                isActive={currentPage === page}
-                            >
-                                {page}
-                            </PaginationLink>
-                        </PaginationItem>
-                    ))}
-
-                    {currentPage === pageCount ? (
-                        <span aria-disabled="true">
-                            <PaginationNext />
-                        </span>
-                    ) : (
-                        <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-                    )}
-                </PaginationContent>
-            </Pagination>
+            <CustomTable tableId="roles-table" columns={columns as any} data={paginatedRoles} placeholder="No roles found" onEdit={handleRowClick} />
         </div>
     )
 }

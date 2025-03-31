@@ -14,7 +14,7 @@
  *   - deleteFile: Function to delete a file from storage
  */
 import { useState } from 'react'
-import { useSupabase } from './use-supabase'
+import { useSupabase } from '@/hooks/use-supabase'
 
 export function useFileStorage(bucketName: string = 'documents') {
   const supabase = useSupabase()

@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist-sans)'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['var(--font-geist-mono)'],
       },
       borderRadius: {
