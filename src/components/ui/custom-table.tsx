@@ -348,7 +348,7 @@ function CustomTable<T extends { id: any }>({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <strong className="flex justify-center">Toggle Columns</strong>
-                            {table.getAllLeafColumns().map((column) => {
+                            {table.getAllLeafColumns().filter(x => x.id !== "action").map((column) => {
                                 return (
                                     <DropdownMenuItem
                                         key={column.id}
