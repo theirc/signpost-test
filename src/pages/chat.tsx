@@ -12,8 +12,8 @@ import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
-import { SourcesTable } from '@/components/sources-table'
-import { availableSources } from "@/components/old_forms/files-modal"
+// import { SourcesTable } from '@/components/sources-table'
+import { availableSources } from "@/components/source_input/files-modal"
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import { MultiSelectDropdown, Option } from '@/components/ui/multiselect'
 import "../index.css"
@@ -417,13 +417,13 @@ const hasSelectedBots = state.selectedBots.length > 0
             <DialogTitle>Attach Files</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <SourcesTable 
+{/*             <SourcesTable 
               sources={sources}
               selectedSources={selectedSources}
               onToggleSelect={handleToggleSelect}
               onSelectAll={handleSelectAll}
               showCheckboxes={true}
-            />
+            /> */}
             <div className="flex justify-end mt-4 gap-2">
               <Button
                 variant="outline"
