@@ -16,6 +16,44 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+.bot-message-content a {
+  color: #3B82F6;
+  text-decoration: none;
+}
+.bot-message-content a:hover {
+  color: #2563EB;
+  text-decoration: none;
+}
+
+.bot-message-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.bot-message-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+.bot-message-content p {
+  margin-bottom: 1rem; 
+  line-height: 1.5; 
+  color: #374151; 
+}
+
+.bot-message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.bot-message-content p strong {
+  font-weight: 600;
+}
+
+.bot-message-content p em {
+  font-style: italic;
+  color: #4B5563; 
+}
 
 @layer base {
   html {

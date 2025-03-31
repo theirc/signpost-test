@@ -3,9 +3,8 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import { Mic, MessageSquare, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select"
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
@@ -13,15 +12,11 @@ import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
+// import { SourcesTable } from '@/components/sources-table'
 import { availableSources } from "@/components/source_input/files-modal"
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
+import { MultiSelectDropdown, Option } from '@/components/ui/multiselect'
 import "../index.css"
-import { formatDate } from "@/components/source_input/utils"
-import { ColumnDef } from '@tanstack/react-table'
-import { format } from 'date-fns'
-import SearchFilter from '@/components/ui/search-filter'
-import SelectFilter from '@/components/ui/select-filter'
-import CustomTable from '@/components/ui/custom-table'
 
 interface Bots {
   [index: number]: {
@@ -32,6 +27,7 @@ interface Bots {
 }
 
 export default function Chat () {
+  const [sidebarVisible, setSidebarVisible] = useState(false)
   const [showFileDialog, setShowFileDialog] = useState(false)
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [sources, setSources] = useState(availableSources)
@@ -48,10 +44,21 @@ export default function Chat () {
     isSending: false,
     rebuilding: false,
     loadingBotList: false,
-    bots: {} as Record<number, {name: string; history: any[]}>,
+    bots: {} as Bots,
     selectedBots: [] as number[],
     audioMode: false,
   })
+
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible)
+  }
+
+  const handleResetChat = () => {
+    setMessages([])
+    setActiveChat(null)
+    setState({ selectedBots: [] })
+    setSidebarVisible(false)
+  }
 
   useEffect(() => {
     api.getBots().then((sb) => {
@@ -109,6 +116,14 @@ export default function Chat () {
       }
       setMessage(prev => prev + "")
     }, 50)
+  }
+
+  const onMultiSelectBot = (selected: number[]) => {
+    if (JSON.stringify(state.selectedBots) !== JSON.stringify(selected)) {
+      setState({ selectedBots: selected })
+      setMessages([])
+      setActiveChat(null)
+    }
   }
 
   const onSelectBot = (e: string[] | string) => {
@@ -169,7 +184,7 @@ export default function Chat () {
         id: new Date().toISOString(),
         botName: currentBotName,
         messages: [userMessage],
-        timestamp: formatDate(new Date().toISOString()),
+        timestamp: new Date().toISOString(),
       }
       setActiveChat(currentActiveChat)
       
@@ -278,122 +293,77 @@ export default function Chat () {
     setState({ audioMode: !state.audioMode })
   }
 
-  const hasSelectedBots = state.selectedBots.length > 0
+  function onExitAudioMode() {
+    setState({ audioMode: false })
+    console.log("Exiting audio mode")
+  }
 
-  const columns: ColumnDef<any>[] = [
-      { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-      { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: false, cell: (info) => info.getValue() },
-      { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
-      {
-        id: "tags",
-        accessorKey: "tags",
-        header: "Tags",
-        enableResizing: true,
-        enableHiding: true,
-        enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1">
-            {(row.original.tags || []).map(tag => {
-              let tagStyle = "bg-muted"
-              if (tag === 'File Upload') {
-                tagStyle = "bg-blue-100 text-blue-800"
-              } else if (tag === 'Live Data') {
-                tagStyle = "bg-purple-100 text-purple-800"
-              }
-              return (
-                <span
-                  key={tag}
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
-                >
-                  {tag}
-                </span>
-              )
-            })}
-          </div>
-        ),
-      }
-    ]
+const hasSelectedBots = state.selectedBots.length > 0
+  const options: Option[] = Object.keys(state.bots).map((k) => ({
+    label: state.bots[Number(k)].name,
+    value: k,
+  }))
   
-    const filters = [
-      {
-        id: "search",
-        label: "Search",
-        component: SearchFilter,
-        props: { filterKey: "search", placeholder: "Search sources..." },
-      },
-      {
-        id: "types",
-        label: "Types",
-        component: SelectFilter,
-        props: { filterKey: "type", placeholder: "All Types" },
-      },
-    ]
-
   return ( 
-      <div className="flex h-screen">
-      <div className="w-1/4 border-r p-4">
-        <div className='flex justify-end mb-4'>
-          <Button 
-            onClick={() => {
-              setMessages([])
-              setActiveChat(null)
-              setState({ selectedBots: [] })
-            }} 
-            size="sm" 
-            className="flex items-center gap-1"
-          >
-            <MessageSquarePlus/>
-          </Button>
-        </div>
-        <ChatHistory 
-          setActiveChat={handleLoadChatHistory} 
-          onSelectBot={(botId) => {
-            onSelectBot(botId)
-          }} 
-          bots={state.bots}
-          chatHistory={chatHistory}
-        />
-      </div>
-            <div className="flex-1 flex flex-col">
-        <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
-          <h2 className="text-lg font-bold">
-            Playground
-          </h2>
-          <div className="flex-grow flex px-4">
-            <Select onValueChange={onSelectBot}>
-              <SelectTrigger className="h-9 border-gray-300 bg-white hover:bg-gray-50">
-                <SelectValue placeholder={
-                  state.selectedBots.length > 0 
-                    ? state.bots[state.selectedBots[0]]?.name || "Please select Bots"
-                    : "Please select Bots"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(state.bots).map((k) => (
-                  <SelectItem key={k} value={k}>
-                    {state.bots[k].name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
+      <div className="flex h-full">
+        <div className={`flex flex-col transition-all duration-300 ${
+         sidebarVisible ? 'w-1/4 border-r' : 'w-0 overflow-hidden border-none'
+          }`}>
+          <div className="p-4 border-b">
+            <div className="flex justify-end mb-4">
+              <Button 
+                onClick={handleResetChat}
+                size="sm" 
+                className="flex items-center gap-1"
+              >
+                <MessageSquarePlus/>
+              </Button>
+            </div>
+            <h2 className="text-1xl font-bold text-left">Chat History</h2>
           </div>
-          <Button onClick={onModeChanged} size="icon" variant="outline">
-            {state.audioMode ? (
-              <MessageSquare className="size-5" />
-            ) : (
-              <Mic className="size-5" />
-            )}
-          </Button>
+          
+          <div 
+            className="overflow-y-auto" 
+            style={{ height: "calc(100% - 100px)" }}
+          >
+            <div className="p-4">
+              <ChatHistory 
+                setActiveChat={handleLoadChatHistory} 
+                onSelectBot={(botId) => {
+                  onSelectBot(botId)
+                }} 
+                bots={state.bots}
+                chatHistory={chatHistory}
+              />
+            </div>
+          </div>
         </div>
-
-        <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-          <div className="flex-1 overflow-y-auto flex flex-col space-y-4">
-            {!state.audioMode && (
-              <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-                <div className="flex-1 overflow-y-auto flex flex-col space-y-6 w-full">
+        <div className="flex-1 flex flex-col">
+          <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
+          <Button onClick={toggleSidebar}className="mr-3 p-1 bg-grey-100 text-black rounded hover:bg-gray-100">
+              {sidebarVisible ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+             </Button>
+            <h2 className="text-lg font-bold">
+              Playground
+            </h2>
+            <div className="flex-grow flex px-4">
+            <MultiSelectDropdown options={options} selected={state.selectedBots} onChange={(selected) => {
+                  setState({ selectedBots: selected })
+                  setMessages([])
+                  setActiveChat(null)
+                }} />
+            </div>
+          </div>
+          <div 
+            className="overflow-y-auto" 
+            style={{ height: "calc(100% - 137px)" }} 
+          >
+            <div className="p-4 space-y-4">
+              {!state.audioMode && (
+                <div className="flex flex-col space-y-6 w-full">
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <MessageSquare className="h-12 w-12 mb-4 opacity-40" />
                       <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
                       <p className="text-sm mt-2">Select a bot and type a message below</p>
                     </div>
@@ -412,24 +382,31 @@ export default function Chat () {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-            {state.audioMode && hasSelectedBots && (
-              <Comm bot={state.selectedBots[0] ? state.selectedBots[0] : null} />
-            )}
+              )}
+              {state.audioMode && hasSelectedBots && (
+                <Comm 
+                  bot={state.selectedBots[0]} 
+                  onExit={onExitAudioMode} 
+                />
+              )}
+            </div>
           </div>
-        </div>
-        <div className="sticky bottom-0 border-t bg-white p-4">
-          {hasSelectedBots && !state.audioMode ? (
-            <SearchInput 
-              onSearch={onSend} 
-              disabled={state.isSending} 
-              openFileDialog={() => setShowFileDialog(true)}
-            />
-          ) : (
-            <div className="flex justify-center items-center py-4 text-gray-500">
-              <MessageSquare className="h-5 w-5 mr-2 opacity-70" />
-              <span>Please select a bot to start chatting</span>
+          
+          {!state.audioMode && (
+            <div className="border-t bg-white p-4">
+              {hasSelectedBots ? (
+                <SearchInput 
+                  onSearch={onSend} 
+                  disabled={state.isSending} 
+                  openFileDialog={() => setShowFileDialog(true)}
+                  audioMode={state.audioMode}
+                  onModeChanged={onModeChanged}
+                />
+              ) : (
+                <div className="flex justify-center items-center py-4 text-gray-500">
+                  <span>Please select a bot to start chatting</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -440,7 +417,13 @@ export default function Chat () {
             <DialogTitle>Attach Files</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-            <CustomTable tableId='chat-table' columns={columns as any} data={sources} filters={filters} placeholder="No sources found" onToggleSelect={handleToggleSelect} onSelectAll={handleSelectAll} />
+{/*             <SourcesTable 
+              sources={sources}
+              selectedSources={selectedSources}
+              onToggleSelect={handleToggleSelect}
+              onSelectAll={handleSelectAll}
+              showCheckboxes={true}
+            /> */}
             <div className="flex justify-end mt-4 gap-2">
               <Button
                 variant="outline"
@@ -465,12 +448,13 @@ export default function Chat () {
 function SearchInput(props: { 
   onSearch: (message?: string, audio?: any, tts?: boolean) => void, 
   disabled: boolean,
-  openFileDialog: () => void
+  openFileDialog: () => void,
+  audioMode: boolean,
+  onModeChanged: () => void
 }) {
   const [value, setValue] = useState("")
   const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
   const [tts, setTts] = useState<boolean>(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [isRecordingMode, setIsRecordingMode] = useState(false)
 
   const {
@@ -518,6 +502,11 @@ function SearchInput(props: {
     }
   }
 
+  const handleSendMessage = () => {
+    if (value.trim()) {
+      handleSearch(value)
+    }
+  }
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -538,35 +527,8 @@ function SearchInput(props: {
       setIsRecordingMode(false)
     }
   }
-
-  const handleActionButton = () => {
-    if (value.trim()) {
-      handleSearch(value)
-    } else {
-      setIsRecordingMode(true)
-    }
-  }
-
   return (
     <div className="w-full">
-      {showSettings && (
-        <div className="mb-4 bg-white rounded-lg p-4 shadow-md border border-gray-200">
-          <h3 className="font-medium mb-3 text-gray-700">Chat Settings</h3>
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Voice Response</span>
-              <Button 
-                onClick={() => setTts(!tts)} 
-                variant="outline" 
-                size="sm"
-                className="h-8"
-              >
-                {tts ? "Enabled" : "Disabled"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
       {isRecordingMode ? (
         <div className="relative">
           <div className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
@@ -575,7 +537,7 @@ function SearchInput(props: {
                 {status === "recording" ? "Recording..." : "Ready to record"}
               </div>
 
-              <button 
+              <Button 
                 onClick={handleToggleRecording}
                 className={`h-20 w-20 rounded-full flex items-center justify-center transition-colors ${
                   status === "recording" ? 'bg-red-500' : 'bg-gray-200 hover:bg-gray-300'
@@ -585,7 +547,7 @@ function SearchInput(props: {
                   <Circle className="h-8 w-8 text-white" /> : 
                   <AudioWaveform className="h-8 w-8 text-gray-800" />
                 }
-              </button>
+              </Button>
 
               {mediaBlobUrl && (
                 <>
@@ -597,22 +559,22 @@ function SearchInput(props: {
                     />
                   </div>
                   
-                  <button
+                  <Button
                     onClick={handleSendRecording}
                     className="mt-4 px-4 py-2 bg-black text-white rounded-full flex items-center hover:bg-gray-900"
                   >
                     <ArrowUp className="h-5 w-5 mr-2" />
                     <span>Send</span>
-                  </button>
+                  </Button>
                 </>
               )}
               
-              <button
+              <Button
                 onClick={() => setIsRecordingMode(false)}
                 className="mt-6 text-gray-600 hover:text-gray-900"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -627,13 +589,13 @@ function SearchInput(props: {
           >
             <div className="flex items-center w-full p-2">
               <div className="flex-shrink-0 pl-2">
-                <button
+                <Button
                   type="button"
                   onClick={props.openFileDialog}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                  className="p-2 text-white hover:text-gray-700 hover:bg-gray-100 rounded-full"
                 >
                   <CirclePlus className="h-6 w-6" />
-                </button>
+                </Button>
               </div>
               <div className="flex-grow px-2 py-3 max-h-48 overflow-y-auto">
                 <textarea
@@ -648,25 +610,18 @@ function SearchInput(props: {
                 />
               </div>
               
-              <div className="flex items-center pr-2">
-                <button
+              <div className="flex items-center pr-2 gap-2">
+              
+                <Button
                   type="button"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="p-2 mr-1 hover:text-gray-700 hover:bg-gray-100 rounded-full bg-black text-white"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={handleActionButton}
-                  className="p-2 rounded-full bg-black text-white hover:bg-gray-900"
+                  onClick={value.trim() ? handleSendMessage : props.onModeChanged}
+                  className={`p-2 rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
                   {value.trim() ? 
                     <ArrowUp className="h-5 w-5" /> : 
                     <AudioWaveform className="h-5 w-5" />
                   }
-                </button>
+                </Button>
               </div>
             </div>
           </form>
@@ -686,53 +641,58 @@ function ChatMessage(props: MessageProps) {
   let { type, message, messages, needsRebuild, rebuild } = props.message
   messages = messages || []
 
-  const hasBots = messages.length > 0
 
-  if (type == "bot") {
-    return (
-      <div className="flex w-full max-w-3xl">
-        <div className="flex gap-3 w-full">
-          {hasBots && (
-            <div className="flex-grow">
-              <div className="space-y-6 w-full">
-                {messages.map((m) => (
-                  <div key={m.id} className="w-full">
-                    <div className="font-medium text-xs mb-1 border border-gray-300 rounded-lg p-3 px-4 w-fit">
-                      {m.botName}
-                    </div>
-                    <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
-                  </div>
-                ))}
+  if (type === "bot") {
+    if (messages.length > 1) {
+      return (
+        <div className="w-full mt-4">
+          <div className="flex gap-4 w-full">
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className="flex-1 border border-gray-300 rounded-lg p-3"
+              >
+                <div className="font-medium text-xs mb-1">{m.botName}</div>
+                <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
               </div>
-            </div>
-          )}
-          {!hasBots && message && (
-            <div className="text-gray-800 rounded-lg max-w-full prose prose-sm">
-              <div>{message}</div>
-            </div>
-          )}
+            ))}
+          </div>
+        </div>
+      )
+    }
+    if (messages.length === 1) {
+      const single = messages[0]
+      return (
+        <div className="mt-4">
+          <div className="p-3">
+            <div className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-1">{single.botName}</div>
+            <BotChatMessage m={single} isWaiting={isWaiting} rebuild={rebuild} />
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div className="w-full mt-4">
+        <div className="border border-gray-300 rounded-lg p-3">
+          {message}
         </div>
       </div>
     )
   }
-
   return (
-    <div className="flex w-full max-w-3xl ml-auto justify-end">
-      <div className="flex gap-3">
-        <div className="bg-gray-100 text-black p-4 rounded-lg max-w-md">
-          <div>{message}</div>
-          
-          {!isWaiting && needsRebuild && (
-            <Button
-              className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
-              onClick={rebuild}
-              disabled={isWaiting}
-              size="sm"
-            >
-              <span className="mr-1">↻</span> Rebuild
-            </Button>
-          )}
-        </div>
+    <div className="w-full flex justify-end mt-4">
+      <div className="bg-gray-100 text-black p-4 rounded-lg max-w-md">
+        <div>{message}</div>
+        {!isWaiting && needsRebuild && (
+          <Button
+            className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
+            onClick={rebuild}
+            disabled={isWaiting}
+            size="sm"
+          >
+            <span className="mr-1">↻</span> Rebuild
+          </Button>
+        )}
       </div>
     </div>
   )
