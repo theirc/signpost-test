@@ -307,8 +307,8 @@ const hasSelectedBots = state.selectedBots.length > 0
   return ( 
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
       <div className="flex h-full">
-        <div className={`border-r flex flex-col transition-all duration-300 ${
-            sidebarVisible ? 'w-1/4' : 'w-0 overflow-hidden'
+        <div className={`flex flex-col transition-all duration-300 ${
+         sidebarVisible ? 'w-1/4 border-r' : 'w-0 overflow-hidden border-none'
           }`}>
           <div className="p-4 border-b">
             <div className="flex justify-end mb-4">
