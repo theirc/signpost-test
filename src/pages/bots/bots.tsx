@@ -247,47 +247,20 @@ export function BotManagement() {
         setTestResultOpen(true);
         
         try {
-            // Step 1: Performing similarity search
-            setCurrentStep('Performing similarity search...');
-            console.log('[BotManagement] Performing similarity search for:', testPrompt);
-            const similarContent = await searchSimilarContent(testPrompt);
-            
-            // Log detailed similarity information
-            console.log('[BotManagement] Similar content found:');
-            similarContent.forEach((result: SimilaritySearchResult, index: number) => {
-                console.log(`\nResult ${index + 1}:
-                    Source: ${result.source_type}
-                    Name: ${result.name}
-                    Similarity: ${(result.similarity * 100).toFixed(2)}%
-                    Content Preview: ${result.content.substring(0, 100)}...`
-                );
-            });
+            setCurrentStep('Connecting to AI service...');
             
             const bot = currentTestBot;
+            console.log('Testing bot:', bot.name, '(ID:', bot.id, ')');
             
-            // Step 2: Preparing AI request
-            setCurrentStep('Preparing AI request...');
-
-            // Check if system prompt content might be missing
-            if (!bot.system_prompt && bot.system_prompt_id) {
-                console.warn(`[BotManagement] Warning: Bot "${bot.name}" has a system_prompt_id but the system_prompt content is missing. The test might not use the intended system prompt unless fetchBots resolves it.`);
-            }
-
+            // Simplified parameters - just send bot ID and prompt
             const paramsObj = {
                 botId: bot.id,
-                botName: bot.name,
-                model: bot.model,
-                modelName: getModelName(bot.model),
-                temperature: bot.temperature?.toString() || '0.7',
-                systemPrompt: bot.system_prompt || '',
-                userPrompt: testPrompt,
-                similarContent: similarContent
+                userPrompt: testPrompt
             };
             
-            console.log('Current bot:', bot);
             console.log('Testing bot function with params:', JSON.stringify(paramsObj, null, 2));
             
-            // Step 3: Getting AI response
+            // Make API request
             setCurrentStep('Getting AI response...');
             const response = await fetch('/api/botResponse', {
                 method: 'POST',
@@ -301,7 +274,7 @@ export function BotManagement() {
             const responseText = await response.text();
             console.log('Raw response:', responseText);
             
-            // Step 4: Processing response
+            // Process response
             setCurrentStep('Processing response...');
             let data;
             try {
@@ -311,8 +284,8 @@ export function BotManagement() {
                 throw new Error(`Invalid JSON response: ${responseText}`);
             }
             
+            // Add original prompt for reference
             data.originalPrompt = testPrompt;
-            data.similarContent = similarContent;
             setTestResult(JSON.stringify(data, null, 2));
             setCurrentStep(null);
         } catch (error) {
