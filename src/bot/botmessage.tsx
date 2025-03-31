@@ -216,7 +216,7 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
     <div>
     <div className="flex">
       {!m.isContacts && !m.tts && (
-        <div className="">
+        <div className="bot-message-content">
           <Markdown
             components={{
               a: ({ node, ...props }) => (
