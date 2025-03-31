@@ -1,3 +1,22 @@
+/**
+ * Bot Response API Handler
+ * 
+ * This API endpoint handles bot responses by:
+ * 1. Retrieving bot configuration from the database
+ * 2. Performing similarity search on the knowledge base if available
+ * 3. Selecting the appropriate Claude AI model
+ * 4. Enhancing the user prompt with relevant context from similarity search
+ * 5. Calling the Claude API and returning the response
+ * 
+ * Note: Currently only supports Claude models. Future versions will support
+ * additional model providers like OpenAI through a model gateway.
+ * 
+ * @route POST /api/botResponse
+ * @param {string} botId - The ID of the bot to use
+ * @param {string} userPrompt - The user's input prompt
+ * @returns {Object} Response containing the AI's reply and metadata
+ */
+
 // api/botResponse.ts
 
 // Takes as an input the content from similarity search if present ... selects the model and calls the AI API. NOTE: It only uses Claude models and the mappings aren't quite right. I'm waiting to see if we want to use a model gateway like the one in Databricks before finalizing this mapping and setting up the API routes for OpenAI and others.
