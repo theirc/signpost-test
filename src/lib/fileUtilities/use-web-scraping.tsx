@@ -42,6 +42,26 @@ export const htmlToPlainText = (html: string): string => {
   }
 };
 
+// Add meta information to the top of content to improve RAG retrieval context
+export const addSourceMetadata = (url: string, content: string, title?: string): string => {
+  const timestamp = new Date().toISOString();
+  const metaHeader = `
+SOURCE INFORMATION
+Title: ${title || 'Web Content'}
+URL: ${url}
+Scraped On: ${timestamp}
+Source Type: Web Scrape
+
+CONTENT SUMMARY
+The following content was scraped from the URL above. This information can be used to provide context for questions related to this content.
+
+---
+
+`;
+  
+  return metaHeader + content;
+};
+
 // Web scraping function using our API
 export const performWebScrape = async (url: string): Promise<string> => {
   try {
@@ -54,10 +74,30 @@ export const performWebScrape = async (url: string): Promise<string> => {
       throw new Error(result.error || 'Failed to fetch content');
     }
     
-    return result.content;
+    // Extract title if available in the response
+    const title = extractTitleFromHTML(result.content);
+    
+    // Convert HTML to plain text
+    const plainText = htmlToPlainText(result.content);
+    
+    // Add metadata to the top of the content
+    const enhancedContent = addSourceMetadata(url, plainText, title);
+    
+    return enhancedContent;
   } catch (error) {
     console.error(`Error scraping ${url}:`, error);
     throw error; // Re-throw to let caller handle it
+  }
+};
+
+// Helper function to extract title from HTML
+const extractTitleFromHTML = (html: string): string => {
+  try {
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    return titleMatch ? titleMatch[1].trim() : 'Untitled Page';
+  } catch (error) {
+    console.error('Error extracting title from HTML:', error);
+    return 'Untitled Page';
   }
 };
 
@@ -67,8 +107,8 @@ export function useWebScraping() {
   const scrapeUrl = async (url: string): Promise<string> => {
     setIsLoading(true);
     try {
-      const html = await performWebScrape(url);
-      return html;
+      const content = await performWebScrape(url);
+      return content;
     } catch (error) {
       console.error('Error in scrapeUrl:', error);
       throw error;
@@ -80,6 +120,7 @@ export function useWebScraping() {
   return {
     isLoading,
     performWebScrape: scrapeUrl,
-    htmlToPlainText
+    htmlToPlainText,
+    addSourceMetadata
   };
 } 
