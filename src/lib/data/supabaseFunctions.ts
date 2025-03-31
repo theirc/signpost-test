@@ -595,41 +595,51 @@ export async function generateEmbedding(text: string): Promise<{
   error: Error | null
 }> {
   try {
-    console.log('[supabaseFunctions] Starting embedding generation...')
+    console.log('[supabaseFunctions] Starting OpenAI embedding generation...')
     
-    const generateEmbedding = await pipeline('feature-extraction', 'Supabase/gte-small', {
-      revision: 'main',
-      quantized: true
+    // OpenAI recommends replacing newlines with spaces for best results
+    const input = text.replace(/\n/g, ' ')
+    
+    const response = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'text-embedding-ada-002',
+        input
+      })
     })
     
-    const output = await generateEmbedding(text, {
-      pooling: 'mean',
-      normalize: true,
-    })
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`)
+    }
     
-    console.log('[supabaseFunctions] Embedding generated successfully')
+    const data = await response.json()
+    const embedding = data.data[0].embedding
     
-    // Convert to array and ensure it's the correct size (384 for gte-small)
-    const embedding = Array.from(output.data)
-    if (embedding.length !== 384) {
-      throw new Error(`Expected embedding dimension of 384, but got ${embedding.length}`)
+    console.log('[supabaseFunctions] OpenAI embedding generated successfully')
+    
+    // Verify the embedding is the correct size (1536 for text-embedding-ada-002)
+    if (embedding.length !== 1536) {
+      throw new Error(`Expected embedding dimension of 1536, but got ${embedding.length}`)
     }
     
     return { data: embedding, error: null }
   } catch (error) {
-    console.error('[supabaseFunctions] Error generating embedding:', error)
+    console.error('[supabaseFunctions] Error generating OpenAI embedding:', error)
     console.error('[supabaseFunctions] Error type:', error instanceof Error ? error.constructor.name : typeof error)
     console.error('[supabaseFunctions] Error message:', error instanceof Error ? error.message : String(error))
     
-    let errorMessage = 'Unknown error occurred during embedding generation.'
+    let errorMessage = 'Unknown error occurred during OpenAI embedding generation.'
     
     if (error instanceof Error) {
-      if (error.message.includes('<!doctype')) {
-        errorMessage = 'Failed to load the embedding model. Please check your internet connection and try again.'
-      } else if (error.message.includes('protobuf')) {
-        errorMessage = 'Error loading model format. Please try again or contact support if the issue persists.'
-      } else if (error.message.includes('Failed to fetch')) {
-        errorMessage = 'Network error while loading the model. Please check your internet connection and try again.'
+      if (error.message.includes('API key')) {
+        errorMessage = 'Invalid or missing OpenAI API key. Please check your environment configuration.'
+      } else if (error.message.includes('network') || error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error while calling OpenAI API. Please check your internet connection and try again.'
       } else {
         errorMessage = error.message
       }

@@ -18,29 +18,41 @@ export function useSimilaritySearch() {
 
   const generateEmbedding = async (text: string) => {
     try {
-      console.log('[useSimilaritySearch] Starting embedding generation...');
+      console.log('[useSimilaritySearch] Starting OpenAI embedding generation...');
       
-      const generateEmbedding = await pipeline('feature-extraction', 'Supabase/gte-small', {
-        revision: 'main',
-        quantized: true
+      // OpenAI recommends replacing newlines with spaces for best results
+      const input = text.replace(/\n/g, ' ');
+      
+      const response = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'text-embedding-ada-002',
+          input
+        })
       });
       
-      const output = await generateEmbedding(text, {
-        pooling: 'mean',
-        normalize: true,
-      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`);
+      }
       
-      console.log('[useSimilaritySearch] Embedding generated successfully');
+      const data = await response.json();
+      const embedding = data.data[0].embedding;
       
-      // Convert to array and ensure it's the correct size (384 for gte-small)
-      const embedding = Array.from(output.data);
-      if (embedding.length !== 384) {
-        throw new Error(`Expected embedding dimension of 384, but got ${embedding.length}`);
+      console.log('[useSimilaritySearch] OpenAI embedding generated successfully');
+      
+      // Verify the embedding is the correct size (1536 for text-embedding-ada-002)
+      if (embedding.length !== 1536) {
+        throw new Error(`Expected embedding dimension of 1536, but got ${embedding.length}`);
       }
       
       return embedding;
     } catch (error) {
-      console.error('[useSimilaritySearch] Error generating embedding:', error);
+      console.error('[useSimilaritySearch] Error generating OpenAI embedding:', error);
       throw error;
     }
   };
