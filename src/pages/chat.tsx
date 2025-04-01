@@ -641,18 +641,20 @@ function ChatMessage(props: MessageProps) {
   let { type, message, messages, needsRebuild, rebuild } = props.message
   messages = messages || []
 
-
   if (type === "bot") {
     if (messages.length > 1) {
       return (
-        <div className="w-full mt-4">
+        <div className="w-full mt-4" dir="auto">
           <div className="flex gap-4 w-full">
             {messages.map((m) => (
               <div
                 key={m.id}
                 className="flex-1 border border-gray-300 rounded-lg p-3"
+                dir="auto"
               >
-                <div className="font-medium text-xs mb-1">{m.botName}</div>
+                <div className="font-medium text-xs mb-1" dir="auto">
+                  {m.botName}
+                </div>
                 <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />
               </div>
             ))}
@@ -663,25 +665,34 @@ function ChatMessage(props: MessageProps) {
     if (messages.length === 1) {
       const single = messages[0]
       return (
-        <div className="mt-4">
+        <div className="mt-4" dir="auto">
           <div className="p-3">
-            <div className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-1">{single.botName}</div>
+            <div
+              className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-1"
+              dir="auto"
+            >
+              {single.botName}
+            </div>
             <BotChatMessage m={single} isWaiting={isWaiting} rebuild={rebuild} />
           </div>
         </div>
       )
     }
     return (
-      <div className="w-full mt-4">
-        <div className="border border-gray-300 rounded-lg p-3">
+      <div className="w-full mt-4" dir="auto">
+        <div className="border border-gray-300 rounded-lg p-3" dir="auto">
           {message}
         </div>
       </div>
     )
   }
   return (
-    <div className="w-full flex justify-end mt-4">
-      <div className="bg-gray-100 text-black p-4 rounded-lg max-w-md">
+    <div className="w-full mt-4" dir="auto">
+      <div
+        className="bg-gray-100 text-black p-4 rounded-lg max-w-[20%]"
+        style={{ marginInlineStart: 'auto' }}
+        dir="auto"
+      >
         <div>{message}</div>
         {!isWaiting && needsRebuild && (
           <Button
