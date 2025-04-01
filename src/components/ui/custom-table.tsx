@@ -37,11 +37,73 @@ interface CustomTableProps<T extends { id: any }> {
     placeholder?: string
 }
 
-const DraggableTableHeader = ({ header }: { header: Header<any, unknown> }) => {
+const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>, table: any }) => {
     if (!header || header.id === 'action') {
         return null
     }
     const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({ id: header.column.id })
+
+    const handleDoubleClick = () => {
+        // Get all cells in this column
+        const cells = table.getRowModel().rows.map(row => {
+            const cell = row.getVisibleCells().find(cell => cell.column.id === header.column.id)
+            if (!cell) return null
+            return cell.getValue()
+        })
+
+        // Get the header content
+        const headerContent = flexRender(header.column.columnDef.header, header.getContext())
+
+        // Create temporary elements to measure text width
+        const tempDiv = document.createElement('div')
+        tempDiv.style.position = 'absolute'
+        tempDiv.style.visibility = 'hidden'
+        tempDiv.style.whiteSpace = 'nowrap'
+        tempDiv.style.font = window.getComputedStyle(document.body).font
+        document.body.appendChild(tempDiv)
+
+        // Measure header width
+        tempDiv.textContent = headerContent as string
+        const headerWidth = tempDiv.offsetWidth
+
+        // Measure all cell widths
+        const cellWidths = cells.map(cell => {
+            if (!cell) return 0
+            tempDiv.textContent = cell.toString()
+            return tempDiv.offsetWidth
+        })
+
+        // Clean up
+        document.body.removeChild(tempDiv)
+
+        // Find the maximum width
+        const maxWidth = Math.max(headerWidth, ...cellWidths)
+
+        // Add some padding (40px) to the max width
+        const newWidth = maxWidth + 40
+
+        // Update the column size
+        table.setColumnSizing(prev => ({
+            ...prev,
+            [header.column.id]: newWidth
+        }))
+
+        // Force a column sizing info update to trigger persistence
+        const newSizes = {
+            ...table.getState().columnSizing,
+            [header.column.id]: newWidth
+        }
+        
+        table.options.onColumnSizingInfoChange?.({
+            ...table.getState().columnSizingInfo,
+            deltaOffset: 0,
+            deltaWidth: 0,
+            isResizingColumn: false,
+            startOffset: 0,
+            startSize: 0,
+            columnSizing: newSizes
+        })
+    }
 
     return (
         <TableHead
@@ -58,7 +120,10 @@ const DraggableTableHeader = ({ header }: { header: Header<any, unknown> }) => {
             }}
         >
             <div className="flex w-full items-center justify-between">
-                <div className="w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                <div 
+                    className="w-full overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer"
+                    onDoubleClick={handleDoubleClick}
+                >
                     <div
                         className={`flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap ${header.column.getCanSort() ? "cursor-pointer" : ""
                             }`}
@@ -77,13 +142,17 @@ const DraggableTableHeader = ({ header }: { header: Header<any, unknown> }) => {
                 </button>
                 {header.column.getCanResize() && (
                     <div
-                        onMouseDown={(e) => {
-                            header.getResizeHandler()(e)
+                        onDoubleClick={handleDoubleClick}
+                        onMouseDown={header.getResizeHandler()}
+                        onTouchStart={header.getResizeHandler()}
+                        className={`absolute right-0 top-0 h-full w-[2px] cursor-col-resize bg-gray-400 opacity-50 ${
+                            header.column.getIsResizing() ? 'bg-blue-500' : ''
+                        }`}
+                        style={{
+                            transform: table.options.columnResizeMode === 'onEnd' && header.column.getIsResizing()
+                                ? `translateX(${(table.options.columnResizeDirection === 'rtl' ? -1 : 1) * (table.getState().columnSizingInfo.deltaOffset ?? 0)}px)`
+                                : '',
                         }}
-                        onTouchStart={(e) => {
-                            header.getResizeHandler()(e)
-                        }}
-                        className="absolute right-0 top-0 h-full w-[2px] cursor-col-resize bg-gray-400 opacity-50"
                     />
                 )}
             </div>
@@ -124,7 +193,11 @@ function CustomTable<T extends { id: any }>({
     filters,
     placeholder
 }: CustomTableProps<T>) {
-    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(columns?.map((col) => col.id as string))
+    const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
+        if (!tableId) return columns?.map((col) => col.id as string)
+        const stored = localStorage.getItem(`columnOrder-${tableId}`)
+        return stored ? JSON.parse(stored) : columns?.map((col) => col.id as string)
+    })
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
         if (!tableId) return {}
         const stored = localStorage.getItem(`columnVisibility-${tableId}`)
@@ -152,7 +225,9 @@ function CustomTable<T extends { id: any }>({
         data: paginatedData,
         columns,
         defaultColumn: {
-            minSize: 10,
+            minSize: 40,
+            maxSize: 5000,
+            size: 150,
         },
         state: { columnOrder, columnVisibility, columnSizingInfo },
         getCoreRowModel: getCoreRowModel(),
@@ -163,13 +238,16 @@ function CustomTable<T extends { id: any }>({
         onColumnOrderChange: setColumnOrder,
         onColumnVisibilityChange: setColumnVisibility,
         columnResizeMode: "onChange",
+        columnResizeDirection: "ltr",
         onColumnSizingInfoChange: (updatedColumnSizingInfo: ColumnSizingInfoState) => {
             setColumnSizingInfo(updatedColumnSizingInfo)
             if (!updatedColumnSizingInfo.isResizingColumn) {
-                const newSizes = table.getAllLeafColumns().reduce((acc, column) => {
-                    acc[column.id] = column.getSize()
-                    return acc
-                }, {} as Record<string, number>)
+                const newSizes = table.getAllLeafColumns()
+                    .filter(column => column.id !== 'action')
+                    .reduce((acc, column) => {
+                        acc[column.id] = column.getSize()
+                        return acc
+                    }, {} as Record<string, number>)
                 setColumnSizes(newSizes)
             }
         },
@@ -178,18 +256,28 @@ function CustomTable<T extends { id: any }>({
         }
     })
 
-    // Apply saved column sizes when columns change
+    // Ensure action column is always visible
     useEffect(() => {
-        if (Object.keys(columnSizes).length > 0) {
-            const newSizingInfo = table.getAllLeafColumns().reduce((acc, column) => {
-                if (columnSizes[column.id]) {
-                    acc[column.id] = columnSizes[column.id]
-                }
-                return acc
-            }, {} as ColumnSizingInfoState)
-            setColumnSizingInfo(newSizingInfo)
+        if (tableId) {
+            const storedVisibility = localStorage.getItem(`columnVisibility-${tableId}`)
+            const visibility = storedVisibility ? JSON.parse(storedVisibility) : {}
+            if (visibility['action'] === false) {
+                setColumnVisibility(prev => ({ ...prev, action: true }))
+            }
         }
-    }, [table, columns])
+    }, [tableId])
+
+    // Optimize column resizing performance
+    useEffect(() => {
+        if (columnSizingInfo.isResizingColumn) {
+            const column = table.getColumn(columnSizingInfo.isResizingColumn)
+            if (column) {
+                const newSizes = { ...columnSizes }
+                newSizes[column.id] = column.getSize()
+                setColumnSizes(newSizes)
+            }
+        }
+    }, [columnSizingInfo.isResizingColumn])
 
     const memoizedHeaderGroups = useMemo(
         () => table.getHeaderGroups(),
@@ -289,7 +377,21 @@ function CustomTable<T extends { id: any }>({
         }
     }, [tableId])
 
-    // Update effect to persist column visibility
+    // Persist column order
+    useEffect(() => {
+        if (tableId) {
+            try {
+                localStorage.setItem(
+                    `columnOrder-${tableId}`,
+                    JSON.stringify(columnOrder)
+                )
+            } catch (error) {
+                console.error("Error saving column order to localStorage:", error)
+            }
+        }
+    }, [columnOrder, tableId])
+
+    // Persist column visibility
     useEffect(() => {
         if (tableId) {
             try {
@@ -303,10 +405,7 @@ function CustomTable<T extends { id: any }>({
         }
     }, [columnVisibility, tableId])
 
-    useEffect(() => {
-        applyFilters()
-    }, [filtersState, applyFilters])
-
+    // Persist column sizes
     useEffect(() => {
         if (tableId) {
             try {
@@ -320,6 +419,10 @@ function CustomTable<T extends { id: any }>({
         }
     }, [columnSizes, tableId])
 
+    useEffect(() => {
+        applyFilters()
+    }, [filtersState, applyFilters])
+
     const tagFilter = filters?.find(filter => filter.id === "tags")
 
     return (
@@ -329,7 +432,7 @@ function CustomTable<T extends { id: any }>({
             onDragEnd={handleDragEnd}
             sensors={sensors}
         >
-            <div className="flex flex-col gap-4 overflow-x-auto p-1">
+            <div className="flex flex-col gap-4 p-1">
                 <div className="flex items-center gap-4 mb-4">
                     {filters?.filter(x => x.id !== "tags").map((filter) => (
                         <filter.component
@@ -378,86 +481,91 @@ function CustomTable<T extends { id: any }>({
                         {...tagFilter.props}
                     />
                 </div>}
-                <div className="border rounded-md">
-                    <Table>
-                        <TableHeader>
-                            {memoizedHeaderGroups.map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {onToggleSelect && <TableHead className="w-12">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedRows?.length === data?.length}
-                                            onChange={onSelectAll}
-                                            className="rounded border-gray-300"
-                                        />
-                                    </TableHead>}
-                                    <SortableContext
-                                        items={columnOrder}
-                                        strategy={horizontalListSortingStrategy}
-                                    >
-                                        {headerGroup.headers.map((header) => (
-                                            <DraggableTableHeader key={header.id} header={header} />
-                                        ))}
-                                    </SortableContext>
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {memoizedRows.length ? memoizedRows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {onToggleSelect && <TableCell>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedRows?.includes(row.original.id)}
-                                            onChange={() => handleToggleSelect(row.original.id)}
-                                            className="rounded border-gray-300"
-                                        />
-                                    </TableCell>}
-                                    {row.getVisibleCells().map((cell) => (
+                <div className="border rounded-md overflow-x-auto">
+                    <div style={{ width: table.getCenterTotalSize() + (onEdit || onDelete ? 80 : 0) }}>
+                        <Table>
+                            <TableHeader>
+                                {memoizedHeaderGroups.map((headerGroup) => (
+                                    <TableRow key={headerGroup.id}>
+                                        {onToggleSelect && <TableHead className="w-12">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedRows?.length === data?.length}
+                                                onChange={onSelectAll}
+                                                className="rounded border-gray-300"
+                                            />
+                                        </TableHead>}
                                         <SortableContext
-                                            key={cell.id}
-                                            items={columnOrder}
+                                            items={columnOrder.filter(id => id !== 'action')}
                                             strategy={horizontalListSortingStrategy}
                                         >
-                                            <DragAlongCell key={cell.id} cell={cell} />
+                                            {headerGroup.headers.map((header) => (
+                                                <DraggableTableHeader key={header.id} header={header} table={table} />
+                                            ))}
                                         </SortableContext>
-                                    ))}
-                                    {(onEdit || onDelete) && (
-                                        <TableCell className="text-right min-w-[40px] max-w-[80px] w-[40px] overflow-hidden text-ellipsis whitespace-nowrap" >
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="sm">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    {onEdit && (
-                                                        <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
-                                                            <Pencil className="h-4 w-4 mr-2" /> Edit
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {onDelete && (
-                                                        <DropdownMenuItem
-                                                            className="text-red-500 focus:text-red-500"
-                                                            onClick={() => onDelete(row.original.id)}
-                                                        >
-                                                            <Trash className="h-4 w-4 mr-2" /> Delete
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                        {(onEdit || onDelete) && (
+                                            <TableHead className="w-[80px] min-w-[80px] max-w-[80px] p-0" />
+                                        )}
+                                    </TableRow>
+                                ))}
+                            </TableHeader>
+                            <TableBody>
+                                {memoizedRows.length ? memoizedRows.map((row) => (
+                                    <TableRow key={row.id}>
+                                        {onToggleSelect && <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedRows?.includes(row.original.id)}
+                                                onChange={() => handleToggleSelect(row.original.id)}
+                                                className="rounded border-gray-300"
+                                            />
+                                        </TableCell>}
+                                        {row.getVisibleCells().map((cell) => (
+                                            <SortableContext
+                                                key={cell.id}
+                                                items={columnOrder.filter(id => id !== 'action')}
+                                                strategy={horizontalListSortingStrategy}
+                                            >
+                                                <DragAlongCell key={cell.id} cell={cell} />
+                                            </SortableContext>
+                                        ))}
+                                        {(onEdit || onDelete) && (
+                                            <TableCell className="w-[80px] min-w-[80px] max-w-[80px] p-0">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="sm">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        {onEdit && (
+                                                            <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
+                                                                <Pencil className="h-4 w-4 mr-2" /> Edit
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {onDelete && (
+                                                            <DropdownMenuItem
+                                                                className="text-red-500 focus:text-red-500"
+                                                                onClick={() => onDelete(row.original.id)}
+                                                            >
+                                                                <Trash className="h-4 w-4 mr-2" /> Delete
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-8">
+                                            {placeholder || "No data found"}
                                         </TableCell>
-                                    )}
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8">
-                                        {placeholder || "No data found"}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </div>
                 {data?.length > pageSize &&<Pagination>
                     <PaginationContent>
