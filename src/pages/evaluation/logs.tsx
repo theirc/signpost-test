@@ -1,11 +1,12 @@
 import sampleLogs from "@/components/data/sample-logs"
 import { LogsTable } from "@/components/logs-table"
-import React, { useState } from "react"
+import { fetchBotLogs } from "@/lib/data/supabaseFunctions"
+import React, { useEffect, useState } from "react"
 
 
 export function BotLogsTable() {
-    const [logs, setLogs] = useState(sampleLogs)
-    const [selectedLogs, setSelectedLogs] = React.useState<string[]>([])
+    const [logs, setLogs] = useState([])
+    const [selectedLogs, setSelectedLogs] = useState<string[]>([])
 
     const handleDelete = (id: string) => {
         const newLogs = logs.filter(source => source.id !== id)
@@ -24,6 +25,17 @@ export function BotLogsTable() {
     const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSelectedLogs(event.target.checked ? logs.map(log => log.id) : [])
     }
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            const { data, error } = await fetchBotLogs()
+            if (error) {
+                console.error('Error fetching bot logs:', error)
+            }
+            setLogs(data)
+        }
+        fetchLogs()
+    },[])
 
     return (
         <div className="flex flex-col h-full">

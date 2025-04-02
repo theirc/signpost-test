@@ -218,6 +218,18 @@ export interface SystemPrompt {
   updated_at: string
 }
 
+export interface BotLog {
+  id: string
+  bot?: string
+  created_at?: string
+  detected_language?: string
+  detected_location?: string
+  search_term?: string
+  user_message?: string
+  answer?: string
+  category?: string
+}
+
 // =========== MODEL FUNCTIONS ===========
 
 /**
@@ -1649,5 +1661,86 @@ export async function getSystemPromptById(id: string): Promise<{
   } catch (error) {
     console.error('Error fetching system prompt:', error)
     return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+// =========== BOT LOG FUNCTIONS ===========
+
+export async function fetchBotLogs(): Promise<{
+  data: BotLog[],
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bot_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return { data: data || [], error: null }
+  } catch (error) {
+    console.error('Error fetching bot logs:', error)
+    return { data: [], error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function addBotLog(logData: Partial<BotLog>): Promise<{
+  data: BotLog | null,
+  error: Error | null
+}> {
+  try {
+    if (!logData.bot) {
+      throw new Error('Bot is required')
+    }
+
+    const { data, error } = await supabaseClient
+      .from('bot_logs')
+      .insert([logData])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding bot log:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function updateBotLog(id: string, logData: Partial<BotLog>): Promise<{
+  data: BotLog | null,
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bot:logs')
+      .update(logData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating bot log:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function deleteBotLog(id: string): Promise<{
+  success: boolean,
+  error: Error | null
+}> {
+  try {
+    const { error } = await supabaseClient
+      .from('bot_logs')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return { success: true, error: null }
+  } catch (error) {
+    console.error('Error deleting bot log:', error)
+    return { success: false, error: error instanceof Error ? error : new Error(String(error)) }
   }
 }
