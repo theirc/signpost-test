@@ -126,7 +126,7 @@ export function NodeHandlers({ worker }: { worker: AIWorker }) {
 
 function InternalNodeHandlers(props: { worker: AIWorker }) {
   const { worker } = props
-  const hs = Object.values(worker.handles)
+  const hs = Object.values(worker.handles).filter(h => !h.system)
   const handlers = hs
   return <div className="my-2">
     {handlers.map((h, i) => <WorkerLabeledHandle key={i} handler={h} />)}

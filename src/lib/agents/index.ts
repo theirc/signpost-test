@@ -17,8 +17,12 @@ declare global {
 }
 
 
+export const OpenAIModels = [
+  { value: "gpt-4", label: "GPT-4" },
+  { value: "gpt-3.5-turbo", label: "GPT-3.5" },
+]
 
-const update = (p: AgentParameters) => { }
+
 
 export function buildAgent(config: AgentConfig) {
 
@@ -60,6 +64,7 @@ export function buildAgent(config: AgentConfig) {
     reset() {
       for (const key in workers) {
         const w = workers[key]
+        w.executed = false
         for (const key in w.handles) {
           const h = w.handles[key]
           if (h.persistent) continue
@@ -74,7 +79,6 @@ export function buildAgent(config: AgentConfig) {
       p.output ||= {}
       p.input ||= {}
       p.output ||= {}
-      // p.update = p.update || update
       p.agent = agent
       console.log("Executing agent...")
       const worker = agent.getResponseWorker()

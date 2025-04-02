@@ -3,6 +3,7 @@ import { supabase } from "../db"
 import { createSupabaseModel } from "../model"
 import { workers } from "./workers"
 import { workerRegistry } from "@/lib/agents/registry"
+import { loadAgenttest } from "../../../../api/loadagent"
 
 declare global {
   type AgentConfig = Partial<typeof model.defaultValue>
@@ -77,7 +78,6 @@ async function saveAgent(agent: Agent) {
 async function loadAgent(id: number): Promise<Agent> {
 
   console.log("Loading agent: ", id)
-
 
   const { data } = await agents.data.select(`
     *,

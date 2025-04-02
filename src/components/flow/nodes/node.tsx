@@ -26,8 +26,9 @@ function ResizeIcon(props: SVGProps<SVGSVGElement>) {
 
 
 export function NodeLayout(props: Props) {
+
   return <WorkerContext.Provider value={{ worker: props.worker, onEdit: props.onEdit }}>
-    <div className={cn("shadow-md rounded-sm bg-white border border-stone-400 size-full pb-4 min-w-56 ", props.className)}>
+    <div className={cn("shadow-md rounded-sm bg-white border border-stone-400 size-full pb-4 min-w-[224px]", props.className)}>
       <NodeTitle />
       {props.resizable && <NodeResizeControl style={controlStyle} minWidth={props.minWidth || 224} minHeight={props.minHeight || 200} maxHeight={props.maxHeight} maxWidth={props.maxWidth} >
         <ResizeIcon className="-ml-4 -mt-4 text-gray-400" />

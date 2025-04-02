@@ -69,22 +69,23 @@ function Flow() {
 
 
   agent.update = () => {
+    // console.log("Flow Update, currentWorker: ", agent.currentWorker?.config.type || "null")
+    counter.current++
+    setNodes((nds) =>
+      nds.map((node) => {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            label: counter.current.toString(),
+          },
+        }
+      }),
+    )
     if (agent.currentWorker) {
-      counter.current++
-      setNodes((nds) =>
-        nds.map((node) => {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              label: counter.current.toString(),
-            },
-          }
-        }),
-      )
-      console.log(`Executing Worker: '${agent.currentWorker.config.type}' `, agent.currentWorker)
+      // console.log(`Executing Worker: '${agent.currentWorker.config.type}' `, agent.currentWorker)
     }
-    update()
+    // update()
   }
 
 

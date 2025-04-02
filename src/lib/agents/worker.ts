@@ -6,6 +6,7 @@ export const inputOutputTypes = {
   number: "Number",
   boolean: "Boolean",
   unknown: "Unknown",
+  // doc: "Documents",
   // chat: "Chat",
   // audio: "Audio",
   // image: "Image",
@@ -13,22 +14,22 @@ export const inputOutputTypes = {
   execute: "Execute",
 }
 
-type IOTypes = keyof typeof inputOutputTypes
 
 declare global {
 
   type AIWorker = ReturnType<typeof buildWorker>
 
   type WorkerHandles = { [index: string]: NodeIO }
+  type IOTypes = keyof typeof inputOutputTypes
 
   interface NodeIO {
     id?: string
     title?: string
     name: string
+    prompt?: string
     direction: "output" | "input"
     type: IOTypes
     system?: boolean
-    input?: any
     persistent?: boolean
     value?: any
   }
@@ -44,6 +45,7 @@ export function buildWorker(w: WorkerConfig) {
     config: w,
     lastUpdate: 0,
     registry: null as WorkerRegistryItem,
+    executed: false,
 
     get id() {
       return w.id
@@ -58,23 +60,45 @@ export function buildWorker(w: WorkerConfig) {
     fields,
 
     async execute(p: AgentParameters) {
-
-      //ToDo: Add executed flag to prevent double execution!
+      if (worker.executed) return
+      worker.executed = true
 
 
       await worker.getValues(p)
 
+      console.log("Worker - Executing: ", w.type)
+
       p.agent.currentWorker = worker
+      worker.updateWorker()
       p.agent.update()
 
       await worker.registry.execute(worker, p)
-      worker.updateWorker()
-
-
-      p.agent.currentWorker = null
       p.agent.update()
 
+      worker.updateWorker()
+      p.agent.currentWorker = null
+      p.agent.update()
     },
+
+    // async execute(p: AgentParameters) {
+    //   console.log("Worker - Setting currentWorker to: ", w.type)
+    //   p.agent.currentWorker = worker
+    //   worker.updateWorker()
+    //   p.agent.update()
+    //   if (!worker.executed) {
+    //     console.log("Worker - Executing: ", w.type)
+    //     await worker.getValues(p)
+    //     await worker.registry.execute(worker, p)
+    //     worker.executed = true
+    //     p.agent.update()
+    //   } else {
+    //     console.log(`Worker '${w.type}' already executed`)
+    //   }
+    //   worker.updateWorker()
+    //   console.log("Worker - Setting currentWorker to: ", null)
+    //   p.agent.currentWorker = null
+    //   p.agent.update()
+    // },
 
     async getValues(p: AgentParameters) {
       const connw = worker.getConnectedWokers()
@@ -160,6 +184,10 @@ export function buildWorker(w: WorkerConfig) {
     deleteHandler(id: string) {
       delete w.handles[id]
       worker.lastUpdate = Date.now().valueOf()
+    },
+
+    getUserHandlers() {
+      return Object.values(w.handles || {}).filter(h => !h.system)
     },
 
 
