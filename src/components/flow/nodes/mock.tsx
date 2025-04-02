@@ -40,7 +40,6 @@ export function MockNode(props: NodeProps) {
       </form.context>
     </div>
   } else {
-
     worker.fields.output.type = "unknown"
   }
 

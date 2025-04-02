@@ -15,10 +15,12 @@ export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
 
 
 
-export function AddFieldsForm(props: { includePrompt?: boolean, direction: "input" | "output" }) {
+export function AddFieldsForm(props: { includePrompt?: boolean, direction: "input" | "output", persist?: boolean }) {
 
   const ctx = useWorkerContext()
   const { worker } = ctx
+
+  // console.log("AddFieldsForm: ", worker.id, props.direction)
 
 
   const updateNodeInternals = useUpdateNodeInternals()
@@ -30,19 +32,18 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
   }
 
   form.onSubmit = data => {
-    if (data.id) {
-      worker.updateHandler(data.id, {
-        name: data.name,
-        type: data.type as any
-      })
-    } else {
-      worker.addHandler({
-        direction: props.direction,
-        type: data.type as any,
-        name: data.name,
-      })
+    const h: NodeIO = {
+      name: data.name,
+      type: data.type as any,
+      direction: props.direction,
+      persistent: props.persist,
+      prompt: props.includePrompt ? data.prompt : undefined,
     }
-    worker.updateWorker()
+    if (data.id) {
+      worker.updateHandler(data.id, h)
+    } else {
+      worker.addHandler(h)
+    }
     updateNodeInternals(worker.id)
     form.reset()
   }

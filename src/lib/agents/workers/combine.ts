@@ -4,6 +4,11 @@ type CombineMode = "concat" | "nonempty"
 
 declare global {
   interface CombineWorker extends AIWorker {
+    fields: {
+      input1: NodeIO
+      input2: NodeIO
+      result: NodeIO
+    }
     parameters: {
       mode?: CombineMode
     }

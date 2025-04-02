@@ -14,7 +14,7 @@ export function SchemaNode(props: NodeProps) {
   return <NodeLayout worker={worker}>
     <WorkerLabeledHandle handler={worker.fields.input} />
     <NodeHandlers worker={worker} />
-    <AddFieldsForm direction="output" />
+    <AddFieldsForm direction="output" includePrompt />
   </NodeLayout >
 }
 
