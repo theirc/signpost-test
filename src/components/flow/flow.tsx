@@ -21,6 +21,7 @@ import { CombineNode } from './nodes/combine'
 import { display } from '@/lib/agents/workers/display'
 import { DisplayNode } from './nodes/diisplay'
 import { MockNode } from './nodes/mock'
+import { ApiNode } from './nodes/api'
 import { useForceUpdate } from '@/lib/utils'
 
 const nodeTypes = {
@@ -35,6 +36,7 @@ const nodeTypes = {
   combine: CombineNode,
   display: DisplayNode,
   mock: MockNode,
+  api: ApiNode,
 }
 
 function Flow() {

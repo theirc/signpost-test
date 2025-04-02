@@ -1,4 +1,5 @@
 import { ai } from "./workers/ai"
+import { api } from "./workers/api"
 import { combine } from "./workers/combine"
 import { display } from "./workers/display"
 import { request } from "./workers/input"
@@ -36,4 +37,5 @@ export const workerRegistry = {
   combine,
   display,
   mock,
+  api,
 } satisfies { [index: string]: WorkerRegistryItem }
