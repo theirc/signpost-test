@@ -1,272 +1,239 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { FileInput } from "lucide-react";
-import { useForm } from "react-hook-form";
-import * as z from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState, useEffect } from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { fetchTeams, Team, Role, fetchRoles, fetchUserById, updateUser, addUser } from "@/lib/data/supabaseFunctions"
+import { Loader2 } from "lucide-react"
 
-const formSchema = z.object({
-    field1: z.string().min(2, {
-        message: "Field 1 must be at least 2 characters.",
-    }),
-    field2: z.string().min(2, {
-        message: "Field 2 must be at least 2 characters.",
-    }),
-    field3: z.string().min(2, {
-        message: "Field 3 must be at least 2 characters.",
-    }),
-    field4: z.string().min(2, {
-        message: "Field 4 must be at least 2 characters.",
-    }),
-    field5: z.string().min(2, {
-        message: "Field 5 must be at least 2 characters.",
-    }),
-    field6: z.string().min(2, {
-        message: "Field 6 must be at least 2 characters.",
-    }),
-    field7: z.string().min(2, {
-        message: "Field 7 must be at least 2 characters.",
-    }),
-    field8: z.string().min(2, {
-        message: "Field 8 must be at least 2 characters.",
-    }),
-    textArea: z.string().min(10, {
-        message: "Text area must be at least 10 characters.",
-    }),
-    avatar: z.any(),
-    language: z.string(),
-    notifications: z.boolean(),
-})
+export function UserForm() {
+    const navigate = useNavigate()
+    const { id } = useParams()
+    const [isLoading, setIsLoading] = useState(false)
+    const [isFetching, setIsFetching] = useState(false)
+    const [teams, setTeams] = useState<Team[]>([])
+    const [roles, setRoles] = useState<Role[]>([])
+    const [selectedTeam, setSelectedTeam] = useState<string>("")
+    const [selectedRole, setSelectedRole] = useState<string>("")
+    const [formData, setFormData] = useState({
+        first_name: "",
+        last_name: "",
+        email: "",
+        location: "",
+        title: "",
+        description: "",
+        status: "",
+    })
 
-export function Users() {
-    console.log('entra aca');
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            field1: "",
-            field2: "",
-            field3: "",
-            field4: "",
-            field5: "",
-            field6: "",
-            field7: "",
-            field8: "",
-            textArea: "",
-            avatar: null,
-        },
-    });
+    useEffect(() => {
+        const loadData = async () => {
+            setIsFetching(true)
+            const [teamsResponse, rolesResponse] = await Promise.all(
+                [fetchTeams(), fetchRoles()]
+            )
 
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values);
+            if (teamsResponse.error) {
+                console.error("Error loading tams:", teamsResponse.error)
+            } else {
+                setTeams(teamsResponse.data)
+            }
+
+            if (rolesResponse.error) {
+                console.error("Error loading roles:", rolesResponse.error)
+            } else {
+                setRoles(rolesResponse.data)
+            }
+
+            if (id && id !== "new") {
+                const { data: user, error } = await fetchUserById(id)
+                if (error) {
+                    console.error("Error loading user:", error)
+                } else if (user) {
+                    setSelectedTeam(user.team)
+                    setSelectedRole(user.role)
+                    setFormData({
+                        first_name: user.first_name ,
+                        last_name: user.last_name,
+                        email: user.email ,
+                        location: user.location,
+                        title: user.title,
+                        description: user.description,
+                        status: user.status ,
+                    })
+                } else {
+                    console.log("No user found with ID:", id)
+                }
+            }
+            setIsFetching(false)
+        }
+        loadData()
+    }, [id])
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsLoading(true)
+
+        try {
+            if (id && id !== "new") {
+                const { error } = await updateUser(id, {
+                    ...formData,
+                    team: selectedTeam,
+                    role: selectedRole
+                })
+                if (error) throw error
+            } else {
+                const { error } = await addUser({
+                    ...formData,
+                    team: selectedTeam,
+                    role: selectedRole,
+                })
+                if (error) throw error
+            }
+            navigate("/settings/teams")
+        } catch (error) {
+            console.error("Error saving user:", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    if (isFetching) {
+        return (
+            <div className="container mx-auto py-8">
+                <div className="max-w-2xl mx-auto flex items-center justify-center h-[50vh]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            </div>
+        )
     }
 
     return (
-        <div className="p-8">
-            <div className="flex flex-col justify-center">
-                <Card className="w-[350px]">
-                    <CardHeader>
-                        <CardTitle>Test Name</CardTitle>
-                        <CardDescription>@ test.name@rescue.org</CardDescription>
-                        <Badge className="w-max">Site Admin</Badge>
-                    </CardHeader>
-                </Card>
-                <div className="py-4">
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="field1"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>First Name</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="First Name" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="field2"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Last Name</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Last Name" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+        <div className="container mx-auto py-8">
+            <div className="max-w-2xl mx-auto">
+                <h1 className="text-2xl font-bold mb-6">{id && id !== "new" ? "Edit Score" : "Add New Score"}</h1>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="first_name">First Name</Label>
+                        <Input
+                            id="first_name"
+                            value={formData.first_name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="last_name">Last Name</Label>
+                        <Input
+                            id="last_name"
+                            value={formData.last_name}
+                            onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                            required
+                        />
+                    </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="field3"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Email" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="field4"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Password</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                            id="email"
+                            value={formData.email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                            required
+                        />
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <Label htmlFor="team">Team</Label>
+                        <Select
+                            value={selectedTeam}
+                            onValueChange={setSelectedTeam}
+                            required
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {teams.map((team) => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                        {team.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                            <FormField
-                                control={form.control}
-                                name="avatar"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2">
-                                        <FormLabel>Avatar</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                id="avatar"
-                                                type="file"
-                                                className="cursor-pointer"
-                                                accept=".pdf,.docx,.txt,.md,.csv"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                    <div className="space-y-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Select
+                            value={selectedRole}
+                            onValueChange={setSelectedRole}
+                            required
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {roles.map((role) => (
+                                    <SelectItem key={role.id} value={role.id}>
+                                        {role.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="field5"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Location</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Location" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="field6"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Title</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Title" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <FormField
-                                control={form.control}
-                                name="textArea"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2">
-                                        <FormLabel>Description</FormLabel>
-                                        <FormControl>
-                                            <Textarea placeholder="Enter your text here." {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="field8"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tags</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Tags" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                    <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Input
+                            id="description"
+                            value={formData.description}
+                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            required
+                        />
+                    </div>
 
-                            <h1 className="font-bold">User Preferences</h1>
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="language"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Language</FormLabel>
-                                            <FormControl>
-                                                <Select>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a language" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="en">English</SelectItem>
-                                                        <SelectItem value="es">Spanish</SelectItem>
-                                                        <SelectItem value="fr">French</SelectItem>
-                                                        <SelectItem value="de">German</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="notifications"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Email Notifications</FormLabel>
-                                            <FormControl>
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id="notifications"
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                    <label
-                                                        htmlFor="notifications"
-                                                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                                    >
-                                                        Enabled
-                                                    </label>
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <Button type="submit">Submit</Button>
-                        </form>
-                    </Form>
-                </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Input
+                            id="status"
+                            value={formData.status}
+                            onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="location">Location</Label>
+                        <Input
+                            id="location"
+                            value={formData.location}
+                            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Title</Label>
+                        <Input
+                            id="title"
+                            value={formData.title}
+                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        />
+                    </div>
+
+                    <div className="flex justify-end space-x-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate("/settings/teams")}
+                            disabled={isLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? "Saving..." : (id && id !== "new" ? "Update" : "Create")}
+                        </Button>
+                    </div>
+                </form>
             </div>
         </div>
     )
-}
+} 

@@ -4,35 +4,48 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { fetchTeamById, updateTeam, addTeam } from "@/lib/data/supabaseFunctions"
+import { fetchTeams, Team, fetchProjectById, updateProject, addProject } from "@/lib/data/supabaseFunctions"
 import { Loader2 } from "lucide-react"
 
-export function TeamForm() {
+export function ProjectForm() {
     const navigate = useNavigate()
     const { id } = useParams()
     const [isLoading, setIsLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
+    const [teams, setTeams] = useState<Team[]>([])
+    const [selectedTeam, setSelectedTeam] = useState<string>("")
     const [formData, setFormData] = useState({
         name: "",
         description: "",
+        team: "",
         status: "",
     })
 
     useEffect(() => {
         const loadData = async () => {
             setIsFetching(true)
+            const teamsResponse = await fetchTeams()
+
+            if (teamsResponse.error) {
+                console.error("Error loading tams:", teamsResponse.error)
+            } else {
+                setTeams(teamsResponse.data)
+            }
+
             if (id && id !== "new") {
-                const { data: team, error } = await fetchTeamById(id)
+                const { data: project, error } = await fetchProjectById(id)
                 if (error) {
-                    console.error("Error loading team:", error)
-                } else if (team) {
+                    console.error("Error loading project:", error)
+                } else if (project) {
+                    setSelectedTeam(project.team || "")
                     setFormData({
-                        name: team.name,
-                        description: team.description,
-                        status: team.status,
+                        name: project.name,
+                        description: project.description,
+                        status: project.status,
+                        team: project.team
                     })
                 } else {
-                    console.log("No team found with ID:", id)
+                    console.log("No project found with ID:", id)
                 }
             }
             setIsFetching(false)
@@ -46,19 +59,21 @@ export function TeamForm() {
 
         try {
             if (id && id !== "new") {
-                const { error } = await updateTeam(id, {
-                    ...formData
+                const { error } = await updateProject(id, {
+                    ...formData,
+                    team: selectedTeam
                 })
                 if (error) throw error
             } else {
-                const { error } = await addTeam({
-                    ...formData
+                const { error } = await addProject({
+                    ...formData,
+                    team: selectedTeam
                 })
                 if (error) throw error
             }
-            navigate("/settings/teams")
+            navigate("/settings/projects")
         } catch (error) {
-            console.error("Error saving team:", error)
+            console.error("Error saving project:", error)
         } finally {
             setIsLoading(false)
         }
@@ -90,6 +105,26 @@ export function TeamForm() {
                     </div>
 
                     <div className="space-y-2">
+                        <Label htmlFor="team">Team</Label>
+                        <Select
+                            value={selectedTeam}
+                            onValueChange={setSelectedTeam}
+                            required
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {teams.map((team) => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                        {team.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
                         <Input
                             id="description"
@@ -112,7 +147,7 @@ export function TeamForm() {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => navigate("/settings/teams")}
+                            onClick={() => navigate("/settings/projects")}
                             disabled={isLoading}
                         >
                             Cancel

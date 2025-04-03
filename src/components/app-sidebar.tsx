@@ -52,7 +52,7 @@ export function AppSidebar() {
         icon: Settings2,
         items: [
           { title: "Projects", url: "/settings/projects" },
-          { title: "Team", url: "/settings/team" },
+          { title: "Team", url: "/settings/teams" },
           { title: "Billing", url: "/settings/billing" },
           { title: "Usage", url: "/settings/usage" },
           { title: "Access Control", url: "/settings/roles" },
