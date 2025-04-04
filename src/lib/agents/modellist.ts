@@ -10,6 +10,17 @@ type OpenAIChatModelId =
   'gpt-4.5-preview' |
   'gpt-3.5-turbo'
 
+type AnthropicMessagesModelId =
+  'claude-3-5-sonnet-latest' |
+  'claude-3-5-haiku-latest' |
+  'claude-3-opus-latest'
+
+
+declare global {
+  type ModelProviders = "openai" | "anthropic" | "google" | "deepseek" | "groq" | "xai"
+}
+
+
 export const OpenAIModels = [
   { value: "openai/o1", label: "OpenAi - o1" },
   { value: "openai/o1-mini", label: "OpenAI - o1-mini" },
@@ -21,5 +32,16 @@ export const OpenAIModels = [
   { value: "openai/gpt-4", label: "OpenAI - gpt-4" },
   { value: "openai/gpt-4.5-preview", label: "OpenAI - gpt-4.5-preview " },
   { value: "openai/gpt-3.5-turbo", label: "OpenAI - gpt-3.5-turbo" },
+]
+
+export const ClaudeModels = [
+  { value: "anthropic/claude-3-5-sonnet-latest", label: "Claude 3.5 Sonnet" },
+  { value: "anthropic/claude-3-5-haiku-latest", label: "Claude 3.5 Haiku" },
+  { value: "anthropic/claude-3-opus-latest", label: "Claude 3 Opus" },
+]
+
+export const AllAIModels = [
+  ...OpenAIModels,
+  ...ClaudeModels,
 ]
 

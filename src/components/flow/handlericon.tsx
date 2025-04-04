@@ -1,6 +1,6 @@
 import { app } from "@/lib/app"
 import { Connection, Handle, HandleProps, Position, useNodeConnections } from "@xyflow/react"
-import { Binary, CircleHelp, Hash, Headphones, Image, MessageCircleMore, Type, Video } from "lucide-react"
+import { Binary, BookMarked, CircleHelp, File, Hash, Headphones, Image, Link, MessageCircleMore, Type, Video } from "lucide-react"
 import React, { useContext } from "react"
 import { MemoizedWorker } from "./memoizedworkers"
 import { cn } from "@/lib/utils"
@@ -22,6 +22,8 @@ export function HanlderIcon({ handler, worker }: { handler: NodeIO, worker: AIWo
     {type == "number" && <Hash size={iconSize} className="mt-[8px]" />}
     {type == "boolean" && <Binary size={iconSize} className="mt-[8px]" />}
     {type == "unknown" && <CircleHelp size={iconSize} className="mt-[8px]" />}
+    {type == "doc" && <File size={iconSize} className="mt-[8px]" />}
+    {type == "references" && <Link size={iconSize} className="mt-[8px]" />}
 
     {/* {type == "chat" && <MessageCircleMore size={iconSize} className="mt-[8px]" />} */}
     {/* {type == "audio" && <Headphones size={iconSize} className="mt-[8px]" />} */}

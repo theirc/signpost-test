@@ -6,7 +6,8 @@ export const inputOutputTypes = {
   number: "Number",
   boolean: "Boolean",
   unknown: "Unknown",
-  // doc: "Documents",
+  doc: "Documents",
+  references: "References",
   // chat: "Chat",
   // audio: "Audio",
   // image: "Image",
@@ -55,7 +56,7 @@ export function buildWorker(w: WorkerConfig) {
       return w.handles
     },
 
-    parameters: {},
+    parameters: w.parameters as any || {},
     values: {},
     fields,
 

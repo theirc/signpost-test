@@ -3,6 +3,8 @@ import { supabase } from "../db"
 import { createSupabaseModel } from "../model"
 import { workers } from "./workers"
 import { workerRegistry } from "@/lib/agents/registry"
+// import { synced } from "../../agents/synced/synced"
+// import axios from "axios"
 
 declare global {
   type AgentConfig = Partial<typeof model.defaultValue>
@@ -22,33 +24,35 @@ const model: SupabaseModel<"agents"> = {
     title: { title: "Title", type: "string" },
     created_at: { title: "Created At", type: "string" },
     edges: { title: "Edges", type: "json", hidden: true },
+    workers: { title: "Workers", type: "json", hidden: true },
   },
 }
 
 
 async function saveAgent(agent: Agent) {
 
-  const { data: existingWorkers, error } = await workers.data.select()
-  const existingWorkerbyKey = existingWorkers?.reduce((a, b) => ({ ...a, [b.id]: true }), {})
+  // const { data: existingWorkers, error } = await workers.data.select()
+  // const existingWorkerbyKey = existingWorkers?.reduce((a, b) => ({ ...a, [b.id]: true }), {})
 
   const agentData: AgentConfig = {
     title: agent.title,
     edges: agent.edges
   }
+  const workerlist = []
 
-  if (agent.id) {
-    await agents.data.update(agentData).eq("id", agent.id)
-  } else {
-    const { data } = await agents.data.insert(agentData).select()
-    agent.id = data[0].id
-  }
+  // if (agent.id) {
+  //   await agents.data.update(agentData).eq("id", agent.id)
+  // } else {
+  //   const { data } = await agents.data.insert(agentData).select()
+  //   agent.id = data[0].id
+  // }
 
-  for (const key in existingWorkerbyKey) {
-    if (!agent.workers[key]) {
-      console.log("delete worker: ", key)
-      await workers.data.delete().eq("id", key)
-    }
-  }
+  // for (const key in existingWorkerbyKey) {
+  //   if (!agent.workers[key]) {
+  //     console.log("delete worker: ", key)
+  //     await workers.data.delete().eq("id", key)
+  //   }
+  // }
 
   for (const key in agent.workers) {
     const w = agent.workers[key].config
@@ -67,10 +71,25 @@ async function saveAgent(agent: Agent) {
       wc.handles[key] = h
     }
 
+    workerlist.push(wc)
 
-    await workers.data.upsert(wc as any)
+    // await workers.data.upsert(wc as any)
 
   }
+
+  agentData.workers = workerlist
+
+
+  if (agent.id) {
+    await agents.data.update(agentData).eq("id", agent.id)
+  } else {
+    const { data } = await agents.data.insert(agentData).select()
+    agent.id = data[0].id
+  }
+
+
+  console.log(workerlist)
+
 
 }
 
@@ -78,23 +97,16 @@ async function loadAgent(id: number): Promise<Agent> {
 
   console.log("Loading agent: ", id)
 
-  const { data } = await agents.data.select(`
-    *,
-    workers (
-      *
-    )
-  `).eq("id", id).single()
+  const { data } = await agents.data.select("*").eq("id", id).single()
 
-  let { workers, ...agentdata } = data
+  const workers: WorkerConfig[] = (data.workers || []) as any
 
-  const agent = buildAgent(agentdata)
+  const agent = buildAgent(data)
 
-  workers = workers || []
 
   for (const w of workers) {
     const { handles, agent: agentId, created_at, ...rest } = w
 
-    // const wrk = agent.addWorker(rest as WorkerConfig)
     const factory = (workerRegistry[w.type] as WorkerRegistryItem)
     if (!factory) continue
     const wrk = factory.create(agent)
@@ -128,6 +140,59 @@ async function loadAgent(id: number): Promise<Agent> {
 
 
   return agent
+
+
+  // console.log("Loading agent: ", id)
+
+  // const { data } = await agents.data.select(`
+  //   *,
+  //   workers (
+  //     *
+  //   )
+  // `).eq("id", id).single()
+
+  // let { workers, ...agentdata } = data
+
+  // const agent = buildAgent(agentdata)
+
+  // workers = workers || []
+
+  // for (const w of workers) {
+  //   const { handles, agent: agentId, created_at, ...rest } = w
+
+  //   const factory = (workerRegistry[w.type] as WorkerRegistryItem)
+  //   if (!factory) continue
+  //   const wrk = factory.create(agent)
+  //   Object.assign(wrk.config, rest)
+
+  //   wrk.parameters = w.parameters || {}
+
+  //   for (const key in (handles as unknown as WorkerHandles)) {
+  //     const h = handles[key] as NodeIO
+  //     const existingHandler = wrk.fields[h.name]
+  //     if (existingHandler) {
+  //       existingHandler.id = h.id
+  //       if (h.persistent) existingHandler.value = h.value
+  //       continue
+  //     }
+  //     wrk.addHandler(h)
+  //   }
+
+  //   for (const key in wrk.handles) {
+  //     const h = wrk.handles[key]
+  //     delete wrk.handles[key]
+  //     wrk.handles[h.id] = h
+  //   }
+  // }
+
+  // for (const key in agent.workers) {
+  //   const ew = agent.workers[key]
+  //   delete agent.workers[key]
+  //   agent.workers[ew.config.id] = ew
+  // }
+
+
+  // return agent
 }
 
 

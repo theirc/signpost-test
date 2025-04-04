@@ -40,18 +40,21 @@ export type Database = {
           edges: Json | null
           id: number
           title: string | null
+          workers: Json | null
         }
         Insert: {
           created_at?: string
           edges?: Json | null
           id?: number
           title?: string | null
+          workers?: Json | null
         }
         Update: {
           created_at?: string
           edges?: Json | null
           id?: number
           title?: string | null
+          workers?: Json | null
         }
         Relationships: []
       }
@@ -90,35 +93,200 @@ export type Database = {
           },
         ]
       }
-      bots: {
+      bot_logs: {
         Row: {
-          collection: string | null
+          answer: string | null
+          bot: string | null
+          category: string | null
+          created_at: string
+          detected_language: string | null
+          detected_location: string | null
+          id: string
+          search_term: string | null
+          user_message: string | null
+        }
+        Insert: {
+          answer?: string | null
+          bot?: string | null
+          category?: string | null
+          created_at?: string
+          detected_language?: string | null
+          detected_location?: string | null
+          id?: string
+          search_term?: string | null
+          user_message?: string | null
+        }
+        Update: {
+          answer?: string | null
+          bot?: string | null
+          category?: string | null
+          created_at?: string
+          detected_language?: string | null
+          detected_location?: string | null
+          id?: string
+          search_term?: string | null
+          user_message?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_logs_bot_fkey"
+            columns: ["bot"]
+            isOneToOne: false
+            referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_logs_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_scores: {
+        Row: {
+          answer: string | null
+          bot: string | null
+          category: string | null
+          created_at: string
+          id: string
+          message: string | null
+          question: string | null
+          reporter: string | null
+          score: string | null
+        }
+        Insert: {
+          answer?: string | null
+          bot?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          question?: string | null
+          reporter?: string | null
+          score?: string | null
+        }
+        Update: {
+          answer?: string | null
+          bot?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          question?: string | null
+          reporter?: string | null
+          score?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_scores_bot_fkey"
+            columns: ["bot"]
+            isOneToOne: false
+            referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_scores_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bot_system_prompts: {
+        Row: {
+          bot_id: string
           created_at: string | null
           id: string
+          position: number | null
+          system_prompt_id: string
+        }
+        Insert: {
+          bot_id: string
+          created_at?: string | null
+          id?: string
+          position?: number | null
+          system_prompt_id: string
+        }
+        Update: {
+          bot_id?: string
+          created_at?: string | null
+          id?: string
+          position?: number | null
+          system_prompt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bot_system_prompts_bot_id_fkey"
+            columns: ["bot_id"]
+            isOneToOne: false
+            referencedRelation: "bots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bot_system_prompts_system_prompt_id_fkey"
+            columns: ["system_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "system_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bots: {
+        Row: {
+          active: boolean | null
+          collection: string | null
+          created_at: string | null
+          creator: string | null
+          id: string
+          knowledge_collections: Json | null
+          knowledge_sources: Json | null
+          last_run: string | null
+          memory: boolean | null
           model: string
           name: string
           system_prompt: string | null
+          system_prompt_id: string | null
           temperature: number | null
+          translate_to_user_language: boolean | null
           updated_at: string | null
         }
         Insert: {
+          active?: boolean | null
           collection?: string | null
           created_at?: string | null
+          creator?: string | null
           id?: string
+          knowledge_collections?: Json | null
+          knowledge_sources?: Json | null
+          last_run?: string | null
+          memory?: boolean | null
           model: string
           name: string
           system_prompt?: string | null
+          system_prompt_id?: string | null
           temperature?: number | null
+          translate_to_user_language?: boolean | null
           updated_at?: string | null
         }
         Update: {
+          active?: boolean | null
           collection?: string | null
           created_at?: string | null
+          creator?: string | null
           id?: string
+          knowledge_collections?: Json | null
+          knowledge_sources?: Json | null
+          last_run?: string | null
+          memory?: boolean | null
           model?: string
           name?: string
           system_prompt?: string | null
+          system_prompt_id?: string | null
           temperature?: number | null
+          translate_to_user_language?: boolean | null
           updated_at?: string | null
         }
         Relationships: [
@@ -127,6 +295,13 @@ export type Database = {
             columns: ["collection"]
             isOneToOne: false
             referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bots_system_prompt_id_fkey"
+            columns: ["system_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "system_prompts"
             referencedColumns: ["id"]
           },
           {
@@ -196,6 +371,7 @@ export type Database = {
           metadata: Json | null
           source_config_id: string
           status: string
+          vector: string | null
           version: string
         }
         Insert: {
@@ -207,6 +383,7 @@ export type Database = {
           metadata?: Json | null
           source_config_id: string
           status?: string
+          vector?: string | null
           version?: string
         }
         Update: {
@@ -218,6 +395,7 @@ export type Database = {
           metadata?: Json | null
           source_config_id?: string
           status?: string
+          vector?: string | null
           version?: string
         }
         Relationships: [
@@ -251,6 +429,86 @@ export type Database = {
           model_id?: string
           name?: string
           provider?: string | null
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string | null
+          status: string | null
+          team: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+          team?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+          team?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_team_fkey"
+            columns: ["team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+        }
+        Relationships: []
+      }
+      service_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string | null
+          translations: Json[] | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          translations?: Json[] | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          translations?: Json[] | null
         }
         Relationships: []
       }
@@ -325,6 +583,7 @@ export type Database = {
           name: string
           tags: string[] | null
           type: string | null
+          vector: string | null
         }
         Insert: {
           content?: string | null
@@ -334,6 +593,7 @@ export type Database = {
           name: string
           tags?: string[] | null
           type?: string | null
+          vector?: string | null
         }
         Update: {
           content?: string | null
@@ -343,6 +603,40 @@ export type Database = {
           name?: string
           tags?: string[] | null
           type?: string | null
+          vector?: string | null
+        }
+        Relationships: []
+      }
+      system_prompts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          language: string | null
+          name: string
+          status: string | null
+          updated_at: string | null
+          version: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          version?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          version?: string | null
         }
         Relationships: []
       }
@@ -360,6 +654,93 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string
+          description: string | null
+          email: string | null
+          first_name: string | null
+          id: string
+          language: Json | null
+          last_name: string | null
+          location: string | null
+          password: string | null
+          role: string | null
+          status: string | null
+          team: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          language?: Json | null
+          last_name?: string | null
+          location?: string | null
+          password?: string | null
+          role?: string | null
+          status?: string | null
+          team?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          first_name?: string | null
+          id?: string
+          language?: Json | null
+          last_name?: string | null
+          location?: string | null
+          password?: string | null
+          role?: string | null
+          status?: string | null
+          team?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_role_fkey"
+            columns: ["role"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "users_team_fkey"
+            columns: ["team"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workers: {
         Row: {
@@ -407,7 +788,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_collections: {
+        Args: {
+          query_embedding: string
+          match_threshold: number
+          match_count: number
+        }
+        Returns: {
+          id: string
+          name: string
+          created_at: string
+          similarity: number
+        }[]
+      }
+      match_documents: {
+        Args: {
+          query_text: string
+        }
+        Returns: {
+          id: string
+          content: string
+          name: string
+          similarity: number
+          source_type: string
+        }[]
+      }
+      similarity_search: {
+        Args: {
+          query_vector: string
+        }
+        Returns: {
+          id: string
+          content: string
+          similarity: number
+          source_type: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

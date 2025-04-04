@@ -22,6 +22,7 @@ import { display } from '@/lib/agents/workers/display'
 import { DisplayNode } from './nodes/diisplay'
 import { MockNode } from './nodes/mock'
 import { useForceUpdate } from '@/lib/utils'
+import { SearchNode } from './nodes/search'
 
 const nodeTypes = {
   request: RequestNode,
@@ -35,6 +36,7 @@ const nodeTypes = {
   combine: CombineNode,
   display: DisplayNode,
   mock: MockNode,
+  search: SearchNode,
 }
 
 function Flow() {
