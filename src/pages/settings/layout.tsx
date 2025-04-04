@@ -18,7 +18,7 @@ export function SettingsLayout() {
             <TabsTrigger value="projects" onClick={() => navigate("/settings/projects")}>
               Projects
             </TabsTrigger>
-            <TabsTrigger value="team" onClick={() => navigate("/settings/team")}>
+            <TabsTrigger value="teams" onClick={() => navigate("/settings/teams")}>
               Team
             </TabsTrigger>
             <TabsTrigger value="billing" onClick={() => navigate("/settings/billing")}>

@@ -12,15 +12,19 @@ import SystemPrompts from "./pages/bots/prompts"
 import Sources from './pages/sources.tsx'
 import { SettingsLayout } from "./pages/settings/layout"
 import { ProjectsSettings } from "./pages/settings/projects"
-import { TeamSettings } from "./pages/settings/team"
+import { TeamSettings } from "./pages/settings/teams.tsx"
 import { UsageSettings } from "./pages/settings/usage"
 import { BillingSettings } from "./pages/settings/billing"
-import { Users } from "./pages/settings/users"
 import { AccessControlSettings } from "./pages/settings/access-control"
 import { Roles } from "./pages/settings/roles"
 import { AgentList } from "./pages/flow/agents.tsx"
 import { Agent } from "./pages/flow/agent.tsx"
 import { BotScoresTable } from "./pages/evaluation/scores.tsx"
+import { LogForm } from "./pages/evaluation/log.tsx"
+import { ScoreForm } from "./pages/evaluation/score.tsx"
+import { ProjectForm } from "./pages/settings/project.tsx"
+import { TeamForm } from "./pages/settings/team.tsx"
+import { UserForm } from "./pages/settings/users.tsx"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -32,7 +36,7 @@ const routeNames: Record<string, string> = {
   '/bots': 'Bots',
   '/bots/prompts': 'System Prompts',
   '/settings/projects': 'Settings / Projects',
-  '/settings/team': 'Settings / Team',
+  '/settings/teams': 'Settings / Teams',
   '/settings/billing': 'Settings / Billing',
   '/settings/usage': 'Settings / Usage',
   '/settings/roles': 'Settings / Access Control'
@@ -83,17 +87,21 @@ function AppContent() {
             <Route path="/rag" element={<CollectionsManagement />} />
             <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
+            <Route path="/logs/:id" element={<LogForm />} />
             <Route path="/scores" element={<BotScoresTable />} />
+            <Route path="/scores/:id" element={<ScoreForm />} />
             <Route path="/bots" element={<BotManagement />} />
             <Route path="/bots/prompts" element={<SystemPrompts />} />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route path="projects" element={<ProjectsSettings />} />
-              <Route path="team" element={<TeamSettings />} />
+              <Route path="teams" element={<TeamSettings />} />
               <Route path="billing" element={<BillingSettings />} />
               <Route path="usage" element={<UsageSettings />} />
               <Route path="roles" element={<AccessControlSettings />} />
             </Route>
-            <Route path="/settings/team/users/:id" element={<Users />} />
+            <Route path="/settings/projects/:id" element={<ProjectForm />} />
+            <Route path="/settings/teams/:id" element={<TeamForm />} />
+            <Route path="/settings/teams/users/:id" element={<UserForm />} />
             <Route path="/settings/roles/:id" element={<Roles />} />
             <Route path="/agent/:id" element={<Agent />} />
           </Routes>

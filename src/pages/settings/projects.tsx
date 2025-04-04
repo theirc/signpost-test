@@ -2,9 +2,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import CustomTable from "@/components/ui/custom-table"
+import { deleteProject, fetchProjects } from "@/lib/data/supabaseFunctions"
+import { useNavigate } from "react-router-dom"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { format } from "date-fns"
 
 interface Project {
   id: string
@@ -21,59 +25,50 @@ interface Team {
 }
 
 export function ProjectsSettings() {
-  const [teams] = useState<Team[]>([
-    { id: "1", name: "Emergency Response Team", members: 5 },
-    { id: "2", name: "Refugee Support Team", members: 3 },
-    { id: "3", name: "Medical Aid Team", members: 4 }
-  ])
+  const navigate = useNavigate()
+  const [projects, setProjects] = useState<Project[]>([])
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
 
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: "1",
-      name: "Syria Crisis Response",
-      createdAt: "2024-01-01",
-      teamId: "1",
-      status: "active"
-    },
-    {
-      id: "2",
-      name: "Mediterranean Rescue Operations",
-      createdAt: "2024-02-15",
-      teamId: "2",
-      status: "active"
-    },
-    {
-      id: "3",
-      name: "Gaza Medical Support",
-      createdAt: "2024-03-01",
-      teamId: "3",
-      status: "active"
-    },
-    {
-      id: "4",
-      name: "Ukraine Aid Coordination",
-      createdAt: "2024-02-01",
-      teamId: "1",
-      status: "active"
+  const fetchProject = async () => {
+    const { data, error } = await fetchProjects()
+    if (error) {
+      console.error('Error fetching projects:', error)
     }
-  ])
-
-  const getTeamName = (teamId: string) => {
-    return teams.find(team => team.id === teamId)?.name || 'Unassigned'
+    const formattedProjects = data.map(project => ({
+      ...project,
+      created_at: project.created_at || new Date().toISOString()
+    }))
+    setProjects(formattedProjects)
   }
 
-  const projectData = projects.map(project => ({
-    id: project.id,
-    name: project.name,
-    team: getTeamName(project.teamId),
-    createdAt: new Date(project.createdAt).toLocaleDateString(),
-    status: project.status
-  }))
+  const handleDelete = async (id: string) => {
+    setProjectToDelete(id)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!projectToDelete) return
+
+    const { error } = await deleteProject(projectToDelete)
+    if (error) {
+      console.error('Error deleting log:', error)
+    } else {
+      await fetchProject()
+    }
+    setIsDeleteDialogOpen(false)
+    setProjectToDelete(null)
+  }
+
+  const handleEdit = (id: string) => {
+    navigate(`/settings/projects/${id}`)
+  }
+
 
   const columns: ColumnDef<any>[] = [
     { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-    { id: "team", enableResizing: true, enableHiding: true, accessorKey: "team", header: "Team", enableSorting: false, cell: (info) => info.getValue() },
-    { id: "createdAt", enableResizing: true, enableHiding: true, accessorKey: "createdAt", header: "Created", enableSorting: false, cell: (info) => info.getValue() },
+    { id: "description", enableResizing: true, enableHiding: true, accessorKey: "description", header: "Team", enableSorting: false, cell: (info) => info.getValue() },
+    { id: "created_at", enableResizing: true, enableHiding: true, accessorKey: "created_at", header: "Created", enableSorting: false, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
     {
       id: "status", enableResizing: true, enableHiding: true, accessorKey: "status", header: "Status", enableSorting: true, cell: ({ row }) => (
         <span className={`capitalize ${row.original.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}>
@@ -83,49 +78,46 @@ export function ProjectsSettings() {
     },
   ]
 
+  useEffect(() => {
+    fetchProject()
+  }, [])
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium">Projects</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your organization's projects and team assignments
-          </p>
+    <div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-medium">Projects</h3>
+            <p className="text-sm text-muted-foreground">
+              Manage your organization's projects and team assignments
+            </p>
+          </div>
+          <Button onClick={() => navigate("/settings/projects/new")}>Create Project</Button>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>Create Project</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <label htmlFor="name">Project Name</label>
-                <Input id="name" placeholder="Enter project name" />
-              </div>
-              <div className="space-y-2">
-                <label>Assigned Team</label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button>Create Project</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <CustomTable
+          tableId="projects-table"
+          columns={columns as any}
+          data={projects}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          placeholder="No projects found" />
       </div>
-      <CustomTable tableId="projects-table" columns={columns as any} data={projectData} placeholder="No projects found" />
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is irreversible. This will permanently delete the project.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 } 
