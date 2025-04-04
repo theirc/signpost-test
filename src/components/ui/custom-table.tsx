@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors, } from "@dnd-kit/core"
 import { restrictToHorizontalAxis } from "@dnd-kit/modifiers"
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable, } from "@dnd-kit/sortable"
+import { parseISO } from "date-fns"
 
 interface FilterComponentProps<T> {
     data: T[]
@@ -17,7 +18,7 @@ interface FilterComponentProps<T> {
 export type FilterValueType = string | (string | number)[]
 
 type FilterDefinition<T> = {
-    id: string
+    id?: string
     label: string
     component: React.ComponentType<FilterComponentProps<T>>
     props: any
@@ -44,17 +45,14 @@ const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>,
     const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({ id: header.column.id })
 
     const handleDoubleClick = () => {
-        // Get all cells in this column
         const cells = table.getRowModel().rows.map(row => {
             const cell = row.getVisibleCells().find(cell => cell.column.id === header.column.id)
             if (!cell) return null
             return cell.getValue()
         })
 
-        // Get the header content
         const headerContent = flexRender(header.column.columnDef.header, header.getContext())
 
-        // Create temporary elements to measure text width
         const tempDiv = document.createElement('div')
         tempDiv.style.position = 'absolute'
         tempDiv.style.visibility = 'hidden'
@@ -62,33 +60,26 @@ const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>,
         tempDiv.style.font = window.getComputedStyle(document.body).font
         document.body.appendChild(tempDiv)
 
-        // Measure header width
         tempDiv.textContent = headerContent as string
         const headerWidth = tempDiv.offsetWidth
 
-        // Measure all cell widths
         const cellWidths = cells.map(cell => {
             if (!cell) return 0
             tempDiv.textContent = cell.toString()
             return tempDiv.offsetWidth
         })
 
-        // Clean up
         document.body.removeChild(tempDiv)
 
-        // Find the maximum width
         const maxWidth = Math.max(headerWidth, ...cellWidths)
 
-        // Add some padding (40px) to the max width
         const newWidth = maxWidth + 40
 
-        // Update the column size
         table.setColumnSizing(prev => ({
             ...prev,
             [header.column.id]: newWidth
         }))
 
-        // Force a column sizing info update to trigger persistence
         const newSizes = {
             ...table.getState().columnSizing,
             [header.column.id]: newWidth
@@ -180,6 +171,16 @@ const DragAlongCell = ({ cell }: { cell: Cell<any, unknown> }) => {
     )
 }
 
+const safeParseDate = (dateString: string): Date | null => {
+    try {
+        const date = parseISO(dateString)
+        return date
+    } catch (error) {
+        console.error("Error parsing date:", error)
+        return null
+    }
+}
+
 function CustomTable<T extends { id: any }>({
     columns,
     data,
@@ -256,7 +257,6 @@ function CustomTable<T extends { id: any }>({
         }
     })
 
-    // Ensure action column is always visible
     useEffect(() => {
         if (tableId) {
             const storedVisibility = localStorage.getItem(`columnVisibility-${tableId}`)
@@ -267,7 +267,6 @@ function CustomTable<T extends { id: any }>({
         }
     }, [tableId])
 
-    // Optimize column resizing performance
     useEffect(() => {
         if (columnSizingInfo.isResizingColumn) {
             const column = table.getColumn(columnSizingInfo.isResizingColumn)
@@ -318,24 +317,28 @@ function CustomTable<T extends { id: any }>({
 
     const applyFilters = useCallback(() => {
         let newFilteredData = data
-
         Object.entries(filtersState).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== "") {
                 newFilteredData = newFilteredData.filter((item) => {
-                    if (key === "date_created") {
+                    if (key === "created_at") {
                         if (!value.from && !value.to) return true
+                        
+                        const itemDate = safeParseDate(item[key])
+                        if (!itemDate) return false
+                        
                         if (value.from && value.to) {
-                            const valueDate = new Date(item[key])
                             const fromDate = new Date(value.from)
                             const toDate = new Date(value.to)
                             fromDate.setHours(0, 0, 0, 0)
                             toDate.setHours(23, 59, 59, 999)
-                            return valueDate >= fromDate && valueDate <= toDate
+                            return itemDate >= fromDate && itemDate <= toDate
                         }
                         if (value.from && !value.to) {
-                            const valueDate = new Date(item[key]).setHours(0, 0, 0, 0)
-                            const fromDate = new Date(value.from).setHours(0, 0, 0, 0)
-                            return valueDate == fromDate
+                            const fromDate = new Date(value.from)
+                            fromDate.setHours(0, 0, 0, 0)
+                            const itemDateNormalized = new Date(itemDate)
+                            itemDateNormalized.setHours(0, 0, 0, 0)
+                            return itemDateNormalized.getTime() === fromDate.getTime()
                         }
                         return true
                     } else if (key === "search") {
@@ -358,7 +361,7 @@ function CustomTable<T extends { id: any }>({
             }
         })
         setFilteredData(newFilteredData)
-    }, [filtersState, data])
+    }, [data, filtersState])
 
     const handleFilterChange = useCallback(
         (filterKey: string, filterValue: FilterValueType) => {
@@ -377,7 +380,6 @@ function CustomTable<T extends { id: any }>({
         }
     }, [tableId])
 
-    // Persist column order
     useEffect(() => {
         if (tableId) {
             try {
@@ -391,7 +393,6 @@ function CustomTable<T extends { id: any }>({
         }
     }, [columnOrder, tableId])
 
-    // Persist column visibility
     useEffect(() => {
         if (tableId) {
             try {
@@ -405,7 +406,6 @@ function CustomTable<T extends { id: any }>({
         }
     }, [columnVisibility, tableId])
 
-    // Persist column sizes
     useEffect(() => {
         if (tableId) {
             try {

@@ -14,14 +14,22 @@ import DateFilter from "./ui/date-filter"
 
 export type Score = {
     id: string
-    bot: string
-    message: string
-    answer: string
+    created_at?: string
     reporter: string
     score: string
     question: string
+    answer: string
+    bot: string
+    bot_name?: string
+    message: string
     category: string
-    date_created: string
+    category_name?: string
+    bots?: {
+        name: string
+    }
+    service_categories?: {
+        name: string
+    }
 }
 
 interface ScoresTableProps {
@@ -29,7 +37,7 @@ interface ScoresTableProps {
     selectedScores?: string[]
     onToggleSelect?: (id: string) => void
     onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
-    onEdit?: (source: Score) => void
+    onEdit?: (id: string) => void
     onDelete?: (id: string) => void
 }
 
@@ -63,7 +71,7 @@ export function ScoresTable({
             score.answer,
             score.reporter,
             score.score,
-            format(new Date(score.date_created), "MMM dd, yyyy")
+            format(new Date(score.created_at), "MMM dd, yyyy")
         ]);
 
         (doc as any).autoTable({
@@ -82,7 +90,7 @@ export function ScoresTable({
             score.answer,
             score.reporter,
             score.score,
-            format(new Date(score.date_created), "MMM dd, yyyy"),
+            format(new Date(score.created_at), "MMM dd, yyyy"),
         ])
 
         const worksheet = utils.aoa_to_sheet([headers, ...data])
@@ -105,12 +113,12 @@ export function ScoresTable({
             .map(
                 (score) => `
     <score>
-        <bot>${score.bot}</bot>
+        <bot>${score.bot_name}</bot>
         <message>${score.message}</message>
         <answer>${score.answer}</answer>
         <reporter>${score.reporter}</reporter>
         <scor>${score.score}</scor>
-        <dateCreated>${format(new Date(score.date_created), "yyyy-MM-dd")}</dateCreated>
+        <dateCreated>${format(new Date(score.created_at), "yyyy-MM-dd")}</dateCreated>
     </score>`
             )
             .join("\n")}
@@ -124,14 +132,14 @@ export function ScoresTable({
     }, [selectedScoresData])
 
     const columns: ColumnDef<any>[] = [
-        { id: "bot", accessorKey: "bot", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+        { id: "bot", accessorKey: "bot_name", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
         { id: "message", enableResizing: true, enableHiding: true, accessorKey: "message", header: "Message", enableSorting: false, cell: (info) => info.getValue() },
         { id: "answer", enableResizing: true, enableHiding: true, accessorKey: "answer", header: "Answer", enableSorting: false, cell: (info) => info.getValue() },
         { id: "reporter", enableResizing: true, enableHiding: true, accessorKey: "reporter", header: "Reporter", enableSorting: true, cell: (info) => info.getValue() },
         { id: "score", enableResizing: true, enableHiding: true, accessorKey: "score", header: "Score", enableSorting: true, cell: (info) => info.getValue() },
         { id: "question", enableResizing: true, enableHiding: true, accessorKey: "question", header: "Question", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category", header: "Category", enableSorting: true, cell: (info) => info.getValue() },
-        { id: "date_created", enableResizing: true, enableHiding: true, accessorKey: "date_created", header: "Date Created", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category_name", header: "Category", enableSorting: true, cell: (info) => info.getValue() },
+        { id: "created_at", enableResizing: true, enableHiding: true, accessorKey: "created_at", header: "Date Created", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
     ]
 
     const filters = [
@@ -157,7 +165,7 @@ export function ScoresTable({
             id: "range",
             label: "Date Created",
             component: DateFilter,
-            props: { filterKey: "date_created", placeholder: "Pick a date" },
+            props: { filterKey: "created_at", placeholder: "Pick a date" },
         },
     ]
 

@@ -4,7 +4,7 @@ import jsPDF from "jspdf"
 import "jspdf-autotable"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { utils, writeFile } from "xlsx"
 import CustomTable from "./ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -12,17 +12,28 @@ import SearchFilter from "./ui/search-filter"
 import SelectFilter from "./ui/select-filter"
 import DateFilter from "./ui/date-filter"
 
+const safeFormatDate = (dateString: string): string => {
+  try {
+    const date = parseISO(dateString)
+    return format(date, "MMM dd, yyyy")
+  } catch (error) {
+    console.error("Error formatting date:", error)
+    return dateString
+  }
+}
 
 export type Log = {
     id: string
     bot: string
-    detectedLanguage: string
-    detectedLocation: string
-    searchTerm: string
+    bot_name: string
     category: string
-    userMessage: string
+    category_name: string
+    detected_language: string
+    detected_location: string
+    search_term: string
+    user_message: string
     answer: string
-    date_created: string
+    created_at: string
 }
 
 interface LogsTableProps {
@@ -61,14 +72,14 @@ export function LogsTable({
         ]
 
         const body = selectedLogsData.map((log) => [
-            log.bot,
-            log.category,
-            log.detectedLanguage,
-            log.detectedLocation,
-            log.searchTerm,
-            log.userMessage,
+            log.bot_name,
+            log.category_name,
+            log.detected_language,
+            log.detected_location,
+            log.search_term,
+            log.user_message,
             log.answer,
-            format(new Date(log.date_created), "MMM dd, yyyy")
+            safeFormatDate(log.created_at)
         ]);
 
         (doc as any).autoTable({
@@ -91,14 +102,14 @@ export function LogsTable({
             "Date Created"
         ]
         const data = selectedLogsData.map((log) => [
-            log.bot,
-            log.category,
-            log.detectedLanguage,
-            log.detectedLocation,
-            log.searchTerm,
-            log.userMessage,
+            log.bot_name,
+            log.category_name,
+            log.detected_language,
+            log.detected_location,
+            log.search_term,
+            log.user_message,
             log.answer,
-            format(new Date(log.date_created), "MMM dd, yyyy"),
+            safeFormatDate(log.created_at),
         ])
 
         const worksheet = utils.aoa_to_sheet([headers, ...data])
@@ -121,14 +132,14 @@ export function LogsTable({
             .map(
                 (log) => `
     <log>
-        <bot>${log.bot}</bot>
-        <category>${log.category}</category>
-        <detectedLanguage>${log.detectedLanguage}</detectedLanguage>
-        <detectedLocation>${log.detectedLocation}</detectedLocation>
-        <searchTerm>${log.searchTerm}</searchTerm>
-        <userMessage>${log.userMessage}</userMessage>
+        <bot>${log.bot_name}</bot>
+        <category>${log.category_name}</category>
+        <detectedLanguage>${log.detected_language}</detectedLanguage>
+        <detectedLocation>${log.detected_location}</detectedLocation>
+        <searchTerm>${log.search_term}</searchTerm>
+        <userMessage>${log.user_message}</userMessage>
         <answer>${log.answer}</answer>
-        <dateCreated>${format(new Date(log.date_created), "yyyy-MM-dd")}</dateCreated>
+        <dateCreated>${safeFormatDate(log.created_at)}</dateCreated>
     </log>`
             )
             .join("\n")}
@@ -142,14 +153,14 @@ export function LogsTable({
     }, [selectedLogsData])
 
     const columns: ColumnDef<any>[] = [
-        { id: "bot", accessorKey: "bot", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-        { id: "detectedLanguage", enableResizing: true, enableHiding: true, accessorKey: "detectedLanguage", header: "Detected Language", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "detectedLocation", enableResizing: true, enableHiding: true, accessorKey: "detectedLocation", header: "Detected Location", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "searchTerm", enableResizing: true, enableHiding: true, accessorKey: "searchTerm", header: "Search Term", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category", header: "Category", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "userMessage", enableResizing: true, enableHiding: true, accessorKey: "userMessage", header: "User Message", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "bot", accessorKey: "bot_name", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
+        { id: "detectedLanguage", enableResizing: true, enableHiding: true, accessorKey: "detected_language", header: "Detected Language", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "detectedLocation", enableResizing: true, enableHiding: true, accessorKey: "detected_location", header: "Detected Location", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "searchTerm", enableResizing: true, enableHiding: true, accessorKey: "search_term", header: "Search Term", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category_name", header: "Category", enableSorting: false, cell: (info) => info.getValue() },
+        { id: "userMessage", enableResizing: true, enableHiding: true, accessorKey: "user_message", header: "User Message", enableSorting: false, cell: (info) => info.getValue() },
         { id: "answer", enableResizing: true, enableHiding: true, accessorKey: "answer", header: "Answer", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "date_created", enableResizing: true, enableHiding: true, accessorKey: "date_created", header: "Date Created", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
+        { id: "created_at", enableResizing: true, enableHiding: true, accessorKey: "created_at", header: "Date Created", enableSorting: true, cell: (info) => safeFormatDate(info.getValue() as string) },
     ]
 
     const filters = [
@@ -175,7 +186,7 @@ export function LogsTable({
             id: "range",
             label: "Date Created",
             component: DateFilter,
-            props: { filterKey: "date_created", placeholder: "Pick a date" },
+            props: { filterKey: "created_at", placeholder: "Pick a date" },
         },
     ]
 

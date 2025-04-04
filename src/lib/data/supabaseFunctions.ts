@@ -70,6 +70,13 @@
  * - `deleteSystemPrompt`: Deletes a system prompt from the database.
  * - `getSystemPromptById`: Fetches a specific system prompt by ID.
  * 
+ * === Projects Functions ===
+ * - `fetchProjects`: Fetches all projects.
+ * - `fetchProjectById`: Fetches a specific project by ID.
+ * - `addProject`: Adds a new project.
+ * - `updateProject`: Updates an existing project.
+ * - `deleteProject`: Deletes a project.
+ * 
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
@@ -228,6 +235,78 @@ export interface BotLog {
   user_message?: string
   answer?: string
   category?: string
+}
+
+export interface ServiceCategory {
+  id: string
+  name?: string
+  created_at?: string
+  description?: string
+  translations?: {
+    language: string
+    name: string
+    description: string
+  }[]
+}
+
+export interface BotScore {
+  id: string
+  reporter?: string
+  score?: string
+  question?: string
+  answer?: string
+  bot?: string
+  message?: string
+  category?: string
+  created_at?: string
+  bot_name?: string
+  category_name?: string
+}
+
+export interface Role {
+  id: string
+  name: string
+  description?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface User {
+  id: string
+  first_name?: string
+  last_name?: string
+  email?: string
+  password?: string
+  location?: string
+  title?: string
+  description?: string
+  language?: {
+    code: string
+    name: string
+  }
+  status: string
+  role?: string
+  role_name?: string
+  team?: string
+  team_name?: string
+  created_at?: string
+}
+
+export interface Team {
+  id: string
+  name: string
+  description?: string
+  status?: string
+  created_at?: string
+}
+
+export interface Project {
+  id: string
+  name?: string
+  description?: string
+  created_at?: string
+  status?: string
+  team?: string
 }
 
 // =========== MODEL FUNCTIONS ===========
@@ -1667,20 +1746,70 @@ export async function getSystemPromptById(id: string): Promise<{
 // =========== BOT LOG FUNCTIONS ===========
 
 export async function fetchBotLogs(): Promise<{
-  data: BotLog[],
+  data: BotScore[],
   error: Error | null
 }> {
   try {
     const { data, error } = await supabaseClient
       .from('bot_logs')
-      .select('*')
+      .select(`
+        *,
+        bots (
+          name
+        ),
+        service_categories (
+          name
+        )
+      `)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return { data: data || [], error: null }
+
+    const transformedData = data?.map(log => ({
+      ...log,
+      bot_name: log.bots?.name,
+      category_name: log.service_categories?.name
+    })) || []
+
+    return { data: transformedData, error: null }
   } catch (error) {
-    console.error('Error fetching bot logs:', error)
+    console.error('Error fetching bot scores:', error)
     return { data: [], error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function fetchBotLogById(id: string): Promise<{
+  data: BotLog | null,
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bot_logs')
+      .select(`
+        *,
+        bots (
+          name
+        ),
+        service_categories (
+          name
+        )
+      `)
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error) throw error
+
+    // Transform the data to flatten the nested objects
+    const transformedData = data ? {
+      ...data,
+      bot_name: data.bots?.name,
+      category_name: data.service_categories?.name
+    } : null
+
+    return { data: transformedData, error: null }
+  } catch (error) {
+    console.error('Error fetching bot log:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
   }
 }
 
@@ -1713,7 +1842,7 @@ export async function updateBotLog(id: string, logData: Partial<BotLog>): Promis
 }> {
   try {
     const { data, error } = await supabaseClient
-      .from('bot:logs')
+      .from('bot_logs')
       .update(logData)
       .eq('id', id)
       .select()
@@ -1743,4 +1872,560 @@ export async function deleteBotLog(id: string): Promise<{
     console.error('Error deleting bot log:', error)
     return { success: false, error: error instanceof Error ? error : new Error(String(error)) }
   }
+}
+
+// =========== SERVICE CATEGORY FUNCTIONS ===========
+
+export async function fetchCategories(): Promise<{
+  data: BotLog[],
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('service_categories')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return { data: data || [], error: null }
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    return { data: [], error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function addCategory(categoryData: Partial<ServiceCategory>): Promise<{
+  data: BotLog | null,
+  error: Error | null
+}> {
+  try {
+    if (!categoryData.name) {
+      throw new Error('Name is required')
+    }
+
+    const { data, error } = await supabaseClient
+      .from('service_categories')
+      .insert([categoryData])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding category:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function updateCategory(id: string, categoryData: Partial<ServiceCategory>): Promise<{
+  data: ServiceCategory | null,
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('service_categories')
+      .update(categoryData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating category:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function deleteCategory(id: string): Promise<{
+  success: boolean,
+  error: Error | null
+}> {
+  try {
+    const { error } = await supabaseClient
+      .from('service_categories')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return { success: true, error: null }
+  } catch (error) {
+    console.error('Error deleting category:', error)
+    return { success: false, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+// =========== BOT LOG FUNCTIONS ===========
+
+export async function fetchBotScores(): Promise<{
+  data: BotScore[],
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bot_scores')
+      .select(`
+        *,
+        bots (
+          name
+        ),
+        service_categories (
+          name
+        )
+      `)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    const transformedData = data?.map(score => ({
+      ...score,
+      bot_name: score.bots?.name,
+      category_name: score.service_categories?.name
+    })) || []
+
+    return { data: transformedData, error: null }
+  } catch (error) {
+    console.error('Error fetching bot scores:', error)
+    return { data: [], error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function fetchBotScoreById(id: string): Promise<{
+  data: BotScore | null,
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bot_scores')
+      .select(`
+        *,
+        bots (
+          name
+        ),
+        service_categories (
+          name
+        )
+      `)
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error) throw error
+
+    const transformedData = data ? {
+      ...data,
+      bot_name: data.bots?.name,
+      category_name: data.service_categories?.name
+    } : null
+
+    return { data: transformedData, error: null }
+  } catch (error) {
+    console.error('Error fetching bot score:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function addBotScore(scoreData: Partial<BotScore>): Promise<{
+  data: BotScore | null,
+  error: Error | null
+}> {
+  try {
+    if (!scoreData.bot) {
+      throw new Error('Bot is required')
+    }
+
+    const { data, error } = await supabaseClient
+      .from('bot_scores')
+      .insert([scoreData])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding bot score:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function updateBotScore(id: string, scoreData: Partial<BotScore>): Promise<{
+  data: BotScore | null,
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('bot_scores')
+      .update(scoreData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating bot score:', error)
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+export async function deleteBotScore(id: string): Promise<{
+  success: boolean,
+  error: Error | null
+}> {
+  try {
+    const { error } = await supabaseClient
+      .from('bot_scores')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return { success: true, error: null }
+  } catch (error) {
+    console.error('Error deleting bot score:', error)
+    return { success: false, error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+// =========== Roles FUNCTIONS ===========
+
+export async function fetchRoles() {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching roles:', error)
+    return { data: null, error }
+  }
+}
+
+export async function fetchRoleById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching role:', error)
+    return { data: null, error }
+  }
+}
+
+export async function addRole(role: Omit<Role, 'id' | 'created_at' | 'updated_at'>) {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .insert([role])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding role:', error)
+    return { data: null, error }
+  }
+}
+
+export async function updateRole(id: string, role: Partial<Role>) {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .update(role)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating role:', error)
+    return { data: null, error }
+  }
+}
+
+export async function deleteRole(id: string) {
+  try {
+    const { error } = await supabase
+      .from('roles')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return { error: null }
+  } catch (error) {
+    console.error('Error deleting role:', error)
+    return { error }
+  }
+}
+
+// =========== Users FUNCTIONS ===========
+
+export async function fetchUsers() {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        roles(name),
+        teams(name)
+      `)
+      .order('first_name', { ascending: true })
+
+    if (error) throw error
+
+    const transformedData = data?.map(user => ({
+      ...user,
+      role_name: user.roles?.name,
+      team_name: user.teams?.name
+    })) || []
+
+    return { data: transformedData, error: null }
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return { data: null, error }
+  }
+}
+
+export async function fetchUserById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        *,
+        roles:role (*),
+        teams:team (*)
+      `)
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching user:', error)
+    return { data: null, error }
+  }
+}
+
+export async function addUser(user: Omit<User, 'id' | 'created_at' | 'updated_at'>) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([user])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding user:', error)
+    return { data: null, error }
+  }
+}
+
+export async function updateUser(id: string, user: Partial<User>) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update(user)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating user:', error)
+    return { data: null, error }
+  }
+}
+
+export async function deleteUser(id: string) {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return { error: null }
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    return { error }
+  }
+}
+
+// =========== Teams FUNCTIONS ===========
+
+export async function fetchTeams() {
+  try {
+    const { data, error } = await supabase
+      .from('teams')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching teams:', error)
+    return { data: null, error }
+  }
+}
+
+export async function fetchTeamById(id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('teams')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching team:', error)
+    return { data: null, error }
+  }
+}
+
+export async function addTeam(team: Omit<Team, 'id' | 'created_at' | 'updated_at'>) {
+  try {
+    const { data, error } = await supabase
+      .from('teams')
+      .insert([team])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding team:', error)
+    return { data: null, error }
+  }
+}
+
+export async function updateTeam(id: string, team: Partial<Team>) {
+  try {
+    const { data, error } = await supabase
+      .from('teams')
+      .update(team)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating team:', error)
+    return { data: null, error }
+  }
+}
+
+export async function deleteTeam(id: string) {
+  try {
+    const { error } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    return { error: null }
+  } catch (error) {
+    console.error('Error deleting team:', error)
+    return { error }
+  }
+}
+
+// =========== Projects FUNCTIONS ===========
+
+export async function fetchProjects() {
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .select(`
+                *,
+                teams:team (*)
+            `)
+            .order('name', { ascending: true })
+
+        if (error) throw error
+        return { data, error: null }
+    } catch (error) {
+        console.error('Error fetching projects:', error)
+        return { data: null, error }
+    }
+}
+
+export async function fetchProjectById(id: string) {
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .select(`
+                *,
+                teams:team (*)
+            `)
+            .eq('id', id)
+            .single()
+
+        if (error) throw error
+        return { data, error: null }
+    } catch (error) {
+        console.error('Error fetching project:', error)
+        return { data: null, error }
+    }
+}
+
+export async function addProject(project: Omit<Project, 'id' | 'created_at'>) {
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .insert([project])
+            .select()
+            .single()
+
+        if (error) throw error
+        return { data, error: null }
+    } catch (error) {
+        console.error('Error adding project:', error)
+        return { data: null, error }
+    }
+}
+
+export async function updateProject(id: string, project: Partial<Project>) {
+    try {
+        const { data, error } = await supabase
+            .from('projects')
+            .update(project)
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (error) throw error
+        return { data, error: null }
+    } catch (error) {
+        console.error('Error updating project:', error)
+        return { data: null, error }
+    }
+}
+
+export async function deleteProject(id: string) {
+    try {
+        const { error } = await supabase
+            .from('projects')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+        return { error: null }
+    } catch (error) {
+        console.error('Error deleting project:', error)
+        return { error }
+    }
 }
