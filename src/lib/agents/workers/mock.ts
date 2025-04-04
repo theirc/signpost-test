@@ -3,7 +3,7 @@ declare global {
     fields: {
       input: NodeIO
       output: NodeIO
-    }
+    },
   }
 }
 

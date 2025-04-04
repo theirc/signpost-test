@@ -1,19 +1,15 @@
 import { BookTemplate, Brain, ListTree, File, GitFork, Send, Upload } from "lucide-react"
-import { AINode } from "./ai"
 import { SchemaNode } from "./schema"
 import { TemplateNode } from "./template"
 import { DocumentGeneratorNode } from "./docgen"
 import { DecisionNode } from "./decision"
-import { NotifyNode } from "./notifiy"
 import { DocumentUploadNode } from "./upload"
 
 export const nodeTypes = {
-  ai: AINode,
   schema: SchemaNode,
   template: TemplateNode,
   docgen: DocumentGeneratorNode,
   decision: DecisionNode,
-  notify: NotifyNode,
   upload: DocumentUploadNode,
 }
 

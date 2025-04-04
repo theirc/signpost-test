@@ -5,6 +5,7 @@ import { request } from "./workers/input"
 import { mock } from "./workers/mock"
 import { response } from "./workers/response"
 import { schema } from "./workers/schema"
+import { search } from "./workers/search"
 import { text } from "./workers/text"
 // import { stt } from "./workers/tts"
 // import { background } from "./workers/background"
@@ -36,4 +37,5 @@ export const workerRegistry = {
   combine,
   display,
   mock,
+  search,
 } satisfies { [index: string]: WorkerRegistryItem }

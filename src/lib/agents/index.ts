@@ -6,6 +6,15 @@ declare global {
   type Agent = ReturnType<typeof buildAgent>
   type EdgeConnections = { [index: string]: { source: string, target: string, sourceHandle: string, targetHandle: string } }
 
+  interface APIKeys {
+    openai?: string
+    anthropic?: string
+    google?: string
+    deepseek?: string
+    groq?: string
+    xai?: string
+  }
+
   interface AgentParameters {
     debug?: boolean
     input: any
@@ -13,15 +22,9 @@ declare global {
     // update: (p: AgentParameters) => void
     agent?: Agent
     error?: string
+    apikeys?: APIKeys
   }
 }
-
-
-export const OpenAIModels = [
-  { value: "gpt-4", label: "GPT-4" },
-  { value: "gpt-3.5-turbo", label: "GPT-3.5" },
-]
-
 
 
 export function buildAgent(config: AgentConfig) {
@@ -79,16 +82,22 @@ export function buildAgent(config: AgentConfig) {
       p.output ||= {}
       p.input ||= {}
       p.output ||= {}
+      p.apikeys ||= {}
       p.agent = agent
       console.log("Executing agent...")
-      const worker = agent.getResponseWorker()
-      if (!worker) return
-      await worker.execute(p)
+      try {
+        const worker = agent.getResponseWorker()
+        if (!worker) return
+        await worker.execute(p)
+      } catch (error) {
+        console.error(error)
+        p.error = error.toString()
+      }
       agent.currentWorker = null
       agent.update()
     },
 
-    initializeWorker(config: WorkerConfig, handlers: NodeIO[], registry: WorkerRegistryItem) {
+    initializeWorker(config: WorkerConfig, handlers: NodeIO[], registry: WorkerRegistryItem, parameters: object = {}) {
       const worker = agent.addWorker(config)
       worker.registry = registry
       for (const h of handlers) {

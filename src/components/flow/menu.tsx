@@ -41,27 +41,35 @@ const model = createModel({
   fields: {
     title: { type: 'string', title: 'Title' },
     openai: { type: 'string', title: 'OpenAI' },
+    anthropic: { type: 'string', title: 'Anthropic' },
   }
 }
 )
 
 export function Toolbar(props: Props) {
 
-  const { form, m, watch } = useForm(model, { defaultValues: { title: app.agent.title } })
+
+  const { form, m, watch } = useForm(model, {
+    values: {
+      title: app.agent.title,
+      ...app.getAPIkeys(),
+    }
+  })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
       console.log(value, name, type)
-      if (name == "title") {
-        app.agent.title = value.title || ""
-      }
+      if (name == "title") app.agent.title = value.title || ""
     })
     return () => subscription.unsubscribe()
   }, [watch])
 
   form.onSubmit = async (data) => {
-    localStorage.setItem("openai-api-key", data.openai)
+    const ak = app.getAPIkeys()
+    ak.openai = data.openai
+    ak.anthropic = data.anthropic
+    app.saveAPIkeys(ak)
   }
 
 
@@ -84,39 +92,43 @@ export function Toolbar(props: Props) {
 
   async function onPlay() {
     console.log("Play")
+    const { agent } = app
 
     const apiKey = localStorage.getItem("openai-api-key")
 
     if (!apiKey) {
-      toast("Please set an OpenAI API Key", {
-        action: {
-          label: "Ok",
-          onClick: () => console.log("Ok"),
-        },
-      })
+      toast("Please set an OpenAI API Key", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
       return
     }
 
 
-    const { agent } = app
-
     if (!agent.hasResponse()) {
-      toast("Add a Response Worker to execute", {
+      toast("Add a Response Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
+      return
+    }
+
+    if (!agent.hasInput()) {
+      toast("Add an Input Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
+      return
+    }
+
+    const p: AgentParameters = {
+      debug: true,
+      input: {},
+      apikeys: app.getAPIkeys(),
+    }
+
+    await agent.execute(p)
+
+    if (p.error) {
+      toast("Error", {
+        description: <div className="text-red-500 font-semibold">{p.error}</div>,
         action: {
           label: "Ok",
           onClick: () => console.log("Ok"),
         },
       })
     }
-
-    const p: AgentParameters = {
-      debug: true,
-      input: {
-        question: "Hello"
-      },
-    }
-
-    await agent.execute(p)
 
     console.log("Result: ", p.output)
   }
@@ -182,6 +194,9 @@ export function Toolbar(props: Props) {
     <Modal form={form} title="API Keys">
       <Row>
         <Input span={12} field={m.openai} required />
+      </Row>
+      <Row>
+        <Input span={12} field={m.anthropic} required />
       </Row>
     </Modal>
 

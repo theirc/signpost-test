@@ -2,7 +2,7 @@ import { supabase } from "../db"
 import { createSupabaseModel } from "../model"
 
 declare global {
-  type WorkerConfig = Omit<Partial<typeof model.defaultValue>, "handles"> & { handles?: WorkerHandles, type: WorkerTypes }
+  type WorkerConfig = Omit<Partial<typeof model.defaultValue>, "handles"> & { handles?: WorkerHandles, type: WorkerTypes, parameters?: object }
 }
 
 const model: SupabaseModel<"workers"> = {

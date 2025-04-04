@@ -32,10 +32,10 @@ export function MockNode(props: NodeProps) {
 
   if (ch) {
     worker.fields.output.type = ch.type
-    content = <div className="flex my-4 px-2 size-full pb-20">
+    content = <div className="flex my-4 px-2 size-full pb-20 flex-col">
       <form.context>
-        <Row className="size-full">
-          <InputTextArea span={12} field={m.output} hideLabel />
+        <Row className=" flex-grow">
+          <InputTextArea span={12} field={m.output} hideLabel className='min-h-10 h-full resize-none' />
         </Row>
       </form.context>
     </div>

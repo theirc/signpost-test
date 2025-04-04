@@ -29,12 +29,12 @@ export function TextNode(props: NodeProps) {
 
   return <NodeLayout worker={worker} resizable>
 
-    <div className="flex flex-col h-full pb-4">
-      <WorkerLabeledHandle handler={worker.fields.output} />
+    <WorkerLabeledHandle handler={worker.fields.output} />
+    <div className="flex size-full pb-12 flex-col">
       <div className="flex-grow nodrag p-2">
         <form.context>
           <Row className="h-full">
-            <InputTextArea span={12} field={m.output} hideLabel />
+            <InputTextArea span={12} field={m.output} hideLabel className='min-h-10 h-full resize-none' />
           </Row>
         </form.context>
       </div>

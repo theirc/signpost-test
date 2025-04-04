@@ -7,18 +7,16 @@ import { InlineHandles, WorkerLabeledHandle } from '../handles'
 import { useWorker } from '../hooks'
 import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
+import { AllAIModels, OpenAIModels } from '@/lib/agents/modellist'
 const { ai } = workerRegistry
 
 ai.icon = Sparkles
 
-const list: FieldList = [
-  { value: "openai", label: "OpenAI" },
-]
 
 const model = createModel({
   fields: {
     prompt: { title: "Prompt", type: "string", },
-    model: { title: "Model", type: "string", list },
+    model: { title: "Model", type: "string", list: AllAIModels },
     temperature: { title: "Temperature", type: "number" },
   }
 })
@@ -27,24 +25,30 @@ function Parameters({ worker }: { worker: BotWorker }) {
   const { form, m, watch } = useForm(model, {
     values: {
       prompt: worker.fields.prompt.value,
-      temperature: worker.parameters.temperature
+      temperature: worker.parameters.temperature,
+      model: worker.parameters.model,
     }
   })
 
   watch((value, { name }) => {
     if (name === "prompt") worker.fields.prompt.value = value.prompt
     if (name === "temperature") worker.parameters.temperature = value.temperature
+    if (name === "model") worker.parameters.model = value.model
+
   })
 
   return <form.context>
-    <div className='p-2 -mt-2 nodrag w-full flex-grow'>
-      <Row className='h-full'>
-        <InputTextArea field={m.prompt} span={12} hideLabel className='h-full' />
+    <div className='p-2 mt-2 nodrag w-full flex-grow flex flex-col'>
+      <Row className='pt-2 flex-grow'>
+        <InputTextArea field={m.prompt} span={12} hideLabel className='min-h-10 h-full resize-none' />
+      </Row>
+      <Row className='py-4'>
+        <Select field={m.model} span={12} />
+      </Row>
+      <Row className='py-4'>
+        <Input field={m.temperature} type="number" span={12} />
       </Row>
     </div>
-    <Row className='pb-8 px-2'>
-      <Input field={m.temperature} type="number" span={12} />
-    </Row>
   </form.context>
 
 }
@@ -52,7 +56,7 @@ function Parameters({ worker }: { worker: BotWorker }) {
 export function AINode(props: NodeProps) {
   const worker = useWorker<BotWorker>(props.id)
 
-  return <NodeLayout worker={worker} resizable minHeight={250}>
+  return <NodeLayout worker={worker} resizable minHeight={340} className='flex flex-col' >
 
     <div className='flex flex-col h-full'>
       <InlineHandles>
@@ -60,6 +64,7 @@ export function AINode(props: NodeProps) {
         <WorkerLabeledHandle handler={worker.fields.answer} />
       </InlineHandles>
       <WorkerLabeledHandle handler={worker.fields.prompt} />
+      <WorkerLabeledHandle handler={worker.fields.documents} />
       <MemoizedWorker worker={worker}>
         <Parameters worker={worker} />
       </MemoizedWorker>

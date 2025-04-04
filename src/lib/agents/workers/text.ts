@@ -3,6 +3,9 @@ declare global {
   interface TextWorker extends AIWorker {
     fields: {
       output: NodeIO
+    },
+    parameters: {
+      text?: string
     }
   }
 }
@@ -20,9 +23,8 @@ function create(agent: Agent) {
 
 }
 
-async function execute(worker: AIWorker) {
-
-
+async function execute(worker: TextWorker) {
+  worker.fields.output.value = worker.parameters.text || ""
 }
 
 
