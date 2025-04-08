@@ -10,6 +10,7 @@ declare global {
     required?: boolean
     validate?: ZodType
     hideLabel?: boolean
+    options?: FieldList
   }
 }
 

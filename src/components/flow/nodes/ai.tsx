@@ -8,6 +8,7 @@ import { useWorker } from '../hooks'
 import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
 import { AllAIModels, OpenAIModels } from '@/lib/agents/modellist'
+import { ConditionHandler } from '../condition'
 const { ai } = workerRegistry
 
 ai.icon = Sparkles
@@ -22,6 +23,7 @@ const model = createModel({
 })
 
 function Parameters({ worker }: { worker: BotWorker }) {
+
   const { form, m, watch } = useForm(model, {
     values: {
       prompt: worker.fields.prompt.value,
@@ -34,12 +36,11 @@ function Parameters({ worker }: { worker: BotWorker }) {
     if (name === "prompt") worker.fields.prompt.value = value.prompt
     if (name === "temperature") worker.parameters.temperature = value.temperature
     if (name === "model") worker.parameters.model = value.model
-
   })
 
   return <form.context>
-    <div className='p-2 mt-2 nodrag w-full flex-grow flex flex-col'>
-      <Row className='pt-2 flex-grow'>
+    <div className='px-2 nodrag w-full flex-grow flex flex-col'>
+      <Row className='flex-grow'>
         <InputTextArea field={m.prompt} span={12} hideLabel className='min-h-10 h-full resize-none' />
       </Row>
       <Row className='py-4'>
@@ -63,11 +64,15 @@ export function AINode(props: NodeProps) {
         <WorkerLabeledHandle handler={worker.fields.input} />
         <WorkerLabeledHandle handler={worker.fields.answer} />
       </InlineHandles>
-      <WorkerLabeledHandle handler={worker.fields.prompt} />
       <WorkerLabeledHandle handler={worker.fields.documents} />
+      <WorkerLabeledHandle handler={worker.fields.prompt} />
       <MemoizedWorker worker={worker}>
         <Parameters worker={worker} />
       </MemoizedWorker>
+      <WorkerLabeledHandle handler={worker.fields.condition} />
+      {/* <MemoizedWorker worker={worker}>
+        <ConditionHandler />
+      </MemoizedWorker> */}
     </div>
   </NodeLayout>
 

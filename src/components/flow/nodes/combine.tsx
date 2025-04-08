@@ -6,15 +6,37 @@ import { useWorker } from '../hooks'
 import { NodeLayout } from './node'
 import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
+import { createModel } from '@/lib/data/model'
+import { Row, Select, useForm } from '@/components/forms'
 const { combine } = workerRegistry
+
+const list = [
+  { label: "Non Empty", value: "nonempty" },
+  { label: "Concatenate", value: "concat" },
+]
+
+const model = createModel({
+  fields: {
+    mode: { title: "Action", type: "string", list },
+  }
+})
 
 export function CombineNode(props: NodeProps) {
   const worker = useWorker(props.id) as CombineWorker
 
+  const { form, m, watch } = useForm(model, {
+    values: {
+      mode: worker.parameters.mode
+    }
+  })
+
+  watch((value, { name }) => {
+    if (name === "mode") worker.parameters.mode = value.mode as any
+  })
+
+
   function onSelected(e) {
     worker.parameters.mode = e
-    console.log(worker)
   }
 
   return <NodeLayout worker={worker}>
@@ -25,16 +47,15 @@ export function CombineNode(props: NodeProps) {
     <WorkerLabeledHandle handler={worker.fields.result} />
 
     <div className='w-full flex'>
-      <Select onValueChange={onSelected} defaultValue={worker.parameters.mode}>
-        <SelectTrigger className="mx-2">
-          <SelectValue placeholder="Select action" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="nonempty">Select non Enpty</SelectItem>
-          <SelectItem value="concat">Concatenate</SelectItem>
-        </SelectContent>
-      </Select>
+      <form.context>
+        <div className='p-2 mt-2 nodrag w-full flex-grow flex flex-col'>
+          <Row className='py-4'>
+            <Select field={m.mode} span={12} />
+          </Row>
+        </div>
+      </form.context>
     </div>
+
   </NodeLayout >
 }
 

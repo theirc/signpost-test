@@ -21,10 +21,10 @@ export function TextNode(props: NodeProps) {
 
   const worker = useWorker<TextWorker>(props.id)
 
-  const { form, watch, m } = useForm(model, { doNotReset: true, values: { output: worker.fields.output.value } })
+  const { form, watch, m } = useForm(model, { doNotReset: true, values: { output: worker.parameters.text } })
 
   watch((value, { name, type }) => {
-    if (name === "output") worker.fields.output.value = value.output
+    if (name === "output") worker.parameters.text = value.output
   })
 
   return <NodeLayout worker={worker} resizable>

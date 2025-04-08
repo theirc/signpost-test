@@ -3,14 +3,43 @@ import { ChevronLast, EllipsisVertical, Key, LoaderCircle, Play, Save, Square, S
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { Separator } from "../ui/separator"
 import { toast } from "sonner"
-import { agents } from "@/lib/data"
-import { app } from "@/lib/app"
 import { createModel } from "@/lib/data/model"
 import { Input, Modal, Row, useForm } from "../forms"
 import { useEffect, useState } from "react"
 import { title } from "process"
 import { cloneDeep } from "lodash"
 import axios from "axios"
+
+import { app } from "@/lib/app"
+import { agents } from "@/lib/data"
+
+async function executeAgent() {
+
+  //Load the agent by id
+  const agent = await agents.loadAgent(23)
+
+  //create the Agent parameters
+  const parameters: AgentParameters = {
+    //Put your input content here
+    input: {
+      question: "What is malaria?"
+    },
+    apikeys: app.getAPIkeys(), //this loads the API keys to execute the AI workers. Use the menu to set it
+  }
+
+  //Execute the agent
+  await agent.execute(parameters)
+
+
+  //Check if there is an error
+  if (parameters.error) {
+    //Check the error returned by the agent if any
+  }
+
+  console.log("Result: ", parameters.output) //The result of the agent
+
+}
+
 
 interface Props {
   update?: () => void
@@ -94,14 +123,6 @@ export function Toolbar(props: Props) {
     console.log("Play")
     const { agent } = app
 
-    const apiKey = localStorage.getItem("openai-api-key")
-
-    if (!apiKey) {
-      toast("Please set an OpenAI API Key", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
-      return
-    }
-
-
     if (!agent.hasResponse()) {
       toast("Add a Response Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
       return
@@ -119,6 +140,7 @@ export function Toolbar(props: Props) {
     }
 
     await agent.execute(p)
+
 
     if (p.error) {
       toast("Error", {
