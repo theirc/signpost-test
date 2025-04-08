@@ -26,7 +26,21 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
     clearBlobUrl,
   } = useReactMediaRecorder({ audio: true })
   
- const {isSpeaking, speakMessage} = useSpeech()
+ const {isSpeaking, speakMessage, stopSpeaking} = useSpeech()
+ const [clickInProgress, setClickInProgress] = useState(false)
+
+
+ const handleSpeakButtonClick = () => {
+  if (clickInProgress) return
+  
+  setClickInProgress(true)
+  if (isSpeaking) {
+    stopSpeaking()
+  } else if (m.message) {
+    speakMessage(m.message)
+  }
+  setTimeout(() => setClickInProgress(false), 300)
+}
 
   console.log('MESSAGE ', m)
   const [state, setState] = useMultiState({
@@ -108,11 +122,12 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
           className="mt-1 cursor-pointer text-red-500"
           onClick={showModalRedFlag}
         />
-         <Volume2
-            className={`cursor-pointer ${isSpeaking ? "text-blue-500" : ""}`}
-            size={26}
-            onClick={() => speakMessage(m.message)}
-          />
+        <Volume2
+        className={`cursor-pointer ${isSpeaking ? "text-blue-500" : ""}`}
+        size={26}
+        onClick={handleSpeakButtonClick}
+        aria-label={isSpeaking ? "Stop speaking" : "Read message aloud"}
+        />
       </div>
     )}
 
