@@ -16,43 +16,89 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
+ .bot-message-content {
+  padding: 0.5rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
 .bot-message-content a {
   color: #3B82F6;
   text-decoration: none;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3);
 }
+
 .bot-message-content a:hover {
   color: #2563EB;
-  text-decoration: none;
+  border-bottom-color: rgba(37, 99, 235, 0.5);
+}
+
+.bot-message-content ul, 
+.bot-message-content ol {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0; 
+  min-height: 1.5rem;
+}
+
+.bot-message-content li {
+  margin-bottom: 0.25rem;
+}
+
+.bot-message-content li:last-child {
+  margin-bottom: 0;
+}
+
+.bot-message-content p {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem; 
+  line-height: 1.5;
+}
+
+.bot-message-content p:last-child,
+.bot-message-content li:last-child p:last-child {
+  margin-bottom: 0;
+}
+
+.bot-message-content h1,
+.bot-message-content h2,
+.bot-message-content h3,
+.bot-message-content h4,
+.bot-message-content h5,
+.bot-message-content h6 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+}
+
+.bot-message-content [data-tts-pause="short"] {
+  position: relative;
+}
+
+.bot-message-content [data-tts-pause="long"] {
+  position: relative;
+  margin-bottom: 0.75rem;
 }
 
 .bot-message-content ul {
   list-style-type: disc;
-  padding-left: 1.5rem;
-  margin: 0.75rem 0;
 }
 
 .bot-message-content ol {
   list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin: 0.75rem 0;
-}
-.bot-message-content p {
-  margin-bottom: 1rem; 
-  line-height: 1.5; 
-  color: #374151; 
 }
 
-.bot-message-content p:last-child {
-  margin-bottom: 0;
+.bot-message-content blockquote {
+  border-left: 3px solid #E5E7EB;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+  color: #4B5563;
 }
 
-.bot-message-content p strong {
-  font-weight: 600;
-}
-
-.bot-message-content p em {
-  font-style: italic;
-  color: #4B5563; 
+.bot-message-content table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  width: 100%;
 }
 
 @layer base {
