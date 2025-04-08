@@ -60,22 +60,6 @@
     nanoid "^3.3.8"
     secure-json-parse "^2.7.0"
 
-"@ai-sdk/provider-utils@2.2.3":
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/provider-utils/-/provider-utils-2.2.3.tgz#e94f58537bbed7f90a1ed94f8cd353b79e3ab65c"
-  integrity sha512-o3fWTzkxzI5Af7U7y794MZkYNEsxbjLam2nxyoUZSScqkacb7vZ3EYHLh21+xCcSSzEC161C7pZAGHtC0hTUMw==
-  dependencies:
-    "@ai-sdk/provider" "1.1.0"
-    nanoid "^3.3.8"
-    secure-json-parse "^2.7.0"
-
-"@ai-sdk/provider@1.0.11":
-  version "1.0.11"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-1.0.11.tgz#c1141b622f6a72551719c106b613c2350c6a29e0"
-  integrity sha512-CPyImHGiT3svyfmvPvAFTianZzWFtm0qK82XjwlQIA1C3IQ2iku/PMQXi7aFyrX0TyMh3VTkJPB03tjU2VXVrw==
-  dependencies:
-    json-schema "^0.4.0"
-
 "@ai-sdk/provider@1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-1.1.0.tgz#a9e8bc5ea820a7e4df0abad008f80c8bda44d035"
@@ -83,11 +67,10 @@
   dependencies:
     json-schema "^0.4.0"
 
-"@ai-sdk/react@1.1.23":
-  version "1.1.23"
-  resolved "https://registry.yarnpkg.com/@ai-sdk/react/-/react-1.1.23.tgz#889f760a961abaac8e813eb6cbf8091def5f8b9a"
-  integrity sha512-R+PG9ya0GLs6orzt+1MxmjrWFuZM0gVs+l8ihBr1u+42wwkVeojY4CAtQjW4nrfGTVbdJYkl5y+r/VKfjr42aQ==
-
+"@ai-sdk/react@1.2.5":
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/react/-/react-1.2.5.tgz#011d0c30aa38a4f7c3ea7d112a054543dc9ec11f"
+  integrity sha512-0jOop3S2WkDOdO4X5I+5fTGqZlNX8/h1T1eYokpkR9xh8Vmrxqw8SsovqGvrddTsZykH8uXRsvI+G4FTyy894A==
   dependencies:
     "@ai-sdk/provider-utils" "2.2.3"
     "@ai-sdk/ui-utils" "1.2.4"
@@ -952,6 +935,21 @@
   resolved "https://registry.yarnpkg.com/@radix-ui/primitive/-/primitive-1.1.1.tgz#fc169732d755c7fbad33ba8d0cd7fd10c90dc8e3"
   integrity sha512-SJ31y+Q/zAyShtXJc8x83i9TYdbAfHZ++tUZnvjJJqFjzsdUnKsxPL6IEtBlxKkU7yzer//GQtZSV4GbldL3YA==
 
+"@radix-ui/react-accordion@^1.2.3":
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/@radix-ui/react-accordion/-/react-accordion-1.2.3.tgz#7768a2d2daea18e5c09809f2c4b8097448ee2ff7"
+  integrity sha512-RIQ15mrcvqIkDARJeERSuXSry2N8uYnxkdDetpfmalT/+0ntOXLkFOsh9iwlAsCv+qcmhZjbdJogIm6WBa6c4A==
+  dependencies:
+    "@radix-ui/primitive" "1.1.1"
+    "@radix-ui/react-collapsible" "1.1.3"
+    "@radix-ui/react-collection" "1.1.2"
+    "@radix-ui/react-compose-refs" "1.1.1"
+    "@radix-ui/react-context" "1.1.1"
+    "@radix-ui/react-direction" "1.1.0"
+    "@radix-ui/react-id" "1.1.0"
+    "@radix-ui/react-primitive" "2.0.2"
+    "@radix-ui/react-use-controllable-state" "1.1.0"
+
 "@radix-ui/react-alert-dialog@^1.1.6":
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.1.6.tgz#52187fdaa5110ed6749e75974e90c3505f788c5d"
@@ -995,7 +993,7 @@
     "@radix-ui/react-use-previous" "1.1.0"
     "@radix-ui/react-use-size" "1.1.0"
 
-"@radix-ui/react-collapsible@^1.1.2":
+"@radix-ui/react-collapsible@1.1.3", "@radix-ui/react-collapsible@^1.1.2":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@radix-ui/react-collapsible/-/react-collapsible-1.1.3.tgz#522a5749646b7a393c9e9049165a9a6dfa924e91"
   integrity sha512-jFSerheto1X03MUC0g6R7LedNW9EEGWdg9W1+MlpkMLwGkgkbUXLPBH/KIuWKXUoeYRVY11llqbTBDzuLg7qrw==
@@ -3467,11 +3465,6 @@ events-intercept@^2.0.0:
   resolved "https://registry.yarnpkg.com/events-intercept/-/events-intercept-2.0.0.tgz#adbf38681c5a4b2011c41ee41f61a34cba448897"
   integrity sha512-blk1va0zol9QOrdZt0rFXo5KMkNPVSp92Eju/Qz8THwKWKRKeE0T8Br/1aW6+Edkyq9xHYgYxn2QtOnUKPUp+Q==
 
-eventsource-parser@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/eventsource-parser/-/eventsource-parser-3.0.0.tgz#9303e303ef807d279ee210a17ce80f16300d9f57"
-  integrity sha512-T1C0XCUimhxVQzW4zFipdx0SficT651NnkR0ZSH3yQwh+mFMdLfgjABVi4YtMTtaL4s168593DaoaRLMqryavA==
-
 exa-js@^1.5.12:
   version "1.5.12"
   resolved "https://registry.yarnpkg.com/exa-js/-/exa-js-1.5.12.tgz#6a6619c7a95328f180c8fb8c12e053965837d7f4"
@@ -5749,16 +5742,8 @@ streamx@^2.15.0, streamx@^2.21.0:
   optionalDependencies:
     bare-events "^2.2.0"
 
-"string-width-cjs@npm:string-width@^4.2.0":
-  version "4.2.3"
-  resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
-  integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
-  dependencies:
-    emoji-regex "^8.0.0"
-    is-fullwidth-code-point "^3.0.0"
-    strip-ansi "^6.0.1"
-
-string-width@^4.1.0:
+"string-width-cjs@npm:string-width@^4.2.0", string-width@^4.1.0:
+  name string-width-cjs
   version "4.2.3"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   integrity sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==
@@ -5791,14 +5776,8 @@ stringify-entities@^4.0.0:
     character-entities-html4 "^2.0.0"
     character-entities-legacy "^3.0.0"
 
-"strip-ansi-cjs@npm:strip-ansi@^6.0.1":
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
-  integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==
-  dependencies:
-    ansi-regex "^5.0.1"
-
-strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+"strip-ansi-cjs@npm:strip-ansi@^6.0.1", strip-ansi@^6.0.0, strip-ansi@^6.0.1:
+  name strip-ansi-cjs
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/strip-ansi/-/strip-ansi-6.0.1.tgz#9e26c63d30f53443e9489495b2105d37b67a85d9"
   integrity sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==

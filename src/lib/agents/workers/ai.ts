@@ -13,6 +13,7 @@ declare global {
       input: NodeIO
       documents: NodeIO
       answer: NodeIO
+      condition: NodeIO
     }
     parameters: {
       temperature?: number
@@ -36,7 +37,7 @@ function create(agent: Agent) {
       { type: "string", direction: "input", title: "Input", name: "input" },
       { type: "doc", direction: "input", title: "Documents", name: "documents" },
       { type: "string", direction: "output", title: "Answer", name: "answer" },
-      // { type: "execute", direction: "output", title: "Next", name: "next" },
+      { type: "unknown", direction: "input", title: "Condition", name: "condition" },
     ],
     ai,
   )
