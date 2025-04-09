@@ -16,6 +16,7 @@ display.icon = Eye
 
 export function DisplayNode(props: NodeProps) {
 
+
   const worker = useWorker<DisplayWorker>(props.id)
   useNodeConnections({ id: props.id })
   const ch = worker.getConnectedHandler(worker.fields.input)

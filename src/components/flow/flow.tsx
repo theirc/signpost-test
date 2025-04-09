@@ -54,7 +54,7 @@ function Flow() {
       const w = agent.workers[key]
       initialNodes.push({
         id: w.config.id,
-        data: w.config,
+        data: {},
         type: w.config.type,
         position: { x: w.config.x, y: w.config.y },
       })
@@ -101,6 +101,7 @@ function Flow() {
       }
     }
     setNodes((nds) => applyNodeChanges(changes, nds))
+
   }
 
   const onEdgesChange = (changes: EdgeChange[]) => {
@@ -110,13 +111,18 @@ function Flow() {
     // console.log("Edges changed:", app.agent.edges)
 
     setEdges((eds) => applyEdgeChanges(changes, eds))
+
+    agent.updateWorkers()
+    agent.update()
+
   }
 
   const onConnect = (c: Connection) => {
-    // console.log("Connect:", c)
+    console.log("Connect:", c)
 
-    const workers = app.agent.workers[c.source]
-    const handle = workers.handles[c.sourceHandle]
+    const worker = app.agent.workers[c.source]
+    const handle = worker.handles[c.sourceHandle]
+    worker.updateWorker()
 
 
     if (handle.type === "execute") {
@@ -128,9 +134,12 @@ function Flow() {
       for (const edge of added) {
         app.agent.edges[edge.id] = edge
       }
-      // console.log("Added edge:", app.agent.edges)
       return added
     })
+
+    agent.updateWorkers()
+    agent.update()
+
   }
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
@@ -182,7 +191,6 @@ function Flow() {
         app.agent.deleteWorker(node.id)
       }
     }
-
   }, [])
 
   return <div className='w-full h-full'>

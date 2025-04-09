@@ -7,6 +7,7 @@ import { NodeProps } from '@xyflow/react'
 import { Type } from "lucide-react"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
+import { ConditionHandler } from "../condition"
 const { text } = workerRegistry
 
 text.icon = Type
@@ -39,6 +40,7 @@ export function TextNode(props: NodeProps) {
         </form.context>
       </div>
     </div>
+    <ConditionHandler />
 
 
   </NodeLayout>
