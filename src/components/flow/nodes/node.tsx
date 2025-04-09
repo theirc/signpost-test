@@ -33,7 +33,7 @@ export function NodeLayout(props: Props) {
 
   let running = false
   if (currentWorker && props.worker && currentWorker.id === props.worker.id) {
-    console.log("Title Worker: ", currentWorker.config.type)
+    // console.log("Title Worker: ", currentWorker.config.type)
     running = true
   }
 

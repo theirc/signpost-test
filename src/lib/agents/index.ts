@@ -19,7 +19,6 @@ declare global {
     debug?: boolean
     input: any
     output?: any
-    // update: (p: AgentParameters) => void
     agent?: Agent
     error?: string
     apikeys?: APIKeys
@@ -44,6 +43,13 @@ export function buildAgent(config: AgentConfig) {
     currentWorker: null as AIWorker,
     update() {
       //Used to update the UI in front end
+    },
+    updateWorkers() {
+      console.log("Updating All workers")
+      for (const key in workers) {
+        const w = workers[key]
+        w.updateWorker()
+      }
     },
 
     getResponseWorker() {

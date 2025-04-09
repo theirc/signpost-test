@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuLabel,
 import { Button } from '@/components/ui/button'
 import { createModel } from '@/lib/data/model'
 import { Row, Select, useForm } from '@/components/forms'
+import { MemoizedWorker } from '../memoizedworkers'
 const { combine } = workerRegistry
 
 const list = [
@@ -21,8 +22,42 @@ const model = createModel({
   }
 })
 
+function Parameters({ worker }: { worker: CombineWorker }) {
+
+  const { form, m, watch } = useForm(model, {
+    values: {
+      mode: worker.parameters.mode,
+    }
+  })
+
+  watch((value, { name }) => {
+    if (name === "mode") worker.parameters.mode = value.mode as any
+  })
+
+  return <form.context>
+    <div className='px-2 nodrag w-full flex-grow flex flex-col'>
+      <Row className='py-4'>
+        <Select field={m.mode} span={12} />
+      </Row>
+    </div>
+  </form.context>
+
+}
+
+
 export function CombineNode(props: NodeProps) {
   const worker = useWorker(props.id) as CombineWorker
+
+  const type1 = worker.getConnectedHandlerType(worker.fields.input1)
+  const type2 = worker.getConnectedHandlerType(worker.fields.input2)
+  const type = type1 == "unknown" ? type2 : type1
+  // const ch = worker.getConnectedHandler(worker.fields.input1)
+  // let type: IOTypes = "unknown"
+  // if (ch) type = ch.type
+  worker.fields.input1.type = type
+  worker.fields.input2.type = type
+  worker.fields.output.type = type
+
 
   const { form, m, watch } = useForm(model, {
     values: {
@@ -44,16 +79,19 @@ export function CombineNode(props: NodeProps) {
     <WorkerLabeledHandle handler={worker.fields.input2} />
 
     <NodeHandlers worker={worker} />
-    <WorkerLabeledHandle handler={worker.fields.result} />
+    <WorkerLabeledHandle handler={worker.fields.output} />
 
     <div className='w-full flex'>
-      <form.context>
+      <MemoizedWorker worker={worker}>
+        <Parameters worker={worker} />
+      </MemoizedWorker>
+      {/* <form.context>
         <div className='p-2 mt-2 nodrag w-full flex-grow flex flex-col'>
           <Row className='py-4'>
             <Select field={m.mode} span={12} />
           </Row>
         </div>
-      </form.context>
+      </form.context> */}
     </div>
 
   </NodeLayout >

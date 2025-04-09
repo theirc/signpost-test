@@ -15,6 +15,10 @@ export const inputOutputTypes = {
   execute: "Execute",
 }
 
+interface WorkerCondition {
+  operator?: "equals"
+  value?: any
+}
 
 declare global {
 
@@ -31,8 +35,19 @@ declare global {
     direction: "output" | "input"
     type: IOTypes
     system?: boolean
+    condition?: boolean
     persistent?: boolean
     value?: any
+  }
+
+  interface WorkerConfig {
+    id?: string
+    handles?: WorkerHandles
+    type: WorkerTypes
+    parameters?: object
+    x?: number
+    y?: number
+    condition?: WorkerCondition
   }
 }
 
@@ -40,6 +55,7 @@ declare global {
 export function buildWorker(w: WorkerConfig) {
 
   w.handles = w.handles || {}
+  w.condition ||= {}
   const fields: { [index: string]: NodeIO } = {}
 
   const worker = {
@@ -51,9 +67,19 @@ export function buildWorker(w: WorkerConfig) {
     get id() {
       return w.id
     },
+    set id(v: string) {
+      w.id = v
+    },
 
     get handles() {
       return w.handles
+    },
+
+    get condition() {
+      return w.condition
+    },
+    set condition(v: WorkerCondition) {
+      w.condition = v
     },
 
     parameters: w.parameters as any || {},
@@ -64,10 +90,22 @@ export function buildWorker(w: WorkerConfig) {
       if (worker.executed) return
       worker.executed = true
 
-
       await worker.getValues(p)
 
       console.log("Worker - Executing: ", w.type)
+
+      const cond = Object.values(worker.handles).filter(h => h.condition)[0]
+      if (cond) {
+        // console.log("Worker - Condition: ", cond)
+        if ((!!worker.condition.value) !== (!!cond.value)) {
+          console.log(`Worker ${w.type} - Condition not met`)
+          worker.updateWorker()
+          p.agent.currentWorker = null
+          p.agent.update()
+          return
+        }
+      }
+
 
       p.agent.currentWorker = worker
       worker.updateWorker()
@@ -80,26 +118,6 @@ export function buildWorker(w: WorkerConfig) {
       p.agent.currentWorker = null
       p.agent.update()
     },
-
-    // async execute(p: AgentParameters) {
-    //   console.log("Worker - Setting currentWorker to: ", w.type)
-    //   p.agent.currentWorker = worker
-    //   worker.updateWorker()
-    //   p.agent.update()
-    //   if (!worker.executed) {
-    //     console.log("Worker - Executing: ", w.type)
-    //     await worker.getValues(p)
-    //     await worker.registry.execute(worker, p)
-    //     worker.executed = true
-    //     p.agent.update()
-    //   } else {
-    //     console.log(`Worker '${w.type}' already executed`)
-    //   }
-    //   worker.updateWorker()
-    //   console.log("Worker - Setting currentWorker to: ", null)
-    //   p.agent.currentWorker = null
-    //   p.agent.update()
-    // },
 
     async getValues(p: AgentParameters) {
       const connw = worker.getConnectedWokers()
@@ -128,6 +146,13 @@ export function buildWorker(w: WorkerConfig) {
 
     getConnectedHandler(h?: NodeIO) {
       return worker.getConnectedHandlers(h)[0] || null
+    },
+
+    getConnectedHandlerType(h?: NodeIO): IOTypes {
+      let type: IOTypes = "unknown"
+      const ch = worker.getConnectedHandler(h)
+      if (ch) type = ch.type
+      return type
     },
 
 

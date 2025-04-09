@@ -194,21 +194,6 @@ export function Toolbar(props: Props) {
             <Key />
             <span>Set API Keys</span>
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Workers</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User />
-            <span>More</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <User />
-            <span>Workers</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <User />
-            <span>Here</span>
-          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

@@ -37,7 +37,7 @@ function create(agent: Agent) {
       { type: "string", direction: "input", title: "Input", name: "input" },
       { type: "doc", direction: "input", title: "Documents", name: "documents" },
       { type: "string", direction: "output", title: "Answer", name: "answer" },
-      { type: "unknown", direction: "input", title: "Condition", name: "condition" },
+      { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
     ],
     ai,
   )

@@ -1,7 +1,7 @@
 import { Input, InputTextArea, Row, Select, Slider, useForm } from '@/components/forms'
 import { workerRegistry } from '@/lib/agents/registry'
 import { createModel } from '@/lib/data/model'
-import { NodeProps } from '@xyflow/react'
+import { NodeProps, useNodeConnections } from '@xyflow/react'
 import { Sparkles } from "lucide-react"
 import { InlineHandles, WorkerLabeledHandle } from '../handles'
 import { useWorker } from '../hooks'
@@ -57,6 +57,8 @@ function Parameters({ worker }: { worker: BotWorker }) {
 export function AINode(props: NodeProps) {
   const worker = useWorker<BotWorker>(props.id)
 
+
+
   return <NodeLayout worker={worker} resizable minHeight={340} className='flex flex-col' >
 
     <div className='flex flex-col h-full'>
@@ -66,13 +68,10 @@ export function AINode(props: NodeProps) {
       </InlineHandles>
       <WorkerLabeledHandle handler={worker.fields.documents} />
       <WorkerLabeledHandle handler={worker.fields.prompt} />
-      <MemoizedWorker worker={worker}>
+      <MemoizedWorker worker={worker} name="parameters">
         <Parameters worker={worker} />
       </MemoizedWorker>
-      <WorkerLabeledHandle handler={worker.fields.condition} />
-      {/* <MemoizedWorker worker={worker}>
-        <ConditionHandler />
-      </MemoizedWorker> */}
+      <ConditionHandler />
     </div>
   </NodeLayout>
 

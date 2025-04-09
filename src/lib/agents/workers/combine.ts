@@ -5,7 +5,7 @@ declare global {
     fields: {
       input1: NodeIO
       input2: NodeIO
-      result: NodeIO
+      output: NodeIO
     }
     parameters: {
       mode?: CombineWorkerMode
@@ -16,14 +16,17 @@ declare global {
 async function execute(worker: CombineWorker) {
 
   if (worker.parameters.mode === "nonempty") {
-    if (worker.fields.input1.value) return worker.fields.input1.value
-    return worker.fields.input2.value
+    if (worker.fields.input1.value) {
+      worker.fields.output.value = worker.fields.input1.value
+    } else {
+      worker.fields.output.value = worker.fields.input2.value
+    }
   }
   if (worker.parameters.mode === "concat") {
     //ToDo: add other types
     const v1 = worker.fields.input1.value || ""
     const v2 = worker.fields.input2.value || ""
-    return `${v1}${v2}`
+    worker.fields.output.value = `${v1}${v2}`
   }
 }
 
@@ -37,7 +40,7 @@ export const combine: WorkerRegistryItem = {
       [
         { type: "unknown", direction: "input", title: "Input", name: "input1" },
         { type: "unknown", direction: "input", title: "Input", name: "input2" },
-        { type: "unknown", direction: "output", title: "Result", name: "result" },
+        { type: "unknown", direction: "output", title: "Result", name: "output" },
       ],
       combine
     ) as CombineWorker

@@ -6,6 +6,7 @@ import { useWorkerContext } from "./hooks"
 import { DeleteButton, SubmitButton } from "../forms/submitbutton"
 import { MemoizedWorker } from "./memoizedworkers"
 import { useForceUpdate } from "@/lib/utils"
+import { app } from "@/lib/app"
 
 export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
   return <div className="w-full px-1 pt-2 -mb-2 flex justify-center" onClick={props.onClick}>
@@ -19,6 +20,7 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
 
   const ctx = useWorkerContext()
   const { worker } = ctx
+  const { agent } = app
 
   // console.log("AddFieldsForm: ", worker.id, props.direction)
 
@@ -45,6 +47,8 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
       worker.addHandler(h)
     }
     updateNodeInternals(worker.id)
+    agent.updateWorkers()
+    agent.update()
     form.reset()
   }
 
@@ -55,6 +59,8 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
     worker.deleteHandler(id)
     form.modal.hide()
     updateNodeInternals(worker.id)
+    agent.updateWorkers()
+    agent.update()
   }
 
   function onAddFieldClick() {

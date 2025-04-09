@@ -1,8 +1,8 @@
 import { app } from "@/lib/app"
 import { createContext, useContext } from "react"
 
-interface WorkerContextType {
-  worker: AIWorker
+interface WorkerContextType<T = AIWorker> {
+  worker: T
   onEdit?: (handle: NodeIO) => void
 }
 
@@ -13,6 +13,6 @@ export function useWorker<T = AIWorker>(id: string): T {
   return worker as T
 }
 
-export function useWorkerContext(): WorkerContextType {
-  return useContext<WorkerContextType>(WorkerContext as any) || {} as WorkerContextType
+export function useWorkerContext<T = AIWorker>(): WorkerContextType<T> {
+  return useContext<WorkerContextType>(WorkerContext as any) || {} as any
 }
