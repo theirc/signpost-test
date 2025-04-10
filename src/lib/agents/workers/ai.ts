@@ -7,11 +7,18 @@ import { createXai } from '@ai-sdk/xai'
 import { CoreMessage, generateText } from 'ai'
 
 declare global {
+
+  type ChatHistory = {
+    role: "user" | "assistant"
+    content: string
+  }[]
+
   interface BotWorker extends AIWorker {
     fields: {
       prompt: NodeIO
       input: NodeIO
       documents: NodeIO
+      history: NodeIO
       answer: NodeIO
       condition: NodeIO
     }
@@ -33,9 +40,10 @@ function create(agent: Agent) {
     },
     [
       // { type: "execute", direction: "input", title: "Execute", name: "execute" },
-      { type: "string", direction: "input", title: "Prompt", name: "prompt", persistent: true },
+      { type: "string", direction: "input", title: "Prompt", name: "prompt" },
       { type: "string", direction: "input", title: "Input", name: "input" },
       { type: "doc", direction: "input", title: "Documents", name: "documents" },
+      { type: "chat", direction: "input", title: "History", name: "history" },
       { type: "string", direction: "output", title: "Answer", name: "answer" },
       { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
     ],
@@ -90,7 +98,6 @@ async function execute(worker: BotWorker, p: AgentParameters) {
 
   if (worker.fields.documents.value) {
     const docs = worker.fields.documents.value as VectorDocument[]
-
     let context = `Based on the following context 
     <Context>
     ${docs.map((doc: VectorDocument) => `Title: ${doc.title}\nContent: ${doc.body}\nLink: ${doc.source}`).join("\n\n")}
@@ -98,14 +105,12 @@ async function execute(worker: BotWorker, p: AgentParameters) {
     Answer the question
     `
     messages.push({ role: "system", content: context })
-
-    //  context += "\n\n" + docs.map((doc: VectorDocument) => `Title: ${doc.title}\nContent: ${doc.body}\nLink: ${doc.source}`).join("\n\n")
-    // context = `<Context>
-    // ${context}
-    // </Context>`
   }
 
-  //ToDo: Chat Messages
+  if (worker.fields.history.value && worker.fields.history.value.length > 0) {
+    const history = worker.fields.history.value as ChatHistory
+    messages.push(...history.map((h) => ({ role: h.role, content: h.content })))
+  }
 
   messages.push({ role: "user", content: worker.fields.input.value || "" })
 

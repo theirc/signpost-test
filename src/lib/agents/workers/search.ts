@@ -1,19 +1,28 @@
 import axios from "axios"
 
 declare global {
+
   interface SearchWorker extends AIWorker {
     fields: {
       input: NodeIO
       output: NodeIO
       references: NodeIO
+
+      engine: NodeIO
+      domain: NodeIO
+      distance: NodeIO
+      maxResults: NodeIO
+
+      condition: NodeIO
     },
     parameters: {
+      engine?: "weaviate" | "exa"
       maxResults?: number
-      engine?: string
       domain?: string
       distance?: number
     }
   }
+
   interface SearchParams {
     query: string
     domains?: string[]
@@ -33,25 +42,6 @@ declare global {
     lon?: number
   }
 }
-
-
-function create(agent: Agent) {
-
-  return agent.initializeWorker(
-    {
-      type: "search",
-      parameters: {},
-    },
-    [
-      { type: "string", direction: "input", title: "Input", name: "input" },
-      { type: "doc", direction: "output", title: "Documents", name: "output" },
-      { type: "references", direction: "output", title: "References", name: "references" },
-    ],
-    search
-  )
-
-}
-
 
 function deduplicateDocuments(array: VectorDocument[]): VectorDocument[] {
   const seen = {}
@@ -100,7 +90,29 @@ async function execute(worker: SearchWorker) {
 export const search: WorkerRegistryItem = {
   title: "Search",
   execute,
-  create,
+  create(agent: Agent) {
+    return agent.initializeWorker(
+      {
+        type: "search",
+        parameters: {},
+      },
+      [
+        { type: "string", direction: "input", title: "Input", name: "input" },
+        { type: "doc", direction: "output", title: "Documents", name: "output" },
+        { type: "references", direction: "output", title: "References", name: "references" },
+
+        { type: "string", direction: "input", title: "Engine", name: "engine" },
+        { type: "string", direction: "input", title: "Domain", name: "domain" },
+        { type: "number", direction: "input", title: "Distance", name: "distance" },
+        { type: "number", direction: "input", title: "Max Results", name: "maxResults" },
+
+
+
+        { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
+      ],
+      search
+    )
+  },
   get registry() { return search },
 }
 
