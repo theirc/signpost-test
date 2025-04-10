@@ -25,7 +25,7 @@ export function HanlderIcon({ handler, worker }: { handler: NodeIO, worker: AIWo
     {type == "doc" && <File size={iconSize} className="mt-[8px]" />}
     {type == "references" && <Link size={iconSize} className="mt-[8px]" />}
 
-    {/* {type == "chat" && <MessageCircleMore size={iconSize} className="mt-[8px]" />} */}
+    {type == "chat" && <MessageCircleMore size={iconSize} className="mt-[8px]" />}
     {/* {type == "audio" && <Headphones size={iconSize} className="mt-[8px]" />} */}
     {/* {type == "image" && <Image size={iconSize} className="mt-[8px]" />} */}
     {/* {type == "video" && <Video size={iconSize} className="mt-[8px]" />} */}

@@ -13,7 +13,7 @@ function create(agent: Agent) {
     { type: "mock" },
     [
       { type: "unknown", direction: "input", title: "Input", name: "input" },
-      { type: "unknown", direction: "output", title: "Ouput", name: "output", persistent: true },
+      { type: "unknown", direction: "output", title: "Ouput", name: "output" },
     ],
     mock
   )

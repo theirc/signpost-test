@@ -32,7 +32,7 @@ export function ConditionHandler() {
   worker.fields.condition.type = type
 
   // console.log("Render Condition")
-  return <div>
+  return <div className="">
     <WorkerLabeledHandle handler={worker.fields.condition} />
     <MemoizedWorker worker={worker} name="condition">
       {type == "boolean" && <ConditionBoolean worker={worker} />}

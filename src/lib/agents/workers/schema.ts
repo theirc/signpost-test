@@ -6,6 +6,7 @@ declare global {
   interface SchemaWorker extends AIWorker {
     fields: {
       input: NodeIO
+      condition: NodeIO
     }
     parameters: {
       temperature?: number
@@ -20,6 +21,7 @@ function create(agent: Agent) {
     { type: "schema" },
     [
       { type: "string", direction: "input", title: "Input", name: "input" },
+      { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
     ],
     schema
   )

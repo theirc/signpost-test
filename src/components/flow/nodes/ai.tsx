@@ -13,7 +13,6 @@ const { ai } = workerRegistry
 
 ai.icon = Sparkles
 
-
 const model = createModel({
   fields: {
     prompt: { title: "Prompt", type: "string", },
@@ -26,14 +25,14 @@ function Parameters({ worker }: { worker: BotWorker }) {
 
   const { form, m, watch } = useForm(model, {
     values: {
-      prompt: worker.fields.prompt.value,
+      prompt: worker.fields.prompt.default,
       temperature: worker.parameters.temperature,
       model: worker.parameters.model,
     }
   })
 
   watch((value, { name }) => {
-    if (name === "prompt") worker.fields.prompt.value = value.prompt
+    if (name === "prompt") worker.fields.prompt.default = value.prompt
     if (name === "temperature") worker.parameters.temperature = value.temperature
     if (name === "model") worker.parameters.model = value.model
   })
@@ -43,10 +42,10 @@ function Parameters({ worker }: { worker: BotWorker }) {
       <Row className='flex-grow'>
         <InputTextArea field={m.prompt} span={12} hideLabel className='min-h-10 h-full resize-none' />
       </Row>
-      <Row className='py-4'>
+      <Row className='py-2'>
         <Select field={m.model} span={12} />
       </Row>
-      <Row className='py-4'>
+      <Row className='py-2'>
         <Input field={m.temperature} type="number" span={12} />
       </Row>
     </div>
@@ -57,22 +56,18 @@ function Parameters({ worker }: { worker: BotWorker }) {
 export function AINode(props: NodeProps) {
   const worker = useWorker<BotWorker>(props.id)
 
+  return <NodeLayout worker={worker} resizable minHeight={400} className='flex flex-col' >
 
-
-  return <NodeLayout worker={worker} resizable minHeight={340} className='flex flex-col' >
-
-    <div className='flex flex-col h-full'>
-      <InlineHandles>
-        <WorkerLabeledHandle handler={worker.fields.input} />
-        <WorkerLabeledHandle handler={worker.fields.answer} />
-      </InlineHandles>
-      <WorkerLabeledHandle handler={worker.fields.documents} />
-      <WorkerLabeledHandle handler={worker.fields.prompt} />
-      <MemoizedWorker worker={worker} name="parameters">
-        <Parameters worker={worker} />
-      </MemoizedWorker>
-      <ConditionHandler />
-    </div>
+    <InlineHandles>
+      <WorkerLabeledHandle handler={worker.fields.input} />
+      <WorkerLabeledHandle handler={worker.fields.answer} />
+    </InlineHandles>
+    <WorkerLabeledHandle handler={worker.fields.history} />
+    <WorkerLabeledHandle handler={worker.fields.documents} />
+    <WorkerLabeledHandle handler={worker.fields.prompt} />
+    <MemoizedWorker worker={worker} name="parameters">
+      <Parameters worker={worker} />
+    </MemoizedWorker>
+    <ConditionHandler />
   </NodeLayout>
-
 }

@@ -20,10 +20,10 @@ export function MockNode(props: NodeProps) {
 
   const worker = useWorker<MockWorker>(props.id)
   useNodeConnections({ id: props.id })
-  const { form, watch, m } = useForm(model, { doNotReset: true, values: { output: worker.fields.output.value } })
+  const { form, watch, m } = useForm(model, { doNotReset: true, values: { output: worker.fields.output.default } })
 
   watch((value, { name, type }) => {
-    if (name === "output") worker.fields.output.value = value.output
+    if (name === "output") worker.fields.output.default = value.output
   })
 
   const ch = worker.getConnectedHandler(worker.fields.input)

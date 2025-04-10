@@ -16,17 +16,31 @@ declare global {
 async function execute(worker: CombineWorker) {
 
   if (worker.parameters.mode === "nonempty") {
+
+    if (Array.isArray(worker.fields.input1.value)) {
+      if (worker.fields.input1.value.length > 0) {
+        worker.fields.output.value = worker.fields.input1.value
+      } else {
+        worker.fields.output.value = worker.fields.input2.value
+      }
+      return
+    }
+
     if (worker.fields.input1.value) {
       worker.fields.output.value = worker.fields.input1.value
     } else {
       worker.fields.output.value = worker.fields.input2.value
     }
   }
+
   if (worker.parameters.mode === "concat") {
-    //ToDo: add other types
-    const v1 = worker.fields.input1.value || ""
-    const v2 = worker.fields.input2.value || ""
-    worker.fields.output.value = `${v1}${v2}`
+
+    if (typeof worker.fields.input1.value == "string") {
+      worker.fields.output.value = `${worker.fields.input1.value || ""}${worker.fields.input2.value || ""}`
+    } else if (Array.isArray(worker.fields.input1.value)) {
+      worker.fields.output.value = [...(worker.fields.input1.value || []), ...(worker.fields.input2.value || [])]
+    }
+
   }
 }
 

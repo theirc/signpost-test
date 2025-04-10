@@ -76,8 +76,8 @@ export function buildAgent(config: AgentConfig) {
         w.executed = false
         for (const key in w.handles) {
           const h = w.handles[key]
-          if (h.persistent) continue
-          h.value = undefined
+          // if (h.persistent) continue
+          h.value = h.default || undefined
         }
       }
     },

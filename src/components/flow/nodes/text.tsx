@@ -31,7 +31,7 @@ export function TextNode(props: NodeProps) {
   return <NodeLayout worker={worker} resizable>
 
     <WorkerLabeledHandle handler={worker.fields.output} />
-    <div className="flex size-full pb-12 flex-col">
+    <div className="flex flex-col size-full pb-12 ">
       <div className="flex-grow nodrag p-2">
         <form.context>
           <Row className="h-full">
@@ -39,8 +39,8 @@ export function TextNode(props: NodeProps) {
           </Row>
         </form.context>
       </div>
+      <ConditionHandler />
     </div>
-    <ConditionHandler />
 
 
   </NodeLayout>

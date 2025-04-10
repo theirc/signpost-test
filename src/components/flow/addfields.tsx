@@ -16,7 +16,7 @@ export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
 
 
 
-export function AddFieldsForm(props: { includePrompt?: boolean, direction: "input" | "output", persist?: boolean }) {
+export function AddFieldsForm(props: { includePrompt?: boolean, direction: "input" | "output" }) {
 
   const ctx = useWorkerContext()
   const { worker } = ctx
@@ -38,7 +38,6 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
       name: data.name,
       type: data.type as any,
       direction: props.direction,
-      persistent: props.persist,
       prompt: props.includePrompt ? data.prompt : undefined,
     }
     if (data.id) {

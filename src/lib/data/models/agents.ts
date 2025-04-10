@@ -50,7 +50,8 @@ async function saveAgent(agent: Agent) {
     }
     for (const key in w.handles) {
       const h = w.handles[key]
-      if (!h.persistent) delete h.value
+      delete h.value
+      delete h.value
       wc.handles[key] = h
     }
 
@@ -87,7 +88,7 @@ async function loadAgent(id: number): Promise<Agent> {
   for (const w of workers) {
     const { handles, ...rest } = w
 
-    console.log("Loading worker: ", w.type, rest.condition)
+    console.log("Loading worker: ", w.type)
 
     const factory = (workerRegistry[w.type] as WorkerRegistryItem)
     if (!factory) continue
@@ -102,7 +103,8 @@ async function loadAgent(id: number): Promise<Agent> {
       const existingHandler = wrk.fields[h.name]
       if (existingHandler) {
         existingHandler.id = h.id
-        if (h.persistent) existingHandler.value = h.value
+        existingHandler.default = h.default
+        // if (h.persistent) existingHandler.value = h.value
         continue
       }
       wrk.addHandler(h)

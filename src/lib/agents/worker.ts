@@ -8,7 +8,7 @@ export const inputOutputTypes = {
   unknown: "Unknown",
   doc: "Documents",
   references: "References",
-  // chat: "Chat",
+  chat: "Chat",
   // audio: "Audio",
   // image: "Image",
   // video: "Video",
@@ -36,8 +36,9 @@ declare global {
     type: IOTypes
     system?: boolean
     condition?: boolean
-    persistent?: boolean
+    // persistent?: boolean
     value?: any
+    default?: any
   }
 
   interface WorkerConfig {
@@ -123,7 +124,7 @@ export function buildWorker(w: WorkerConfig) {
       const connw = worker.getConnectedWokers()
       for (const { worker, source, target } of connw) {
         await worker.execute(p)
-        target.value = source.value
+        target.value = source.value || target.default
       }
     },
 
@@ -146,13 +147,6 @@ export function buildWorker(w: WorkerConfig) {
 
     getConnectedHandler(h?: NodeIO) {
       return worker.getConnectedHandlers(h)[0] || null
-    },
-
-    getConnectedHandlerType(h?: NodeIO): IOTypes {
-      let type: IOTypes = "unknown"
-      const ch = worker.getConnectedHandler(h)
-      if (ch) type = ch.type
-      return type
     },
 
 

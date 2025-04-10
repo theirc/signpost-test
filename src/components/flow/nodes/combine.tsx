@@ -48,12 +48,9 @@ function Parameters({ worker }: { worker: CombineWorker }) {
 export function CombineNode(props: NodeProps) {
   const worker = useWorker(props.id) as CombineWorker
 
-  const type1 = worker.getConnectedHandlerType(worker.fields.input1)
-  const type2 = worker.getConnectedHandlerType(worker.fields.input2)
+  const type1 = worker.inferType(worker.fields.input1)
+  const type2 = worker.inferType(worker.fields.input2)
   const type = type1 == "unknown" ? type2 : type1
-  // const ch = worker.getConnectedHandler(worker.fields.input1)
-  // let type: IOTypes = "unknown"
-  // if (ch) type = ch.type
   worker.fields.input1.type = type
   worker.fields.input2.type = type
   worker.fields.output.type = type
@@ -85,13 +82,6 @@ export function CombineNode(props: NodeProps) {
       <MemoizedWorker worker={worker}>
         <Parameters worker={worker} />
       </MemoizedWorker>
-      {/* <form.context>
-        <div className='p-2 mt-2 nodrag w-full flex-grow flex flex-col'>
-          <Row className='py-4'>
-            <Select field={m.mode} span={12} />
-          </Row>
-        </div>
-      </form.context> */}
     </div>
 
   </NodeLayout >
