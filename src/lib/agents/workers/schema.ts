@@ -28,7 +28,7 @@ function create(agent: Agent) {
 
 }
 
-async function execute(worker: AIWorker) {
+async function execute(worker: AIWorker, p: AgentParameters) {
 
   const handlers = worker.getUserHandlers()
   const input = worker.fields.input.value
@@ -69,12 +69,10 @@ async function execute(worker: AIWorker) {
   }
   `
 
-  const apiKey = localStorage.getItem("openai-api-key")
   const schemaModel = createLanguageModel({
     OPENAI_MODEL: "gpt-4o",
-    OPENAI_API_KEY: apiKey,
+    OPENAI_API_KEY: p.apikeys.openai,
   })
-
 
   const validator = createTypeScriptJsonValidator<any>(schema, "Schema")
   const translator = createJsonTranslator<any>(schemaModel, validator)

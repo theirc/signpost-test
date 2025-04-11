@@ -14,7 +14,7 @@ export function HanlderIcon({ handler, worker }: { handler: NodeIO, worker: AIWo
   let type = handler.type
 
   if (type == "unknown" && handler.direction == "input" && worker) {
-    type = worker.inferType(handler)
+    type = worker.inferType(handler, app.agent)
   }
 
   return <>

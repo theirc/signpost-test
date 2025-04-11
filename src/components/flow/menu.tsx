@@ -5,13 +5,30 @@ import { Separator } from "../ui/separator"
 import { toast } from "sonner"
 import { createModel } from "@/lib/data/model"
 import { Input, Modal, Row, useForm } from "../forms"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { title } from "process"
 import { cloneDeep } from "lodash"
 import axios from "axios"
+import {
+  Menubar,
+  MenubarCheckboxItem,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarRadioGroup,
+  MenubarRadioItem,
+  MenubarSeparator,
+  MenubarShortcut,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
+  MenubarTrigger,
+} from "@/components/ui/menubar"
+
 
 import { app } from "@/lib/app"
-import { agents } from "@/lib/data"
+import { agentsModel } from "@/lib/data"
+import { agents } from "@/lib/agents"
 
 async function executeAgent() {
 
@@ -51,10 +68,12 @@ function MenuDragger(props: { icon: any, title: string, type: string }) {
   const onDragStart = (event: React.DragEvent<HTMLAnchorElement>, nodeType) => {
     event.dataTransfer.setData('nodeType', nodeType)
     event.dataTransfer.effectAllowed = 'move'
+    console.log("drag")
   }
 
   const onClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
     event.preventDefault()
+
   }
 
   return <a href={"#"} onDragStart={(event) => onDragStart(event, props.type)} onClick={onClick} draggable>
@@ -76,6 +95,7 @@ const model = createModel({
 )
 
 export function Toolbar(props: Props) {
+
 
 
   const { form, m, watch } = useForm(model, {
@@ -175,12 +195,6 @@ export function Toolbar(props: Props) {
       <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play" onClick={() => onPlay()}>
         <Play size={18} />
       </div>
-      {/* <div className="rounded-sm hover:text-rose-600  text-indigo-500 cursor-pointer" title="Step">
-      <StepForward size={18} />
-    </div> */}
-      {/* <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Stop">
-      <Square size={18} />
-    </div> */}
       <Separator orientation="vertical" />
       {Object.entries(workerRegistry).map(([key, node]) => (
         <MenuDragger title={node.title} type={key} icon={node.icon} key={key} />
@@ -190,12 +204,43 @@ export function Toolbar(props: Props) {
           <EllipsisVertical size={18} className="cursor-pointer" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={onSetAPIKey}>
+          <DropdownMenuItem onClick={onSetAPIKey} >
             <Key />
             <span>Set API Keys</span>
           </DropdownMenuItem>
+          <DropdownMenuItem>
+            <MenuDragger title="Schema" type={"schema"} icon={null} />
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* <Menubar className="h-4 border-0 hi">
+        <MenubarMenu>
+          <MenubarTrigger className="font-normal text-xs">
+            In/Out
+          </MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>
+              <MenuDragger title="Schema" type={"schema"} icon={null} />
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>Print</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger className="font-normal text-xs">
+            Debug
+          </MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem>
+              <MenuDragger title="Schema" type={"schema"} icon={null} />
+            </MenubarItem>
+            <MenubarSeparator />
+            <MenubarItem>Print</MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+      </Menubar> */}
+
     </div>
 
     <Modal form={form} title="API Keys">

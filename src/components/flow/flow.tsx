@@ -15,14 +15,15 @@ import { AINode } from './nodes/ai'
 // import { SpeechToText } from './nodes/stt'
 // import { BackgroundNode } from './nodes/backgroundstart'
 import { Skeleton } from '../ui/skeleton'
-import { agents } from '@/lib/data'
-import { buildAgent } from '@/lib/agents'
+import { agentsModel } from '@/lib/data'
+import { agents } from '@/lib/agents'
 import { CombineNode } from './nodes/combine'
 import { display } from '@/lib/agents/workers/display'
 import { DisplayNode } from './nodes/diisplay'
 import { MockNode } from './nodes/mock'
 import { useForceUpdate } from '@/lib/utils'
 import { SearchNode } from './nodes/search'
+import { AgentNode } from './nodes/agent'
 
 const nodeTypes = {
   request: RequestNode,
@@ -37,6 +38,7 @@ const nodeTypes = {
   display: DisplayNode,
   mock: MockNode,
   search: SearchNode,
+  agentWorker: AgentNode,
 }
 
 function Flow() {
@@ -145,10 +147,14 @@ function Flow() {
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
+    console.log("DragOver:", event.dataTransfer.getData("nodeType"))
+
   }, [])
 
   const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    console.log("Drop:", event.dataTransfer.getData("nodeType"))
+
     const type = event.dataTransfer.getData("nodeType") as WorkerTypes
     if (!type) return
 
@@ -225,7 +231,7 @@ export function FlowDesigner({ id }: { id?: string }) {
     if (isLoading.current) return
     isLoading.current = true
     if (id == "new") {
-      app.agent = buildAgent({
+      app.agent = agents.buildAgent({
         title: "New Agent",
       })
       setAgent(app.agent)

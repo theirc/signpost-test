@@ -21,7 +21,10 @@ export function Select({ field, span, className, required, validate, hideLabel, 
       rules={{ validate: validateFn }}
       render={({ field: { name, value, onChange } }) => {
 
-        return <ShadcnSelect name={name} onValueChange={onChange} value={value || undefined}>
+        return <ShadcnSelect name={name} onValueChange={(v) => {
+          onChange(v)
+          props.onChange?.(v as any)
+        }} value={value || undefined}>
           <SelectTrigger className={cn("focus-visible:ring-transparent ring-0 focus:ring-0")}>
             <SelectValue className={cn("focus-visible:ring-transparent w-full h-full", className)}  {...props} />
           </SelectTrigger>

@@ -7,6 +7,7 @@ import { NodeProps, useNodeConnections } from '@xyflow/react'
 import { Eye, FlaskConical, Type } from "lucide-react"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
+import { app } from "@/lib/app"
 const { mock } = workerRegistry
 mock.icon = FlaskConical
 
@@ -26,7 +27,7 @@ export function MockNode(props: NodeProps) {
     if (name === "output") worker.fields.output.default = value.output
   })
 
-  const ch = worker.getConnectedHandler(worker.fields.input)
+  const ch = worker.getConnectedHandler(worker.fields.input, app.agent)
 
   let content = <h3 className="flex justify-center font-semibold my-4 text-red-600">Connect the Input Node</h3>
 

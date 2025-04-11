@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { createModel } from '@/lib/data/model'
 import { Row, Select, useForm } from '@/components/forms'
 import { MemoizedWorker } from '../memoizedworkers'
+import { app } from '@/lib/app'
 const { combine } = workerRegistry
 
 const list = [
@@ -48,8 +49,8 @@ function Parameters({ worker }: { worker: CombineWorker }) {
 export function CombineNode(props: NodeProps) {
   const worker = useWorker(props.id) as CombineWorker
 
-  const type1 = worker.inferType(worker.fields.input1)
-  const type2 = worker.inferType(worker.fields.input2)
+  const type1 = worker.inferType(worker.fields.input1, app.agent)
+  const type2 = worker.inferType(worker.fields.input2, app.agent)
   const type = type1 == "unknown" ? type2 : type1
   worker.fields.input1.type = type
   worker.fields.input2.type = type
