@@ -1,3 +1,4 @@
+import { agentWorker } from "./workers/agent"
 import { ai } from "./workers/ai"
 import { combine } from "./workers/combine"
 import { display } from "./workers/display"
@@ -33,6 +34,7 @@ export const workerRegistry = {
   search,
   text,
   combine,
+  agentWorker,
   display,
   mock,
 } satisfies { [index: string]: WorkerRegistryItem }

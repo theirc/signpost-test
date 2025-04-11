@@ -8,6 +8,7 @@ import { Eye, Type } from "lucide-react"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
 import { Markdown } from "@/components/bot_management/markdown"
+import { app } from "@/lib/app"
 
 const { display } = workerRegistry
 
@@ -19,7 +20,7 @@ export function DisplayNode(props: NodeProps) {
 
   const worker = useWorker<DisplayWorker>(props.id)
   useNodeConnections({ id: props.id })
-  const ch = worker.getConnectedHandler(worker.fields.input)
+  const ch = worker.getConnectedHandler(worker.fields.input, app.agent)
   let type: IOTypes = "unknown"
   if (ch) type = ch.type
   worker.fields.output.type = type

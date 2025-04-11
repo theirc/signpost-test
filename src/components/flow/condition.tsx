@@ -9,6 +9,7 @@ import { MemoizedWorker } from "./memoizedworkers"
 import { Switch } from "../ui/switch"
 import { Label } from "../ui/label"
 import { useState } from "react"
+import { app } from "@/lib/app"
 
 const list = [
   { label: "Equals", value: "equals" },
@@ -25,7 +26,7 @@ const model = createModel({
 export function ConditionHandler() {
 
   const { worker } = useWorkerContext<AIWorker>()
-  const ch = worker.getConnectedHandler(worker.fields.condition)
+  const ch = worker.getConnectedHandler(worker.fields.condition, app.agent)
   useNodeConnections({ id: worker.id })
   let type: IOTypes = "unknown"
   if (ch) type = ch.type

@@ -1,5 +1,6 @@
 import { ulid } from "ulid"
-import { app } from "../app"
+// import { app } from "../app"
+import { loadAgent } from "./agentfactory"
 
 export const inputOutputTypes = {
   string: "Text",
@@ -65,15 +66,22 @@ export function buildWorker(w: WorkerConfig) {
     registry: null as WorkerRegistryItem,
     executed: false,
 
+    referencedAgent: null, //this cannot be typed because it causes circular references. Cast to Agent when needed
+
     get id() {
       return w.id
     },
+
     set id(v: string) {
       w.id = v
     },
 
     get handles() {
       return w.handles
+    },
+
+    get handlersArray() {
+      return Object.values(w.handles || {}) as NodeIO[]
     },
 
     get condition() {
@@ -121,15 +129,16 @@ export function buildWorker(w: WorkerConfig) {
     },
 
     async getValues(p: AgentParameters) {
-      const connw = worker.getConnectedWokers()
+      const connw = worker.getConnectedWokers(p)
       for (const { worker, source, target } of connw) {
         await worker.execute(p)
         target.value = source.value || target.default
       }
     },
 
-    getConnectedHandlers(h?: NodeIO) {
-      const { agent, agent: { workers } } = app
+    getConnectedHandlers(h: NodeIO, curAgent: any) {
+      const agent: Agent = curAgent
+      const { workers } = agent
 
       const connected: AIWorker[] = []
       const connwh: NodeIO[] = []
@@ -145,18 +154,18 @@ export function buildWorker(w: WorkerConfig) {
       return connwh
     },
 
-    getConnectedHandler(h?: NodeIO) {
-      return worker.getConnectedHandlers(h)[0] || null
+    getConnectedHandler(h: NodeIO, curAgent: any) {
+      return worker.getConnectedHandlers(h, curAgent)[0] || null
     },
 
 
-    inferType(h: NodeIO): IOTypes {
-      const c = worker.getConnectedHandler(h)
+    inferType(h: NodeIO, curAgent: any): IOTypes {
+      const c = worker.getConnectedHandler(h, curAgent)
       return c?.type || "unknown"
     },
 
-    getConnectedWokers() {
-      const { agent, agent: { workers } } = app
+    getConnectedWokers(p: AgentParameters) {
+      const { agent, agent: { workers } } = p
 
       const connected: AIWorker[] = []
       const connwh: { worker: AIWorker, source: NodeIO, target: NodeIO }[] = []
@@ -208,6 +217,29 @@ export function buildWorker(w: WorkerConfig) {
 
     getUserHandlers() {
       return Object.values(w.handles || {}).filter(h => !h.system)
+    },
+
+    async loadAgent() {
+      if (!worker.parameters || !worker.parameters.agent) return
+      const agent = await loadAgent(worker.parameters.agent)
+      const inp = agent.getInputWorker()
+      const out = agent.getResponseWorker()
+      if (!inp || !out) return
+
+      worker.referencedAgent = agent
+      w.handles = {}
+
+      for (const h of Object.values(inp.handles)) {
+        h.direction = "input"
+        worker.addHandler(h)
+      }
+      for (const h of Object.values(out.handles)) {
+        h.direction = "output"
+        worker.addHandler(h)
+      }
+
+      worker.updateWorker()
+      console.log("Worker Referenced Agent Loaded: ", worker.referencedAgent)
     },
 
 

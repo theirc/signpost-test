@@ -1,5 +1,5 @@
 import { ZodType } from "zod"
-import { Database } from "./supabase"
+import { Database } from "../agents/supabase"
 import { supabase } from "."
 
 type FieldTypes = "string" | "number" | "boolean" | "json"

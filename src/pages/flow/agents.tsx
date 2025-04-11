@@ -1,6 +1,6 @@
 import { Datagrid } from "@/components/forms"
 import { Link } from "react-router-dom"
-import { agents } from "@/lib/data"
+import { agentsModel } from "@/lib/data"
 import { Button } from "@/components/ui/button"
 
 export function AgentList() {
@@ -16,7 +16,7 @@ export function AgentList() {
       </Link>
     </div>
     <div className="flex-grow">
-      <Datagrid model={agents} editPath="agent" />
+      <Datagrid model={agentsModel} editPath="agent" />
     </div>
   </div>
 
