@@ -174,7 +174,7 @@ export function LogsTable({
             id: "bot",
             label: "Bot",
             component: SelectFilter,
-            props: { filterKey: "bot", placeholder: "All bots" },
+            props: { filterKey: "bot_name", placeholder: "All bots" },
         },
         {
             id: "detectedLanguage",

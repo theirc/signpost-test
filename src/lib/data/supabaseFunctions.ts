@@ -261,6 +261,7 @@ export interface BotScore {
   created_at?: string
   bot_name?: string
   category_name?: string
+  log_id?: string
 }
 
 export interface Role {
@@ -1746,7 +1747,7 @@ export async function getSystemPromptById(id: string): Promise<{
 // =========== BOT LOG FUNCTIONS ===========
 
 export async function fetchBotLogs(): Promise<{
-  data: BotScore[],
+  data: BotLog[],
   error: Error | null
 }> {
   try {
