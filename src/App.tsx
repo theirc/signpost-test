@@ -25,14 +25,16 @@ import { ScoreForm } from "./pages/evaluation/score.tsx"
 import { ProjectForm } from "./pages/settings/project.tsx"
 import { TeamForm } from "./pages/settings/team.tsx"
 import { UserForm } from "./pages/settings/users.tsx"
+import { CustomView } from "./pages/evaluation/custom-view.tsx"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
   '/chat': 'Playground',
   '/rag': 'Collections',
   '/sources': 'Data Sources',
-  '/logs': 'Logs',
-  '/scores': 'Scores',
+  '/logs': 'Evaluation / Logs',
+  '/scores': 'Evaluation / Scores',
+  '/customview': 'Evaluation / Custom View',
   '/bots': 'Bots',
   '/bots/prompts': 'System Prompts',
   '/settings/projects': 'Settings / Projects',
@@ -90,6 +92,7 @@ function AppContent() {
             <Route path="/logs/:id" element={<LogForm />} />
             <Route path="/scores" element={<BotScoresTable />} />
             <Route path="/scores/:id" element={<ScoreForm />} />
+            <Route path="/customview" element={<CustomView />} />
             <Route path="/bots" element={<BotManagement />} />
             <Route path="/bots/prompts" element={<SystemPrompts />} />
             <Route path="/settings" element={<SettingsLayout />}>

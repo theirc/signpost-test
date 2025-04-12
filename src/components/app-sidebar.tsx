@@ -34,7 +34,8 @@ export function AppSidebar() {
         icon: Logs,
         items: [
           {title: "Logs", url: "logs"},
-          {title: "Scores", url: "scores"}
+          {title: "Scores", url: "scores"},
+          {title: "Custom View", url:"customview"}
         ]
       },
       {

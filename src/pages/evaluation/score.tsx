@@ -23,6 +23,7 @@ export function ScoreForm() {
         bot: "",
         message: "",
         category: "",
+        log_id: "",
     })
 
     useEffect(() => {
@@ -59,6 +60,7 @@ export function ScoreForm() {
                         bot: score.bot,
                         message: score.message,
                         category: score.category,
+                        log_id: score.log_id,
                     })
                 } else {
                     console.log("No score found with ID:", id)
@@ -194,6 +196,15 @@ export function ScoreForm() {
                             id="search_term"
                             value={formData.message}
                             onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="log_id">Log ID</Label>
+                        <Input
+                            id="log_id"
+                            value={formData.log_id}
+                            onChange={(e) => setFormData(prev => ({ ...prev, log_id: e.target.value }))}
                         />
                     </div>
 

@@ -24,6 +24,7 @@ export type Score = {
     message: string
     category: string
     category_name?: string
+    log_id?: string
     bots?: {
         name: string
     }
