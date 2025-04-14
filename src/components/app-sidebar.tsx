@@ -24,7 +24,7 @@ export function AppSidebar() {
       },
       {
         title: "Playground",
-        url: "chat",
+        url: "playground",
         icon: MessagesSquare,
         isLink: true,
       },

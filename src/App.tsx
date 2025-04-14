@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Separator } from "@radix-ui/react-separator"
 import { BrowserRouter, Route, Routes, useLocation, Link, useNavigate } from "react-router-dom"
 import Chat from "./pages/chat"
+import Playground from "./pages/playground.tsx"
 import { CollectionsManagement } from "./pages/knowledge"
 import { BotLogsTable } from "./pages/evaluation/logs.tsx"
 import { BotManagement } from "./pages/bots/bots.tsx"
@@ -29,6 +30,7 @@ import { UserForm } from "./pages/settings/users.tsx"
 const routeNames: Record<string, string> = {
   '/': 'Designer',
   '/chat': 'Playground',
+  '/playground': 'Chat',
   '/rag': 'Collections',
   '/sources': 'Data Sources',
   '/logs': 'Logs',
@@ -84,6 +86,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<AgentList />} />
             <Route path="/chat" element={<Chat />} />
+            <Route path="/playground" element={<Playground/>} />
             <Route path="/rag" element={<CollectionsManagement />} />
             <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
