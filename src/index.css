@@ -15,6 +15,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  font-family: 'Inter', sans-serif;
 }
 .bot-message-content a {
   color: #3B82F6;
@@ -40,6 +41,7 @@ body {
   margin-bottom: 1rem; 
   line-height: 1.5; 
   color: #374151; 
+  font-family: 'Inter', sans-serif;
 }
 
 .bot-message-content p:last-child {
@@ -53,6 +55,75 @@ body {
 .bot-message-content p em {
   font-style: italic;
   color: #4B5563; 
+}
+
+/* Chat interface font and spacing */
+.chat-messages-container {
+  font-size: 0.925rem;
+  font-family: 'Inter', sans-serif;
+  scroll-behavior: smooth;
+  padding-bottom: 60vh; /* Add extra padding at bottom for response viewing */
+}
+
+/* Chat interface text styles */
+.chat-messages-container p, 
+.bot-message-content p, 
+.bot-message-content,
+.font-sans.text-base,
+.font-sans.text-sm {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-size: 0.925rem;
+}
+
+.bot-message-content ul li,
+.bot-message-content ol li {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-size: 0.925rem;
+}
+
+/* User message text */
+.break-words.whitespace-pre-wrap {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.5;
+  font-size: 0.925rem;
+  word-break: break-word;
+  hyphens: auto;
+  overflow-wrap: break-word;
+}
+
+/* Message bubble styles - simplified approach */
+.message-bubble {
+  display: inline-block;
+  min-width: 80px;
+  max-width: 48%;
+  background-color: rgba(59, 130, 246, 0.04);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin-top: -10px;
+}
+
+/* Single line messages also get the same subtle rounding */
+.message-bubble.single-line {
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+
+/* Multi-line messages have the same styling */
+.message-bubble:not(.single-line) {
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+
+/* Ensure text always has proper padding */
+.message-bubble .break-words.whitespace-pre-wrap {
+  display: inline;
+}
+
+/* Space for waiting response below user message */
+.message-waiting-area {
+  min-height: 40vh;
 }
 
 @layer base {
@@ -207,4 +278,57 @@ body {
 
 .animate-message-popup {
   animation: messagePopup 0.3s ease-out forwards;
+}
+
+@keyframes gradientText {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-text-animation {
+  background-size: 200% auto;
+  animation: gradientText 3s ease infinite;
+}
+
+/* Transition style for text when animation completes */
+.typewriter-text-complete {
+  transition: all 0.5s ease-out;
+  color: black;
+}
+
+/* Fade in animation for new messages */
+@keyframes fadeInMessage {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-fade-in {
+  animation: fadeInMessage 0.3s ease-out forwards;
+}
+
+/* Pulsing animation for model selection */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.1);
+  }
+}
+
+.empty-model-select {
+  animation: pulseGlow 2s ease-in-out infinite;
 }
