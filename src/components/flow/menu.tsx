@@ -1,34 +1,16 @@
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar"
 import { workerRegistry } from "@/lib/agents/registry"
-import { ChevronLast, EllipsisVertical, Key, LoaderCircle, Play, Save, Square, StepForward, StopCircle, StopCircleIcon, User } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../ui/dropdown-menu"
-import { Separator } from "../ui/separator"
-import { toast } from "sonner"
 import { createModel } from "@/lib/data/model"
-import { Input, Modal, Row, useForm } from "../forms"
-import { useEffect, useRef, useState } from "react"
-import { title } from "process"
 import { cloneDeep } from "lodash"
-import axios from "axios"
-import {
-  Menubar,
-  MenubarCheckboxItem,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarRadioGroup,
-  MenubarRadioItem,
-  MenubarSeparator,
-  MenubarShortcut,
-  MenubarSub,
-  MenubarSubContent,
-  MenubarSubTrigger,
-  MenubarTrigger,
-} from "@/components/ui/menubar"
+import { EllipsisVertical, LoaderCircle, Play, Save } from "lucide-react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
+import { Input, Modal, Row, useForm } from "../forms"
+import { Separator } from "../ui/separator"
 
 
-import { app } from "@/lib/app"
-import { agentsModel } from "@/lib/data"
 import { agents } from "@/lib/agents"
+import { app } from "@/lib/app"
 
 async function executeAgent() {
 
@@ -81,6 +63,31 @@ function MenuDragger(props: { icon: any, title: string, type: string }) {
       {props.icon && <props.icon size={16} />}
       {props.title}
     </div>
+  </a>
+
+}
+function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: WorkerRegistryItem }) {
+
+  const onDragStart = (event: React.DragEvent<HTMLAnchorElement>, nodeType) => {
+    event.dataTransfer.setData('nodeType', nodeType)
+    event.dataTransfer.effectAllowed = 'move'
+    console.log("drag")
+  }
+
+  const onClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+    event.preventDefault()
+  }
+
+  return <a href={"#"} onDragStart={(event) => onDragStart(event, type)} onClick={onClick} draggable>
+    <MenubarItem className="size-full flex cursor-move">
+      <div className="hover:bg-gray-100 cursor-move flex gap-1 items-center select-none w-28 h-10 mr-1 px-2">
+        {Icon && <Icon size={16} />}
+        {title}
+      </div>
+      <div className="text-xs w-64">
+        {description}
+      </div>
+    </MenubarItem>
   </a>
 
 }
@@ -196,7 +203,7 @@ export function Toolbar(props: Props) {
         <Play size={18} />
       </div>
       <Separator orientation="vertical" />
-      {Object.entries(workerRegistry).map(([key, node]) => (
+      {/* {Object.entries(workerRegistry).map(([key, node]) => (
         <MenuDragger title={node.title} type={key} icon={node.icon} key={key} />
       ))}
       <DropdownMenu>
@@ -212,34 +219,47 @@ export function Toolbar(props: Props) {
             <MenuDragger title="Schema" type={"schema"} icon={null} />
           </DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu> */}
 
-      {/* <Menubar className="h-4 border-0 hi">
+      <Menubar className="h-4 border-0 hi">
         <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs">
-            In/Out
-          </MenubarTrigger>
+          <MenubarTrigger className="font-normal text-xs">I/O</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem>
-              <MenuDragger title="Schema" type={"schema"} icon={null} />
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>Print</MenubarItem>
+            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "io").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
           </MenubarContent>
         </MenubarMenu>
+
         <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs">
-            Debug
-          </MenubarTrigger>
+          <MenubarTrigger className="font-normal text-xs">Generators</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem>
-              <MenuDragger title="Schema" type={"schema"} icon={null} />
-            </MenubarItem>
-            <MenubarSeparator />
-            <MenubarItem>Print</MenubarItem>
+            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "generator").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
           </MenubarContent>
         </MenubarMenu>
-      </Menubar> */}
+
+        <MenubarMenu>
+          <MenubarTrigger className="font-normal text-xs">Tools</MenubarTrigger>
+          <MenubarContent>
+            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "tool").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="font-normal text-xs">Debug</MenubarTrigger>
+          <MenubarContent>
+            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "debug").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
+          </MenubarContent>
+        </MenubarMenu>
+
+        <MenubarMenu>
+          <MenubarTrigger className="font-normal text-xs"><EllipsisVertical size={18} className="cursor-pointer" /></MenubarTrigger>
+          <MenubarContent>
+            <MenubarItem className="text-xs" onClick={onSetAPIKey}>
+              Set API Keys
+            </MenubarItem>
+          </MenubarContent>
+        </MenubarMenu>
+
+      </Menubar>
 
     </div>
 

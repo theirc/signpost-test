@@ -12,6 +12,9 @@ import { text } from "./workers/text"
 // import { background } from "./workers/background"
 // import { condition } from "./workers/condition"
 
+
+type WorkerCategories = "io" | "generator" | "debug" | "tool"
+
 declare global {
 
   type WorkerTypes = keyof typeof workerRegistry
@@ -19,6 +22,9 @@ declare global {
   interface WorkerRegistryItem {
     title: string
     icon?: any
+    category: WorkerCategories
+    type: WorkerTypes
+    description?: string
     execute(worker: AIWorker, p: AgentParameters): Promise<void>
     create(agent: Agent): AIWorker
     registry?: this
@@ -27,14 +33,19 @@ declare global {
 }
 
 export const workerRegistry = {
+
   request,
-  schema,
   response,
+
   ai,
-  search,
-  text,
-  combine,
+  schema,
   agentWorker,
-  display,
+  text,
+
+  search,
+  combine,
+
   mock,
+  display,
+
 } satisfies { [index: string]: WorkerRegistryItem }

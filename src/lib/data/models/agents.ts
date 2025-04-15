@@ -4,7 +4,7 @@ import { createSupabaseModel } from "../model"
 import { workerRegistry } from "@/lib/agents/registry"
 
 declare global {
-  type AgentConfig = Partial<typeof model.defaultValue>
+  type AgentDatabase = Partial<typeof model.defaultValue>
 }
 
 const model: SupabaseModel<"agents"> = {
