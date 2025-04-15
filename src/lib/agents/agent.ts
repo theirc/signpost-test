@@ -25,7 +25,7 @@ declare global {
 }
 
 export const agents = {
-  buildAgent: createAgent,
+  createAgent,
   configureAgent,
   saveAgent,
   loadAgent,

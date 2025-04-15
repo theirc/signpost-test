@@ -4,6 +4,14 @@ import { buildWorker } from "./worker"
 import { ulid } from 'ulid'
 
 
+interface AgentConfig {
+  edges?: object
+  id?: number
+  title?: string
+  workers?: object
+}
+
+
 export function createAgent(config: AgentConfig) {
 
   const workers: { [index: string]: AIWorker } = {}
@@ -58,6 +66,7 @@ export function createAgent(config: AgentConfig) {
       for (const key in workers) {
         const w = workers[key]
         w.executed = false
+        w.error = null
         for (const key in w.handles) {
           const h = w.handles[key]
           // if (h.persistent) continue
@@ -75,9 +84,9 @@ export function createAgent(config: AgentConfig) {
       p.apikeys ||= {}
       p.agent = agent
       console.log(`Executing agent '${agent.title}'`)
+      const worker = agent.getResponseWorker()
+      if (!worker) return
       try {
-        const worker = agent.getResponseWorker()
-        if (!worker) return
         await worker.execute(p)
       } catch (error) {
         console.error(error)
@@ -197,9 +206,9 @@ export async function saveAgent(agent: Agent) {
 
 
   if (agent.id) {
-    await supabase.from("agents").update(agentData).eq("id", agent.id)
+    await supabase.from("agents").update(agentData as any).eq("id", agent.id)
   } else {
-    const { data } = await supabase.from("agents").insert(agentData).select()
+    const { data } = await supabase.from("agents").insert(agentData as any).select()
     agent.id = data[0].id
   }
 
@@ -212,7 +221,7 @@ export async function saveAgent(agent: Agent) {
 export async function loadAgent(id: number): Promise<Agent> {
   console.log("Loading agent: ", id)
   const { data } = await supabase.from("agents").select("*").eq("id", id).single()
-  const agent = configureAgent(data)
+  const agent = configureAgent(data as any)
 
   for (const key in agent.workers) {
     const w = agent.workers[key]

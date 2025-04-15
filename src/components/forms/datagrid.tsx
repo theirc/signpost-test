@@ -32,7 +32,7 @@ const invoices = [
 ]
 
 const fallbackData = []
-const columnHelper = createColumnHelper<AgentConfig>()
+const columnHelper = createColumnHelper<AgentDatabase>()
 const columns = [
   columnHelper.accessor('id', {
     header: (a) => <span className="font-semibold text-black">ID</span>,

@@ -90,6 +90,9 @@ async function execute(worker: SearchWorker) {
 export const search: WorkerRegistryItem = {
   title: "Search",
   execute,
+  category: "tool",
+  type: "search",
+  description: "This worker allows you to search for information in the knowledge base",
   create(agent: Agent) {
     return agent.initializeWorker(
       {

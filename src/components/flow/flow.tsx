@@ -231,7 +231,7 @@ export function FlowDesigner({ id }: { id?: string }) {
     if (isLoading.current) return
     isLoading.current = true
     if (id == "new") {
-      app.agent = agents.buildAgent({
+      app.agent = agents.createAgent({
         title: "New Agent",
       })
       setAgent(app.agent)
