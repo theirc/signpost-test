@@ -49,18 +49,17 @@ function create(agent: Agent) {
   return worker;
 }
 
-async function execute(worker: ApiWorker, p: AgentParameters) { // Added p: AgentParameters
+async function execute(worker: ApiWorker, p: AgentParameters) {
   try {
-    // Get endpoint: prioritize input handle, fallback to parameter
+    // --- Common Setup --- 
     const runtimeEndpoint = worker.fields.endpointUrlInput?.value as string | undefined;
     const fallbackEndpoint = worker.parameters.endpoint || '';
     const endpoint = runtimeEndpoint && runtimeEndpoint.trim() !== '' ? runtimeEndpoint.trim() : fallbackEndpoint;
 
-    // Validation: Ensure an endpoint is available
     if (!endpoint) {
       throw new Error("API endpoint is required. Provide it either via the 'Endpoint URL' input handle or in the node parameters.");
     }
-    
+
     const method = (worker.parameters.method || 'GET').toUpperCase();
     const paramsString = worker.parameters.params || '{}';
     const headersString = worker.parameters.headers || '{}';
@@ -68,17 +67,13 @@ async function execute(worker: ApiWorker, p: AgentParameters) { // Added p: Agen
     const authType = worker.parameters.authType || 'none';
     const username = worker.parameters.username;
     const selectedKeyName = worker.parameters.selectedKeyName || '';
-    // REMOVED localKeys = worker.parameters.localApiKeys || {};
-    
     const bodyValue = worker.fields.body.value;
 
     let params = {};
     try { params = JSON.parse(paramsString); } catch (e) { throw new Error("Invalid params JSON in parameters."); }
-
     let headers: Record<string, string> = {};
     try { headers = JSON.parse(headersString); } catch (e) { throw new Error("Invalid headers JSON in parameters."); }
 
-    // Clean potentially sensitive headers before adding auth
     delete headers['Authorization']; 
     delete headers['X-API-Key'];
     Object.keys(headers).forEach(key => {
@@ -87,172 +82,136 @@ async function execute(worker: ApiWorker, p: AgentParameters) { // Added p: Agen
 
     let actualValue: string | undefined;
     if (authType !== 'none' && authType) {
-        if (!selectedKeyName) {
-             throw new Error(`Auth type '${authType}' selected, but no Stored Key Name chosen in parameters.`);
-        }
-        // Get key value from GLOBAL AgentParameters (passed during execution)
-        actualValue = p.apikeys?.[selectedKeyName]; 
-        if (actualValue === undefined) { 
-            // Distinguish between key name selected but not found globally vs. no key selected
-            if (selectedKeyName) {
-                 // If the selected key is missing, throw an error.
-                throw new Error(`Selected stored key named "${selectedKeyName}" was not found in the globally provided API keys.`);
-            } else {
-                // This case means auth was selected, but no key name was chosen in params
-                throw new Error(`Auth type '${authType}' selected, but no Stored Key Name chosen in parameters.`);
-            }
-        }
+      if (!selectedKeyName) { throw new Error(`Auth type '${authType}' selected, but no Stored Key Name chosen.`); }
+      actualValue = p.apikeys?.[selectedKeyName]; 
+      if (actualValue === undefined) { 
+        if (selectedKeyName) { throw new Error(`Selected stored key "${selectedKeyName}" not found in provided API keys.`); }
+        else { throw new Error(`Auth type '${authType}' selected, but no Stored Key Name chosen.`); }
+      }
     }
 
     switch (authType) {
       case 'basic':
-        console.log(`API Worker (${worker.id}) - Entered 'basic' auth case.`); // DEBUG
-        if (!username) throw new Error("Username is required for Basic Auth (in parameters).");
-        if (actualValue !== undefined) {
-          const token = typeof Buffer !== 'undefined' 
-            ? Buffer.from(`${username}:${actualValue}`).toString('base64') 
-            : btoa(`${username}:${actualValue}`);
-          headers.Authorization = `Basic ${token}`;
-          console.log(`API Worker (${worker.id}) - Added Basic Auth header:`, headers.Authorization); // DEBUG
-          console.log(`API Worker (${worker.id}) - Headers object after add:`, JSON.stringify(headers)); // DEBUG
-        } else {
-           console.warn(`API Worker (${worker.id}) - Basic auth failed: actualValue was undefined (key '${selectedKeyName}' likely missing).`); // DEBUG
-        }
+        if (!username) throw new Error("Username required for Basic Auth.");
+        if (actualValue !== undefined) { headers.Authorization = `Basic ${btoa(`${username}:${actualValue}`)}`; }
         break;
       case 'bearer':
-         console.log(`API Worker (${worker.id}) - Entered 'bearer' auth case.`); // DEBUG
-        if (actualValue !== undefined) {
-          headers.Authorization = `Bearer ${actualValue}`;
-          console.log(`API Worker (${worker.id}) - Added Bearer Auth header:`, headers.Authorization); // DEBUG
-          console.log(`API Worker (${worker.id}) - Headers object after add:`, JSON.stringify(headers)); // DEBUG
-        } else {
-            console.warn(`API Worker (${worker.id}) - Bearer auth failed: actualValue was undefined (key '${selectedKeyName}' likely missing).`); // DEBUG
-        }
+        if (actualValue !== undefined) { headers.Authorization = `Bearer ${actualValue}`; }
         break;
       case 'api_key':
-         console.log(`API Worker (${worker.id}) - Entered 'api_key' auth case.`); // DEBUG
-        if (actualValue !== undefined) {
-          const headerName = 'X-API-Key'; // Consider making this configurable?
-          headers[headerName] = actualValue; 
-          console.log(`API Worker (${worker.id}) - Added API Key header '${headerName}':`, headers[headerName]); // DEBUG
-          console.log(`API Worker (${worker.id}) - Headers object after add:`, JSON.stringify(headers)); // DEBUG
-        } else {
-             console.warn(`API Worker (${worker.id}) - API Key auth failed: actualValue was undefined (key '${selectedKeyName}' likely missing).`); // DEBUG
-        }
+        if (actualValue !== undefined) { headers['X-API-Key'] = actualValue; }
         break;
-      default:
-         console.log(`API Worker (${worker.id}) - Entered default auth case (authType: ${authType}). No auth header added.`); // DEBUG
     }
-    // === End Authentication ===
 
     let data = undefined;
-    // Use runtime body value from fields
     if (method !== 'GET' && bodyValue) {
-        // Assume bodyValue is string or already object/primitive
-        data = bodyValue;
-        // Auto-add Content-Type if not present and body looks like JSON
-        if (!headers['Content-Type'] && typeof data === 'string' && (data.trim().startsWith('{') || data.trim().startsWith('['))) {
-             headers['Content-Type'] = 'application/json';
-        }
+      data = bodyValue;
+      if (!headers['Content-Type'] && typeof data === 'string' && (data.trim().startsWith('{') || data.trim().startsWith('['))) {
+        headers['Content-Type'] = 'application/json';
+      }
     }
+    // --- End Common Setup ---
 
-    console.log(`API Worker (${worker.id}) - Making direct ${method} request to: ${endpoint}`);
+    // --- Environment Check and Call --- 
+    const isBrowser = typeof window !== 'undefined';
+    let apiResponseData: any;
+    let apiResponseStatus: number | undefined;
+    let apiResponseStatusText: string | undefined;
 
-    // --- Log request details before sending ---
-    console.log(`API Worker (${worker.id}) - Request Details Before Sending:`,
-        `\n  URL: ${endpoint}`,
-        `\n  Method: ${method}`,
-        `\n  Headers: ${JSON.stringify(headers)}`,
-        `\n  Params: ${JSON.stringify(params)}`,
-        `\n  Body: ${typeof data === 'object' ? JSON.stringify(data) : data}`
-    );
-    // --- End logging request details ---
+    if (isBrowser) {
+      // FRONTEND: Use the proxy
+      console.log(`API Worker (${worker.id}) [Browser] - Using proxy /api/axiosFetch for: ${endpoint}`);
+      const proxyResponse = await axios({
+        method: 'POST',
+        url: '/api/axiosFetch', 
+        data: { url: endpoint, method, headers, params, data, timeout }
+      });
 
-    // --- Make the direct API call using axios ---
-    const response = await axios({
-        method: method as any, // Cast needed as axios types might be stricter
-        url: endpoint,
-        headers: headers,
-        params: params,
-        data: data,
-        timeout: timeout,
-        // Ensure Axios doesn't throw for non-2xx status codes, so we can handle them manually
-        validateStatus: function (status) {
-            return status >= 200 && status < 500; // Accept 2xx, 3xx, 4xx - handle 5xx as errors later
-        },
-    });
+      if (proxyResponse.status !== 200) {
+         throw new Error(`Proxy service request failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
+      }
+      // Assuming proxy returns { status, statusText, data, error? }
+      const proxyResult = proxyResponse.data;
+      if (proxyResult?.error) {
+          throw new Error(`Proxy error: ${proxyResult.error} ${proxyResult.message || ''}`);
+      }
+      apiResponseData = proxyResult?.data;
+      apiResponseStatus = proxyResult?.status;
+      apiResponseStatusText = proxyResult?.statusText;
 
-    // --- Handle the direct response ---
+    } else {
+      // BACKEND: Make direct call
+      console.log(`API Worker (${worker.id}) [Node.js] - Making direct ${method} request to: ${endpoint}`);
+      const directResponse = await axios({
+          method: method as any, 
+          url: endpoint,
+          headers: headers,
+          params: params,
+          data: data,
+          timeout: timeout,
+          validateStatus: (status) => status >= 200 && status < 500, // Handle 4xx locally
+      });
+      apiResponseData = directResponse.data;
+      apiResponseStatus = directResponse.status;
+      apiResponseStatusText = directResponse.statusText;
+    }
+    // --- End Environment Check and Call --- 
+
+    // --- Common Response Handling --- 
     worker.fields.error.value = ''; // Clear previous error
 
-    if (response.status >= 200 && response.status < 300) {
-      // Successful response from target API
-       console.log(`API Worker (${worker.id}) - Success Response Status: ${response.status}`);
-       if (response.data !== undefined && response.data !== null) {
-         if (typeof response.data === 'object') {
-           worker.fields.response.value = JSON.stringify(response.data, null, 2);
-         } else {
-           worker.fields.response.value = String(response.data);
-         }
-       } else {
-         worker.fields.response.value = `Request successful: ${response.status} ${response.statusText || ''}`;
-       }
+    if (apiResponseStatus && apiResponseStatus >= 200 && apiResponseStatus < 300) {
+      // Success (2xx)
+      console.log(`API Worker (${worker.id}) - Success Response Status: ${apiResponseStatus}`);
+      if (apiResponseData !== undefined && apiResponseData !== null) {
+        worker.fields.response.value = typeof apiResponseData === 'object' 
+            ? JSON.stringify(apiResponseData, null, 2) 
+            : String(apiResponseData);
+      } else {
+        worker.fields.response.value = `Request successful: ${apiResponseStatus} ${apiResponseStatusText || ''}`;
+      }
     } else {
-      // Non-2xx response from target API (e.g., 4xx client errors, potentially 3xx redirects if not followed)
-      console.warn(`API Worker (${worker.id}) - Non-Success Response Status: ${response.status}`);
-      const errorStatus = response.status || 'Unknown';
-      const errorStatusText = response.statusText || 'Error';
+      // Non-Success (3xx, 4xx, or error from proxy)
+      const errorStatus = apiResponseStatus || 'Unknown';
+      const errorStatusText = apiResponseStatusText || 'Error';
       const errorMsg = `Request failed with status code ${errorStatus} (${errorStatusText})`;
       let errorDataString = '';
-      if (response.data) {
+      if (apiResponseData) {
           try {
-              errorDataString = typeof response.data === 'object' ? JSON.stringify(response.data) : String(response.data);
+              errorDataString = typeof apiResponseData === 'object' ? JSON.stringify(apiResponseData) : String(apiResponseData);
           } catch (e) { errorDataString = '[Could not stringify error data]'; }
       }
-
-      // --- Added detailed logging for non-success response ---
-      console.error(`API Worker (${worker.id}) - Request Details for Failed Call:`,
-          `\n  URL: ${endpoint}`,
-          `\n  Method: ${method}`,
-          `\n  Headers: ${JSON.stringify(headers)}`, // Headers used in the axios call
-          `\n  Params: ${JSON.stringify(params)}`,
-          `\n  Body: ${typeof data === 'object' ? JSON.stringify(data) : data}`,
-          `\n  Response Status: ${response.status}`,
-          `\n  Response Status Text: ${response.statusText}`,
-          `\n  Response Data: ${errorDataString}`
-      );
-      // --- End detailed logging ---
-
+      console.warn(`API Worker (${worker.id}) - Non-Success Response Status: ${errorStatus}. Data: ${errorDataString}`);
       worker.fields.error.value = errorDataString ? `${errorMsg} (Response Data: ${errorDataString})` : errorMsg;
       worker.fields.response.value = '';
     }
-    // Note: The catch block below will handle axios errors like timeouts, network errors, or 5xx server errors if validateStatus was stricter
+    // --- End Common Response Handling ---
 
   } catch (error) {
-     console.error("API worker error:", worker.id, error); // Simplified log prefix
-     worker.fields.response.value = '';
-     let errorMessage = "An unknown error occurred.";
-     if (axios.isAxiosError(error)) {
-         errorMessage = error.message; // Default axios error message
-         if (error.response) {
-             // This block now primarily handles errors not caught by validateStatus (e.g., 5xx) or if validateStatus is changed
-             errorMessage = `Request failed with status code ${error.response.status} (${error.response.statusText || 'Error'})`;
-             if (error.response.data) {
-                 try {
-                     const errorDataString = typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : String(error.response.data);
-                     errorMessage = `${errorMessage} (Response Data: ${errorDataString})`;
-                 } catch (e) { /* Ignore stringify error */ }
-             }
-         } else if (error.request) {
-             // Error occurred setting up the request or no response received (e.g., timeout, network error)
-             errorMessage = `No response received or request setup failed: ${error.message}`;
-         }
-     } else if (error instanceof Error) { 
-         errorMessage = error.message; 
-     } else { 
-         try { errorMessage = JSON.stringify(error); } catch (e) { errorMessage = String(error); } 
-     }
-     worker.fields.error.value = errorMessage;
+    // --- Common Error Handling (Network errors, 5xx, setup errors, proxy errors) ---
+    console.error("API worker error:", worker.id, error); 
+    worker.fields.response.value = '';
+    let errorMessage = "An unknown error occurred.";
+    if (axios.isAxiosError(error)) {
+        errorMessage = error.message; 
+        if (error.response) {
+            // Error with a response (e.g., 5xx from direct call, or maybe proxy itself failed)
+            errorMessage = `Request failed with status code ${error.response.status} (${error.response.statusText || 'Error'})`;
+            if (error.response.data) {
+                try { errorMessage += ` (Response Data: ${typeof error.response.data === 'object' ? JSON.stringify(error.response.data) : String(error.response.data)})`; }
+                catch (e) { /* ignore stringify error */ }
+            }
+        } else if (error.request) {
+            // No response received or setup failed
+            errorMessage = `No response received or request setup failed: ${error.message}`;
+        }
+    } else if (error instanceof Error) { 
+        errorMessage = error.message; 
+    } else { 
+        try { errorMessage = JSON.stringify(error); } catch (e) { errorMessage = String(error); } 
+    }
+    worker.fields.error.value = errorMessage;
+    // --- End Common Error Handling ---
   }
 }
 
