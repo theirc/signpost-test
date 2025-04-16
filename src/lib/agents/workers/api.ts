@@ -1,4 +1,3 @@
-import { Globe } from "lucide-react"
 import axios from 'axios'
 
 export interface ApiWorker extends AIWorker {
@@ -96,9 +95,10 @@ async function execute(worker: ApiWorker, p: AgentParameters) { // Added p: Agen
         if (actualValue === undefined) { 
             // Distinguish between key name selected but not found globally vs. no key selected
             if (selectedKeyName) {
+                 // If the selected key is missing, throw an error.
                 throw new Error(`Selected stored key named "${selectedKeyName}" was not found in the globally provided API keys.`);
             } else {
-                // This case is already handled by the check above, but included for clarity
+                // This case means auth was selected, but no key name was chosen in params
                 throw new Error(`Auth type '${authType}' selected, but no Stored Key Name chosen in parameters.`);
             }
         }
@@ -156,74 +156,86 @@ async function execute(worker: ApiWorker, p: AgentParameters) { // Added p: Agen
         }
     }
 
-    console.log(`API Worker (${worker.id}) - State before axios call:`, { /* ... log object ... */ });
- 
-     // --- Call the backend proxy instead --- 
-    console.log(`Making ${method} request via /api/axiosFetch for endpoint: ${endpoint}`);
-    const proxyResponse = await axios({
-      method: 'POST', // Proxy endpoint expects POST
-      url: '/api/axiosFetch', // Your backend proxy endpoint
-      data: { // Send target request details in the payload
+    console.log(`API Worker (${worker.id}) - Making direct ${method} request to: ${endpoint}`);
+
+    // --- Log request details before sending ---
+    console.log(`API Worker (${worker.id}) - Request Details Before Sending:`,
+        `\n  URL: ${endpoint}`,
+        `\n  Method: ${method}`,
+        `\n  Headers: ${JSON.stringify(headers)}`,
+        `\n  Params: ${JSON.stringify(params)}`,
+        `\n  Body: ${typeof data === 'object' ? JSON.stringify(data) : data}`
+    );
+    // --- End logging request details ---
+
+    // --- Make the direct API call using axios ---
+    const response = await axios({
+        method: method as any, // Cast needed as axios types might be stricter
         url: endpoint,
-        method: method,
-        headers: headers, // Send calculated headers
+        headers: headers,
         params: params,
-        data: data, 
-        timeout: timeout
-      }
+        data: data,
+        timeout: timeout,
+        // Ensure Axios doesn't throw for non-2xx status codes, so we can handle them manually
+        validateStatus: function (status) {
+            return status >= 200 && status < 500; // Accept 2xx, 3xx, 4xx - handle 5xx as errors later
+        },
     });
 
-    // Handle response FROM THE PROXY
-    worker.fields.error.value = '';
-    // Check status of the PROXY response itself first
-    if (proxyResponse.status === 200) {
-        // Now check the data returned BY the proxy, which should contain 
-        // the status and data from the ACTUAL target API call made by the proxy.
-        const apiResult = proxyResponse.data; 
+    // --- Handle the direct response ---
+    worker.fields.error.value = ''; // Clear previous error
 
-        // Assuming proxy returns structure like { status: number, statusText: string, data: any, error?: string }
-        // Adjust based on your actual proxy response structure!
-        if (apiResult?.error) { // Check if the proxy reported an error during its execution
-            throw new Error(`Proxy error: ${apiResult.error}`);
-        }
-        
-        if (apiResult && apiResult.status >= 200 && apiResult.status < 300) {
-          // Successful response from target API (via proxy)
-          if (apiResult.data !== undefined && apiResult.data !== null) { // Check if data exists
-            if (typeof apiResult.data === 'object') {
-              worker.fields.response.value = JSON.stringify(apiResult.data, null, 2);
-            } else {
-              worker.fields.response.value = String(apiResult.data);
-            }
-          } else {
-            worker.fields.response.value = `Request successful: ${apiResult.status} ${apiResult.statusText || ''}`;
-          }
-        } else {
-          // Non-2xx response from target API (via proxy)
-          const errorStatus = apiResult?.status || 'Unknown';
-          const errorStatusText = apiResult?.statusText || 'Error';
-          const errorMsg = `Request failed with status code ${errorStatus} (${errorStatusText})`;
-          let errorDataString = '';
-          if (apiResult?.data) {
-              try {
-                  errorDataString = typeof apiResult.data === 'object' ? JSON.stringify(apiResult.data) : String(apiResult.data);
-              } catch (e) { errorDataString = '[Could not stringify error data]'; }
-          }
-          worker.fields.error.value = errorDataString ? `${errorMsg} (Response Data: ${errorDataString})` : errorMsg;
-          worker.fields.response.value = '';
-        }
+    if (response.status >= 200 && response.status < 300) {
+      // Successful response from target API
+       console.log(`API Worker (${worker.id}) - Success Response Status: ${response.status}`);
+       if (response.data !== undefined && response.data !== null) {
+         if (typeof response.data === 'object') {
+           worker.fields.response.value = JSON.stringify(response.data, null, 2);
+         } else {
+           worker.fields.response.value = String(response.data);
+         }
+       } else {
+         worker.fields.response.value = `Request successful: ${response.status} ${response.statusText || ''}`;
+       }
     } else {
-      // Error FROM the proxy service itself (e.g., proxy 500 error, network error talking to proxy)
-      throw new Error(`Proxy service request failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
+      // Non-2xx response from target API (e.g., 4xx client errors, potentially 3xx redirects if not followed)
+      console.warn(`API Worker (${worker.id}) - Non-Success Response Status: ${response.status}`);
+      const errorStatus = response.status || 'Unknown';
+      const errorStatusText = response.statusText || 'Error';
+      const errorMsg = `Request failed with status code ${errorStatus} (${errorStatusText})`;
+      let errorDataString = '';
+      if (response.data) {
+          try {
+              errorDataString = typeof response.data === 'object' ? JSON.stringify(response.data) : String(response.data);
+          } catch (e) { errorDataString = '[Could not stringify error data]'; }
+      }
+
+      // --- Added detailed logging for non-success response ---
+      console.error(`API Worker (${worker.id}) - Request Details for Failed Call:`,
+          `\n  URL: ${endpoint}`,
+          `\n  Method: ${method}`,
+          `\n  Headers: ${JSON.stringify(headers)}`, // Headers used in the axios call
+          `\n  Params: ${JSON.stringify(params)}`,
+          `\n  Body: ${typeof data === 'object' ? JSON.stringify(data) : data}`,
+          `\n  Response Status: ${response.status}`,
+          `\n  Response Status Text: ${response.statusText}`,
+          `\n  Response Data: ${errorDataString}`
+      );
+      // --- End detailed logging ---
+
+      worker.fields.error.value = errorDataString ? `${errorMsg} (Response Data: ${errorDataString})` : errorMsg;
+      worker.fields.response.value = '';
     }
+    // Note: The catch block below will handle axios errors like timeouts, network errors, or 5xx server errors if validateStatus was stricter
 
   } catch (error) {
-     console.error("API worker error (or error communicating with proxy):", worker.id, error);
+     console.error("API worker error:", worker.id, error); // Simplified log prefix
      worker.fields.response.value = '';
      let errorMessage = "An unknown error occurred.";
      if (axios.isAxiosError(error)) {
-         errorMessage = error.message;
+         errorMessage = error.message; // Default axios error message
          if (error.response) {
+             // This block now primarily handles errors not caught by validateStatus (e.g., 5xx) or if validateStatus is changed
              errorMessage = `Request failed with status code ${error.response.status} (${error.response.statusText || 'Error'})`;
              if (error.response.data) {
                  try {
@@ -232,7 +244,8 @@ async function execute(worker: ApiWorker, p: AgentParameters) { // Added p: Agen
                  } catch (e) { /* Ignore stringify error */ }
              }
          } else if (error.request) {
-             errorMessage = "No response received from server. Check network or target API status.";
+             // Error occurred setting up the request or no response received (e.g., timeout, network error)
+             errorMessage = `No response received or request setup failed: ${error.message}`;
          }
      } else if (error instanceof Error) { 
          errorMessage = error.message; 
@@ -247,7 +260,7 @@ export const api: WorkerRegistryItem = {
   title: "API Call",
   type: "api",
   category: "tool",
-  description: "This worker allows you to make external API calls using globally stored keys.", // Updated description
+  description: "This worker allows you to make external API calls to use other external services.", // Updated description
   execute,
   create,
   get registry() { return api },
