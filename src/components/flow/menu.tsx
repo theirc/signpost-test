@@ -97,6 +97,7 @@ const model = createModel({
     title: { type: 'string', title: 'Title' },
     openai: { type: 'string', title: 'OpenAI' },
     anthropic: { type: 'string', title: 'Anthropic' },
+    zendesk: { type: 'string', title: 'Zendesk' },
   }
 }
 )
@@ -125,6 +126,7 @@ export function Toolbar(props: Props) {
     const ak = app.getAPIkeys()
     ak.openai = data.openai
     ak.anthropic = data.anthropic
+    ak.zendesk = data.zendesk
     app.saveAPIkeys(ak)
   }
 
@@ -269,6 +271,9 @@ export function Toolbar(props: Props) {
       </Row>
       <Row>
         <Input span={12} field={m.anthropic} required />
+      </Row>
+      <Row>
+        <Input span={12} field={m.zendesk} required />
       </Row>
     </Modal>
 
