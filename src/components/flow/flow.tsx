@@ -24,6 +24,7 @@ import { MockNode } from './nodes/mock'
 import { useForceUpdate } from '@/lib/utils'
 import { SearchNode } from './nodes/search'
 import { AgentNode } from './nodes/agent'
+import { ApiNode } from './nodes/api'
 
 const nodeTypes = {
   request: RequestNode,
@@ -39,6 +40,7 @@ const nodeTypes = {
   mock: MockNode,
   search: SearchNode,
   agentWorker: AgentNode,
+  api: ApiNode,
 }
 
 function Flow() {

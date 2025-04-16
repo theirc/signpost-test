@@ -8,6 +8,7 @@ import { response } from "./workers/response"
 import { schema } from "./workers/schema"
 import { search } from "./workers/search"
 import { text } from "./workers/text"
+import { api } from "./workers/api"
 // import { stt } from "./workers/tts"
 // import { background } from "./workers/background"
 // import { condition } from "./workers/condition"
@@ -47,5 +48,6 @@ export const workerRegistry = {
 
   mock,
   display,
+  api,
 
 } satisfies { [index: string]: WorkerRegistryItem }
