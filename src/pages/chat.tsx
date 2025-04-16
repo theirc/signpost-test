@@ -345,7 +345,6 @@ const hasSelectedBots = state.selectedBots.length > 0
                   setMessages([])
                   setActiveChat(null)
                 }}
-                placeholder="Select models"
               />
               <Button 
                 onClick={toggleSidebar} 
