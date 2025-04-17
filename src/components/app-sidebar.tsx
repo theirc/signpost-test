@@ -65,13 +65,13 @@ export function AppSidebar() {
         url: "#",
         icon: Bot,
         items: [
-          { title: "All Bots", url: "/bots" },
-          { title: "System Prompts", url: "/bots/prompts" },
+          { title: "Bots", url: "bots" },
+          { title: "System Prompts", url: "bots/prompts" },
         ],
       },
       {
         title: "Playground",
-        url: "/chat",
+        url: "playground",
         icon: MessagesSquare,
         isLink: true,
       },
@@ -90,8 +90,8 @@ export function AppSidebar() {
         url: "#",
         icon: Book,
         items: [
-          { title: "Collections", url: "/rag" },
-          { title: "Data Sources", url: "/sources" },
+          { title: "Collections", url: "collections" },
+          { title: "Sources", url: "sources" },
         ],
       },
       {
