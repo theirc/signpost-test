@@ -64,8 +64,8 @@ export function BotLogsTable() {
         )
     }
 
-    const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedLogs(event.target.checked ? logs.map(log => log.id) : [])
+    const handleSelectAll = () => {
+        setSelectedLogs(prev => prev.length === logs.length ? [] : logs.map(log => log.id))
     }
 
     useEffect(() => {
@@ -73,30 +73,33 @@ export function BotLogsTable() {
     }, [])
 
     return (
-        <div className="container mx-auto py-8">
-            <div className="flex flex-col h-full">
-                <div className="flex-1 space-y-4 p-8 pt-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-3xl font-bold tracking-tight">Logs</h2>
-                        <Button onClick={() => navigate("/logs/new")}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Log
-                        </Button>
+        <div className="flex flex-col h-full">
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Logs</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            View and manage your bot interaction logs.
+                        </p>
                     </div>
+                    <Button onClick={() => navigate("/logs/new")}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Log
+                    </Button>
+                </div>
 
-                    <div className="space-y-4">
-                        <LogsTable
-                            logs={logs}
-                            selectedLogs={selectedLogs}
-                            onToggleSelect={handleToggleSelect}
-                            onSelectAll={handleSelectAll}
-                            onDelete={handleDelete}
-                            onEdit={handleEdit}
-                        />
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-muted-foreground">
-                                {selectedLogs.length} logs selected
-                            </div>
+                <div className="space-y-4">
+                    <LogsTable
+                        logs={logs}
+                        selectedLogs={selectedLogs}
+                        onToggleSelect={handleToggleSelect}
+                        onSelectAll={handleSelectAll}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
+                    />
+                    <div className="flex justify-between items-center">
+                        <div className="text-sm text-muted-foreground">
+                            {selectedLogs.length} logs selected
                         </div>
                     </div>
                 </div>

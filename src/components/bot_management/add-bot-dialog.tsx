@@ -83,7 +83,7 @@ export default function AddBotDialog({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="kb">Knowledge Base</Label>
+                            <Label htmlFor="kb">Collections</Label>
                             <select
                                 id="kb"
                                 className="w-full p-2 border rounded-md"

@@ -306,11 +306,8 @@ export function CollectionsManagement() {
   };
 
   // Update handleSelectAll to accept a ChangeEvent
-  const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Get the checkbox checked value from the event
-    const isSelected = event.target.checked;
-
-    if (isSelected) {
+  const handleSelectAll = () => {
+    if (selectedSources.length === 0) {
       setSelectedSources(sourcesDisplay.map(source => source.id));
     } else {
       setSelectedSources([]);
@@ -622,7 +619,7 @@ export function CollectionsManagement() {
     <div className="flex flex-col h-full">
       <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Knowledge Base</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
           <div className="flex space-x-2">
             <Button variant="outline" onClick={handleRefreshSources}>
               <RefreshCcw className="h-4 w-4 mr-2" />
@@ -641,7 +638,7 @@ export function CollectionsManagement() {
 
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Manage your knowledge base collections and their sources.
+            Manage your collections and their sources.
           </div>
 
           {collectionsLoading ? (

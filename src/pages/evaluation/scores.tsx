@@ -56,8 +56,8 @@ export function BotScoresTable() {
         )
     }
 
-    const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedScores(event.target.checked ? scores.map(score => score.id) : [])
+    const handleSelectAll = () => {
+        setSelectedScores(prev => prev.length === scores.length ? [] : scores.map(score => score.id))
     }
 
     useEffect(() => {
@@ -65,34 +65,38 @@ export function BotScoresTable() {
     }, [])
 
     return (
-        <div className="container mx-auto py-8">
-            <div className="flex flex-col h-full">
-                <div className="flex-1 space-y-4 p-8 pt-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-3xl font-bold tracking-tight">Scores</h2>
-                        <Button onClick={() => navigate("/scores/new")}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Score
-                        </Button>
+        <div className="flex flex-col h-full">
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Scores</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            View and manage your bot evaluation scores.
+                        </p>
                     </div>
+                    <Button onClick={() => navigate("/scores/new")}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Score
+                    </Button>
+                </div>
 
-                    <div className="space-y-4">
-                        <ScoresTable
-                            scores={scores}
-                            selectedScores={selectedScores}
-                            onToggleSelect={handleToggleSelect}
-                            onSelectAll={handleSelectAll}
-                            onDelete={handleDelete}
-                            onEdit={handleEdit}
-                        />
-                        <div className="flex justify-between items-center">
-                            <div className="text-sm text-muted-foreground">
-                                {selectedScores.length} scores selected
-                            </div>
+                <div className="space-y-4">
+                    <ScoresTable
+                        scores={scores}
+                        selectedScores={selectedScores}
+                        onToggleSelect={handleToggleSelect}
+                        onSelectAll={handleSelectAll}
+                        onDelete={handleDelete}
+                        onEdit={handleEdit}
+                    />
+                    <div className="flex justify-between items-center">
+                        <div className="text-sm text-muted-foreground">
+                            {selectedScores.length} scores selected
                         </div>
                     </div>
                 </div>
             </div>
+
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

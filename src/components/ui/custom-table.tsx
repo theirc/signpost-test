@@ -27,13 +27,14 @@ type FilterDefinition<T> = {
 interface CustomTableProps<T extends { id: any }> {
     columns: ColumnDef<T>[]
     data: T[]
-    selectedRows?: any[]
+    selectedRows?: string[]
     pageSize?: number
-    onToggleSelect?: (rowId: any) => void
-    onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
-    onDelete?: (rowId: any) => void
-    onEdit?: (rowId: any) => void
-    tableId: string
+    onToggleSelect?: (id: string) => void
+    onSelectAll?: () => void
+    onDelete?: (id: string) => void
+    onEdit?: (id: string) => void
+    onRowClick?: (row: T) => void
+    tableId?: string
     filters?: FilterDefinition<T>[]
     placeholder?: string
 }
@@ -116,16 +117,13 @@ const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>,
                     onDoubleClick={handleDoubleClick}
                 >
                     <div
-                        className={`flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap ${header.column.getCanSort() ? "cursor-pointer" : ""
-                            }`}
-                        {...(header.column.getCanSort()
-                            ? { onClick: header.column.getToggleSortingHandler() }
-                            : {})}
+                        className={`flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer`}
+                        onClick={header.column.getToggleSortingHandler()}
                     >
                         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                             {flexRender(header.column.columnDef.header, header.getContext())}
                         </span>
-                        {header.column.getCanSort() && <ArrowUpDown className="h-4 w-4" />}
+                        <ArrowUpDown className="h-4 w-4" />
                     </div>
                 </div>
                 <button {...attributes} {...listeners}>
@@ -190,6 +188,7 @@ function CustomTable<T extends { id: any }>({
     onSelectAll,
     onDelete,
     onEdit,
+    onRowClick,
     tableId,
     filters,
     placeholder
@@ -229,6 +228,7 @@ function CustomTable<T extends { id: any }>({
             minSize: 40,
             maxSize: 5000,
             size: 150,
+            enableSorting: true,
         },
         state: { columnOrder, columnVisibility, columnSizingInfo },
         getCoreRowModel: getCoreRowModel(),
@@ -432,17 +432,8 @@ function CustomTable<T extends { id: any }>({
             onDragEnd={handleDragEnd}
             sensors={sensors}
         >
-            <div className="flex flex-col gap-4 p-1">
-                <div className="flex items-center gap-4 mb-4">
-                    {filters?.filter(x => x.id !== "tags").map((filter) => (
-                        <filter.component
-                            key={filter.id}
-                            data={data}
-                            onFilterChange={handleFilterChange}
-                            {...filter.props}
-                        />
-                    ))
-                    }
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm" className="ml-auto">
@@ -481,8 +472,8 @@ function CustomTable<T extends { id: any }>({
                         {...tagFilter.props}
                     />
                 </div>}
-                <div className="border rounded-md overflow-x-auto">
-                    <div style={{ width: table.getCenterTotalSize() + (onEdit || onDelete ? 80 : 0) }}>
+                <div className="border rounded-md overflow-x-auto w-full">
+                    <div className="min-w-full" style={{ width: Math.max(table.getCenterTotalSize(), 800) }}>
                         <Table>
                             <TableHeader>
                                 {memoizedHeaderGroups.map((headerGroup) => (
@@ -496,69 +487,45 @@ function CustomTable<T extends { id: any }>({
                                             />
                                         </TableHead>}
                                         <SortableContext
-                                            items={columnOrder.filter(id => id !== 'action')}
+                                            items={columnOrder}
                                             strategy={horizontalListSortingStrategy}
                                         >
                                             {headerGroup.headers.map((header) => (
                                                 <DraggableTableHeader key={header.id} header={header} table={table} />
                                             ))}
                                         </SortableContext>
-                                        {(onEdit || onDelete) && (
-                                            <TableHead className="w-[80px] min-w-[80px] max-w-[80px] p-0" />
-                                        )}
                                     </TableRow>
                                 ))}
                             </TableHeader>
                             <TableBody>
                                 {memoizedRows.length ? memoizedRows.map((row) => (
-                                    <TableRow key={row.id}>
-                                        {onToggleSelect && <TableCell>
+                                    <TableRow 
+                                        key={row.id} 
+                                        className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                                        onClick={(e) => {
+                                            if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                                                return;
+                                            }
+                                            onRowClick && onRowClick(row.original);
+                                        }}
+                                    >
+                                        {onToggleSelect && <TableCell className="w-12">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedRows?.includes(row.original.id)}
-                                                onChange={() => handleToggleSelect(row.original.id)}
+                                                checked={selectedRows?.includes(row.getValue("id"))}
+                                                onChange={() => onToggleSelect(row.getValue("id"))}
                                                 className="rounded border-gray-300"
                                             />
                                         </TableCell>}
                                         {row.getVisibleCells().map((cell) => (
-                                            <SortableContext
-                                                key={cell.id}
-                                                items={columnOrder.filter(id => id !== 'action')}
-                                                strategy={horizontalListSortingStrategy}
-                                            >
-                                                <DragAlongCell key={cell.id} cell={cell} />
-                                            </SortableContext>
-                                        ))}
-                                        {(onEdit || onDelete) && (
-                                            <TableCell className="w-[80px] min-w-[80px] max-w-[80px] p-0">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="sm">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        {onEdit && (
-                                                            <DropdownMenuItem onClick={() => onEdit(row.original.id)}>
-                                                                <Pencil className="h-4 w-4 mr-2" /> Edit
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                        {onDelete && (
-                                                            <DropdownMenuItem
-                                                                className="text-red-500 focus:text-red-500"
-                                                                onClick={() => onDelete(row.original.id)}
-                                                            >
-                                                                <Trash className="h-4 w-4 mr-2" /> Delete
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                            <TableCell key={cell.id}>
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </TableCell>
-                                        )}
+                                        ))}
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="text-center py-8">
+                                        <TableCell colSpan={columns.length + (onToggleSelect ? 1 : 0)} className="text-center py-8">
                                             {placeholder || "No data found"}
                                         </TableCell>
                                     </TableRow>

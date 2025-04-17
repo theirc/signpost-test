@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { X, Loader2, Upload, FolderOpen } from "lucide-react"
 import React from "react"
 import { useFileParser } from "@/lib/fileUtilities/use-file-parser"
@@ -17,15 +17,16 @@ interface FilesModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSourcesUpdated: () => void
+  initialFiles?: File[]
 }
 
-export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalProps) {
+export function FilesModal({ open, onOpenChange, onSourcesUpdated, initialFiles = [] }: FilesModalProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { isLoading: parsingFiles, parseFiles, supportedTypes } = useFileParser()
   const [tags, setTags] = useState<Tag[]>([])
   const [tagsLoading, setTagsLoading] = useState(true)
   
-  const [isLoading, setIsLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [processedSources, setProcessedSources] = useState<ParsedFile[]>([])
   const [sourceNames, setSourceNames] = useState<Record<string, string>>({})
   const [currentTags, setCurrentTags] = useState<string[]>([])
@@ -33,7 +34,7 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
   const [activeTab, setActiveTab] = useState<string>("files")
 
   // Fetch tags on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchTagsData = async () => {
       setTagsLoading(true);
       try {
@@ -56,30 +57,27 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
     }
   }, [open]);
 
-  // Reset state when modal closes
-  React.useEffect(() => {
-    if (!open) {
-      setTagInput("")
-      setProcessedSources([])
-      setSourceNames({})
-      setCurrentTags([])
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
+  const handleFiles = useCallback(async (files: File[]) => {
+    if (!files.length) return;
+    try {
+      const parsedSources = await parseFiles(Array.from(files));
+      setProcessedSources(parsedSources);
+    } catch (error) {
+      console.error('Error processing files:', error);
     }
-  }, [open])
+  }, [parseFiles]);
+
+  // Process initial files when they are provided
+  useEffect(() => {
+    if (initialFiles.length > 0) {
+      handleFiles(initialFiles);
+    }
+  }, [initialFiles, handleFiles]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return
-    const files = Array.from(e.target.files)
-    const parsedFiles = await parseFiles(files)
-    const names: Record<string, string> = {}
-    parsedFiles.forEach(file => {
-      names[file.id] = file.name
-    })
-    setProcessedSources(parsedFiles)
-    setSourceNames(names)
-  }
+    if (!e.target.files?.length) return;
+    await handleFiles(Array.from(e.target.files));
+  };
 
   const updateSourceName = (sourceId: string, name: string) => {
     setSourceNames(prev => ({
@@ -100,32 +98,25 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
   const handleAddSources = async () => {
     if (processedSources.length === 0) return false
     
-    setIsLoading(true)
+    setUploading(true)
     try {
       // Ensure tags exist
       const tagPromises = ['File Upload', ...currentTags].map(async tagName => {
         const existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
         if (existingTag) return existingTag.id
-        // Use imported addTag (renamed to addTagToDb) directly here, explicitly handle promise
         try {
           const result = await addTagToDb(tagName);
-          if (result.error) {
-            console.error(`Error creating tag ${tagName}:`, result.error);
-            throw result.error; // Propagate the error
-          }
+          if (result.error) throw result.error;
           return result.data?.id;
         } catch (err) {
-          console.error(`Exception creating tag ${tagName}:`, err);
-          throw err; // Re-throw exception
+          console.error(`Error creating tag ${tagName}:`, err);
+          throw err;
         }
       })
-      // Filter out potential undefined IDs from failed tag creations
       const tagIds = (await Promise.all(tagPromises)).filter(id => id !== undefined);
 
-      // Check if all required tags were successfully created/found
       if (tagIds.length < ['File Upload', ...currentTags].length) {
-          console.error('Failed to create/find all required tags.');
-          throw new Error('Failed to create/find all required tags.');
+        throw new Error('Failed to create/find all required tags.');
       }
       
       const { success, error } = await uploadSources(processedSources, sourceNames, currentTags)
@@ -145,12 +136,37 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
       console.error('Error uploading sources:', error)
       return false
     } finally {
-      setIsLoading(false)
+      setUploading(false)
     }
   }
 
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setTagInput("")
+      setProcessedSources([])
+      setSourceNames({})
+      setCurrentTags([])
+      setUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
+  }, [open])
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        setProcessedSources([]);
+        setSourceNames({});
+        setCurrentTags([]);
+        setUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      }
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import Content</DialogTitle>
@@ -264,16 +280,18 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated }: FilesModalP
         <DialogFooter className="mt-6 border-t pt-4">
           {activeTab === "files" && (
             <div className="flex justify-between w-full items-center">
-              {(isLoading || parsingFiles) ? (
+              {(parsingFiles || uploading) && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{parsingFiles ? 'Parsing files...' : 'Uploading...'}</span>
+                  <span>{parsingFiles ? 'Processing files...' : uploading ? 'Adding to knowledge base...' : ''}</span>
                 </div>
-              ) : <div />}
+              )}
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                {processedSources.length > 0 && !isLoading && !parsingFiles && (
-                  <Button onClick={handleAddSources}>
+                <Button variant="outline" onClick={() => onOpenChange(false)} disabled={parsingFiles || uploading}>
+                  Cancel
+                </Button>
+                {processedSources.length > 0 && !parsingFiles && !uploading && (
+                  <Button onClick={handleAddSources} disabled={parsingFiles || uploading}>
                     Add {processedSources.length} Source{processedSources.length > 1 ? 's' : ''} to Knowledge Base
                   </Button>
                 )}

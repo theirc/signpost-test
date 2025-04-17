@@ -29,8 +29,8 @@ import { CustomView } from "./pages/evaluation/custom-view.tsx"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
-  '/chat': 'Playground',
-  '/rag': 'Collections',
+  '/playground': 'Playground',
+  '/collections': 'Collections',
   '/sources': 'Data Sources',
   '/logs': 'Evaluation / Logs',
   '/scores': 'Evaluation / Scores',
@@ -85,8 +85,8 @@ function AppContent() {
         <div className="flex flex-1 flex-col p-2 pt-0">
           <Routes>
             <Route path="/" element={<AgentList />} />
-            <Route path="/chat" element={<Chat />} />
-            <Route path="/rag" element={<CollectionsManagement />} />
+            <Route path="/playground" element={<Chat />} />
+            <Route path="/collections" element={<CollectionsManagement />} />
             <Route path="/sources" element={<Sources />} />
             <Route path="/logs" element={<BotLogsTable />} />
             <Route path="/logs/:id" element={<LogForm />} />
