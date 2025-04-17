@@ -41,11 +41,12 @@ interface PreviewContent {
 }
 
 export default function Sources() {
+  console.log("[Sources Page] Component Mounting/Rendering"); // Mount Log
+
   const [sources, setSources] = useState<Source[]>([])
-  const [sourcesLoading, setSourcesLoading] = useState(true)
   const [tags, setTags] = useState<Tag[]>([])
   const [tagsLoading, setTagsLoading] = useState(true)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // Start loading true
   const [previewContent, setPreviewContent] = React.useState<PreviewContent | null>(null)
   const [selectedElement, setSelectedElement] = React.useState<LiveDataElement | null>(null)
   const [filesModalOpen, setFilesModalOpen] = React.useState(false)
@@ -55,22 +56,31 @@ export default function Sources() {
   const [sourcesDisplay, setSourcesDisplay] = useState<SourceDisplay[]>([])
 
   const fetchSourcesData = useCallback(async () => {
-    setLoading(true)
+    console.log("[fetchSourcesData] Starting fetch...");
+    // Use the single loading state
+    setLoading(true); 
+    console.log("[State Change] setLoading(true)");
     try {
       const { data, error } = await fetchSources()
       if (error) {
-        console.error("Error fetching sources:", error)
+        console.error("[fetchSourcesData] Error fetching sources:", error)
+        console.log("[fetchSourcesData] Setting sources to [] due to error.");
         setSources([])
       } else {
-        setSources(data || [])
+        const fetchedSources = data || [];
+        console.log(`[fetchSourcesData] Fetched ${fetchedSources.length} sources. Setting state.`);
+        setSources(fetchedSources)
       }
     } catch (err) {
-      console.error("Error fetching sources:", err)
+      console.error("[fetchSourcesData] Exception fetching sources:", err)
+      console.log("[fetchSourcesData] Setting sources to [] due to exception.");
       setSources([])
     } finally {
-      setLoading(false)
+      // Set loading false AFTER data is fetched (and state potentially set)
+      setLoading(false);
+      console.log("[State Change] setLoading(false)");
     }
-  }, [])
+  }, []) // Removed fetchSources dependency - it's defined outside
 
   const fetchTagsData = useCallback(async () => {
     setTagsLoading(true)
@@ -91,21 +101,31 @@ export default function Sources() {
   }, [])
 
   useEffect(() => {
+    console.log("[Initial Fetch Effect] Running...");
     fetchSourcesData()
     fetchTagsData()
   }, [fetchSourcesData, fetchTagsData])
 
   React.useEffect(() => {
+    console.log(`[Transform Effect] Running. Loading: ${loading}, Sources Count: ${sources.length}`);
     if (!loading && sources.length > 0) {
-      setSourcesDisplay(transformSourcesForDisplay(sources))
+      console.log("[Transform Effect] Transforming sources...");
+      const display = transformSourcesForDisplay(sources)
+      console.log(`[Transform Effect] Setting sourcesDisplay with ${display.length} items.`);
+      setSourcesDisplay(display)
     } else if (!loading && sources.length === 0) {
+      console.log("[Transform Effect] Sources empty and not loading. Setting sourcesDisplay to [].");
       setSourcesDisplay([])
+    } else if (loading) {
+        console.log("[Transform Effect] Still loading. Not transforming yet.");
+        // Optionally set display to empty while loading if desired
+        // setSourcesDisplay([]); 
     }
-  }, [sources, loading])
+  }, [sources, loading]) // Depend on sources and the main loading state
 
   const refreshSources = useCallback(() => {
-    setLoading(true)
-    fetchSourcesData().finally(() => setLoading(false))
+    console.log("[refreshSources] Triggered.");
+    fetchSourcesData() // Directly call fetchSourcesData
   }, [fetchSourcesData])
 
   const handleDelete = useCallback(async (id: string) => {
@@ -285,6 +305,8 @@ export default function Sources() {
     }
   ]
 
+  // Comment out or remove the original filters definition
+  /*
   const filters = [
     {
       id: "search",
@@ -311,6 +333,10 @@ export default function Sources() {
       props: { filterKey: "tags", placeholder: "All Tags" },
     }
   ]
+  */
+
+  // Log state just before render
+  console.log(`[Render] SourcesDisplay length: ${sourcesDisplay.length}, Loading: ${loading}`);
 
   return (
     <div className="flex flex-col h-full">
@@ -342,7 +368,15 @@ export default function Sources() {
             </div>
           ) : (
             <div className="space-y-4">
-              <CustomTable tableId="sources-table" columns={columns as any} data={sourcesDisplay} filters={filters} placeholder="No sources found" onEdit={handlePreview} onDelete={handleDelete} />
+              <CustomTable 
+                tableId="sources-table" 
+                columns={columns as any} 
+                data={sourcesDisplay} 
+                filters={[]} // Pass empty array to disable filters
+                placeholder="No sources found" 
+                onEdit={handlePreview} 
+                onDelete={handleDelete} 
+              />
             </div>
           )}
         </div>
