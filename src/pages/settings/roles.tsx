@@ -1,12 +1,17 @@
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { fetchRoleById, updateRole, addRole } from "@/lib/data/supabaseFunctions"
+import { useToast } from "@/hooks/use-toast"
+import { Loader2, Plus, Eye, Pencil, Trash2, Share2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { CheckedState } from "@radix-ui/react-checkbox"
-import { Eye, Pencil, Plus, Share2, Trash2 } from "lucide-react"
-import { useState } from "react"
 
-interface CollectionPermissions {
-    collection: string
+interface Permission {
+    resource: string
     create: boolean
     read: boolean
     update: boolean
@@ -14,159 +19,380 @@ interface CollectionPermissions {
     share: boolean
 }
 
-export function Roles() {
-    const [permissions, setPermissions] = useState<CollectionPermissions[]>([
-        {
-            collection: "Users",
+interface RoleFormData {
+    name: string
+    description: string
+    permissions: Permission[]
+}
+
+const APP_RESOURCES = [
+    { id: 'agents', label: 'Agents' },
+    { id: 'chat', label: 'Chat' },
+    { id: 'knowledge', label: 'Knowledge Base' },
+    { id: 'sources', label: 'Data Sources' },
+    { id: 'logs', label: 'Logs' },
+    { id: 'scores', label: 'Scores' },
+    { id: 'evaluation', label: 'Evaluation' },
+    { id: 'bots', label: 'Bots' },
+    { id: 'projects', label: 'Projects' },
+    { id: 'teams', label: 'Teams' },
+    { id: 'settings', label: 'Settings' },
+    { id: 'roles', label: 'Roles' },
+    { id: 'users', label: 'Users' },
+    { id: 'billing', label: 'Billing' },
+    { id: 'usage', label: 'Usage' }
+]
+
+type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
+
+const PERMISSION_ICONS: Record<PermissionAction, any> = {
+    create: Plus,
+    read: Eye,
+    update: Pencil,
+    delete: Trash2,
+    share: Share2
+}
+
+export function RoleForm() {
+    const { toast } = useToast()
+    const navigate = useNavigate()
+    const { id } = useParams()
+    const isNewRole = id === 'new'
+
+    const [loading, setLoading] = useState(false)
+    const [isFetching, setIsFetching] = useState(false)
+    const [formData, setFormData] = useState<RoleFormData>({
+        name: "",
+        description: "",
+        permissions: APP_RESOURCES.map(resource => ({
+            resource: resource.id,
             create: false,
-            read: true,
+            read: false,
             update: false,
             delete: false,
-            share: false,
-        },
-        {
-            collection: "Products",
-            create: true,
-            read: true,
-            update: true,
-            delete: false,
-            share: false,
-        },
-        {
-            collection: "Orders",
-            create: false,
-            read: true,
-            update: false,
-            delete: false,
-            share: false,
-        },
-    ])
+            share: false
+        }))
+    })
 
-    const handlePermissionChange = (
-        collection: string,
-        permission: keyof Omit<CollectionPermissions, "collection">,
-        checked: CheckedState
-    ) => {
-        const checkedBoolean = checked === true
+    useEffect(() => {
+        const loadData = async () => {
+            setIsFetching(true)
+            if (id && !isNewRole) {
+                const { data: role, error } = await fetchRoleById(id)
+                if (error) {
+                    console.error("Error loading role:", error)
+                    toast({
+                        title: "Error",
+                        description: "Failed to load role data",
+                        variant: "destructive"
+                    })
+                } else if (role) {
+                    setFormData({
+                        name: role.name,
+                        description: role.description,
+                        permissions: role.permissions || APP_RESOURCES.map(resource => ({
+                            resource: resource.id,
+                            create: false,
+                            read: false,
+                            update: false,
+                            delete: false,
+                            share: false
+                        }))
+                    })
+                }
+            }
+            setIsFetching(false)
+        }
+        loadData()
+    }, [id, isNewRole, toast])
 
-        setPermissions((prevPermissions) =>
-            prevPermissions.map((p) =>
-                p.collection === collection ? { ...p, [permission]: checkedBoolean } : p
+    const handlePermissionChange = (resource: string, action: PermissionAction, value: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            permissions: prev.permissions.map(permission =>
+                permission.resource === resource
+                    ? { ...permission, [action]: value }
+                    : permission
             )
+        }))
+    }
+
+    const handleSelectAll = (resource: string, value: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            permissions: prev.permissions.map(permission =>
+                permission.resource === resource
+                    ? {
+                        ...permission,
+                        create: value,
+                        read: value,
+                        update: value,
+                        delete: value,
+                        share: value
+                    }
+                    : permission
+            )
+        }))
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+
+        try {
+            if (isNewRole) {
+                const { error } = await addRole({
+                    name: formData.name,
+                    description: formData.description,
+                    permissions: formData.permissions
+                })
+
+                if (error) {
+                    toast({
+                        title: "Error creating role",
+                        description: error.message,
+                        variant: "destructive"
+                    })
+                    return
+                }
+
+                toast({
+                    title: "Role created successfully",
+                    description: "The new role has been created."
+                })
+            } else if (id) {
+                const { error } = await updateRole(id, {
+                    name: formData.name,
+                    description: formData.description,
+                    permissions: formData.permissions
+                })
+
+                if (error) {
+                    toast({
+                        title: "Error updating role",
+                        description: error.message,
+                        variant: "destructive"
+                    })
+                    return
+                }
+
+                toast({
+                    title: "Role updated successfully",
+                    description: "The role has been updated."
+                })
+            }
+
+            navigate('/settings/roles')
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "An unexpected error occurred",
+                variant: "destructive"
+            })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    if (isFetching) {
+        return (
+            <div className="container mx-auto py-8">
+                <div className="max-w-2xl mx-auto flex items-center justify-center h-[50vh]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            </div>
         )
     }
 
     return (
-        <div className="px-8 space-y-4">
-            <div className="py-6">
-                <h1 className="text-3xl font-bold tracking-tight">Permissions</h1>
-            </div>
-            <div className="border rounded-md">
-                <TooltipProvider>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-1/2">Collection</TableHead>
-                                <TableHead className="px-3">
-                                    <Tooltip>
-                                        <TooltipTrigger className="cursor-default"><Plus /></TooltipTrigger>
-                                        <TooltipContent>Create</TooltipContent>
-                                    </Tooltip>
-                                </TableHead>
-                                <TableHead className="px-3">
-                                    <Tooltip>
-                                        <TooltipTrigger className="cursor-default"><Eye /></TooltipTrigger>
-                                        <TooltipContent>Read</TooltipContent>
-                                    </Tooltip>
-                                </TableHead>
-                                <TableHead className="px-3">
-                                    <Tooltip>
-                                        <TooltipTrigger className="cursor-default"><Pencil /></TooltipTrigger>
-                                        <TooltipContent>Update</TooltipContent>
-                                    </Tooltip>
-                                </TableHead>
-                                <TableHead className="px-3">
-                                    <Tooltip>
-                                        <TooltipTrigger className="cursor-default"><Trash2 /></TooltipTrigger>
-                                        <TooltipContent>Delete</TooltipContent>
-                                    </Tooltip>
-                                </TableHead>
-                                <TableHead className="px-3">
-                                    <Tooltip>
-                                        <TooltipTrigger className="cursor-default"><Share2 /></TooltipTrigger>
-                                        <TooltipContent>Share</TooltipContent>
-                                    </Tooltip>
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {permissions.map((permission) => (
-                                <TableRow key={permission.collection}>
-                                    <TableCell className="font-medium">
-                                        {permission.collection}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={permission.create}
-                                            onCheckedChange={(checked) =>
-                                                handlePermissionChange(
-                                                    permission.collection,
-                                                    "create",
-                                                    checked
-                                                )
-                                            }
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={permission.read}
-                                            onCheckedChange={(checked) =>
-                                                handlePermissionChange(permission.collection, "read", checked)
-                                            }
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={permission.update}
-                                            onCheckedChange={(checked) =>
-                                                handlePermissionChange(
-                                                    permission.collection,
-                                                    "update",
-                                                    checked
-                                                )
-                                            }
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={permission.delete}
-                                            onCheckedChange={(checked) =>
-                                                handlePermissionChange(
-                                                    permission.collection,
-                                                    "delete",
-                                                    checked
-                                                )
-                                            }
-                                        />
-                                    </TableCell>
-                                    <TableCell>
-                                        <Checkbox
-                                            checked={permission.share}
-                                            onCheckedChange={(checked) =>
-                                                handlePermissionChange(
-                                                    permission.collection,
-                                                    "share",
-                                                    checked
-                                                )
-                                            }
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TooltipProvider>
-            </div>
+        <div className="container mx-auto py-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{isNewRole ? "Create New Role" : "Edit Role"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Role Name</Label>
+                            <Input
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                required
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Input
+                                id="description"
+                                value={formData.description}
+                                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                            />
+                        </div>
+
+                        <div className="space-y-4">
+                            <Label>Permissions</Label>
+                            <div className="border rounded-lg p-4">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th className="text-left py-2">Resource</th>
+                                            <th className="text-center py-2">
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex items-center justify-center space-x-2">
+                                                                <Plus className="h-4 w-4" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Create new items</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </th>
+                                            <th className="text-center py-2">
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex items-center justify-center space-x-2">
+                                                                <Eye className="h-4 w-4" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>View items</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </th>
+                                            <th className="text-center py-2">
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex items-center justify-center space-x-2">
+                                                                <Pencil className="h-4 w-4" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Edit items</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </th>
+                                            <th className="text-center py-2">
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex items-center justify-center space-x-2">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Delete items</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </th>
+                                            <th className="text-center py-2">
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <div className="flex items-center justify-center space-x-2">
+                                                                <Share2 className="h-4 w-4" />
+                                                            </div>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Share</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </th>
+                                            <th className="text-center py-2">
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    <Checkbox
+                                                        id="select-all-permissions"
+                                                        checked={formData.permissions.every(p =>
+                                                            p.create && p.read && p.update && p.delete && p.share
+                                                        )}
+                                                        onCheckedChange={(checked) => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                permissions: prev.permissions.map(permission => ({
+                                                                    ...permission,
+                                                                    create: checked as boolean,
+                                                                    read: checked as boolean,
+                                                                    update: checked as boolean,
+                                                                    delete: checked as boolean,
+                                                                    share: checked as boolean
+                                                                }))
+                                                            }))
+                                                        }}
+                                                    />
+                                                    <Label htmlFor="select-all-permissions">Select All</Label>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {APP_RESOURCES.map(resource => {
+                                            const permission = formData.permissions.find(p => p.resource === resource.id)
+                                            return (
+                                                <tr key={resource.id} className="border-t">
+                                                    <td className="py-2">
+                                                        <Label className="font-medium">{resource.label}</Label>
+                                                    </td>
+                                                    {Object.entries(PERMISSION_ICONS).map(([action, Icon]) => {
+                                                        const permissionAction = action as PermissionAction
+                                                        const isChecked = Boolean(permission?.[permissionAction])
+                                                        return (
+                                                            <td key={action} className="text-center py-2">
+                                                                <Checkbox
+                                                                    id={`${resource.id}-${action}`}
+                                                                    checked={isChecked}
+                                                                    onCheckedChange={(checked) => handlePermissionChange(resource.id, permissionAction, checked as boolean)}
+                                                                />
+                                                            </td>
+                                                        )
+                                                    })}
+                                                    <td className="text-center py-2">
+                                                        <div className="flex items-center justify-center space-x-2">
+                                                            <Checkbox
+                                                                id={`select-all-${resource.id}`}
+                                                                checked={permission?.create && permission?.read && permission?.update && permission?.delete && permission?.share}
+                                                                onCheckedChange={(checked) => handleSelectAll(resource.id, checked as boolean)}
+                                                            />
+                                                            <Label htmlFor={`select-all-${resource.id}`}>Select All</Label>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => navigate("/settings/roles")}
+                                disabled={loading}
+                            >
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={loading}>
+                                {loading ? (isNewRole ? "Creating..." : "Updating...") : (isNewRole ? "Create Role" : "Update Role")}
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     )
 }

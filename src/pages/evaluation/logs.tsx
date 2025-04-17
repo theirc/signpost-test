@@ -14,9 +14,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 export function BotLogsTable() {
     const navigate = useNavigate()
+    const { canCreate, canUpdate, canDelete } = usePermissions()
     const [logs, setLogs] = useState([])
     const [selectedLogs, setSelectedLogs] = useState<string[]>([])
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -81,11 +83,14 @@ export function BotLogsTable() {
                         <p className="text-sm text-muted-foreground mt-1">
                             View and manage your bot interaction logs.
                         </p>
+
                     </div>
-                    <Button onClick={() => navigate("/logs/new")}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Log
-                    </Button>
+                    {canCreate("logs") && (
+                        <Button onClick={() => navigate("/logs/new")}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Log
+                        </Button>
+                    )}
                 </div>
 
                 <div className="space-y-4">
@@ -94,8 +99,8 @@ export function BotLogsTable() {
                         selectedLogs={selectedLogs}
                         onToggleSelect={handleToggleSelect}
                         onSelectAll={handleSelectAll}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
+                        onDelete={canDelete("logs") ? handleDelete : undefined}
+                        onEdit={canUpdate("logs") ? handleEdit : undefined}
                     />
                     <div className="flex justify-between items-center">
                         <div className="text-sm text-muted-foreground">
@@ -121,6 +126,6 @@ export function BotLogsTable() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     )
 } 

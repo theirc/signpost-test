@@ -268,8 +268,15 @@ export interface Role {
   id: string
   name: string
   description?: string
-  created_at?: string
-  updated_at?: string
+  permissions?: {
+    resource: string
+    create: boolean
+    read: boolean
+    update: boolean
+    delete: boolean
+  }[]
+  created_at: string
+  updated_at: string
 }
 
 export interface User {
@@ -2157,7 +2164,10 @@ export async function updateRole(id: string, role: Partial<Role>) {
   try {
     const { data, error } = await supabase
       .from('roles')
-      .update(role)
+      .update({
+        ...role,
+        permissions: role.permissions || []
+      })
       .eq('id', id)
       .select()
       .single()
@@ -2182,6 +2192,25 @@ export async function deleteRole(id: string) {
   } catch (error) {
     console.error('Error deleting role:', error)
     return { error }
+  }
+}
+
+export async function createRole(roleData: Omit<Role, 'id' | 'created_at' | 'updated_at'>) {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .insert([{
+        ...roleData,
+        permissions: roleData.permissions || []
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error creating role:', error)
+    return { data: null, error }
   }
 }
 

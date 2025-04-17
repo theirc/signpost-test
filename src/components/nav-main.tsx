@@ -2,6 +2,7 @@ import { Brain, ChevronRight, type LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, } from "@/components/ui/collapsible"
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, } from "@/components/ui/sidebar"
 import { Link } from "react-router-dom"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 interface Props {
   items: {
@@ -19,18 +20,22 @@ interface Props {
 }
 
 export function NavMain({ items }: Props) {
+  const { canRead, loading: permissionsLoading } = usePermissions()
+
   return <SidebarGroup>
     <SidebarGroupLabel>Platform</SidebarGroupLabel>
 
     <SidebarMenu>
-      <SidebarMenuItem>
-        <Link to="/" className="w-full">
-          <SidebarMenuButton tooltip="Agents">
-            <Brain />
-            <span>Agents</span>
-          </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
+      {!permissionsLoading && canRead("agents") && (
+        <SidebarMenuItem>
+          <Link to="/" className="w-full">
+            <SidebarMenuButton tooltip="Agents">
+              <Brain />
+              <span>Agents</span>
+            </SidebarMenuButton>
+          </Link>
+        </SidebarMenuItem>
+      )}
 
       {items.map((item) => {
         if (item.isLink) {

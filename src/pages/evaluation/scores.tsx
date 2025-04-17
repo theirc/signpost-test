@@ -5,10 +5,12 @@ import { deleteBotScore, fetchBotScores } from "@/lib/data/supabaseFunctions"
 import { Plus } from "lucide-react"
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 
 export function BotScoresTable() {
     const navigate = useNavigate()
+    const { canCreate, canUpdate, canDelete } = usePermissions()
     const [scores, setScores] = useState([])
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [scoreToDelete, setScoreToDelete] = useState<string | null>(null)
@@ -17,7 +19,7 @@ export function BotScoresTable() {
     const fetchScores = async () => {
         const { data, error } = await fetchBotScores()
         if (error) {
-            console.error('Error fetching bot logs:', error)
+            console.error('Error fetching bot scores:', error)
         }
         const formattedScores = data.map(score => ({
             ...score,
@@ -36,7 +38,7 @@ export function BotScoresTable() {
 
         const { error } = await deleteBotScore(scoreToDelete)
         if (error) {
-            console.error('Error deleting log:', error)
+            console.error('Error deleting score:', error)
         } else {
             await fetchScores()
         }
@@ -73,11 +75,14 @@ export function BotScoresTable() {
                         <p className="text-sm text-muted-foreground mt-1">
                             View and manage your bot evaluation scores.
                         </p>
+
                     </div>
-                    <Button onClick={() => navigate("/scores/new")}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Score
-                    </Button>
+                    {canCreate("scores") && (
+                        <Button onClick={() => navigate("/scores/new")}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Score
+                        </Button>
+                    )}
                 </div>
 
                 <div className="space-y-4">
@@ -86,8 +91,8 @@ export function BotScoresTable() {
                         selectedScores={selectedScores}
                         onToggleSelect={handleToggleSelect}
                         onSelectAll={handleSelectAll}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
+                        onDelete={canDelete("scores") ? handleDelete : undefined}
+                        onEdit={canUpdate("scores") ? handleEdit : undefined}
                     />
                     <div className="flex justify-between items-center">
                         <div className="text-sm text-muted-foreground">
@@ -113,6 +118,6 @@ export function BotScoresTable() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     )
 } 
