@@ -19,15 +19,16 @@ search.icon = Search
 const engineList = [
   { label: "Weaviate", value: "weaviate" },
   { label: "Exa", value: "exa" },
+  { label: "Supabase", value: "supabase" }
 ]
 
 const model = createModel({
   fields: {
     engine: { title: "Engine", type: "string", list: engineList },
     maxResults: { title: "Max Results", type: "number" },
-    domain: { title: "Domain", type: "string" },
-    distance: { title: "Distance", type: "number" },
-    collection: { title: "Collection (Supabase)", type: "string" }
+    distance: { title: "Distance/Similarity Threshold", type: "number" },
+    domain: { title: "Domain (for External Engines)", type: "string" },
+    collections: { title: "Collections (for Supabase Engine - Multi Needed)", type: "string" }
   }
 })
 
@@ -83,15 +84,35 @@ export function SearchNode(props: NodeProps) {
     loadCollections()
   }, [])
 
-  const { form, m, watch } = useForm(model, {
+  const { form, m, watch, setValue } = useForm(model, {
     values: {
-      engine: worker.fields.engine.default || "weaviate",
-      maxResults: worker.fields.maxResults.default || 5,
-      distance: worker.fields.distance.default || 0.2,
-      domain: worker.fields.domain.default || "",
-      collection: worker.parameters.collection || worker.fields.collection.default || undefined
+      engine: worker.parameters.engine || worker.fields.engine.default || "weaviate",
+      maxResults: worker.parameters.maxResults || worker.fields.maxResults.default || 5,
+      distance: worker.parameters.distance ?? worker.fields.distance.default ?? 0.3,
+      domain: worker.parameters.domain || worker.fields.domain.default || "",
+      collections: worker.parameters.collections?.[0] || worker.fields.collections?.default || undefined
     }
   })
+
+  const selectedEngine = watch('engine');
+
+  useEffect(() => {
+      if (selectedEngine === 'supabase') {
+          if (worker.parameters.domain) {
+             console.log("[Engine Change] Clearing domain parameter");
+             setValue('domain', ''); 
+             worker.parameters.domain = undefined; 
+             worker.fields.domain.default = ''; 
+          }
+      } else {
+          if (worker.parameters.collections && worker.parameters.collections.length > 0) {
+              console.log("[Engine Change] Clearing collections parameter");
+              setValue('collections', undefined); 
+              worker.parameters.collections = undefined; 
+              worker.fields.collections.default = undefined; 
+          }
+      }
+  }, [selectedEngine, setValue, worker.parameters, worker.fields, form]);
 
   watch((value, { name }) => {
     if (name === "engine") {
@@ -103,18 +124,19 @@ export function SearchNode(props: NodeProps) {
       worker.fields.maxResults.default = value.maxResults
     }
     if (name === "distance") {
-      const dist = value.distance || 0.2
+      const dist = value.distance ?? 0.3
       worker.parameters.distance = dist
       worker.fields.distance.default = dist
     }
-    if (name === "domain") {
+    if (name === "domain" && selectedEngine !== 'supabase') {
       worker.parameters.domain = value.domain
       worker.fields.domain.default = value.domain
     }
-    if (name === "collection") {
-      const selectedCollection = value.collection || undefined
-      worker.parameters.collection = selectedCollection
-      worker.fields.collection.default = selectedCollection
+    if (name === "collections" && selectedEngine === 'supabase') {
+      const selectedCollections = value.collections ? [value.collections] : undefined;
+      console.log("[Watch Collections] Setting worker parameters:", selectedCollections);
+      worker.parameters.collections = selectedCollections
+      worker.fields.collections.default = value.collections
     }
   })
 
@@ -143,31 +165,37 @@ export function SearchNode(props: NodeProps) {
       </MemoizedWorker>
 
       <WorkerLabeledHandle handler={worker.fields.distance} />
-      <MemoizedWorker worker={worker}>
-        <Row className='pb-2 px-2'>
-          <Input field={m.distance} type='number' span={12} hideLabel />
-        </Row>
-      </MemoizedWorker>
+      <Row className='pb-2 px-2'>
+        <Input field={m.distance} type='number' span={12} hideLabel />
+      </Row>
 
-      <WorkerLabeledHandle handler={worker.fields.domain} />
-      <MemoizedWorker worker={worker}>
-        <Row className='pb-2 px-2'>
-          <Input field={m.domain} span={12} hideLabel />
-        </Row>
-      </MemoizedWorker>
+      {selectedEngine !== 'supabase' && (
+        <>
+          <WorkerLabeledHandle handler={worker.fields.domain} />
+          <MemoizedWorker worker={worker}>
+            <Row className='pb-2 px-2'>
+              <Input field={m.domain} span={12} hideLabel />
+            </Row>
+          </MemoizedWorker>
+        </>
+      )}
 
-      <WorkerLabeledHandle handler={worker.fields.collection} />
-      <MemoizedWorker worker={worker}>
-        <Row className='pb-2 px-2'>
-          <Select 
-            field={m.collection} 
-            options={collectionOptions} 
-            span={12} 
-            hideLabel 
-            placeholder="Select Collection (Optional)" 
-          />
-        </Row>
-      </MemoizedWorker>
+      {selectedEngine === 'supabase' && (
+        <>
+          <WorkerLabeledHandle handler={worker.fields.collections} />
+          <MemoizedWorker worker={worker}>
+            <Row className='pb-2 px-2'>
+              <Select 
+                field={m.collections}
+                options={collectionOptions} 
+                span={12} 
+                hideLabel 
+                placeholder="Select Collection(s) (Optional)"
+              />
+            </Row>
+          </MemoizedWorker>
+        </>
+      )}
 
     </form.context>
 
