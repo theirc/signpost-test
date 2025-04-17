@@ -3,6 +3,7 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
+import {app} from '@/lib/app'
 import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
@@ -12,7 +13,7 @@ import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
-// import { SourcesTable } from '@/components/sources-table'
+import { agents } from "@/lib/agents"
 import { availableSources } from "@/components/source_input/files-modal"
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
 import { MultiSelectDropdown, Option } from '@/components/ui/multiselect'
@@ -26,6 +27,8 @@ interface Bots {
   }
 }
 
+const AGENT_ID = 23
+
 export default function Chat () {
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [showFileDialog, setShowFileDialog] = useState(false)
@@ -33,6 +36,7 @@ export default function Chat () {
   const [sources, setSources] = useState(availableSources)
   const [message, setMessage] = useState("")
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
+  const [agentInstance, setAgentInstance] = useState<any>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       type: "bot",
@@ -61,13 +65,17 @@ export default function Chat () {
   }
 
   useEffect(() => {
-    api.getBots().then((sb) => {
+    async function initBots() {
+      const sb = await api.getBots()
       const bots: Bots = {}
       for (const key in sb) {
-        bots[Number(key)] = { name: sb[key], id: key, history: [] }
+        bots[Number(key)] = { name: sb[key], id:  key, history: [] }
       }
-      setState({ bots })
-    })
+  
+    bots[AGENT_ID] = { name: AGENT_ID.toString(), id:   AGENT_ID.toString(), history: [] }
+    setState({ bots })
+    }
+    initBots()
   }, [])
 
   useEffect(()=> {
@@ -161,98 +169,152 @@ export default function Chat () {
       setActiveChat(null)
     }
   }
-
+ 
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
     message ||= "where can i find english classes in athens?"
-    
     if (!message && !audio) return
-    
-    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-    
-    const currentBotName = state.selectedBots.length > 0 ? state.bots[state.selectedBots[0]].name : "Chat"
-    
-    const userMessage: ChatMessage = { type: "human", message: message || "" }
-    
+  
+    const selectedBots = state.selectedBots.map(b => ({
+      label: state.bots[b].name,
+      value: b,
+      history: state.bots[b].history,
+    }))
+  
+    const currentBotName = state.selectedBots.length > 0
+      ? state.bots[state.selectedBots[0]].name
+      : "Chat"
+  
+    const userMessage: ChatMessage = { type: "human", message }
     if (message) {
       setMessages(prev => [...prev, userMessage])
     }
-    
-    let currentActiveChat: ChatSession
-    
+  
+  let currentActiveChat: ChatSession
     if (!activeChat) {
       currentActiveChat = {
-        id: new Date().toISOString(),
-        botName: currentBotName,
-        messages: [userMessage],
+        id:        new Date().toISOString(),
+        botName:   currentBotName,
+        messages:  [userMessage],
         timestamp: new Date().toISOString(),
       }
       setActiveChat(currentActiveChat)
-      
-      setChatHistory(prevHistory => [currentActiveChat, ...prevHistory])
+      setChatHistory(prev => [currentActiveChat, ...prev])
     } else {
       currentActiveChat = {
         ...activeChat,
-        messages: [...activeChat.messages, userMessage]
+        messages: [...activeChat.messages, userMessage],
       }
       setActiveChat(currentActiveChat)
-      
-      setChatHistory(prevHistory => 
-        prevHistory.map(chat => 
+      setChatHistory(prev =>
+        prev.map(chat =>
           chat.id === currentActiveChat.id ? currentActiveChat : chat
         )
       )
     }
-    
+  
     setState({ isSending: true })
+  
+    const useAgent = state.selectedBots.includes(AGENT_ID)
+  
+    let botResponseForHistory: ChatMessage
     
-    const response = message ? 
-      await api.askbot({ message }, tts, selectedBots) : 
-      await api.askbot({ audio }, tts, selectedBots)
+    if (useAgent) {
+      try {
+        const agent = await agents.loadAgent(AGENT_ID)
+        const parameters: AgentParameters = {
+          input:   { question: message! },
+          apikeys: app.getAPIkeys(),
+        }
+        await agent.execute(parameters)
     
-    if (!response.error) {
-      for (const m of response.messages) {
-        const rbot = state.bots[m.id]
-        if (!rbot) continue
-        
-        const messageRegistered = rbot.history.find(h => h.message === message && h.isHuman)
-        if (!messageRegistered) rbot.history.push({ isHuman: true, message: message || "" })
-        
-        if (!m.needsRebuild && !m.error) {
-          const messageRegistered = rbot.history.find(h => h.message === m.message && !h.isHuman)
-          if (!messageRegistered) rbot.history.push({ isHuman: false, message: m.message })
+        const raw = parameters.error
+          ? `Agent error: ${parameters.error}`
+          : parameters.output
+        const text =
+          typeof raw === "string"
+            ? raw
+            : JSON.stringify(raw, null, 2)
+    
+        const rbot = state.bots[AGENT_ID]!
+        if (!rbot.history.some(h => h.isHuman && h.message === message))
+          rbot.history.push({ isHuman: true, message })
+        if (!rbot.history.some(h => !h.isHuman && h.message === text))
+          rbot.history.push({ isHuman: false, message: text })
+    
+        botResponseForHistory = {type: "bot", message: text, messages: [], needsRebuild: false, }
+      } catch (err: unknown) {  
+        let errorMsg = "Oops, something went wrong with the agent."
+        if (err && typeof err === "object") {
+          const e = err as any
+          if (typeof e.message === "string") {
+            errorMsg = e.message
+          } else if (typeof e.status === "number") {
+            errorMsg = `Agent server returned ${e.status}`
+          }
+        }
+    botResponseForHistory = { type:  "bot", message:  errorMsg, messages: [],  needsRebuild: false, }
+      }
+    } else {
+      const response = message
+        ? await api.askbot({ message }, tts, selectedBots)
+        : await api.askbot({ audio }, tts, selectedBots)
+  
+      if (!response.error) {
+        for (const m of response.messages) {
+          const rbot = state.bots[m.id]
+          if (!rbot) continue
+  
+     
+          if (
+            !rbot.history.find(h => h.isHuman && h.message === message)
+          ) {
+            rbot.history.push({ isHuman: true, message })
+          }
+          if (!m.needsRebuild && !m.error) {
+            if (
+              !rbot.history.find(
+                h => !h.isHuman && h.message === m.message
+              )
+            ) {
+              rbot.history.push({
+                isHuman: false,
+                message: m.message,
+              })
+            }
+          }
         }
       }
+  
+      response.rebuild = async () => {
+        setState({ isSending: true })
+        response.needsRebuild = false
+        await onRebuild()
+        setState({ isSending: false })
+      }
+  
+      botResponseForHistory = {
+        type:         "bot",
+        message:      response.message || "",
+        messages:     response.messages || [],
+        needsRebuild: response.needsRebuild || false,
+      }
     }
-    
-    response.rebuild = async () => {
-      setState({ isSending: true })
-      response.needsRebuild = false
-      await onRebuild()
-      setState({ isSending: false })
-    }
-    
-    const botResponseForHistory: ChatMessage = {
-      type: "bot",
-      message: response.message || "",
-      messages: response.messages || [],
-      needsRebuild: response.needsRebuild || false
-    }
-    
-    setMessages(prev => [...prev, response as ChatMessage])
-    
+  
+    setMessages(prev => [...prev, botResponseForHistory])
+  
     const updatedChatWithResponse: ChatSession = {
       ...currentActiveChat,
-      messages: [...currentActiveChat.messages, botResponseForHistory]
+      messages: [...currentActiveChat.messages, botResponseForHistory],
     }
-    
     setActiveChat(updatedChatWithResponse)
-    
-    setChatHistory(prevHistory => 
-      prevHistory.map(chat => 
-        chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat
+    setChatHistory(prev =>
+      prev.map(chat =>
+        chat.id === updatedChatWithResponse.id
+          ? updatedChatWithResponse
+          : chat
       )
     )
-    
+  
     setState({ isSending: false })
   }
 
@@ -417,13 +479,6 @@ const hasSelectedBots = state.selectedBots.length > 0
             <DialogTitle>Attach Files</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
-{/*             <SourcesTable 
-              sources={sources}
-              selectedSources={selectedSources}
-              onToggleSelect={handleToggleSelect}
-              onSelectAll={handleSelectAll}
-              showCheckboxes={true}
-            /> */}
             <div className="flex justify-end mt-4 gap-2">
               <Button
                 variant="outline"
@@ -609,7 +664,6 @@ function SearchInput(props: {
                   style={{ overflowY: 'auto' }}
                 />
               </div>
-              
               <div className="flex items-center pr-2 gap-2">
               
                 <Button
@@ -640,6 +694,32 @@ function ChatMessage(props: MessageProps) {
   const { isWaiting } = props
   let { type, message, messages, needsRebuild, rebuild } = props.message
   messages = messages || []
+  const [copied, setCopied] = useState(false)
+  const [isSingleLine, setIsSingleLine] = useState(true)
+  const messageTextRef = useRef<HTMLDivElement>(null)
+  const messageContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (type === "human") {
+      const hasNewlines = message.includes('\n')
+      
+      if (!hasNewlines && messageTextRef.current) {
+        const lineHeight = 23
+        setIsSingleLine(messageTextRef.current.clientHeight <= lineHeight * 1.2)
+      } else {
+        setIsSingleLine(!hasNewlines)
+      }
+    }
+  }, [message, type])
+
+  const handleCopyText = () => {
+    navigator.clipboard.writeText(message).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const isLastMessage = messages.length === 1 && messages[0].type === "human"
 
   if (type === "bot") {
     if (messages.length > 1) {
