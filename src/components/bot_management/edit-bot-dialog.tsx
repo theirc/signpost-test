@@ -87,7 +87,7 @@ export default function EditBotDialog({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="edit-kb">Knowledge Base</Label>
+                            <Label htmlFor="edit-kb">Collections</Label>
                             <select
                                 id="edit-kb"
                                 className="w-full p-2 border rounded-md"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Play, RefreshCcw } from "lucide-react"
+import { Play, RefreshCcw, Loader2 } from "lucide-react"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
@@ -307,61 +307,46 @@ export function BotManagement() {
 
     // Define columns for the CustomTable
     const columns: ColumnDef<any>[] = [
-        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        { id: "collection", accessorKey: "collection", header: "Knowledge Base", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        { id: "model", accessorKey: "model", header: "Model", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
-        {
-            id: "action",
-            accessorKey: "action",
-            header: () => null,
-            enableResizing: false,
-            enableHiding: false,
-            enableSorting: false,
-            cell: ({ row }) => {
-                // Find the original bot object based on the ID
-                const originalBot = bots.find(bot => bot.id === row.original.id);
-                if (!originalBot) return null;
-                
-                return (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenTestDialog(originalBot)}
-                        disabled={testLoading && currentTestBot?.id === originalBot.id}
-                    >
-                        {testLoading && currentTestBot?.id === originalBot.id ? (
-                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                        ) : (
-                            <Play className="h-4 w-4" />
-                        )}
-                        <span className="ml-1">Test</span>
-                    </Button>
-                );
-            }
-        }
+        { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, cell: (info) => info.getValue() },
+        { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, cell: (info) => info.getValue() },
+        { id: "collection", accessorKey: "collection", header: "Collections", enableResizing: true, enableHiding: true, cell: (info) => info.getValue() },
+        { id: "model", accessorKey: "model", header: "Model", enableResizing: true, enableHiding: true, cell: (info) => info.getValue() }
     ]
+
+    // Add state for selected rows
+    const [selectedBots, setSelectedBots] = useState<string[]>([]);
+
+    // Handle toggle select for a single row
+    const handleToggleSelect = (id: string) => {
+        setSelectedBots(prev => 
+            prev.includes(id) 
+                ? prev.filter(botId => botId !== id) 
+                : [...prev, id]
+        );
+    };
+
+    // Handle select all rows
+    const handleSelectAll = () => {
+        if (selectedBots.length === botsData.length) {
+            setSelectedBots([]);
+        } else {
+            setSelectedBots(botsData.map(bot => bot.id));
+        }
+    };
 
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold tracking-tight">AI Management</h1>
-                    <div className="flex space-x-2">
-                        <Button variant="outline" onClick={handleRefresh}>
+                    <h1 className="text-3xl font-bold tracking-tight">Bots</h1>
+                    <div className="flex gap-2">
+                        <Button onClick={handleRefresh} variant="outline">
                             <RefreshCcw className="h-4 w-4 mr-2" />
                             Refresh
                         </Button>
-                        <AddBotDialog
-                            open={isAddDialogOpen}
-                            onOpenChange={setIsAddDialogOpen}
-                            onSubmit={handleAddBot}
-                            bot={newBot}
-                            onBotChange={setNewBot}
-                            models={models}
-                            collections={collections}
-                            loading={loading || collectionsLoading || modelsLoading}
-                        />
+                        <Button onClick={() => setIsAddDialogOpen(true)}>
+                            Create Bot
+                        </Button>
                     </div>
                 </div>
 
@@ -372,12 +357,19 @@ export function BotManagement() {
 
                     {loading ? (
                         <div className="w-full h-64 flex items-center justify-center">
-                            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+                            <Loader2 className="h-8 w-8 animate-spin" />
                         </div>
                     ) : (
-                        <div>
-                            <CustomTable tableId="bots-table" columns={columns as any} data={botsData} onDelete={(id) => handleDelete(id)} onEdit={(id) => startEdit(id)} />
-                        </div>
+                        <CustomTable
+                            tableId="bots-table"
+                            columns={columns}
+                            data={botsData}
+                            selectedRows={selectedBots}
+                            onToggleSelect={handleToggleSelect}
+                            onSelectAll={handleSelectAll}
+                            onRowClick={(row) => startEdit(row.id)}
+                            placeholder="No bots found"
+                        />
                     )}
                 </div>
             </div>

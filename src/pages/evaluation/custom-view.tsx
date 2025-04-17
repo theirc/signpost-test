@@ -173,21 +173,22 @@ export function CustomView() {
     }
 
     return (
-        <div className="container mx-auto py-8">
-            <div className="flex flex-col h-full">
-                <div className="flex-1 space-y-4 p-8 pt-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-3xl font-bold tracking-tight my-2">Custom View</h2>
-                            <span>Design your own evaluation template by merging fields from both Scores and Logs.</span>
-                        </div>
-                        {isCreated && (
-                            <Button onClick={handleEdit} variant="outline">
-                                Edit View
-                            </Button>
-                        )}
+        <div className="flex flex-col h-full">
+            <div className="flex-1 space-y-4 p-8 pt-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">Custom View</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Design your own evaluation template by merging fields from both Scores and Logs.
+                        </p>
                     </div>
+                    {isCreated && (
+                        <Button onClick={handleEdit} variant="outline">
+                            Edit View
+                        </Button>
+                    )}
                 </div>
+
                 {!isCreated ? (
                     <div className='flex gap-6'>
                         <div className='flex-[2_1_0%]'>
@@ -390,23 +391,28 @@ export function CustomView() {
                         </div>
                     </div>
                 ) : null}
-                {!isCreated && (<div className="flex justify-end p-8 gap-4">
-                    <>
+                
+                {!isCreated && (
+                    <div className="flex justify-end gap-4">
                         <Button onClick={generatePreview}>
                             Preview
                         </Button>
                         <Button onClick={handleCreate} variant="outline">
                             Create
                         </Button>
-                    </>
-                </div>)}
+                    </div>
+                )}
+                
                 {columns.length > 0 && (
-                    <div className="p-8">
+                    <div className="space-y-4">
                         <CustomTable
                             columns={columns as any}
                             data={previewData}
                             tableId="custom-view-table"
                             filters={filters}
+                            selectedRows={[]}
+                            onToggleSelect={() => {}}
+                            onSelectAll={() => {}}
                         />
                     </div>
                 )}

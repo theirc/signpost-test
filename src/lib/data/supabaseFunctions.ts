@@ -520,6 +520,25 @@ export async function deleteBot(id: string): Promise<{
   }
 }
 
+export async function fetchBotById(id: string): Promise<{
+  data: Bot | null;
+  error: Error | null;
+}> {
+  try {
+    const { data, error } = await supabase
+      .from('bots')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
 // =========== COLLECTION FUNCTIONS ===========
 
 /**

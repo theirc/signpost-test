@@ -190,8 +190,7 @@ export function SystemPrompts() {
                             columns={columns as any}
                             data={prompts}
                             filters={filters}
-                            onEdit={handleEdit}
-                            onDelete={handleDeletePrompt}
+                            onRowClick={(row) => handleEdit(row.id)}
                             placeholder="No prompts found"
                         />
                     )}

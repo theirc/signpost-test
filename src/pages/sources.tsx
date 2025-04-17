@@ -13,6 +13,7 @@ import TagsFilter from "@/components/ui/tags-filter"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import CustomTable from "@/components/ui/custom-table"
+import { DropZone } from "@/components/ui/drop-zone"
 import { 
   transformSourcesForDisplay, 
   getConfigForSource, 
@@ -54,6 +55,7 @@ export default function Sources() {
   const [newTag, setNewTag] = useState("")
   const [savingTags, setSavingTags] = useState(false)
   const [sourcesDisplay, setSourcesDisplay] = useState<SourceDisplay[]>([])
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([])
 
   const fetchSourcesData = useCallback(async () => {
     console.log("[fetchSourcesData] Starting fetch...");
@@ -243,6 +245,11 @@ export default function Sources() {
     }
   };
 
+  const handleFilesDrop = useCallback(async (files: File[]) => {
+    setDroppedFiles(files);
+    setFilesModalOpen(true);
+  }, []);
+
   const handleFilesModalOpenChange = useCallback((open: boolean) => {
     setFilesModalOpen(open)
     if (!open) {
@@ -339,14 +346,11 @@ export default function Sources() {
   console.log(`[Render] SourcesDisplay length: ${sourcesDisplay.length}, Loading: ${loading}`);
 
   return (
-    <div className="flex flex-col h-full">
+    <DropZone onFilesDrop={handleFilesDrop} className="flex flex-col h-full">
       <div className="flex-1 space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">All Sources</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Sources</h1>
           <div className="flex gap-2">
-            <Button onClick={() => setFilesModalOpen(true)}>
-              Upload Files
-            </Button>
             <Button onClick={() => setLiveDataModalOpen(true)} variant="outline">
               Add Live Data
             </Button>
@@ -354,12 +358,15 @@ export default function Sources() {
               <RefreshCcw className="h-4 w-4 mr-2" />
               Refresh Sources
             </Button>
+            <Button onClick={() => setFilesModalOpen(true)}>
+              Upload Files
+            </Button>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Manage your data sources and their content.
+            Manage your data sources and their content. Drag and drop files anywhere to upload.
           </div>
 
           {loading ? (
@@ -381,6 +388,19 @@ export default function Sources() {
           )}
         </div>
       </div>
+
+      <FilesModal
+        open={filesModalOpen}
+        onOpenChange={setFilesModalOpen}
+        onSourcesUpdated={handleRefresh}
+        initialFiles={droppedFiles}
+      />
+
+      <LiveDataModal
+        open={liveDataModalOpen}
+        onOpenChange={setLiveDataModalOpen}
+        onSourcesUpdated={handleRefresh}
+      />
 
       <Dialog open={!!previewContent} onOpenChange={() => setPreviewContent(null)}>
         <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
@@ -497,17 +517,6 @@ export default function Sources() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <FilesModal
-        open={filesModalOpen}
-        onOpenChange={handleFilesModalOpenChange}
-        onSourcesUpdated={refreshSources}
-      />
-
-      <LiveDataModal
-        open={liveDataModalOpen}
-        onOpenChange={handleLiveDataModalOpenChange}
-      />
-    </div>
+    </DropZone>
   )
 } 

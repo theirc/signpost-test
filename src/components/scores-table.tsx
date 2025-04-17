@@ -36,10 +36,10 @@ export type Score = {
 interface ScoresTableProps {
     scores: Score[]
     selectedScores?: string[]
-    onToggleSelect?: (id: string) => void
-    onSelectAll?: (event: React.ChangeEvent<HTMLInputElement>) => void
-    onEdit?: (id: string) => void
+    onToggleSelect: (id: string) => void
+    onSelectAll: () => void
     onDelete?: (id: string) => void
+    onEdit: (id: string) => void
 }
 
 export function ScoresTable({
@@ -209,8 +209,7 @@ export function ScoresTable({
                 onToggleSelect={onToggleSelect}
                 selectedRows={selectedScores}
                 onSelectAll={onSelectAll}
-                onDelete={onDelete}
-                onEdit={onEdit}
+                onRowClick={(row) => onEdit(row.id)}
                 tableId="scores-table"
                 filters={filters}
             />

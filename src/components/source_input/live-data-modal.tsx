@@ -25,9 +25,10 @@ import {
 interface LiveDataModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onSourcesUpdated: () => void
 }
 
-export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
+export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveDataModalProps) {
   const supabase = useSupabase()
   
   const [form, setForm] = useState<FormState>(DEFAULT_FORM_STATE)
@@ -202,6 +203,7 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
         
         // We've handled this case completely, so close the modal
         onOpenChange(false);
+        onSourcesUpdated();
         return;
       } else if (form.type === 'zendesk') {
         config.subdomain = form.subdomain
@@ -300,6 +302,7 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
             setProgress(`Successfully imported ${successCount} articles (${errorCount} failed)`)
             await new Promise(resolve => setTimeout(resolve, 2000))
             onOpenChange(false)
+            onSourcesUpdated();
           } catch (error) {
             console.error('Error in Zendesk import:', error)
             // Update source content with error message
@@ -327,6 +330,7 @@ export function LiveDataModal({ open, onOpenChange }: LiveDataModalProps) {
       }
 
       onOpenChange(false)
+      onSourcesUpdated();
     } catch (error) {
       console.error('Error in handleSave:', error)
       // You might want to show an error toast or message here
