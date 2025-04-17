@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import ReactJson from 'react-json-view'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2, Volume2 } from "lucide-react";
+import { Loader2, Volume2, Code } from "lucide-react";
 import { useEffect, useState, useRef } from "react"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { ThumbsDown, ThumbsUp, Flag } from "lucide-react"
@@ -27,7 +28,10 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
   
   const [isSpeaking, setIsSpeaking] = useState(false)
   const utteranceRef = useRef(null)
-  
+  const [isJsonOpen, setIsJsonOpen] = useState(false)
+
+  const handleViewJson = () => setIsJsonOpen(true)
+
   useEffect(() => {
     if (window.speechSynthesis) {
       if (speechSynthesis.getVoices().length === 0) {
@@ -213,7 +217,7 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
   }
 
   return (
-    <div>
+    <>
     <div className="flex">
       {!m.isContacts && !m.tts && (
         <div className="bot-message-content">
@@ -264,9 +268,13 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
             size={26}
             onClick={() => speakMessage(m.message)}
           />
+          <Code 
+          className="cursor-pointer hover:text-gray-700"
+          size={26}
+          onClick={() => setIsJsonOpen(true)}
+          />
       </div>
     )}
-
     {m.tts && (
       <div className="test">
         <AudioComponent message={m.message} />
@@ -287,7 +295,23 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
       close={handleClose}
       score={state.positivie}
     />
-  </div>
+    <Dialog open={isJsonOpen} onOpenChange={setIsJsonOpen}>
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+        <DialogHeader>
+           <DialogTitle>Bot Response JSON</DialogTitle>
+        </DialogHeader>
+        <div className="p-4 bg-gray-50">
+           <ReactJson
+            src={m}
+            name={false}
+           collapsed={1}
+          enableClipboard={true}
+          displayDataTypes={false}
+          />         
+          </div>
+       </DialogContent>
+   </Dialog>
+  </>
 )
 }
 
@@ -722,3 +746,4 @@ function AudioComponent(props: { message: string }) {
     <audio controls src={base64ToBlob(message)} className="mt-4" />
   )
 }
+

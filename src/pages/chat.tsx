@@ -3,8 +3,9 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
-import {app} from '@/lib/app'
+import { app } from '@/lib/app'
 import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
+import AgentJsonView from '@/bot/agentview'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
@@ -15,7 +16,7 @@ import type { ChatMessage } from '@/types/types.ai'
 import { useReactMediaRecorder } from "react-media-recorder"
 import { agents } from "@/lib/agents"
 import { availableSources } from "@/components/source_input/files-modal"
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MultiSelectDropdown, Option } from '@/components/ui/multiselect'
 import "../index.css"
 
@@ -29,7 +30,7 @@ interface Bots {
 
 const AGENT_ID = 23
 
-export default function Chat () {
+export default function Chat() {
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [showFileDialog, setShowFileDialog] = useState(false)
   const [selectedSources, setSelectedSources] = useState<string[]>([])
@@ -69,16 +70,16 @@ export default function Chat () {
       const sb = await api.getBots()
       const bots: Bots = {}
       for (const key in sb) {
-        bots[Number(key)] = { name: sb[key], id:  key, history: [] }
+        bots[Number(key)] = { name: sb[key], id: key, history: [] }
       }
-  
-    bots[AGENT_ID] = { name: AGENT_ID.toString(), id:   AGENT_ID.toString(), history: [] }
-    setState({ bots })
+
+      bots[AGENT_ID] = { name: AGENT_ID.toString(), id: AGENT_ID.toString(), history: [] }
+      setState({ bots })
     }
     initBots()
   }, [])
 
-  useEffect(()=> {
+  useEffect(() => {
     setSources(availableSources)
   }, [availableSources])
 
@@ -97,12 +98,12 @@ export default function Chat () {
     return []
   })
 
-  useEffect(()=> {
+  useEffect(() => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
   }, [chatHistory])
-  
+
   const handleLoadChatHistory = (chatSession: ChatSession) => {
-    
+
     setActiveChat(chatSession)
 
     setTimeout(() => {
@@ -111,12 +112,12 @@ export default function Chat () {
       } else {
         setMessages([])
       }
-      
+
       if (chatSession.botName) {
         const botEntry = Object.entries(state.bots).find(
           ([_, bot]) => bot.name === chatSession.botName
         )
-  
+
         if (botEntry) {
           const botId = Number(botEntry[0])
           setState({ selectedBots: [botId] })
@@ -136,23 +137,23 @@ export default function Chat () {
 
   const onSelectBot = (e: string[] | string) => {
     console.log("Selecting bot:", e)
-  
+
     const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
-    
+
     if (!e || e.length == 0) {
       setState({ selectedBots: [] })
       return
     }
-  
+
     let newSelectedBotId: number
-    
+
     if (typeof e == "string") {
       newSelectedBotId = Number(e)
       setState({ selectedBots: [newSelectedBotId] })
     } else {
       const bots = e.map(Number)
       newSelectedBotId = bots[0]
-      
+
       for (const b of bots) {
         const bot = state.bots[b]
         if (!bot) continue
@@ -160,41 +161,41 @@ export default function Chat () {
         state.selectedBots.push(b)
         bot.history = []
       }
-  
+
       setState({ selectedBots: bots })
     }
-    
+
     if (previousSelectedBot !== newSelectedBotId) {
       setMessages([])
       setActiveChat(null)
     }
   }
- 
+
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
     message ||= "where can i find english classes in athens?"
     if (!message && !audio) return
-  
+
     const selectedBots = state.selectedBots.map(b => ({
       label: state.bots[b].name,
       value: b,
       history: state.bots[b].history,
     }))
-  
+
     const currentBotName = state.selectedBots.length > 0
       ? state.bots[state.selectedBots[0]].name
       : "Chat"
-  
+
     const userMessage: ChatMessage = { type: "human", message }
     if (message) {
       setMessages(prev => [...prev, userMessage])
     }
-  
-  let currentActiveChat: ChatSession
+
+    let currentActiveChat: ChatSession
     if (!activeChat) {
       currentActiveChat = {
-        id:        new Date().toISOString(),
-        botName:   currentBotName,
-        messages:  [userMessage],
+        id: new Date().toISOString(),
+        botName: currentBotName,
+        messages: [userMessage],
         timestamp: new Date().toISOString(),
       }
       setActiveChat(currentActiveChat)
@@ -211,60 +212,76 @@ export default function Chat () {
         )
       )
     }
-  
+
     setState({ isSending: true })
-  
+
     const useAgent = state.selectedBots.includes(AGENT_ID)
-  
     let botResponseForHistory: ChatMessage
-    
+
     if (useAgent) {
       try {
-        const agent = await agents.loadAgent(AGENT_ID)
+        const agent = await agents.loadAgent(AGENT_ID);
         const parameters: AgentParameters = {
-          input:   { question: message! },
+          input: { question: message! },
           apikeys: app.getAPIkeys(),
-        }
-        await agent.execute(parameters)
-    
+        };
+        await agent.execute(parameters);
+
         const raw = parameters.error
           ? `Agent error: ${parameters.error}`
-          : parameters.output
-        const text =
-          typeof raw === "string"
-            ? raw
-            : JSON.stringify(raw, null, 2)
-    
-        const rbot = state.bots[AGENT_ID]!
+          : parameters.output;
+
+        const text = typeof raw === "string"
+          ? raw
+          : JSON.stringify(raw, null, 2)
+
+        const rbot = state.bots[AGENT_ID]!;
         if (!rbot.history.some(h => h.isHuman && h.message === message))
-          rbot.history.push({ isHuman: true, message })
+          rbot.history.push({ isHuman: true, message });
         if (!rbot.history.some(h => !h.isHuman && h.message === text))
-          rbot.history.push({ isHuman: false, message: text })
-    
-        botResponseForHistory = {type: "bot", message: text, messages: [], needsRebuild: false, }
-      } catch (err: unknown) {  
-        let errorMsg = "Oops, something went wrong with the agent."
+          rbot.history.push({ isHuman: false, message: text });
+
+        botResponseForHistory = {
+          type: "bot",
+          message: text,
+          messages: [{
+            id: AGENT_ID,
+            botName: "Agent",
+            message: text,
+            needsRebuild: false,
+          }],
+          needsRebuild: false
+        };
+      } catch (err: unknown) {
+        let errorMsg = "Oops, something went wrong with the agent.";
         if (err && typeof err === "object") {
-          const e = err as any
+          const e = err as any;
           if (typeof e.message === "string") {
-            errorMsg = e.message
+            errorMsg = e.message;
           } else if (typeof e.status === "number") {
-            errorMsg = `Agent server returned ${e.status}`
+            errorMsg = `Agent server returned ${e.status}`;
           }
         }
-    botResponseForHistory = { type:  "bot", message:  errorMsg, messages: [],  needsRebuild: false, }
+        botResponseForHistory = {
+          type: "bot",
+          message: errorMsg,
+          messages: [{
+            id: AGENT_ID,
+            botName: "Agent",
+            message: errorMsg,
+            needsRebuild: false,
+          }],
+          needsRebuild: false
+        }
       }
     } else {
-      const response = message
-        ? await api.askbot({ message }, tts, selectedBots)
-        : await api.askbot({ audio }, tts, selectedBots)
-  
+      const response = message ? await api.askbot({ message }, tts, selectedBots) : await api.askbot({ audio }, tts, selectedBots)
+
       if (!response.error) {
         for (const m of response.messages) {
           const rbot = state.bots[m.id]
           if (!rbot) continue
-  
-     
+
           if (
             !rbot.history.find(h => h.isHuman && h.message === message)
           ) {
@@ -284,37 +301,24 @@ export default function Chat () {
           }
         }
       }
-  
+
       response.rebuild = async () => {
         setState({ isSending: true })
         response.needsRebuild = false
         await onRebuild()
         setState({ isSending: false })
       }
-  
-      botResponseForHistory = {
-        type:         "bot",
-        message:      response.message || "",
-        messages:     response.messages || [],
-        needsRebuild: response.needsRebuild || false,
-      }
+
+      botResponseForHistory = { type: "bot", message: response.message || "", messages: response.messages || [], needsRebuild: response.needsRebuild || false, }
     }
-  
+
     setMessages(prev => [...prev, botResponseForHistory])
-  
+
     const updatedChatWithResponse: ChatSession = {
-      ...currentActiveChat,
-      messages: [...currentActiveChat.messages, botResponseForHistory],
+      ...currentActiveChat, messages: [...currentActiveChat.messages, botResponseForHistory],
     }
     setActiveChat(updatedChatWithResponse)
-    setChatHistory(prev =>
-      prev.map(chat =>
-        chat.id === updatedChatWithResponse.id
-          ? updatedChatWithResponse
-          : chat
-      )
-    )
-  
+    setChatHistory(prev => prev.map(chat => chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat))
     setState({ isSending: false })
   }
 
@@ -327,10 +331,10 @@ export default function Chat () {
   }
 
   const handleToggleSelect = (id: string) => {
-    setSelectedSources(prev => 
+    setSelectedSources(prev =>
       prev.includes(id)
-      ? prev.filter(sourceId => sourceId !== id)
-      : [...prev, id]
+        ? prev.filter(sourceId => sourceId !== id)
+        : [...prev, id]
     )
   }
 
@@ -340,7 +344,7 @@ export default function Chat () {
 
   const handleAttachFiles = () => {
     const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
-    .filter(Boolean)
+      .filter(Boolean)
       .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
       .join('\n\n')
 
@@ -360,41 +364,40 @@ export default function Chat () {
     console.log("Exiting audio mode")
   }
 
-const hasSelectedBots = state.selectedBots.length > 0
+  const hasSelectedBots = state.selectedBots.length > 0
   const options: Option[] = Object.keys(state.bots).map((k) => ({
     label: state.bots[Number(k)].name,
     value: k,
   }))
-  
-  return ( 
+
+  return (
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
       <div className="flex h-full">
-        <div className={`flex flex-col transition-all duration-300 ${
-         sidebarVisible ? 'w-1/4 border-r' : 'w-0 overflow-hidden border-none'
+        <div className={`flex flex-col transition-all duration-300 ${sidebarVisible ? 'w-1/4 border-r' : 'w-0 overflow-hidden border-none'
           }`}>
           <div className="p-4 border-b">
             <div className="flex justify-end mb-4">
-              <Button 
+              <Button
                 onClick={handleResetChat}
-                size="sm" 
+                size="sm"
                 className="flex items-center gap-1"
               >
-                <MessageSquarePlus/>
+                <MessageSquarePlus />
               </Button>
             </div>
             <h2 className="text-1xl font-bold text-left">Chat History</h2>
           </div>
-          
-          <div 
-            className="overflow-y-auto" 
+
+          <div
+            className="overflow-y-auto"
             style={{ height: "calc(100% - 100px)" }}
           >
             <div className="p-4">
-              <ChatHistory 
-                setActiveChat={handleLoadChatHistory} 
+              <ChatHistory
+                setActiveChat={handleLoadChatHistory}
                 onSelectBot={(botId) => {
                   onSelectBot(botId)
-                }} 
+                }}
                 bots={state.bots}
                 chatHistory={chatHistory}
               />
@@ -403,23 +406,23 @@ const hasSelectedBots = state.selectedBots.length > 0
         </div>
         <div className="flex-1 flex flex-col">
           <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
-          <Button onClick={toggleSidebar}className="mr-3 p-1 bg-grey-100 text-black rounded hover:bg-gray-100">
+            <Button onClick={toggleSidebar} className="mr-3 p-1 bg-grey-100 text-black rounded hover:bg-gray-100">
               {sidebarVisible ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-             </Button>
+            </Button>
             <h2 className="text-lg font-bold">
               Playground
             </h2>
             <div className="flex-grow flex px-4">
-            <MultiSelectDropdown options={options} selected={state.selectedBots} onChange={(selected) => {
-                  setState({ selectedBots: selected })
-                  setMessages([])
-                  setActiveChat(null)
-                }} />
+              <MultiSelectDropdown options={options} selected={state.selectedBots} onChange={(selected) => {
+                setState({ selectedBots: selected })
+                setMessages([])
+                setActiveChat(null)
+              }} />
             </div>
           </div>
-          <div 
-            className="overflow-y-auto" 
-            style={{ height: "calc(100% - 137px)" }} 
+          <div
+            className="overflow-y-auto"
+            style={{ height: "calc(100% - 137px)" }}
           >
             <div className="p-4 space-y-4">
               {!state.audioMode && (
@@ -446,20 +449,20 @@ const hasSelectedBots = state.selectedBots.length > 0
                 </div>
               )}
               {state.audioMode && hasSelectedBots && (
-                <Comm 
-                  bot={state.selectedBots[0]} 
-                  onExit={onExitAudioMode} 
+                <Comm
+                  bot={state.selectedBots[0]}
+                  onExit={onExitAudioMode}
                 />
               )}
             </div>
           </div>
-          
+
           {!state.audioMode && (
             <div className="border-t bg-white p-4">
               {hasSelectedBots ? (
-                <SearchInput 
-                  onSearch={onSend} 
-                  disabled={state.isSending} 
+                <SearchInput
+                  onSearch={onSend}
+                  disabled={state.isSending}
                   openFileDialog={() => setShowFileDialog(true)}
                   audioMode={state.audioMode}
                   onModeChanged={onModeChanged}
@@ -500,8 +503,8 @@ const hasSelectedBots = state.selectedBots.length > 0
   )
 }
 
-function SearchInput(props: { 
-  onSearch: (message?: string, audio?: any, tts?: boolean) => void, 
+function SearchInput(props: {
+  onSearch: (message?: string, audio?: any, tts?: boolean) => void,
   disabled: boolean,
   openFileDialog: () => void,
   audioMode: boolean,
@@ -521,7 +524,7 @@ function SearchInput(props: {
   } = useReactMediaRecorder({ audio: true })
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  
+
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "24px"
@@ -592,14 +595,13 @@ function SearchInput(props: {
                 {status === "recording" ? "Recording..." : "Ready to record"}
               </div>
 
-              <Button 
+              <Button
                 onClick={handleToggleRecording}
-                className={`h-20 w-20 rounded-full flex items-center justify-center transition-colors ${
-                  status === "recording" ? 'bg-red-500' : 'bg-gray-200 hover:bg-gray-300'
-                }`}
+                className={`h-20 w-20 rounded-full flex items-center justify-center transition-colors ${status === "recording" ? 'bg-red-500' : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
               >
-                {status === "recording" ? 
-                  <Circle className="h-8 w-8 text-white" /> : 
+                {status === "recording" ?
+                  <Circle className="h-8 w-8 text-white" /> :
                   <AudioWaveform className="h-8 w-8 text-gray-800" />
                 }
               </Button>
@@ -607,13 +609,13 @@ function SearchInput(props: {
               {mediaBlobUrl && (
                 <>
                   <div className="mt-6 w-full max-w-md">
-                    <audio 
-                      controls 
-                      src={mediaBlobUrl} 
-                      className="w-full rounded-md shadow-sm border border-gray-300" 
+                    <audio
+                      controls
+                      src={mediaBlobUrl}
+                      className="w-full rounded-md shadow-sm border border-gray-300"
                     />
                   </div>
-                  
+
                   <Button
                     onClick={handleSendRecording}
                     className="mt-4 px-4 py-2 bg-black text-white rounded-full flex items-center hover:bg-gray-900"
@@ -623,7 +625,7 @@ function SearchInput(props: {
                   </Button>
                 </>
               )}
-              
+
               <Button
                 onClick={() => setIsRecordingMode(false)}
                 className="mt-6 text-gray-600 hover:text-gray-900"
@@ -665,14 +667,14 @@ function SearchInput(props: {
                 />
               </div>
               <div className="flex items-center pr-2 gap-2">
-              
+
                 <Button
                   type="button"
                   onClick={value.trim() ? handleSendMessage : props.onModeChanged}
                   className={`p-2 rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
-                  {value.trim() ? 
-                    <ArrowUp className="h-5 w-5" /> : 
+                  {value.trim() ?
+                    <ArrowUp className="h-5 w-5" /> :
                     <AudioWaveform className="h-5 w-5" />
                   }
                 </Button>
@@ -691,23 +693,23 @@ interface MessageProps {
 }
 
 function ChatMessage(props: MessageProps) {
-  const { isWaiting } = props
-  let { type, message, messages, needsRebuild, rebuild } = props.message
-  messages = messages || []
-  const [copied, setCopied] = useState(false)
-  const [isSingleLine, setIsSingleLine] = useState(true)
-  const messageTextRef = useRef<HTMLDivElement>(null)
-  const messageContainerRef = useRef<HTMLDivElement>(null)
+  const { isWaiting } = props;
+  let { type, message, messages, needsRebuild, rebuild } = props.message;
+  messages = messages || [];
+  const [copied, setCopied] = useState(false);
+  const [isSingleLine, setIsSingleLine] = useState(true);
+  const messageTextRef = useRef<HTMLDivElement>(null);
+  const messageContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (type === "human") {
-      const hasNewlines = message.includes('\n')
-      
+      const hasNewlines = message.includes('\n');
+
       if (!hasNewlines && messageTextRef.current) {
-        const lineHeight = 23
-        setIsSingleLine(messageTextRef.current.clientHeight <= lineHeight * 1.2)
+        const lineHeight = 23;
+        setIsSingleLine(messageTextRef.current.clientHeight <= lineHeight * 1.2);
       } else {
-        setIsSingleLine(!hasNewlines)
+        setIsSingleLine(!hasNewlines);
       }
     }
   }, [message, type])
@@ -715,13 +717,59 @@ function ChatMessage(props: MessageProps) {
   const handleCopyText = () => {
     navigator.clipboard.writeText(message).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), 2000);
     })
   }
 
-  const isLastMessage = messages.length === 1 && messages[0].type === "human"
-
+  if (type === "human") {
+    return (
+      <div className="w-full mt-4" dir="auto">
+        <div
+          className="bg-gray-100 text-black p-4 rounded-lg max-w-[20%]"
+          style={{ marginInlineStart: 'auto' }}
+          dir="auto"
+        >
+          <div ref={messageTextRef}>{message}</div>
+          {!isWaiting && needsRebuild && (
+            <Button
+              className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
+              onClick={rebuild}
+              disabled={isWaiting}
+              size="sm"
+            >
+              <span className="mr-1">↻</span> Rebuild
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
   if (type === "bot") {
+    if (messages.length > 0) {
+      const agentMessage = messages.find(m => m.id === AGENT_ID);
+
+      if (agentMessage) {
+        return (
+          <div className="mt-4 w-full" dir="auto">
+            <div className="p-3 border border-gray-200 rounded-lg">
+              <div className="font-medium text-xs mb-2 pb-1 border-b">Agent</div>
+              <AgentJsonView data={agentMessage.message} />
+
+              {needsRebuild && !isWaiting && rebuild && (
+                <Button
+                  className="mt-3 bg-gray-700 hover:bg-gray-600 text-white"
+                  onClick={rebuild}
+                  disabled={isWaiting}
+                  size="sm"
+                >
+                  <span className="mr-1">↻</span> Rebuild
+                </Button>
+              )}
+            </div>
+          </div>
+        )
+      }
+    }
     if (messages.length > 1) {
       return (
         <div className="w-full mt-4" dir="auto">
@@ -743,7 +791,7 @@ function ChatMessage(props: MessageProps) {
       )
     }
     if (messages.length === 1) {
-      const single = messages[0]
+      const single = messages[0];
       return (
         <div className="mt-4" dir="auto">
           <div className="p-3">
@@ -758,6 +806,7 @@ function ChatMessage(props: MessageProps) {
         </div>
       )
     }
+
     return (
       <div className="w-full mt-4" dir="auto">
         <div className="border border-gray-300 rounded-lg p-3" dir="auto">
@@ -766,25 +815,6 @@ function ChatMessage(props: MessageProps) {
       </div>
     )
   }
-  return (
-    <div className="w-full mt-4" dir="auto">
-      <div
-        className="bg-gray-100 text-black p-4 rounded-lg max-w-[20%]"
-        style={{ marginInlineStart: 'auto' }}
-        dir="auto"
-      >
-        <div>{message}</div>
-        {!isWaiting && needsRebuild && (
-          <Button
-            className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
-            onClick={rebuild}
-            disabled={isWaiting}
-            size="sm"
-          >
-            <span className="mr-1">↻</span> Rebuild
-          </Button>
-        )}
-      </div>
-    </div>
-  )
+
+  return null
 }
