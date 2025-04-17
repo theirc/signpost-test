@@ -274,9 +274,9 @@ export interface Role {
 
 export interface User {
   id: string
+  email: string
   first_name?: string
   last_name?: string
-  email?: string
   password?: string
   location?: string
   title?: string
@@ -285,9 +285,9 @@ export interface User {
     code: string
     name: string
   }
-  status: string
   role?: string
   role_name?: string
+  status?: string
   team?: string
   team_name?: string
   created_at?: string
@@ -1800,7 +1800,6 @@ export async function fetchBotLogById(id: string): Promise<{
 
     if (error) throw error
 
-    // Transform the data to flatten the nested objects
     const transformedData = data ? {
       ...data,
       bot_name: data.bots?.name,
@@ -2208,7 +2207,15 @@ export async function fetchUserById(id: string) {
       .single()
 
     if (error) throw error
-    return { data, error: null }
+    const transformedData = data ? {
+      ...data,
+      role: data.roles?.id,
+      team: data.teams?.id,
+      role_name: data.roles?.name,
+      team_name: data.teams?.name
+    } : null
+
+    return { data: transformedData, error: null }
   } catch (error) {
     console.error('Error fetching user:', error)
     return { data: null, error }
@@ -2429,4 +2436,231 @@ export async function deleteProject(id: string) {
         console.error('Error deleting project:', error)
         return { error }
     }
+}
+
+export async function loginUser(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
+  return { data, error }
+}
+
+export async function getCurrentUser() {
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !authData?.user) {
+    return { data: null, error: authError }
+  }
+
+  const { data: publicUserData, error: publicUserError } = await supabase
+    .from('users')
+    .select(`
+      *,
+      roles:role (*),
+      teams:team (*)
+    `)
+    .eq('id', authData.user.id)
+    .single()
+
+  if (publicUserError) {
+    return { data: authData.user, error: publicUserError }
+  }
+
+  return { 
+    data: {
+      ...authData.user,
+      ...publicUserData,
+      role_name: publicUserData.roles?.name,
+      team_name: publicUserData.teams?.name
+    }, 
+    error: null 
+  }
+}
+
+export async function logoutUser() {
+  const { error } = await supabase.auth.signOut()
+  return { error }
+}
+
+export async function signUpUser(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
+  return { data, error }
+}
+
+export async function createNewUser(userData: {
+  email: string
+  password: string
+  first_name?: string
+  last_name?: string
+  role?: string
+  team?: string
+  location?: string
+  title?: string
+  description?: string
+  language?: {
+    code: string
+    name: string
+  }
+}) {
+  try {
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+    })
+
+    if (authError) {
+      console.error('Error creating auth user:', authError)
+      return { data: null, error: authError }
+    }
+
+    if (!authData.user) {
+      return { data: null, error: new Error('No user data returned from auth creation') }
+    }
+
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking existing user:', checkError)
+      return { data: null, error: checkError }
+    }
+
+    let publicUserData
+    let publicUserError
+
+    if (existingUser) {
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role,
+          team: userData.team,
+          location: userData.location,
+          title: userData.title,
+          description: userData.description,
+          language: userData.language,
+          status: 'active'
+        })
+        .eq('id', authData.user.id)
+        .select(`
+          *,
+          roles:role (*),
+          teams:team (*)
+        `)
+        .single()
+      
+      publicUserData = data
+      publicUserError = error
+    } else {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          id: authData.user.id,
+          first_name: userData.first_name,
+          last_name: userData.last_name,
+          role: userData.role,
+          team: userData.team,
+          location: userData.location,
+          title: userData.title,
+          description: userData.description,
+          language: userData.language,
+          status: 'active'
+        }])
+        .select(`
+          *,
+          roles:role (*),
+          teams:team (*)
+        `)
+        .single()
+      
+      publicUserData = data
+      publicUserError = error
+    }
+
+    if (publicUserError) {
+      console.error('Error creating/updating public user:', publicUserError)
+      await supabase.auth.signOut()
+      return { data: null, error: publicUserError }
+    }
+
+    return { 
+      data: {
+        ...authData.user,
+        ...publicUserData,
+        role_name: publicUserData.roles?.name,
+        team_name: publicUserData.teams?.name
+      }, 
+      error: null 
+    }
+  } catch (error) {
+    console.error('Error in createNewUser:', error)
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error(String(error)) 
+    }
+  }
+}
+
+export async function updateUserData(id: string, userData: {
+  first_name?: string
+  last_name?: string
+  role?: string
+  team?: string
+  location?: string
+  title?: string
+  description?: string
+  language?: {
+    code: string
+    name: string
+  }
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        role: userData.role,
+        team: userData.team,
+        location: userData.location,
+        title: userData.title,
+        description: userData.description,
+        language: userData.language
+      })
+      .eq('id', id)
+      .select(`
+        *,
+        roles:role (*),
+        teams:team (*)
+      `)
+      .single()
+
+    if (error) {
+      console.error('Error updating user:', error)
+      return { data: null, error }
+    }
+
+    return { 
+      data: {
+        ...data,
+        role_name: data.roles?.name,
+        team_name: data.teams?.name
+      }, 
+      error: null 
+    }
+  } catch (error) {
+    console.error('Error in updateUserData:', error)
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error(String(error)) 
+    }
+  }
 }

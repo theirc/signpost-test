@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { fetchTeamById, updateTeam, addTeam } from "@/lib/data/supabaseFunctions"
 import { Loader2 } from "lucide-react"
 
@@ -77,7 +76,7 @@ export function TeamForm() {
     return (
         <div className="container mx-auto py-8">
             <div className="max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold mb-6">{id && id !== "new" ? "Edit Score" : "Add New Score"}</h1>
+                <h1 className="text-2xl font-bold mb-6">{id && id !== "new" ? "Edit Team" : "Add New Team"}</h1>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>

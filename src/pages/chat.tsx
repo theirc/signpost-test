@@ -4,7 +4,7 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
 import {app} from '@/lib/app'
-import { History, AudioWaveform, ArrowUp, CirclePlus, Circle, Check, Copy } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
@@ -369,98 +369,20 @@ const hasSelectedBots = state.selectedBots.length > 0
   return ( 
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
       <div className="flex h-full">
-        <div className="flex-1 flex flex-col relative">
-          <div className="py-4 border-b flex justify-between items-center bg-white px-4">
-            <h2 className="text-2xl font-bold tracking-tight">Playground</h2>
-            <div className="flex items-center gap-2">
-              <MultiSelectDropdown 
-                options={options} 
-                selected={state.selectedBots} 
-                onChange={(selected) => {
-                  setState({ selectedBots: selected })
-                  setMessages([])
-                  setActiveChat(null)
-                }}
-              />
+        <div className={`flex flex-col transition-all duration-300 ${
+         sidebarVisible ? 'w-1/4 border-r' : 'w-0 overflow-hidden border-none'
+          }`}>
+          <div className="p-4 border-b">
+            <div className="flex justify-end mb-4">
               <Button 
-                onClick={toggleSidebar} 
-                size="sm"
-                variant="ghost"
+                onClick={handleResetChat}
+                size="sm" 
                 className="flex items-center gap-1"
               >
-                <History className="h-5 w-5" />
+                <MessageSquarePlus/>
               </Button>
             </div>
-          </div>
-          <div 
-            className="overflow-y-auto chat-messages-container" 
-            style={{ height: "calc(100% - 137px)" }} 
-          >
-            <div className="p-4 space-y-4">
-              {!state.audioMode && (
-                <div className="flex flex-col space-y-6 w-full">
-                  {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <p className="text-base font-medium">Start chatting with Signpost Bot</p>
-                      <p className="text-xs mt-2">Select a bot and type a message below</p>
-                    </div>
-                  ) : (
-                    messages.map((m, i) => (
-                      <ChatMessage key={i} message={m} isWaiting={state.isSending} />
-                    ))
-                  )}
-                  {state.isSending && (
-                    <div className="flex justify-start w-fit">
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {state.audioMode && hasSelectedBots && (
-                <Comm 
-                  bot={state.selectedBots[0]} 
-                  onExit={onExitAudioMode} 
-                />
-              )}
-            </div>
-          </div>
-          
-          {!state.audioMode && (
-            <div className="bg-white pb-6 pt-2 px-4">
-              {hasSelectedBots ? (
-                <SearchInput 
-                  onSearch={onSend} 
-                  disabled={state.isSending} 
-                  openFileDialog={() => setShowFileDialog(true)}
-                  audioMode={state.audioMode}
-                  onModeChanged={onModeChanged}
-                />
-              ) : (
-                <div className="flex justify-center items-center py-4 text-gray-500">
-                  <span>Please select a bot to start chatting</span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        
-        <div className={`flex flex-col transition-all duration-300 border-l ${
-         sidebarVisible ? 'w-1/4' : 'w-0 overflow-hidden border-none'
-          }`}>
-          <div className="py-4 flex justify-between items-center bg-white px-4">
-            <h2 className="text-2xl font-bold tracking-tight ml-2">Chat History</h2>
-            <Button 
-              onClick={handleResetChat}
-              size="sm" 
-              variant="ghost"
-              className="flex items-center gap-1"
-            >
-              <History/>
-            </Button>
+            <h2 className="text-1xl font-bold text-left">Chat History</h2>
           </div>
           
           <div 
@@ -478,6 +400,77 @@ const hasSelectedBots = state.selectedBots.length > 0
               />
             </div>
           </div>
+        </div>
+        <div className="flex-1 flex flex-col">
+          <div className="py-4 border-b flex justify-between items-center bg-white px-4 shadow-sm">
+          <Button onClick={toggleSidebar}className="mr-3 p-1 bg-grey-100 text-black rounded hover:bg-gray-100">
+              {sidebarVisible ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+             </Button>
+            <h2 className="text-lg font-bold">
+              Playground
+            </h2>
+            <div className="flex-grow flex px-4">
+            <MultiSelectDropdown options={options} selected={state.selectedBots} onChange={(selected) => {
+                  setState({ selectedBots: selected })
+                  setMessages([])
+                  setActiveChat(null)
+                }} />
+            </div>
+          </div>
+          <div 
+            className="overflow-y-auto" 
+            style={{ height: "calc(100% - 137px)" }} 
+          >
+            <div className="p-4 space-y-4">
+              {!state.audioMode && (
+                <div className="flex flex-col space-y-6 w-full">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <p className="text-lg font-medium">Start chatting with Signpost Bot</p>
+                      <p className="text-sm mt-2">Select a bot and type a message below</p>
+                    </div>
+                  ) : (
+                    messages.map((m, i) => (
+                      <ChatMessage key={i} message={m} isWaiting={state.isSending} />
+                    ))
+                  )}
+                  {state.isSending && (
+                    <div className="flex justify-start w-fit">
+                      <div className="bg-gray-100 rounded-lg p-3 flex gap-1">
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+                        <div className="w-2.5 h-2.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {state.audioMode && hasSelectedBots && (
+                <Comm 
+                  bot={state.selectedBots[0]} 
+                  onExit={onExitAudioMode} 
+                />
+              )}
+            </div>
+          </div>
+          
+          {!state.audioMode && (
+            <div className="border-t bg-white p-4">
+              {hasSelectedBots ? (
+                <SearchInput 
+                  onSearch={onSend} 
+                  disabled={state.isSending} 
+                  openFileDialog={() => setShowFileDialog(true)}
+                  audioMode={state.audioMode}
+                  onModeChanged={onModeChanged}
+                />
+              ) : (
+                <div className="flex justify-center items-center py-4 text-gray-500">
+                  <span>Please select a bot to start chatting</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
@@ -647,9 +640,18 @@ function SearchInput(props: {
               e.preventDefault()
               handleSearch(value)
             }}
-            className="relative bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[4px_4px_20px_-4px_rgba(236,72,153,0.1),_-4px_4px_20px_-4px_rgba(124,58,237,0.1),_0_4px_20px_-4px_rgba(34,211,238,0.1)]"
+            className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
           >
-            <div className="flex flex-col w-full">
+            <div className="flex items-center w-full p-2">
+              <div className="flex-shrink-0 pl-2">
+                <Button
+                  type="button"
+                  onClick={props.openFileDialog}
+                  className="p-2 text-white hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                >
+                  <CirclePlus className="h-6 w-6" />
+                </Button>
+              </div>
               <div className="flex-grow px-2 py-3 max-h-48 overflow-y-auto">
                 <textarea
                   ref={textareaRef}
@@ -657,36 +659,23 @@ function SearchInput(props: {
                   onChange={handleSearchChange}
                   onKeyDown={handleKeyDown}
                   placeholder="Type your message here."
-                  className="w-full outline-none resize-none py-1 px-1 text-sm min-h-[40px]"
-                  style={{ overflowY: 'auto', fontFamily: 'Inter, sans-serif' }}
+                  className="w-full outline-none resize-none py-1 px-1 text-gray-800 min-h-[40px]"
                   rows={1}
+                  style={{ overflowY: 'auto' }}
                 />
               </div>
+              <div className="flex items-center pr-2 gap-2">
               
-              <div className="flex justify-between items-center p-2">
-                <div>
-                  <Button
-                    type="button"
-                    onClick={props.openFileDialog}
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-full border border-gray-200 bg-transparent"
-                    variant="ghost"
-                  >
-                    <CirclePlus className="h-6 w-6" />
-                  </Button>
-                </div>
-                
-                <div>
-                  <Button
-                    type="button"
-                    onClick={value.trim() ? handleSendMessage : props.onModeChanged}
-                    className={`w-10 h-10 p-0 flex items-center justify-center rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
-                  >
-                    {value.trim() ? 
-                      <ArrowUp className="h-5 w-5" /> : 
-                      <AudioWaveform className="h-5 w-5" />
-                    }
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  onClick={value.trim() ? handleSendMessage : props.onModeChanged}
+                  className={`p-2 rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
+                >
+                  {value.trim() ? 
+                    <ArrowUp className="h-5 w-5" /> : 
+                    <AudioWaveform className="h-5 w-5" />
+                  }
+                </Button>
               </div>
             </div>
           </form>
@@ -771,44 +760,30 @@ function ChatMessage(props: MessageProps) {
     }
     return (
       <div className="w-full mt-4" dir="auto">
-        <div className="border border-gray-300 rounded-lg p-3" dir="auto" style={{ minWidth: "80px" }}>
-          <div className="px-1" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}>{message}</div>
+        <div className="border border-gray-300 rounded-lg p-3" dir="auto">
+          {message}
         </div>
       </div>
     )
   }
   return (
-    <div className="w-full mt-4" dir="auto" ref={messageContainerRef}>
-      <div className="flex flex-col items-end">
-        <div
-          className={`bg-gray-100 text-black message-bubble shadow-sm ${isSingleLine ? 'single-line' : ''}`}
-          dir="auto"
-        >
-          <div 
-            ref={messageTextRef}
-            className="break-words whitespace-pre-wrap" 
-            style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
+    <div className="w-full mt-4" dir="auto">
+      <div
+        className="bg-gray-100 text-black p-4 rounded-lg max-w-[20%]"
+        style={{ marginInlineStart: 'auto' }}
+        dir="auto"
+      >
+        <div>{message}</div>
+        {!isWaiting && needsRebuild && (
+          <Button
+            className="mt-2 bg-gray-700 hover:bg-gray-600 text-white"
+            onClick={rebuild}
+            disabled={isWaiting}
+            size="sm"
           >
-            {message}
-          </div>
-        </div>
-        <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">
-          {copied ? 
-            <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} /> :
-            <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} />
-          }
-          {!isWaiting && needsRebuild && (
-            <Button
-              className="bg-gray-700 hover:bg-gray-600 text-white"
-              onClick={rebuild}
-              disabled={isWaiting}
-              size="sm"
-            >
-              <span className="mr-1">↻</span> Rebuild
-            </Button>
-          )}
-        </div>
-        {type === "human" && isLastMessage && <div className="message-waiting-area"></div>}
+            <span className="mr-1">↻</span> Rebuild
+          </Button>
+        )}
       </div>
     </div>
   )
