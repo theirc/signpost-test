@@ -9,21 +9,25 @@ import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
 import { AllAIModels, OpenAIModels } from '@/lib/agents/modellist'
 import { ConditionHandler } from '../condition'
+import { useEffect, useState } from 'react'
+import { fetchCollections, Collection } from '@/lib/data/supabaseFunctions'
+
 const { search } = workerRegistry
 
 search.icon = Search
 
-const list = [
+const engineList = [
   { label: "Weaviate", value: "weaviate" },
   { label: "Exa", value: "exa" },
 ]
 
 const model = createModel({
   fields: {
-    engine: { title: "Engine", type: "string", list },
+    engine: { title: "Engine", type: "string", list: engineList },
     maxResults: { title: "Max Results", type: "number" },
     domain: { title: "Domain", type: "string" },
     distance: { title: "Distance", type: "number" },
+    collection: { title: "Collection (Supabase)", type: "string" }
   }
 })
 
@@ -62,9 +66,22 @@ const model = createModel({
 //   </form.context>
 // }
 
-
 export function SearchNode(props: NodeProps) {
   const worker = useWorker<SearchWorker>(props.id)
+  const [collectionOptions, setCollectionOptions] = useState<{ label: string, value: string }[]>([])
+
+  useEffect(() => {
+    async function loadCollections() {
+      const { data, error } = await fetchCollections()
+      if (error) {
+        console.error("Error fetching collections:", error)
+      } else {
+        const options = data.map((coll: Collection) => ({ label: coll.name, value: coll.id }))
+        setCollectionOptions(options)
+      }
+    }
+    loadCollections()
+  }, [])
 
   const { form, m, watch } = useForm(model, {
     values: {
@@ -72,17 +89,36 @@ export function SearchNode(props: NodeProps) {
       maxResults: worker.fields.maxResults.default || 5,
       distance: worker.fields.distance.default || 0.2,
       domain: worker.fields.domain.default || "",
+      collection: worker.parameters.collection || worker.fields.collection.default || undefined
     }
   })
 
   watch((value, { name }) => {
-    if (name === "engine") worker.fields.engine.default = value.engine
-    if (name === "maxResults") worker.fields.maxResults.default = value.maxResults
-    if (name === "distance") worker.fields.distance.default = value.distance || 0.2
-    if (name === "domain") worker.fields.domain.default = value.domain
+    if (name === "engine") {
+      worker.parameters.engine = value.engine as any
+      worker.fields.engine.default = value.engine
+    }
+    if (name === "maxResults") {
+      worker.parameters.maxResults = value.maxResults
+      worker.fields.maxResults.default = value.maxResults
+    }
+    if (name === "distance") {
+      const dist = value.distance || 0.2
+      worker.parameters.distance = dist
+      worker.fields.distance.default = dist
+    }
+    if (name === "domain") {
+      worker.parameters.domain = value.domain
+      worker.fields.domain.default = value.domain
+    }
+    if (name === "collection") {
+      const selectedCollection = value.collection || undefined
+      worker.parameters.collection = selectedCollection
+      worker.fields.collection.default = selectedCollection
+    }
   })
 
-  return <NodeLayout worker={worker} resizable minHeight={420}>
+  return <NodeLayout worker={worker} resizable minHeight={480}>
 
     <InlineHandles>
       <WorkerLabeledHandle handler={worker.fields.input} />
@@ -117,6 +153,19 @@ export function SearchNode(props: NodeProps) {
       <MemoizedWorker worker={worker}>
         <Row className='pb-2 px-2'>
           <Input field={m.domain} span={12} hideLabel />
+        </Row>
+      </MemoizedWorker>
+
+      <WorkerLabeledHandle handler={worker.fields.collection} />
+      <MemoizedWorker worker={worker}>
+        <Row className='pb-2 px-2'>
+          <Select 
+            field={m.collection} 
+            options={collectionOptions} 
+            span={12} 
+            hideLabel 
+            placeholder="Select Collection (Optional)" 
+          />
         </Row>
       </MemoizedWorker>
 
