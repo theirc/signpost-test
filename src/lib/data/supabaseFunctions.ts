@@ -810,7 +810,7 @@ export async function generateCollectionVector(
       const { data: embedding, error: embeddingError } = await generateEmbedding(cs.sources.content)
       
       if (embeddingError) {
-        console.error(`[supabaseFunctions] Error generating embedding for source ${cs.source_id}:`, embeddingError)
+        console.error(`[supabaseFunctions] Error generating lakjhlkjashdlkajshdlkajshdlkajshembedding for source ${cs.source_id}:`, embeddingError)
         continue
       }
       
