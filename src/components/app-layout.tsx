@@ -185,6 +185,11 @@ export function AppLayout() {
                   <ProjectForm />
                 </ProtectedRoute>
               } />
+              <Route path="/agent/:id" element={
+              <ProtectedRoute resource="agents" action="update">
+                <Agent />
+              </ProtectedRoute>
+             } />
             </Route>
           </Routes>
         </div>
