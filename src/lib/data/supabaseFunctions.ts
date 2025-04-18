@@ -279,6 +279,13 @@ export interface Role {
   updated_at: string
 }
 
+export interface UserTeam {
+  id: string
+  user_id: string
+  team_id: string
+  created_at: string
+}
+
 export interface User {
   id: string
   email: string
@@ -298,6 +305,7 @@ export interface User {
   team?: string
   team_name?: string
   created_at?: string
+  teams?: Team[]
 }
 
 export interface Team {
@@ -306,6 +314,7 @@ export interface Team {
   description?: string
   status?: string
   created_at?: string
+  users?: User[]
 }
 
 export interface Project {
@@ -2711,4 +2720,56 @@ export async function updateUserData(id: string, userData: {
       error: error instanceof Error ? error : new Error(String(error)) 
     }
   }
+}
+
+// Add a user to a team
+export async function addUserToTeam(userId: string, teamId: string) {
+  const { data, error } = await supabase
+    .from('user_teams')
+    .insert([
+      { user_id: userId, team_id: teamId }
+    ])
+    .select()
+  return { data, error }
+}
+
+export async function removeUserFromTeam(userId: string, teamId: string) {
+  const { data, error } = await supabase
+    .from('user_teams')
+    .delete()
+    .match({ user_id: userId, team_id: teamId })
+  return { data, error }
+}
+
+export async function getUserTeams(userId: string) {
+  const { data, error } = await supabase
+    .from('teams')
+    .select(`
+      *,
+      user_teams!inner(user_id)
+    `)
+    .eq('user_teams.user_id', userId)
+  return { data, error }
+}
+
+export async function getTeamUsers(teamId: string) {
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      user_teams!inner(team_id),
+      roles:role (*)
+    `)
+    .eq('user_teams.team_id', teamId)
+
+  if (error) {
+    return { data: null, error }
+  }
+
+  const transformedData = data?.map(user => ({
+    ...user,
+    role_name: user.roles?.name
+  })) || []
+
+  return { data: transformedData, error: null }
 }
