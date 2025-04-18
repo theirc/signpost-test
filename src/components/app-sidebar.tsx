@@ -4,7 +4,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { Bot, MessagesSquare, Book, Settings2, Logs, Plus, Network, Search } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useEffect, useState, useRef } from "react"
-import { fetchTeams, getCurrentUser, Team, User } from "@/lib/data/supabaseFunctions"
+import { getUserTeams, getCurrentUser, Team, User } from "@/lib/data/supabaseFunctions"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { usePermissions } from "@/lib/hooks/usePermissions"
@@ -18,11 +18,19 @@ export function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState("")
   const sidebarHeaderRef = useRef<HTMLDivElement>(null)
   const [user, setUser] = useState<User | null>(null)
+
   useEffect(() => {
     const loadTeams = async () => {
-      const { data, error } = await fetchTeams()
+      const { data: userData, error: userError } = await getCurrentUser()
+      if (userError || !userData) {
+        console.error('Error fetching user:', userError)
+        return
+      }
+      setUser(userData)
+
+      const { data, error } = await getUserTeams(userData.id)
       if (error) {
-        console.error('Error fetching teams:', error)
+        console.error('Error fetching user teams:', error)
         return
       }
       setTeams(data)
@@ -31,16 +39,7 @@ export function AppSidebar() {
       }
     }
 
-    const loadUser = async () => {
-      const { data, error } = await getCurrentUser()
-      if (error) {
-        console.error('Error fetching user:', error)
-        return
-      }
-      setUser(data)
-    }
     loadTeams()
-    loadUser()
   }, [])
 
   useEffect(() => {
