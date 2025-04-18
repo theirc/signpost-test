@@ -815,7 +815,7 @@ export async function generateCollectionVector(
       }
       
       if (!embedding) {
-        console.error(`[supabaseFunctions] Failed to generate embedding for source ${cs.source_id}`)
+        console.error(`[supabaseFunctions] Failed adsadasdasdasdto generate embedding for source ${cs.source_id}`)
         continue
       }
       
