@@ -37,6 +37,7 @@ const routeNames: Record<string, string> = {
   '/customview': 'Evaluation / Custom View',
   '/bots': 'Bots',
   '/bots/prompts': 'System Prompts',
+  '/agent/:id': 'Agent Details',
   '/settings/projects': 'Settings / Projects',
   '/settings/teams': 'Settings / Teams',
   '/settings/billing': 'Settings / Billing',
@@ -139,6 +140,11 @@ export function AppLayout() {
                 <SystemPrompts />
               </ProtectedRoute>
             } />
+            <Route path="/agent/:id" element={
+              <ProtectedRoute resource="agents" action="update">
+                <Agent />
+              </ProtectedRoute>
+            } />
             <Route path="/settings" element={<SettingsLayout />}>
               <Route path="projects" element={
                 <ProtectedRoute resource="projects" action="read">
@@ -185,15 +191,10 @@ export function AppLayout() {
                   <ProjectForm />
                 </ProtectedRoute>
               } />
-              <Route path="/agent/:id" element={
-              <ProtectedRoute resource="agents" action="update">
-                <Agent />
-              </ProtectedRoute>
-             } />
             </Route>
           </Routes>
         </div>
       </SidebarInset>
     </SidebarProvider>
   )
-} 
+}
