@@ -90,12 +90,12 @@ export function AppLayout() {
               </ProtectedRoute>
             } />
             <Route path="/playground" element={
-              <ProtectedRoute resource="chat" action="read">
+              <ProtectedRoute resource="playground" action="read">
                 <Chat />
               </ProtectedRoute>
             } />
             <Route path="/collections" element={
-              <ProtectedRoute resource="knowledge" action="read">
+              <ProtectedRoute resource="collections" action="read">
                 <CollectionsManagement />
               </ProtectedRoute>
             } />
@@ -125,7 +125,7 @@ export function AppLayout() {
               </ProtectedRoute>
             } />
             <Route path="/customview" element={
-              <ProtectedRoute resource="evaluation" action="read">
+              <ProtectedRoute resource="scores" action="read">
                 <CustomView />
               </ProtectedRoute>
             } />
@@ -135,7 +135,7 @@ export function AppLayout() {
               </ProtectedRoute>
             } />
             <Route path="/bots/prompts" element={
-              <ProtectedRoute resource="bots" action="update">
+              <ProtectedRoute resource="prompts" action="update">
                 <SystemPrompts />
               </ProtectedRoute>
             } />
@@ -151,12 +151,12 @@ export function AppLayout() {
                 </ProtectedRoute>
               } />
               <Route path="billing" element={
-                <ProtectedRoute resource="settings" action="read">
+                <ProtectedRoute resource="billing" action="read">
                   <BillingSettings />
                 </ProtectedRoute>
               } />
               <Route path="usage" element={
-                <ProtectedRoute resource="settings" action="read">
+                <ProtectedRoute resource="usage" action="read">
                   <UsageSettings />
                 </ProtectedRoute>
               } />

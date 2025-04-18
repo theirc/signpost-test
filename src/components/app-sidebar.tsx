@@ -61,16 +61,16 @@ export function AppSidebar() {
       icon: Bot,
       items: [
         { title: "All Bots", url: "/bots", permission: "bots" },
-        { title: "System Prompts", url: "/bots/prompts", permission: "bots" },
+        { title: "System Prompts", url: "/bots/prompts", permission: "prompts" },
       ],
-      show: !permissionsLoading && canRead("bots")
+      show: !permissionsLoading && (canRead("bots") || canRead("prompts"))
     },
     {
       title: "Playground",
       url: "/playground",
       icon: MessagesSquare,
       isLink: true,
-      show: !permissionsLoading && canRead("chat")
+      show: !permissionsLoading && canRead("playground")
     },
     {
       title: "Evaluation",
@@ -79,32 +79,32 @@ export function AppSidebar() {
       items: [
         { title: "Logs", url: "/logs", permission: "logs" },
         { title: "Scores", url: "/scores", permission: "scores" },
-        { title: "Custom View", url: "/customview", permission: "evaluation" }
+        { title: "Custom View", url: "/customview", permission: "scores" }
       ],
-      show: !permissionsLoading && (canRead("logs") || canRead("scores") || canRead("evaluation"))
+      show: !permissionsLoading && (canRead("logs") || canRead("scores"))
     },
     {
       title: "Knowledge",
       url: "#",
       icon: Book,
       items: [
-        { title: "Collections", url: "/collections", permission: "knowledge" },
+        { title: "Collections", url: "/collections", permission: "collections" },
         { title: "Data Sources", url: "/sources", permission: "sources" },
       ],
-      show: !permissionsLoading && (canRead("knowledge") || canRead("sources"))
+      show: !permissionsLoading && (canRead("collections") || canRead("sources"))
     },
     {
       title: "Settings",
       url: "#",
       icon: Settings2,
       items: [
-        { title: "Projects", url: "/settings/projects", permission: "settings" },
+        { title: "Projects", url: "/settings/projects", permission: "projects" },
         { title: "Team", url: "/settings/teams", permission: "teams" },
-        { title: "Billing", url: "/settings/billing", permission: "settings" },
-        { title: "Usage", url: "/settings/usage", permission: "settings" },
+        { title: "Billing", url: "/settings/billing", permission: "billing" },
+        { title: "Usage", url: "/settings/usage", permission: "usage" },
         { title: "Access Control", url: "/settings/roles", permission: "roles" },
       ],
-      show: !permissionsLoading && (canRead("settings") || canRead("teams") || canRead("roles"))
+      show: !permissionsLoading && (canRead("projects") || canRead("teams") || canRead('billing') || canRead('usage') || canRead("roles"))
     }
   ].filter(item => {
     if (item.items) {

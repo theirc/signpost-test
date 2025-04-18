@@ -6,7 +6,7 @@ import { usePermissions } from "@/lib/hooks/usePermissions"
 export function SettingsLayout() {
   const navigate = useNavigate()
   const location = useLocation()
-  const currentPath = location.pathname.split("/").pop()
+  const currentPath = location.pathname.split("/")[2]
   const { canRead } = usePermissions()
 
   return (
