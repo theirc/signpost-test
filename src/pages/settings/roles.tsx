@@ -27,20 +27,19 @@ interface RoleFormData {
 
 const APP_RESOURCES = [
     { id: 'agents', label: 'Agents' },
-    { id: 'chat', label: 'Chat' },
-    { id: 'knowledge', label: 'Knowledge Base' },
-    { id: 'sources', label: 'Data Sources' },
+    { id: 'bots', label: 'Bots' },
+    { id: 'prompts', label: 'System Prompts' },
+    { id: 'playground', label: 'Playground' },
     { id: 'logs', label: 'Logs' },
     { id: 'scores', label: 'Scores' },
-    { id: 'evaluation', label: 'Evaluation' },
-    { id: 'bots', label: 'Bots' },
+    { id: 'collections', label: 'Collections' },
+    { id: 'sources', label: 'Data Sources' },
     { id: 'projects', label: 'Projects' },
     { id: 'teams', label: 'Teams' },
-    { id: 'settings', label: 'Settings' },
+    { id: 'billing', label: 'Billing' },
+    { id: 'usage', label: 'Usage' },
     { id: 'roles', label: 'Roles' },
     { id: 'users', label: 'Users' },
-    { id: 'billing', label: 'Billing' },
-    { id: 'usage', label: 'Usage' }
 ]
 
 type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
