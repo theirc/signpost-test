@@ -6,10 +6,6 @@ import { FilesModal } from "@/components/source_input/files-modal"
 import { LiveDataModal } from "@/components/source_input/live-data-modal"
 import { Loader2, RefreshCcw, Plus, X } from "lucide-react"
 import { formatDate } from "@/components/source_input/utils"
-import DateFilter from "@/components/ui/date-filter"
-import SearchFilter from "@/components/ui/search-filter"
-import SelectFilter from "@/components/ui/select-filter"
-import TagsFilter from "@/components/ui/tags-filter"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import CustomTable from "@/components/ui/custom-table"
@@ -18,14 +14,11 @@ import {
   transformSourcesForDisplay, 
   getConfigForSource, 
   getLiveDataElements,
-  updateSourceConfig,
-  deleteSource,
   SourceDisplay,
   LiveDataElement,
   fetchSources,
   updateSource,
   Source,
-  fetchTags,
   addTag
 } from '@/lib/data/supabaseFunctions'
 
@@ -45,8 +38,6 @@ export default function Sources() {
   console.log("[Sources Page] Component Mounting/Rendering"); // Mount Log
 
   const [sources, setSources] = useState<Source[]>([])
-  const [tags, setTags] = useState<Tag[]>([])
-  const [tagsLoading, setTagsLoading] = useState(true)
   const [loading, setLoading] = useState(true) // Start loading true
   const [previewContent, setPreviewContent] = React.useState<PreviewContent | null>(null)
   const [selectedElement, setSelectedElement] = React.useState<LiveDataElement | null>(null)
@@ -84,29 +75,10 @@ export default function Sources() {
     }
   }, []) // Removed fetchSources dependency - it's defined outside
 
-  const fetchTagsData = useCallback(async () => {
-    setTagsLoading(true)
-    try {
-      const { data, error } = await fetchTags()
-      if (error) {
-        console.error("Error fetching tags:", error)
-        setTags([])
-      } else {
-        setTags(data || [])
-      }
-    } catch (err) {
-      console.error("Error fetching tags:", err)
-      setTags([])
-    } finally {
-      setTagsLoading(false)
-    }
-  }, [])
-
   useEffect(() => {
     console.log("[Initial Fetch Effect] Running...");
     fetchSourcesData()
-    fetchTagsData()
-  }, [fetchSourcesData, fetchTagsData])
+  }, [fetchSourcesData])
 
   React.useEffect(() => {
     console.log(`[Transform Effect] Running. Loading: ${loading}, Sources Count: ${sources.length}`);
@@ -120,8 +92,6 @@ export default function Sources() {
       setSourcesDisplay([])
     } else if (loading) {
         console.log("[Transform Effect] Still loading. Not transforming yet.");
-        // Optionally set display to empty while loading if desired
-        // setSourcesDisplay([]); 
     }
   }, [sources, loading]) // Depend on sources and the main loading state
 
@@ -129,19 +99,6 @@ export default function Sources() {
     console.log("[refreshSources] Triggered.");
     fetchSourcesData() // Directly call fetchSourcesData
   }, [fetchSourcesData])
-
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      const { success, error } = await deleteSource(id)
-      if (success) {
-        setSources(prev => prev.filter(source => source.id !== id))
-      } else if (error) {
-        console.error("Error deleting source:", error)
-      }
-    } catch (error) {
-      console.error("Error deleting source:", error)
-    }
-  }, [])
 
   const handlePreview = useCallback(async (id: string) => {
     const source = sources.find(source => source.id === id)
@@ -250,20 +207,6 @@ export default function Sources() {
     setFilesModalOpen(true);
   }, []);
 
-  const handleFilesModalOpenChange = useCallback((open: boolean) => {
-    setFilesModalOpen(open)
-    if (!open) {
-      refreshSources()
-    }
-  }, [refreshSources])
-
-  const handleLiveDataModalOpenChange = useCallback((open: boolean) => {
-    setLiveDataModalOpen(open)
-    if (!open) {
-      refreshSources()
-    }
-  }, [refreshSources])
-
   const handleRefresh = useCallback(() => {
     refreshSources()
   }, [refreshSources])
@@ -312,36 +255,6 @@ export default function Sources() {
     }
   ]
 
-  // Comment out or remove the original filters definition
-  /*
-  const filters = [
-    {
-      id: "search",
-      label: "Search",
-      component: SearchFilter,
-      props: { filterKey: "search", placeholder: "Search sources..." },
-    },
-    {
-      id: "types",
-      label: "Types",
-      component: SelectFilter,
-      props: { filterKey: "type", placeholder: "All Types" },
-    },
-    {
-      id: "range",
-      label: "Date Created",
-      component: DateFilter,
-      props: { filterKey: "date_created", placeholder: "Pick a date" },
-    },
-    {
-      id: "tags",
-      label: "Tags",
-      component: TagsFilter,
-      props: { filterKey: "tags", placeholder: "All Tags" },
-    }
-  ]
-  */
-
   // Log state just before render
   console.log(`[Render] SourcesDisplay length: ${sourcesDisplay.length}, Loading: ${loading}`);
 
@@ -380,9 +293,8 @@ export default function Sources() {
                 columns={columns as any} 
                 data={sourcesDisplay} 
                 filters={[]} // Pass empty array to disable filters
-                placeholder="No sources found" 
-                onEdit={handlePreview} 
-                onDelete={handleDelete} 
+                placeholder="No sources found"
+                onRowClick={(row) => handlePreview(row.id)}
               />
             </div>
           )}

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 
 export function UserForm() {
+    console.log('entra aca')
     const { toast } = useToast()
     const navigate = useNavigate()
     const { id } = useParams()

@@ -1,11 +1,13 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useNavigate, useLocation } from "react-router-dom"
 import { Outlet } from "react-router-dom"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 export function SettingsLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const currentPath = location.pathname.split("/").pop()
+  const { canRead } = usePermissions()
 
   return (
     <div className="flex flex-col h-full">
@@ -15,21 +17,31 @@ export function SettingsLayout() {
         </div>
         <Tabs value={currentPath} className="px-8">
           <TabsList>
-            <TabsTrigger value="projects" onClick={() => navigate("/settings/projects")}>
-              Projects
-            </TabsTrigger>
-            <TabsTrigger value="teams" onClick={() => navigate("/settings/teams")}>
-              Team
-            </TabsTrigger>
-            <TabsTrigger value="billing" onClick={() => navigate("/settings/billing")}>
-              Billing
-            </TabsTrigger>
-            <TabsTrigger value="usage" onClick={() => navigate("/settings/usage")}>
-              Usage
-            </TabsTrigger>
-            <TabsTrigger value="roles" onClick={() => navigate("/settings/roles")}>
-              Access Control
-            </TabsTrigger>
+            {canRead("projects") && (
+              <TabsTrigger value="projects" onClick={() => navigate("/settings/projects")}>
+                Projects
+              </TabsTrigger>
+            )}
+            {canRead("teams") && (
+              <TabsTrigger value="teams" onClick={() => navigate("/settings/teams")}>
+                Team
+              </TabsTrigger>
+            )}
+            {canRead("billing") && (
+              <TabsTrigger value="billing" onClick={() => navigate("/settings/billing")}>
+                Billing
+              </TabsTrigger>
+            )}
+            {canRead("usage") && (
+              <TabsTrigger value="usage" onClick={() => navigate("/settings/usage")}>
+                Usage
+              </TabsTrigger>
+            )}
+            {canRead("roles") && (
+              <TabsTrigger value="roles" onClick={() => navigate("/settings/roles")}>
+                Access Control
+              </TabsTrigger>
+            )}
           </TabsList>
         </Tabs>
       </div>

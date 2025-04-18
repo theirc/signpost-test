@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { fetchTeamById, updateTeam, addTeam } from "@/lib/data/supabaseFunctions"
 import { Loader2 } from "lucide-react"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 export function TeamForm() {
     const navigate = useNavigate()
     const { id } = useParams()
+    const { canCreate, canUpdate } = usePermissions()
     const [isLoading, setIsLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
     const [formData, setFormData] = useState({
@@ -41,18 +43,17 @@ export function TeamForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setIsLoading(true)
+        if ((id === "new" && !canCreate("teams")) || (id !== "new" && !canUpdate("teams"))) {
+            return
+        }
 
+        setIsLoading(true)
         try {
             if (id && id !== "new") {
-                const { error } = await updateTeam(id, {
-                    ...formData
-                })
+                const { error } = await updateTeam(id, formData)
                 if (error) throw error
             } else {
-                const { error } = await addTeam({
-                    ...formData
-                })
+                const { error } = await addTeam(formData)
                 if (error) throw error
             }
             navigate("/settings/teams")
@@ -85,6 +86,7 @@ export function TeamForm() {
                             value={formData.name}
                             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                             required
+                            disabled={!canCreate("teams") && !canUpdate("teams")}
                         />
                     </div>
 
@@ -94,7 +96,7 @@ export function TeamForm() {
                             id="description"
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            required
+                            disabled={!canCreate("teams") && !canUpdate("teams")}
                         />
                     </div>
 
@@ -104,6 +106,7 @@ export function TeamForm() {
                             id="status"
                             value={formData.status}
                             onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                            disabled={!canCreate("teams") && !canUpdate("teams")}
                         />
                     </div>
 
@@ -112,13 +115,21 @@ export function TeamForm() {
                             type="button"
                             variant="outline"
                             onClick={() => navigate("/settings/teams")}
-                            disabled={isLoading}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : (id && id !== "new" ? "Update" : "Create")}
-                        </Button>
+                        {(canCreate("teams") || canUpdate("teams")) && (
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    "Save"
+                                )}
+                            </Button>
+                        )}
                     </div>
                 </form>
             </div>

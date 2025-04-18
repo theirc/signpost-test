@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, } from "react"
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from "@/components/ui/table"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
-import { ArrowUpDown, MoreHorizontal, Pencil, Trash, SlidersHorizontal, GripVertical } from "lucide-react"
+import { ArrowUpDown, SlidersHorizontal, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors, } from "@dnd-kit/core"
@@ -31,8 +31,6 @@ interface CustomTableProps<T extends { id: any }> {
     pageSize?: number
     onToggleSelect?: (id: string) => void
     onSelectAll?: () => void
-    onDelete?: (id: string) => void
-    onEdit?: (id: string) => void
     onRowClick?: (row: T) => void
     tableId?: string
     filters?: FilterDefinition<T>[]
@@ -186,8 +184,6 @@ function CustomTable<T extends { id: any }>({
     pageSize = 10,
     onToggleSelect,
     onSelectAll,
-    onDelete,
-    onEdit,
     onRowClick,
     tableId,
     filters,

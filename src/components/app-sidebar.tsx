@@ -7,9 +7,11 @@ import { useEffect, useState, useRef } from "react"
 import { fetchTeams, getCurrentUser, Team, User } from "@/lib/data/supabaseFunctions"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 export function AppSidebar() {
   const navigate = useNavigate()
+  const { canRead, loading: permissionsLoading } = usePermissions()
   const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
   const [dropdownWidth, setDropdownWidth] = useState<number>(0)
@@ -52,62 +54,65 @@ export function AppSidebar() {
     team.description?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // This is sample data.
-  const data = {
-    user: {
-      name: "User Name",
-      email: "email@signpost.com",
-      avatar: "/avatars/shadcn.jpg",
+  const navItems = [
+    {
+      title: "Bots",
+      url: "#",
+      icon: Bot,
+      items: [
+        { title: "All Bots", url: "/bots", permission: "bots" },
+        { title: "System Prompts", url: "/bots/prompts", permission: "bots" },
+      ],
+      show: !permissionsLoading && canRead("bots")
     },
-    navMain: [
-      {
-        title: "Bots",
-        url: "#",
-        icon: Bot,
-        items: [
-          { title: "Bots", url: "bots" },
-          { title: "System Prompts", url: "bots/prompts" },
-        ],
-      },
-      {
-        title: "Playground",
-        url: "playground",
-        icon: MessagesSquare,
-        isLink: true,
-      },
-      {
-        title: "Evaluation",
-        url: '#',
-        icon: Logs,
-        items: [
-          {title: "Logs", url: "/logs"},
-          {title: "Scores", url: "/scores"},
-          {title: "Custom View", url:"/customview"}
-        ]
-      },
-      {
-        title: "Knowledge",
-        url: "#",
-        icon: Book,
-        items: [
-          { title: "Collections", url: "collections" },
-          { title: "Sources", url: "sources" },
-        ],
-      },
-      {
-        title: "Settings",
-        url: "/settings",
-        icon: Settings2,
-        items: [
-          { title: "Projects", url: "/settings/projects" },
-          { title: "Team", url: "/settings/teams" },
-          { title: "Billing", url: "/settings/billing" },
-          { title: "Usage", url: "/settings/usage" },
-          { title: "Access Control", url: "/settings/roles" },
-        ],
-      },
-    ],
-  }
+    {
+      title: "Playground",
+      url: "/playground",
+      icon: MessagesSquare,
+      isLink: true,
+      show: !permissionsLoading && canRead("chat")
+    },
+    {
+      title: "Evaluation",
+      url: '#',
+      icon: Logs,
+      items: [
+        { title: "Logs", url: "/logs", permission: "logs" },
+        { title: "Scores", url: "/scores", permission: "scores" },
+        { title: "Custom View", url: "/customview", permission: "evaluation" }
+      ],
+      show: !permissionsLoading && (canRead("logs") || canRead("scores") || canRead("evaluation"))
+    },
+    {
+      title: "Knowledge",
+      url: "#",
+      icon: Book,
+      items: [
+        { title: "Collections", url: "/collections", permission: "knowledge" },
+        { title: "Data Sources", url: "/sources", permission: "sources" },
+      ],
+      show: !permissionsLoading && (canRead("knowledge") || canRead("sources"))
+    },
+    {
+      title: "Settings",
+      url: "#",
+      icon: Settings2,
+      items: [
+        { title: "Projects", url: "/settings/projects", permission: "settings" },
+        { title: "Team", url: "/settings/teams", permission: "teams" },
+        { title: "Billing", url: "/settings/billing", permission: "settings" },
+        { title: "Usage", url: "/settings/usage", permission: "settings" },
+        { title: "Access Control", url: "/settings/roles", permission: "roles" },
+      ],
+      show: !permissionsLoading && (canRead("settings") || canRead("teams") || canRead("roles"))
+    }
+  ].filter(item => {
+    if (item.items) {
+      item.items = item.items.filter(subItem => !permissionsLoading && canRead(subItem.permission))
+      return item.items.length > 0
+    }
+    return item.show
+  })
 
   return (
     <>
@@ -150,17 +155,9 @@ export function AppSidebar() {
                     <DropdownMenuItem
                       key={team.id}
                       onClick={() => setSelectedTeam(team)}
-                      className="flex items-center gap-2"
+                      className={selectedTeam?.id === team.id ? "bg-accent" : ""}
                     >
-                      <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-100">
-                        <span className="text-blue-600 font-semibold">
-                          {team.name?.[0] || 'T'}
-                        </span>
-                      </div>
-                      <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold">{team.name}</span>
-                        <span className="truncate text-xs">{team.description}</span>
-                      </div>
+                      {team.name}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
@@ -184,7 +181,7 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <NavMain items={data.navMain} />
+          <NavMain items={navItems} />
         </SidebarContent>
         <SidebarFooter>
           <NavUser user={user} />

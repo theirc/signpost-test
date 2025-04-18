@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { fetchTeams, Team, fetchProjectById, updateProject, addProject } from "@/lib/data/supabaseFunctions"
 import { Loader2 } from "lucide-react"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 export function ProjectForm() {
     const navigate = useNavigate()
     const { id } = useParams()
+    const { canCreate, canUpdate } = usePermissions()
     const [isLoading, setIsLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
     const [teams, setTeams] = useState<Team[]>([])
@@ -27,7 +29,7 @@ export function ProjectForm() {
             const teamsResponse = await fetchTeams()
 
             if (teamsResponse.error) {
-                console.error("Error loading tams:", teamsResponse.error)
+                console.error("Error loading teams:", teamsResponse.error)
             } else {
                 setTeams(teamsResponse.data)
             }
@@ -55,8 +57,11 @@ export function ProjectForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setIsLoading(true)
+        if ((id === "new" && !canCreate("projects")) || (id !== "new" && !canUpdate("projects"))) {
+            return
+        }
 
+        setIsLoading(true)
         try {
             if (id && id !== "new") {
                 const { error } = await updateProject(id, {
@@ -92,7 +97,7 @@ export function ProjectForm() {
     return (
         <div className="container mx-auto py-8">
             <div className="max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold mb-6">{id && id !== "new" ? "Edit Score" : "Add New Score"}</h1>
+                <h1 className="text-2xl font-bold mb-6">{id && id !== "new" ? "Edit Project" : "Add New Project"}</h1>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
@@ -101,6 +106,7 @@ export function ProjectForm() {
                             value={formData.name}
                             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                             required
+                            disabled={!canCreate("projects") && !canUpdate("projects")}
                         />
                     </div>
 
@@ -110,6 +116,7 @@ export function ProjectForm() {
                             value={selectedTeam}
                             onValueChange={setSelectedTeam}
                             required
+                            disabled={!canCreate("projects") && !canUpdate("projects")}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a team" />
@@ -130,7 +137,7 @@ export function ProjectForm() {
                             id="description"
                             value={formData.description}
                             onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            required
+                            disabled={!canCreate("projects") && !canUpdate("projects")}
                         />
                     </div>
 
@@ -140,6 +147,7 @@ export function ProjectForm() {
                             id="status"
                             value={formData.status}
                             onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                            disabled={!canCreate("projects") && !canUpdate("projects")}
                         />
                     </div>
 
@@ -148,13 +156,21 @@ export function ProjectForm() {
                             type="button"
                             variant="outline"
                             onClick={() => navigate("/settings/projects")}
-                            disabled={isLoading}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : (id && id !== "new" ? "Update" : "Create")}
-                        </Button>
+                        {(canCreate("projects") || canUpdate("projects")) && (
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    "Save"
+                                )}
+                            </Button>
+                        )}
                     </div>
                 </form>
             </div>
