@@ -185,32 +185,36 @@ export default function Chat() {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
   }, [chatHistory])
 
-  const handleLoadChatHistory = (chatSession: ChatSession) => {
-    
-    setIsLoadingFromHistory(true); // Set flag before loading
-    setActiveChat(chatSession)
 
-    setTimeout(() => {
-      if (chatSession.messages && chatSession.messages.length > 0) {
-        setMessages([...chatSession.messages])
-      } else {
-        setMessages([])
-      }
-      
-      if (chatSession.botName) {
-        const botEntry = Object.entries(state.bots).find(
-          ([_, bot]) => bot.name === chatSession.botName
-        )
+const handleLoadChatHistory = (chatSession: ChatSession) => {
+  setIsLoadingFromHistory(true)
+  setActiveChat(chatSession)
+
+  setTimeout(() => {
+    if (chatSession.messages && chatSession.messages.length > 0) {
+      setMessages([...chatSession.messages])
+    } else {
+      setMessages([])
+    }
+    
+    if (chatSession.selectedBots && chatSession.selectedBots.length > 0) {
+      setState({ selectedBots: [...chatSession.selectedBots] })
+    } else if (chatSession.botName) {
   
-        if (botEntry) {
-          const botId = Number(botEntry[0])
-          setState({ selectedBots: [botId] })
-        }
+      const botEntry = Object.entries(state.bots).find(
+        ([_, bot]) => bot.name === chatSession.botName
+      )
+
+      if (botEntry) {
+        const botId = Number(botEntry[0])
+        setState({ selectedBots: [botId] })
       }
-      setMessage(prev => prev + "")
-      setIsLoadingFromHistory(false); // Reset flag after loading
-    }, 50)
-  }
+    }
+    
+    setMessage(prev => prev + "")
+    setIsLoadingFromHistory(false)
+  }, 50)
+}
 
   const onMultiSelectBot = (selected: number[]) => {
     if (JSON.stringify(state.selectedBots) !== JSON.stringify(selected)) {
@@ -220,41 +224,36 @@ export default function Chat() {
     }
   }
 
-  const onSelectBot = (e: string[] | string) => {
-    console.log("Selecting bot:", e)
+const onSelectBot = (e: string[] | string) => {
+  console.log("Selecting bot:", e)
 
-    const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
+  const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
 
-    if (!e || e.length == 0) {
-      setState({ selectedBots: [] })
-      return
-    }
-
-    let newSelectedBotId: number
-
-    if (typeof e == "string") {
-      newSelectedBotId = Number(e)
-      setState({ selectedBots: [newSelectedBotId] })
-    } else {
-      const bots = e.map(Number)
-      newSelectedBotId = bots[0]
-
-      for (const b of bots) {
-        const bot = state.bots[b]
-        if (!bot) continue
-        if (state.selectedBots.includes(b)) continue
-        state.selectedBots.push(b)
-        bot.history = []
-      }
-
-      setState({ selectedBots: bots })
-    }
-
-    if (previousSelectedBot !== newSelectedBotId) {
-      setMessages([])
-      setActiveChat(null)
-    }
+  if (!e || (Array.isArray(e) && e.length === 0)) {
+    setState({ selectedBots: [] })
+    return
   }
+
+  let newSelectedBots: number[] = []
+
+  if (Array.isArray(e)) {
+    newSelectedBots = e.map(Number)
+    setState({ selectedBots: newSelectedBots })
+  } else if (typeof e === "string") {
+    newSelectedBots = [Number(e)]
+    setState({ selectedBots: newSelectedBots })
+  }
+
+  const selectionChanged = 
+    previousSelectedBot !== newSelectedBots[0] || 
+    state.selectedBots.length !== newSelectedBots.length ||
+    !state.selectedBots.every(id => newSelectedBots.includes(id))
+  
+  if (selectionChanged) {
+    setMessages([])
+    setActiveChat(null)
+  }
+}
 
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
     message ||= "where can i find english classes in athens?"
@@ -298,7 +297,7 @@ export default function Chat() {
             });
           }
         }
-      }, 100); // Slight delay to ensure the DOM has updated
+      }, 100); 
     }
 
     let currentActiveChat: ChatSession
@@ -306,6 +305,7 @@ export default function Chat() {
       currentActiveChat = {
         id: new Date().toISOString(),
         botName: currentBotName,
+        selectedBots: [...state.selectedBots], 
         messages: [userMessage],
         timestamp: new Date().toISOString(),
       }
@@ -315,6 +315,7 @@ export default function Chat() {
       currentActiveChat = {
         ...activeChat,
         messages: [...activeChat.messages, userMessage],
+        selectedBots: [...state.selectedBots], 
       }
       setActiveChat(currentActiveChat)
       setChatHistory(prev =>
@@ -323,7 +324,6 @@ export default function Chat() {
         )
       )
     }
-
     setState({ isSending: true })
 
     const useAgent = state.selectedBots.includes(AGENT_ID)
@@ -426,11 +426,14 @@ export default function Chat() {
     setMessages(prev => [...prev, botResponseForHistory])
 
     const updatedChatWithResponse: ChatSession = {
-      ...currentActiveChat, messages: [...currentActiveChat.messages, botResponseForHistory],
+      ...currentActiveChat, 
+      messages: [...currentActiveChat.messages, botResponseForHistory],
+      selectedBots: [...state.selectedBots], 
     }
     setActiveChat(updatedChatWithResponse)
-    setChatHistory(prev => prev.map(chat => chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat))
-    setState({ isSending: false })
+    setChatHistory(prev => prev.map(chat => 
+      chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat
+    ))
   }
 
   const onRebuild = async () => {
@@ -606,8 +609,8 @@ export default function Chat() {
             <div className="p-4">
               <ChatHistory 
                 setActiveChat={handleLoadChatHistory} 
-                onSelectBot={(botId) => {
-                  onSelectBot(botId)
+                onSelectBot={(botIds) => {
+                  onSelectBot(botIds)
                 }} 
                 bots={state.bots}
                 chatHistory={chatHistory}
@@ -667,12 +670,9 @@ function SearchInput(props: {
   
   useEffect(() => {
     if (textareaRef.current) {
-      // Reset height first to correctly calculate scrollHeight when shrinking
       textareaRef.current.style.height = "auto"; 
       // Set height based on the content scroll height
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-    // Re-run when the input value changes
   }, [value]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -810,7 +810,7 @@ function SearchInput(props: {
                   <Button
                     type="button"
                     onClick={props.openFileDialog}
-                    className="w-10 h-10 p-0 flex items-center justify-center text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-full border border-gray-200 bg-transparent"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-full border border-gray-200 bg-transparent"
                     variant="ghost"
                   >
                     <CirclePlus className="h-6 w-6" />

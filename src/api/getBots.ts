@@ -134,7 +134,8 @@ const saveChatHistory = (userMessage: ChatMessage, botResponse: ChatMessage) => 
       id: new Date().toISOString(),
       botName: currentBotName,
       messages: formattedMessages,
-      timestamp: new Date().toLocaleString()
+      timestamp: new Date().toLocaleString(),
+      selectedBots: []
     }
     existingHistory.unshift(newChat)
   }
