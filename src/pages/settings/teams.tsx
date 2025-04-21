@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import CustomTable from "@/components/ui/custom-table"
-import { fetchTeams, Team, fetchUsers, User } from "@/lib/data/supabaseFunctions"
+import { fetchTeams, Team, User, getTeamUsers } from "@/lib/data/supabaseFunctions"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { ChevronDown } from "lucide-react"
@@ -15,46 +15,41 @@ interface TeamWithUsers extends Team {
 export function TeamSettings() {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([])
   const [teams, setTeams] = useState<TeamWithUsers[]>([])
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const fetchTeam = async () => {
-    const [{ data: teamsData, error: teamsError }, { data: usersData, error: usersError }] = await Promise.all([
-      fetchTeams(),
-      fetchUsers()
-    ])
-
+    const { data: teamsData, error: teamsError } = await fetchTeams()
     if (teamsError) {
       console.error('Error fetching teams:', teamsError)
       return
     }
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError)
-      return
-    }
-
-    const teamsWithUsers = teamsData.map(team => ({
-      ...team,
-      created_at: team.created_at || new Date().toISOString(),
-      users: usersData.filter(user => user.team === team.id)
-    }))
+    const teamsWithUsers = await Promise.all(
+      teamsData.map(async (team) => {
+        const { data: usersData } = await getTeamUsers(team.id)
+        return {
+          ...team,
+          users: usersData || []
+        }
+      })
+    )
 
     setTeams(teamsWithUsers)
+  }
+
+  const isTeamExpanded = (teamId: string) => expandedTeams.includes(teamId)
+
+  const toggleTeam = (teamId: string) => {
+    setExpandedTeams(prev =>
+      prev.includes(teamId)
+        ? prev.filter(id => id !== teamId)
+        : [...prev, teamId]
+    )
   }
 
   const handleEdit = (id: string) => {
     navigate(`/settings/teams/users/${id}`)
   }
-
-  const toggleTeam = (teamId: string) => {
-    setExpandedTeams((prevExpanded) =>
-      prevExpanded.includes(teamId)
-        ? prevExpanded.filter((id) => id !== teamId)
-        : [...prevExpanded, teamId]
-    )
-  }
-
-  const isTeamExpanded = (teamId: string) => expandedTeams.includes(teamId)
 
   const columns: ColumnDef<{ id: any }>[] = [
     {
