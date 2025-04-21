@@ -4,7 +4,7 @@ import ReactJson from 'react-json-view'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Loader2, Volume2, Code } from "lucide-react";
+import { Loader2, Volume2, Code, Copy } from "lucide-react";
 import { useEffect, useState, useRef } from "react"
 import { Controller, SubmitHandler, useForm } from "react-hook-form"
 import { ThumbsDown, ThumbsUp, Flag } from "lucide-react"
@@ -256,23 +256,37 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
     )}
 
     {m.isAnswer && (
-      <div className="text-gray-400 flex gap-2 mt-2">
-        <ThumbsUp className="cursor-pointer" onClick={showModalPositive} />
-        <ThumbsDown className="mt-1 cursor-pointer" onClick={showModalNegative} />
+      <div className="text-gray-400 flex gap-1 items-center mt-2">
+        <ThumbsUp 
+          className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" 
+          size={24} 
+          onClick={showModalPositive} 
+        />
+        <ThumbsDown 
+          className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" 
+          size={24} 
+          onClick={showModalNegative} 
+        />
         <Flag
-          className="mt-1 cursor-pointer text-red-500"
+          className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md"
+          size={24}
           onClick={showModalRedFlag}
         />
          <Volume2
-            className={`cursor-pointer ${isSpeaking ? "text-blue-500" : ""}`}
-            size={26}
+            className={`cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md ${isSpeaking ? "text-blue-500" : ""}`}
+            size={24}
             onClick={() => speakMessage(m.message)}
           />
           <Code 
-          className="cursor-pointer hover:text-gray-700"
-          size={26}
-          onClick={() => setIsJsonOpen(true)}
+            className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md"
+            size={24}
+            onClick={() => setIsJsonOpen(true)}
           />
+        <Copy 
+          className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" 
+          size={24} 
+          onClick={() => { if(m.message) navigator.clipboard.writeText(m.message) }} 
+        />
       </div>
     )}
     {m.tts && (
