@@ -21,92 +21,6 @@ import { MultiSelectDropdown } from '@/components/ui/multiselect'
 import type { Option } from '@/components/ui/multiselect'
 import "../index.css"
 
-// Inline animation styles
-const typingAnimationStyle = `
-  @keyframes typing-bounce {
-    0%, 80%, 100% { transform: scale(0); }
-    40% { transform: scale(1.0); }
-  }
-  .animate-typing-1, .animate-typing-2, .animate-typing-3 {
-    animation: typing-bounce 1s infinite ease-in-out both;
-  }
-  .animate-typing-1 { animation-delay: -0.2s; }
-  .animate-typing-2 { animation-delay: -0.1s; }
-  .animate-typing-3 { animation-delay: 0s; }
-  
-  @keyframes fadeInMessage {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  .message-fade-in {
-    animation: fadeInMessage 0.2s ease-out forwards;
-  }
-  
-  .typewriter-text-complete {
-    transition: all 0.3s ease-out;
-    color: black;
-  }
-
-  /* Pulsing animation for model selection */
-  @keyframes pulseGlow {
-    0%, 100% {
-      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1);
-    }
-    50% {
-      box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.1);
-    }
-  }
-  .empty-model-select {
-    animation: pulseGlow 2s ease-in-out infinite;
-  }
-
-  /* Pulsing shadow for empty input */
-  @keyframes pulseInputShadow {
-    0%, 100% {
-      /* Start with the base shadow defined in Tailwind */
-      box-shadow: 4px 4px 20px -4px rgba(236,72,153,0.1), -4px 4px 20px -4px rgba(124,58,237,0.1), 0 4px 20px -4px rgba(34,211,238,0.1);
-    }
-    50% {
-      /* Slightly more intense/larger shadow */
-      box-shadow: 4px 4px 25px -2px rgba(236,72,153,0.15), -4px 4px 25px -2px rgba(124,58,237,0.15), 0 4px 25px -2px rgba(34,211,238,0.15);
-    }
-  }
-  .pulse-input-shadow {
-    animation: pulseInputShadow 2.5s ease-in-out infinite;
-  }
-
-  /* Slide reveal animation for the initial greeting */
-  @keyframes slideReveal {
-    from {
-      transform: translateX(0%);
-    }
-    to {
-      transform: translateX(100%);
-    }
-  }
-  .slide-reveal-greeting {
-    position: relative; /* Needed for pseudo-element positioning */
-    overflow: hidden; /* Hide the overlay outside the bounds */
-  }
-  .slide-reveal-greeting::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: white; /* Match the page background */
-    animation: slideReveal 0.6s ease-out forwards;
-    animation-delay: 0.2s; /* Optional: slight delay before reveal starts */
-  }
-`;
-
 interface Bots {
   [index: number]: {
     name: string
@@ -115,7 +29,10 @@ interface Bots {
   }
 }
 
-const AGENT_ID = 23
+// Define constants for known agent IDs
+const AGENT_ID_23 = 23;
+const AGENT_ID_27 = 27;
+const KNOWN_AGENT_IDS = [AGENT_ID_23, AGENT_ID_27];
 
 export default function Chat() {
   const [sidebarVisible, setSidebarVisible] = useState(false)
@@ -156,7 +73,10 @@ export default function Chat() {
         bots[Number(key)] = { name: sb[key], id: key, history: [] }
       }
 
-      bots[AGENT_ID] = { name: AGENT_ID.toString(), id: AGENT_ID.toString(), history: [] }
+      // Add known agents manually
+      bots[AGENT_ID_23] = { name: `Agent ${AGENT_ID_23}`, id: AGENT_ID_23.toString(), history: [] }
+      bots[AGENT_ID_27] = { name: `Aprendia Test`, id: AGENT_ID_27.toString(), history: [] }
+      
       setState({ bots })
     }
     initBots()
@@ -259,7 +179,7 @@ const onSelectBot = (e: string[] | string) => {
     message ||= "where can i find english classes in athens?"
     if (!message && !audio) return
 
-    const selectedBots = state.selectedBots.map(b => ({
+    const selectedBotsConfig = state.selectedBots.map(b => ({
       label: state.bots[b].name,
       value: b,
       history: state.bots[b].history,
@@ -326,17 +246,54 @@ const onSelectBot = (e: string[] | string) => {
     }
     setState({ isSending: true })
 
-    const useAgent = state.selectedBots.includes(AGENT_ID)
+    // Determine if an agent is selected and which one
+    const selectedAgentId = state.selectedBots.find(id => KNOWN_AGENT_IDS.includes(id));
+    const useAgent = selectedAgentId !== undefined;
+    
     let botResponseForHistory: ChatMessage
 
-    if (useAgent) {
+    if (useAgent && selectedAgentId) { // Check selectedAgentId is not undefined
       try {
-        const agent = await agents.loadAgent(AGENT_ID);
+        const agent = await agents.loadAgent(selectedAgentId); // Use the detected agent ID
+
+        // Format the entire conversation history including the latest user message
+        const formattedHistory = currentActiveChat.messages
+          .map(msg => {
+            if (msg.type === 'human') {
+              return `User: ${msg.message}`;
+            } else if (msg.type === 'bot') {
+              // Extract bot message content (handle potential variations)
+              let botContent = "[Bot message not found]";
+              if (msg.messages && msg.messages.length > 0) {
+                  // Prioritize agent-specific message if available, using the selectedAgentId
+                  const agentMsg = msg.messages.find(m => m.id === selectedAgentId);
+                  botContent = agentMsg?.message || msg.messages[0]?.message || msg.message || "[Empty bot message]";
+              } else if (msg.message) {
+                  botContent = msg.message;
+              }
+              return `Assistant: ${botContent}`;
+            }
+            return null; // Ignore other message types or malformed messages
+          })
+          .filter(Boolean) // Remove null entries
+          .join('\\n\\n'); // Separate messages with double newline
+
+        // Ensure the input object exists if it doesn't (though it should)
+        const agentInput = { 
+            question: formattedHistory // Pass the combined history string
+        };
+
         const parameters: AgentParameters = {
-          input: { question: message! },
+          input: agentInput,
           apikeys: app.getAPIkeys(),
         };
+        
+        console.log(`Sending to agent ${selectedAgentId} with combined history in input:`, parameters); // Log for verification
+
         await agent.execute(parameters);
+        
+        // Set isSending to false *after* agent execution completes
+        setState({ isSending: false }); 
 
         const raw = parameters.error
           ? `Agent error: ${parameters.error}`
@@ -346,7 +303,7 @@ const onSelectBot = (e: string[] | string) => {
           ? raw
           : JSON.stringify(raw, null, 2)
 
-        const rbot = state.bots[AGENT_ID]!;
+        const rbot = state.bots[selectedAgentId]!; // Use the correct agent ID here
         if (!rbot.history.some(h => h.isHuman && h.message === message))
           rbot.history.push({ isHuman: true, message });
         if (!rbot.history.some(h => !h.isHuman && h.message === text))
@@ -356,8 +313,8 @@ const onSelectBot = (e: string[] | string) => {
           type: "bot",
           message: text,
           messages: [{
-            id: AGENT_ID,
-            botName: "Agent",
+            id: selectedAgentId, // Use the correct agent ID here
+            botName: `Agent ${selectedAgentId}`, // Use the correct agent ID here
             message: text,
             needsRebuild: false,
           }],
@@ -377,8 +334,8 @@ const onSelectBot = (e: string[] | string) => {
           type: "bot",
           message: errorMsg,
           messages: [{
-            id: AGENT_ID,
-            botName: "Agent",
+            id: selectedAgentId, // Use the correct agent ID here
+            botName: `Agent ${selectedAgentId}`, // Use the correct agent ID here
             message: errorMsg,
             needsRebuild: false,
           }],
@@ -386,7 +343,11 @@ const onSelectBot = (e: string[] | string) => {
         }
       }
     } else {
-      const response = message ? await api.askbot({ message }, tts, selectedBots) : await api.askbot({ audio }, tts, selectedBots)
+      // Fetch response from non-agent bot
+      const response = message ? await api.askbot({ message }, tts, selectedBotsConfig) : await api.askbot({ audio }, tts, selectedBotsConfig)
+      
+      // Set isSending to false *after* API call completes
+      setState({ isSending: false }); 
 
       if (!response.error) {
         for (const m of response.messages) {
@@ -414,15 +375,16 @@ const onSelectBot = (e: string[] | string) => {
       }
 
       response.rebuild = async () => {
-        setState({ isSending: true })
+        setState({ isSending: true }) // Keep true here for rebuild action
         response.needsRebuild = false
         await onRebuild()
-        setState({ isSending: false })
+        setState({ isSending: false }) // Set false after rebuild completes
       }
 
-      botResponseForHistory = { type: "bot", message: response.message || "", messages: response.messages || [], needsRebuild: response.needsRebuild || false, }
+      botResponseForHistory = { type: "bot", message: response.message || "", messages: response.messages || [], needsRebuild: response.needsRebuild || false, rebuild: response.rebuild }
     }
 
+    // Add the bot response to messages AFTER setting isSending to false
     setMessages(prev => [...prev, botResponseForHistory])
 
     const updatedChatWithResponse: ChatSession = {
@@ -486,8 +448,6 @@ const onSelectBot = (e: string[] | string) => {
 
   return (
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
-      <style dangerouslySetInnerHTML={{ __html: typingAnimationStyle }} />
-      
       <div className="flex h-full">
         <div className="flex-1 flex flex-col relative">
           <div className="py-4 border-b flex justify-between items-center bg-white px-4">
@@ -982,7 +942,8 @@ function ChatMessage(props: MessageProps) {
 
   if (type === "bot") {
     if (messages.length > 0) {
-      const agentMessage = messages.find(m => m.id === AGENT_ID);
+      // Check if any message corresponds to a known agent
+      const agentMessage = messages.find(m => KNOWN_AGENT_IDS.includes(m.id));
       
       if (agentMessage) {
         return (
