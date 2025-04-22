@@ -34,6 +34,36 @@ const AGENT_ID_23 = 23;
 const AGENT_ID_27 = 27;
 const KNOWN_AGENT_IDS = [AGENT_ID_23, AGENT_ID_27];
 
+// Helper function to check for image URLs
+export const isImageUrl = (url: string | undefined | null): boolean => {
+  if (!url) return false;
+  // Basic check for http/https and common image extensions
+  return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+};
+
+// Helper function to parse markdown image and text
+export const parseMarkdownImage = (text: string | undefined | null): { imageUrl: string | null; remainingText: string | null } => {
+  if (!text) return { imageUrl: null, remainingText: null };
+  
+  // Regex to capture ![alt](url) and any subsequent text
+  // Allows optional leading '!' for formats like [![Image](...)]
+  // Captures URL in group 1, remaining text in group 2
+  const markdownRegex = /^!?\[.*?\]\((.+?)\)\s*(.*)$/s; 
+  const match = text.match(markdownRegex);
+
+  if (match && match[1]) {
+    const imageUrl = match[1];
+    const remainingText = match[2] ? match[2].trim() : null; // Get text after the markdown
+    // Basic validation if the extracted URL looks like an image URL
+    if (isImageUrl(imageUrl)) { 
+      return { imageUrl, remainingText };
+    }
+  }
+  
+  // If no markdown match, return nulls
+  return { imageUrl: null, remainingText: null };
+};
+
 export default function Chat() {
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [showFileDialog, setShowFileDialog] = useState(false)
@@ -44,6 +74,7 @@ export default function Chat() {
   const [agentInstance, setAgentInstance] = useState<any>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
+  const chatContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
 
   const [state, setState] = useMultiState({
     isSending: false,
@@ -192,32 +223,6 @@ const onSelectBot = (e: string[] | string) => {
     const userMessage: ChatMessage = { type: "human", message }
     if (message) {
       setMessages(prev => [...prev, userMessage])
-      
-      // Automatically scroll to position the user message at the top right
-      setTimeout(() => {
-        const chatContainer = document.querySelector('.overflow-y-auto');
-        if (chatContainer) {
-          // Get all message elements
-          const messageElements = document.querySelectorAll('.w-full.mt-4');
-          if (messageElements.length > 0) {
-            // Get the newly added user message (last element)
-            const lastMessage = messageElements[messageElements.length - 1];
-            
-            // Calculate scroll position to place the message near the top
-            const topPadding = 60; // Pixels from the top
-            const scrollPosition = lastMessage.getBoundingClientRect().top + 
-                                  chatContainer.scrollTop - 
-                                  chatContainer.getBoundingClientRect().top - 
-                                  topPadding;
-            
-            // Scroll with animation
-            chatContainer.scrollTo({
-              top: scrollPosition,
-              behavior: 'smooth'
-            });
-          }
-        }
-      }, 100); 
     }
 
     let currentActiveChat: ChatSession
@@ -252,7 +257,7 @@ const onSelectBot = (e: string[] | string) => {
     
     let botResponseForHistory: ChatMessage
 
-    if (useAgent && selectedAgentId) { // Check selectedAgentId is not undefined
+    if (useAgent && selectedAgentId) {
       try {
         const agent = await agents.loadAgent(selectedAgentId); // Use the detected agent ID
 
@@ -446,6 +451,36 @@ const onSelectBot = (e: string[] | string) => {
     value: k,
   }))
 
+  // Scroll Effect for new messages
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const lastMessage = messages[messages.length - 1];
+
+    // Scroll bot messages to the top
+    if (lastMessage?.type === 'bot') {
+      const lastMessageElement = container.querySelector(':scope > div:last-child') as HTMLElement;
+      if (lastMessageElement) {
+        const topPadding = 20; // Pixels from the top
+        const targetScrollTop = lastMessageElement.offsetTop - container.offsetTop - topPadding;
+        
+        container.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth'
+        });
+      }
+    } 
+    // Optionally, scroll user messages fully into view at the bottom if needed
+    // else if (lastMessage?.type === 'human') {
+    //   container.scrollTo({
+    //     top: container.scrollHeight,
+    //     behavior: 'smooth'
+    //   });
+    // }
+
+  }, [messages]); // Dependency array includes messages
+
   return (
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
       <div className="flex h-full">
@@ -475,6 +510,7 @@ const onSelectBot = (e: string[] | string) => {
             </div>
           </div>
           <div 
+            ref={chatContainerRef}
             className="overflow-y-auto chat-messages-container flex-1"
             style={{ paddingBottom: "180px" }}
           >
@@ -495,9 +531,9 @@ const onSelectBot = (e: string[] | string) => {
                   ) : (
                     messages.map((m, i) => (
                       <ChatMessage 
-                        key={i} 
+                        key={m.id || i}
                         message={m} 
-                        isWaiting={state.isSending} 
+                        isWaiting={state.isSending && i === messages.length -1}
                         isLoadingFromHistory={isLoadingFromHistory}
                       />
                     ))
@@ -798,7 +834,11 @@ function SearchInput(props: {
   )
 }
 
-function TypewriterText({ text, speed = 15, onComplete }: { text: string, speed?: number, onComplete?: () => void }) {
+// Base speed for typewriter effect (milliseconds per character)
+const TYPEWRITER_BASE_SPEED = 8; // Changed from 15
+const TYPEWRITER_MIN_SPEED = 2; // Minimum speed
+
+function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete }: { text: string, speed?: number, onComplete?: () => void }) {
   const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const textElementRef = useRef<HTMLDivElement>(null);
@@ -823,35 +863,8 @@ function TypewriterText({ text, speed = 15, onComplete }: { text: string, speed?
     return () => clearInterval(timer);
   }, [text, speed, onComplete]);
 
-  // Effect for auto-scrolling
-  useEffect(() => {
-    const textElement = textElementRef.current;
-    const scrollContainer = document.querySelector('.chat-messages-container'); // Find the scroll container
-
-    if (textElement && scrollContainer) {
-      const textRect = textElement.getBoundingClientRect();
-      const containerRect = scrollContainer.getBoundingClientRect();
-
-      // Define desired visible space below the text (e.g., 80px from container bottom)
-      const desiredBottomMargin = 80;
-      const targetTextBottomPosition = containerRect.bottom - desiredBottomMargin;
-
-      // Check if the bottom of the text has gone below our target position
-      if (textRect.bottom > targetTextBottomPosition) {
-        // Calculate how much the text is below the target position
-        const distanceBelowTarget = textRect.bottom - targetTextBottomPosition;
-        
-        // Calculate the new scroll top: current scroll + distance below target
-        const newScrollTop = scrollContainer.scrollTop + distanceBelowTarget;
-
-        // Scroll smoothly to the calculated position to keep the last line visible
-        scrollContainer.scrollTo({
-          top: newScrollTop,
-          behavior: 'smooth' // Smooth scroll for better UX
-        });
-      }
-    }
-  }, [displayedText]); // Run this effect whenever the displayed text updates
+  // REMOVED: useEffect for auto-scrolling while typing
+  // useEffect(() => { ... }, [displayedText]);
 
   return (
     <div 
@@ -867,9 +880,7 @@ function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHist
 
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
-  // Reset completion state if the message changes
   useEffect(() => {
-    // Skip setting if loading from history, as it will be skipped anyway
     if (!isLoadingFromHistory) { 
       setIsTypingComplete(false);
     }
@@ -878,16 +889,52 @@ function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHist
   // Determine if we should skip the typewriter 
   const skipTypewriter = isLoadingFromHistory || !m.message || (m.type && m.type !== "bot");
                          
-  // If skipping OR if typing is complete, render the original component
-  // The original component shows the full text and has the button logic
+  // If skipping OR if typing is complete, render the final content directly
   if (skipTypewriter || isTypingComplete) {
-    return <BotChatMessage m={m} isWaiting={isWaiting} rebuild={rebuild} />;
+    const { imageUrl, remainingText } = parseMarkdownImage(m.message);
+    const isPlainImage = !imageUrl && isImageUrl(m.message);
+
+    // Render final state (image or text)
+    if (imageUrl) {
+       return (
+         <div className="bot-message-content">
+            <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+              <img 
+                src={imageUrl} 
+                alt="Bot image" 
+                className="max-w-md h-auto rounded"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </a>
+            {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+         </div>
+       )
+    } else if (isPlainImage) {
+      return (
+        <div className="bot-message-content">
+            <a href={m.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+              <img 
+                src={m.message} 
+                alt="Bot image" 
+                className="max-w-md h-auto rounded"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </a>
+        </div>
+      )
+    } else {
+        // Render plain text without typewriter effect
+        return <div className="bot-message-content whitespace-pre-wrap">{m.message || ""}</div>;
+    }
   }
   
-  // Calculate dynamic speed: Start at 15ms, decrease by 1ms per 150 chars, min 2ms
-  const dynamicSpeed = Math.max(2, 15 - Math.floor((m.message?.length || 0) / 150));
+  // Calculate dynamic speed based on message length
+  const dynamicSpeed = Math.max(
+    TYPEWRITER_MIN_SPEED, 
+    TYPEWRITER_BASE_SPEED - Math.floor((m.message?.length || 0) / 150)
+  );
 
-  // While typing, render ONLY the TypewriterText
+  // While typing, render ONLY the TypewriterText component
   return (
     <div className="bot-message-content">
       <TypewriterText 
@@ -895,7 +942,8 @@ function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHist
         speed={dynamicSpeed} 
         onComplete={() => setIsTypingComplete(true)} 
       />
-      {/* Icons, References, and Rebuild button are rendered by the original BotChatMessage once isTypingComplete is true */}
+      {/* Note: Action buttons like Copy, Thumbs up/down, Rebuild are handled within the ChatMessage component */}
+      {/* This component focuses solely on displaying the message content with a typewriter effect */}
     </div>
   );
 }
@@ -915,15 +963,11 @@ function ChatMessage(props: MessageProps) {
   const messageTextRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
-  // Detect if message is single line or multi-line
   useEffect(() => {
-    if (type === "human") {
-      // Check for explicit newlines
-      const hasNewlines = message.includes('\n');
-      
-      // If no explicit newlines, check rendered height after component mounts
+    if (type === "human" && message) {
+      const hasNewlines = message.includes('\\n');
       if (!hasNewlines && messageTextRef.current) {
-        const lineHeight = 23; // Approximate line height (1.5 * font size)
+        const lineHeight = 23;
         setIsSingleLine(messageTextRef.current.clientHeight <= lineHeight * 1.2);
       } else {
         setIsSingleLine(!hasNewlines);
@@ -932,102 +976,229 @@ function ChatMessage(props: MessageProps) {
   }, [message, type]);
 
   const handleCopyText = () => {
-    navigator.clipboard.writeText(message).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    const { imageUrl, remainingText } = parseMarkdownImage(message);
+    let textToCopy = message; // Default to copying the raw message
+
+    if (imageUrl) {
+      // If markdown image, decide what to copy (e.g., URL + text)
+      textToCopy = imageUrl + (remainingText ? ` ${remainingText}` : '');
+    } else if (isImageUrl(message)) {
+      // If plain image URL, copy the URL
+      textToCopy = message;
+    } // Otherwise, textToCopy remains the original message text
+
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    }
   };
 
   const isLastMessage = messages.length === 1 && messages[0].type === "human";
 
   if (type === "bot") {
+    // Agent messages
     if (messages.length > 0) {
-      // Check if any message corresponds to a known agent
       const agentMessage = messages.find(m => KNOWN_AGENT_IDS.includes(m.id));
-      
       if (agentMessage) {
-        return (
-          <div className="mt-4 w-full" dir="auto">
-            <div className="p-3 border border-gray-200 rounded-lg">
-              <div className="font-medium text-xs mb-2 pb-1 border-b">Agent</div>
-              <AgentJsonView data={agentMessage.message} />
+        let answerContent: string | null = null;
+        try {
+          const parsedJson = JSON.parse(agentMessage.message);
+          if (parsedJson && typeof parsedJson.answer === 'string') {
+            answerContent = parsedJson.answer;
+          }
+        } catch (e) {
+          console.warn("Agent message was not valid JSON for extracting answer:", agentMessage.message);
+        }
+        const messageForTypewriter = answerContent ? {
+          ...agentMessage,
+          message: answerContent,
+        } : null;
 
-              {needsRebuild && !isWaiting && rebuild && (
+        return (
+          <>
+            <div className="mt-4 w-full" dir="auto">
+              <div className="p-3 border border-gray-200 rounded-lg">
+                <div className="font-medium text-xs mb-1 pb-1 border-b">Agent Raw Output: {agentMessage.botName || `ID ${agentMessage.id}`}</div>
+                <AgentJsonView data={agentMessage.message} />
+              </div>
+            </div>
+
+            {messageForTypewriter && (
+              <div className="mt-4 w-full" dir="auto">
+                <div className="font-medium text-xs mb-2">Agent Answer:</div>
+                <BotChatMessageWithTypewriter 
+                  m={messageForTypewriter} 
+                  isWaiting={isWaiting} 
+                  isLoadingFromHistory={isLoadingFromHistory}
+                />
+              </div>
+            )}
+            
+            {needsRebuild && !isWaiting && rebuild && (
+              <div className="mt-2 w-full flex justify-start">
                 <Button
-                  className="mt-3 bg-gray-700 hover:bg-gray-600 text-white"
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
                   onClick={rebuild}
                   disabled={isWaiting}
                   size="sm"
                 >
                   <span className="mr-1">↻</span> Rebuild
                 </Button>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
+          </>
         );
       }
     }
+    
+    // Multiple bot messages side-by-side
     if (messages.length > 1) {
       return (
         <div className="w-full mt-4" dir="auto">
           <div className="flex gap-4 w-full">
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className="flex-1 border border-gray-300 rounded-lg p-3 bot-message-content"
-                dir="auto"
-              >
-                <div className="font-medium text-xs mb-1" dir="auto">
-                  {m.botName}
+            {messages.map((m) => {
+              const { imageUrl, remainingText } = parseMarkdownImage(m.message);
+              const isPlainImage = !imageUrl && isImageUrl(m.message);
+
+              return (
+                <div
+                  key={m.id}
+                  className="flex-1 border border-gray-300 rounded-lg p-3 bot-message-content"
+                  dir="auto"
+                >
+                  <div className="font-medium text-xs mb-2">{m.botName}</div>
+                  {imageUrl ? (
+                    <div>
+                      <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                        <img 
+                          src={imageUrl} 
+                          alt="Bot image" 
+                          className="max-w-md h-auto rounded"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </a>
+                      {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+                    </div>
+                  ) : isPlainImage ? (
+                     <a href={m.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                       <img 
+                         src={m.message} 
+                         alt="Bot image" 
+                         className="max-w-md h-auto rounded"
+                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                       />
+                     </a>
+                  ) : (
+                    <BotChatMessageWithTypewriter 
+                      m={m} 
+                      isWaiting={isWaiting} 
+                      rebuild={rebuild} 
+                      isLoadingFromHistory={isLoadingFromHistory}
+                    />
+                  )}
                 </div>
-                <BotChatMessageWithTypewriter 
-                  m={m} 
-                  isWaiting={isWaiting} 
-                  rebuild={rebuild} 
-                  isLoadingFromHistory={isLoadingFromHistory}
-                />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
     }
+    
+    // Single bot message
     if (messages.length === 1) {
       const single = messages[0];
+      const { imageUrl, remainingText } = parseMarkdownImage(single.message);
+      const isPlainImage = !imageUrl && isImageUrl(single.message);
+
       return (
         <div className="mt-4" dir="auto">
           <div className="p-3 bot-message-content">
             <div
-              className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-1"
+              className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-2"
               dir="auto"
             >
               {single.botName}
             </div>
-            <BotChatMessageWithTypewriter 
-              m={single} 
-              isWaiting={isWaiting} 
-              rebuild={rebuild} 
-              isLoadingFromHistory={isLoadingFromHistory}
-            />
+            {imageUrl ? (
+              <div>
+                 <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                  <img 
+                    src={imageUrl} 
+                    alt="Bot image" 
+                    className="max-w-md h-auto rounded"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                 </a>
+                 {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+              </div>
+            ) : isPlainImage ? (
+               <a href={single.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                 <img 
+                   src={single.message} 
+                   alt="Bot image" 
+                   className="max-w-md h-auto rounded"
+                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                 />
+               </a>
+            ) : (
+              <BotChatMessageWithTypewriter 
+                m={single} 
+                isWaiting={isWaiting} 
+                rebuild={rebuild} 
+                isLoadingFromHistory={isLoadingFromHistory}
+              />
+            )}
           </div>
         </div>
       );
     }
+    
+    // Fallback case: Bot message directly on the main message object
+    const { imageUrl, remainingText } = parseMarkdownImage(message);
+    const isPlainImage = !imageUrl && isImageUrl(message);
+
     return (
       <div className="w-full mt-4" dir="auto">
         <div className="border border-gray-300 rounded-lg p-3 bot-message-content" dir="auto" style={{ minWidth: "80px" }}>
-          <div className="px-1 text-gray-700" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}>
-            <BotChatMessageWithTypewriter 
-              m={{ message, type: "bot" }} 
-              isWaiting={isWaiting} 
-              rebuild={rebuild} 
-              isLoadingFromHistory={isLoadingFromHistory}
-            />
-          </div>
+           {imageUrl ? (
+             <div>
+               <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                 <img 
+                   src={imageUrl} 
+                   alt="Bot image" 
+                   className="max-w-md h-auto rounded"
+                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                 />
+               </a>
+               {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+             </div>
+           ) : isPlainImage ? (
+             <a href={message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+               <img 
+                 src={message} 
+                 alt="Bot image" 
+                 className="max-w-md h-auto rounded"
+                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+             </a>
+           ) : (
+            <div className="px-1 text-gray-700" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}>
+              <BotChatMessageWithTypewriter 
+                m={{ message, type: "bot" }} 
+                isWaiting={isWaiting} 
+                rebuild={rebuild} 
+                isLoadingFromHistory={isLoadingFromHistory}
+              />
+            </div>
+           )}
         </div>
       </div>
     );
   }
+  
+  // Human messages remain unchanged
   return (
     <div className="w-full mt-4 message-fade-in" dir="auto" ref={messageContainerRef}>
       <div className="flex flex-col items-end">
@@ -1046,7 +1217,7 @@ function ChatMessage(props: MessageProps) {
         <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">
           {copied ? 
             <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} /> :
-            <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} />
+            message ? <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} /> : null
           }
           {!isWaiting && needsRebuild && (
             <Button
