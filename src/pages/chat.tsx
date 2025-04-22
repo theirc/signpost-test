@@ -456,28 +456,11 @@ const onSelectBot = (e: string[] | string) => {
     const container = chatContainerRef.current;
     if (!container) return;
 
-    const lastMessage = messages[messages.length - 1];
-
-    // Scroll bot messages to the top
-    if (lastMessage?.type === 'bot') {
-      const lastMessageElement = container.querySelector(':scope > div:last-child') as HTMLElement;
-      if (lastMessageElement) {
-        const topPadding = 20; // Pixels from the top
-        const targetScrollTop = lastMessageElement.offsetTop - container.offsetTop - topPadding;
-        
-        container.scrollTo({
-          top: targetScrollTop,
-          behavior: 'smooth'
-        });
-      }
-    } 
-    // Optionally, scroll user messages fully into view at the bottom if needed
-    // else if (lastMessage?.type === 'human') {
-    //   container.scrollTo({
-    //     top: container.scrollHeight,
-    //     behavior: 'smooth'
-    //   });
-    // }
+    // Always scroll to the bottom smoothly when messages change
+    container.scrollTo({
+      top: container.scrollHeight, // Scroll to the very bottom
+      behavior: 'smooth'
+    });
 
   }, [messages]); // Dependency array includes messages
 
@@ -880,70 +863,88 @@ function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHist
 
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
+  // Parse the message immediately to check for images
+  const { imageUrl, remainingText } = parseMarkdownImage(m.message);
+  const isPlainImage = !imageUrl && isImageUrl(m.message);
+  const hasImage = !!imageUrl || isPlainImage;
+  const textToType = imageUrl ? remainingText : (hasImage ? null : m.message); // Text for typewriter is remainingText or full message
+
+  // Determine if we should skip the typewriter effect for the textual part
+  // Skip if loading from history, or if there's no text to type
+  const skipTypewriter = isLoadingFromHistory || !textToType || (m.type && m.type !== "bot");
+
+  // Reset completion state if the relevant text content changes
   useEffect(() => {
-    if (!isLoadingFromHistory) { 
+    if (!isLoadingFromHistory) {
       setIsTypingComplete(false);
     }
-  }, [m.message, isLoadingFromHistory]);
+    // Reset only if the text content intended for typing changes
+  }, [textToType, isLoadingFromHistory]); 
 
-  // Determine if we should skip the typewriter 
-  const skipTypewriter = isLoadingFromHistory || !m.message || (m.type && m.type !== "bot");
-                         
-  // If skipping OR if typing is complete, render the final content directly
-  if (skipTypewriter || isTypingComplete) {
-    const { imageUrl, remainingText } = parseMarkdownImage(m.message);
-    const isPlainImage = !imageUrl && isImageUrl(m.message);
+  // --- Rendering Logic --- 
 
-    // Render final state (image or text)
+  // Part 1: Render the image immediately if it exists
+  const renderImage = () => {
     if (imageUrl) {
-       return (
-         <div className="bot-message-content">
-            <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
-              <img 
-                src={imageUrl} 
-                alt="Bot image" 
-                className="max-w-md h-auto rounded"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-            </a>
-            {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
-         </div>
-       )
-    } else if (isPlainImage) {
       return (
-        <div className="bot-message-content">
-            <a href={m.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
-              <img 
-                src={m.message} 
-                alt="Bot image" 
-                className="max-w-md h-auto rounded"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-            </a>
-        </div>
-      )
-    } else {
-        // Render plain text without typewriter effect
-        return <div className="bot-message-content whitespace-pre-wrap">{m.message || ""}</div>;
+        <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+          <img 
+            src={imageUrl} 
+            alt="Bot image" 
+            className="max-w-md h-auto rounded"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </a>
+      );
+    } else if (isPlainImage) {
+       return (
+         <a href={m.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+           <img 
+             src={m.message} 
+             alt="Bot image" 
+             className="max-w-md h-auto rounded"
+             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+           />
+         </a>
+       );
     }
-  }
-  
-  // Calculate dynamic speed based on message length
-  const dynamicSpeed = Math.max(
-    TYPEWRITER_MIN_SPEED, 
-    TYPEWRITER_BASE_SPEED - Math.floor((m.message?.length || 0) / 150)
-  );
+    return null;
+  };
 
-  // While typing, render ONLY the TypewriterText component
+  // Part 2: Render the text part (with or without typewriter)
+  const renderText = () => {
+    if (!textToType) {
+      return null; // No text to render
+    }
+
+    // If skipping typewriter or typing is complete, render text directly
+    if (skipTypewriter || isTypingComplete) {
+      return <div className={`whitespace-pre-wrap ${hasImage ? 'mt-2' : ''}`}>{textToType}</div>;
+    }
+
+    // Otherwise, render with typewriter effect
+    const dynamicSpeed = Math.max(
+      TYPEWRITER_MIN_SPEED, 
+      TYPEWRITER_BASE_SPEED - Math.floor((textToType.length || 0) / 150)
+    );
+    
+    return (
+      <div className={`${hasImage ? 'mt-2' : ''}`}> {/* Add margin if there was an image */} 
+        <TypewriterText 
+          text={textToType} 
+          speed={dynamicSpeed} 
+          onComplete={() => setIsTypingComplete(true)} 
+        />
+      </div>
+    );
+  };
+
+  // Combine image and text rendering
   return (
     <div className="bot-message-content">
-      <TypewriterText 
-        text={m.message || ""} 
-        speed={dynamicSpeed} 
-        onComplete={() => setIsTypingComplete(true)} 
-      />
-      {/* Note: Action buttons like Copy, Thumbs up/down, Rebuild are handled within the ChatMessage component */}
-      {/* This component focuses solely on displaying the message content with a typewriter effect */}
+      {renderImage()}
+      {renderText()}
+      {/* Action buttons (like Copy, Rebuild) are handled externally by ChatMessage */}
     </div>
   );
 }
