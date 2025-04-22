@@ -4,7 +4,7 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
 import { app } from '@/lib/app'
-import { ChevronLeft, ChevronRight, MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle, Copy, Check, History, ThumbsUp, ThumbsDown, Flag, Volume2, Code } from 'lucide-react'
+import { MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle, Copy, Check, History } from 'lucide-react'
 import AgentJsonView from '@/bot/agentview'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
@@ -13,6 +13,7 @@ import { BotChatMessage } from '@/bot/botmessage'
 import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
 import type { ChatMessage } from '@/types/types.ai'
+import { SearchInput } from '@/bot/search'
 import { useReactMediaRecorder } from "react-media-recorder"
 import { agents } from "@/lib/agents"
 import { availableSources } from "@/components/source_input/files-modal"
@@ -625,197 +626,6 @@ const onSelectBot = (e: string[] | string) => {
   )
 }
 
-function SearchInput(props: {
-  onSearch: (message?: string, audio?: any, tts?: boolean) => void,
-  disabled: boolean,
-  openFileDialog: () => void,
-  audioMode: boolean,
-  onModeChanged: () => void
-}) {
-  const [value, setValue] = useState("")
-  const [recordingComplete, setRecordingComplete] = useState<boolean>(false)
-  const [tts, setTts] = useState<boolean>(false)
-  const [isRecordingMode, setIsRecordingMode] = useState(false)
-
-  const {
-    status,
-    startRecording,
-    stopRecording,
-    mediaBlobUrl,
-    clearBlobUrl,
-  } = useReactMediaRecorder({ audio: true })
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"; 
-      // Set height based on the content scroll height
-    }
-  }, [value]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(e.target.value)
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSearch(value)
-    }
-  }
-
-  const handleSearch = (v: string) => {
-    if (!v.trim()) return
-    props.onSearch(v, '', tts)
-    setValue("")
-  }
-
-  const handleToggleRecording = () => {
-    if (status === "recording") {
-      stopRecording()
-      setRecordingComplete(true)
-    } else {
-      clearBlobUrl()
-      startRecording()
-      setRecordingComplete(false)
-    }
-  }
-
-  const handleSendMessage = () => {
-    if (value.trim()) {
-      handleSearch(value)
-    }
-  }
-  const blobToBase64 = (blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  }
-
-  const handleSendRecording = async () => {
-    if (mediaBlobUrl) {
-      const response = await fetch(mediaBlobUrl)
-      const blob = await response.blob()
-      const base64Data = await blobToBase64(blob)
-      props.onSearch(undefined, base64Data, true)
-      clearBlobUrl()
-      setRecordingComplete(false)
-      setIsRecordingMode(false)
-    }
-  }
-  return (
-    <div className="w-full">
-      {isRecordingMode ? (
-        <div className="relative">
-          <div className="relative bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            <div className="flex flex-col items-center p-6">
-              <div className="text-lg font-medium text-gray-700 mb-6">
-                {status === "recording" ? "Recording..." : "Ready to record"}
-              </div>
-
-              <Button 
-                onClick={handleToggleRecording}
-                className={`h-20 w-20 rounded-full flex items-center justify-center transition-colors ${
-                  status === "recording" ? 'bg-red-500' : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-              >
-                {status === "recording" ? 
-                  <Circle className="h-8 w-8 text-white" /> : 
-                  <AudioWaveform className="h-8 w-8 text-gray-800" />
-                }
-              </Button>
-
-              {mediaBlobUrl && (
-                <>
-                  <div className="mt-6 w-full max-w-md">
-                    <audio 
-                      controls 
-                      src={mediaBlobUrl} 
-                      className="w-full rounded-md shadow-sm border border-gray-300" 
-                    />
-                  </div>
-                  
-                  <Button
-                    onClick={handleSendRecording}
-                    className="mt-4 px-4 py-2 bg-black text-white rounded-full flex items-center hover:bg-gray-900"
-                  >
-                    <ArrowUp className="h-5 w-5 mr-2" />
-                    <span>Send</span>
-                  </Button>
-                </>
-              )}
-              
-              <Button
-                onClick={() => setIsRecordingMode(false)}
-                className="mt-6 text-gray-600 hover:text-gray-900"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="relative">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleSearch(value)
-            }}
-            className={`relative bg-white rounded-xl border border-gray-200 overflow-hidden ${
-              !value.trim() 
-                ? 'pulse-input-shadow' 
-                : 'shadow-[4px_4px_20px_-4px_rgba(236,72,153,0.1),_-4px_4px_20px_-4px_rgba(124,58,237,0.1),_0_4px_20px_-4px_rgba(34,211,238,0.1)]'
-            }`}
-          >
-            <div className="flex flex-col w-full">
-              <div className="px-2 py-3 max-h-80 overflow-y-auto">
-                <textarea
-                  ref={textareaRef}
-                  value={value}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message here."
-                  className="w-full outline-none resize-none py-1 px-1 text-sm min-h-[40px] block"
-                  style={{ fontFamily: 'Inter, sans-serif' }}
-                />
-              </div>
-              
-              <div className="flex justify-between items-center p-2">
-                <div>
-                  <Button
-                    type="button"
-                    onClick={props.openFileDialog}
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-full border border-gray-200 bg-transparent"
-                    variant="ghost"
-                  >
-                    <CirclePlus className="h-6 w-6" />
-                  </Button>
-                </div>
-                
-                <div>
-                  <Button
-                    type="button"
-                    onClick={value.trim() ? handleSendMessage : props.onModeChanged}
-                    className={`w-10 h-10 p-0 flex items-center justify-center rounded-full ${value.trim() ? 'bg-black text-white' : 'bg-black text-white hover:bg-gray-800'}`}
-                  >
-                    {value.trim() ? 
-                      <ArrowUp className="h-5 w-5" /> : 
-                      <AudioWaveform className="h-5 w-5" />
-                    }
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </form>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // Base speed for typewriter effect (milliseconds per character)
 const TYPEWRITER_BASE_SPEED = 8; // Changed from 15
