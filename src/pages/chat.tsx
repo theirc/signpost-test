@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { MultiSelectDropdown } from '@/components/ui/multiselect'
 import type { Option } from '@/components/ui/multiselect'
 import "../index.css"
+import { supabase } from '@/lib/data/supabaseFunctions'
 
 interface Bots {
   [index: number]: {
@@ -104,9 +105,52 @@ export default function Chat() {
         bots[Number(key)] = { name: sb[key], id: key, history: [] }
       }
 
-      // Add known agents manually
-      bots[AGENT_ID_23] = { name: `Agent ${AGENT_ID_23}`, id: AGENT_ID_23.toString(), history: [] }
-      bots[AGENT_ID_27] = { name: `Aprendia Test`, id: AGENT_ID_27.toString(), history: [] }
+      // Fetch agents directly from Supabase
+      try {
+        const { data: agentData, error: agentError } = await supabase
+          .from('agents')
+          .select('id, title'); // Fetch ID and title
+
+        if (agentError) {
+          // Don't throw, just log the error and continue
+          console.error("Supabase error fetching agents:", agentError);
+        } else if (agentData) {
+          console.log("Fetched agents from Supabase:", agentData); // Log fetched agents
+          for (const agent of agentData) {
+            // Ensure agent.id is treated as a number if it comes back differently
+            const agentId = Number(agent.id); 
+            // Ensure agent.title exists and is a string
+            const agentName = typeof agent.title === 'string' ? agent.title : `Agent ${agentId}`; 
+
+            // Check if agentId is a valid number before proceeding
+            if (!isNaN(agentId)) {
+              // Avoid overwriting bots fetched from the API if IDs overlap
+              if (!bots[agentId]) {
+                bots[agentId] = { 
+                  name: agentName, 
+                  id: agentId.toString(), 
+                  history: [] 
+                };
+                 console.log(`Added agent ${agentId} (${agentName}) to bots list.`);
+              } else {
+                // Optionally update the name if the agent definition is preferred
+                // bots[agentId].name = agentName; 
+                console.warn(`Agent ID ${agentId} from Supabase conflicts with bot from API. Using API bot info.`);
+              }
+            } else {
+              console.warn("Skipping agent with invalid ID:", agent);
+            }
+          }
+        } else {
+           console.log("No agents found in Supabase 'agents' table.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch agents from Supabase:", error);
+        // Fallback or error handling if Supabase fetch fails
+        // You might want to add the known ones manually here as a fallback
+        // bots[AGENT_ID_23] = { name: `Agent ${AGENT_ID_23}`, id: AGENT_ID_23.toString(), history: [] }
+        // bots[AGENT_ID_27] = { name: `Aprendia Test`, id: AGENT_ID_27.toString(), history: [] }
+      }
       
       setState({ bots })
     }
@@ -252,14 +296,18 @@ const onSelectBot = (e: string[] | string) => {
     setState({ isSending: true })
 
     // Determine if an agent is selected and which one
-    const selectedAgentId = state.selectedBots.find(id => KNOWN_AGENT_IDS.includes(id));
-    const useAgent = selectedAgentId !== undefined;
+    // const selectedAgentId = state.selectedBots.find(id => KNOWN_AGENT_IDS.includes(id));
+    // const useAgent = selectedAgentId !== undefined;
     
+    // Revised logic: Treat any single selected bot as a potential agent
+    const useAgent = state.selectedBots.length === 1;
+    const selectedAgentId = useAgent ? state.selectedBots[0] : undefined;
+
     let botResponseForHistory: ChatMessage
 
     if (useAgent && selectedAgentId) {
       try {
-        const agent = await agents.loadAgent(selectedAgentId); // Use the detected agent ID
+        const agent = await agents.loadAgent(selectedAgentId); // Use the single selected bot ID
 
         // Format the entire conversation history including the latest user message
         const formattedHistory = currentActiveChat.messages
@@ -348,8 +396,14 @@ const onSelectBot = (e: string[] | string) => {
         }
       }
     } else {
-      // Fetch response from non-agent bot
-      const response = message ? await api.askbot({ message }, tts, selectedBotsConfig) : await api.askbot({ audio }, tts, selectedBotsConfig)
+      // Fetch response from non-agent bot or handle multiple selections
+      // If multiple bots are selected, use api.askbot
+      const selectedBotsConfigForApi = state.selectedBots.map(b => ({
+        label: state.bots[b].name,
+        value: b,
+        history: state.bots[b].history,
+      }));
+      const response = message ? await api.askbot({ message }, tts, selectedBotsConfigForApi) : await api.askbot({ audio }, tts, selectedBotsConfigForApi)
       
       // Set isSending to false *after* API call completes
       setState({ isSending: false }); 
@@ -456,11 +510,28 @@ const onSelectBot = (e: string[] | string) => {
     const container = chatContainerRef.current;
     if (!container) return;
 
-    // Always scroll to the bottom smoothly when messages change
-    container.scrollTo({
-      top: container.scrollHeight, // Scroll to the very bottom
-      behavior: 'smooth'
-    });
+    const lastMessage = messages[messages.length - 1];
+
+    // Scroll bot messages to the top
+    if (lastMessage?.type === 'bot') {
+      const lastMessageElement = container.querySelector(':scope > div:last-child') as HTMLElement;
+      if (lastMessageElement) {
+        const topPadding = 20; // Pixels from the top
+        const targetScrollTop = lastMessageElement.offsetTop - container.offsetTop - topPadding;
+        
+        container.scrollTo({
+          top: targetScrollTop,
+          behavior: 'smooth'
+        });
+      }
+    } 
+    // Optionally, scroll user messages fully into view at the bottom if needed
+    // else if (lastMessage?.type === 'human') {
+    //   container.scrollTo({
+    //     top: container.scrollHeight,
+    //     behavior: 'smooth'
+    //   });
+    // }
 
   }, [messages]); // Dependency array includes messages
 
@@ -1001,56 +1072,83 @@ function ChatMessage(props: MessageProps) {
   if (type === "bot") {
     // Agent messages
     if (messages.length > 0) {
-      const agentMessage = messages.find(m => KNOWN_AGENT_IDS.includes(m.id));
-      if (agentMessage) {
+      // Check if the primary message seems to be from an agent (e.g., by checking if the first message ID is likely an agent ID)
+      // This might need refinement based on how agent responses are structured.
+      // Let's assume for now if there's a single message and its ID is in state.bots and potentially marked as an agent somehow.
+      // A more robust check might involve looking at the structure of 'message' itself.
+      // For now, we'll use the existence of a single message in the 'messages' array as a proxy,
+      // combined with the logic already present for handling agent JSON.
+      const potentialAgentMessage = messages.length === 1 ? messages[0] : null; // Simplified check
+
+      // Try parsing logic if it looks like an agent response based on existing checks or structure
+      if (potentialAgentMessage) {
         let answerContent: string | null = null;
+        let isLikelyAgentJson = false;
         try {
-          const parsedJson = JSON.parse(agentMessage.message);
+          // Ensure the message content is a string before parsing
+          const messageString = typeof potentialAgentMessage.message === 'string'
+             ? potentialAgentMessage.message
+             : JSON.stringify(potentialAgentMessage.message);
+
+          // Attempt to parse, assuming agent responses might be JSON strings
+          const parsedJson = JSON.parse(messageString);
+          // Check for a known structure, like having an 'answer' field
           if (parsedJson && typeof parsedJson.answer === 'string') {
             answerContent = parsedJson.answer;
+            isLikelyAgentJson = true; // Successfully parsed known structure
+          } else if (parsedJson && typeof parsedJson === 'object') {
+             // It parsed as JSON, might be agent output even without 'answer'
+             isLikelyAgentJson = true;
           }
         } catch (e) {
-          console.warn("Agent message was not valid JSON for extracting answer:", agentMessage.message);
+          // Parsing failed, likely not JSON or not the expected structure
+          // console.warn("Message was not valid JSON for extracting answer:", potentialAgentMessage.message);
+          isLikelyAgentJson = false;
         }
-        const messageForTypewriter = answerContent ? {
-          ...agentMessage,
-          message: answerContent,
-        } : null;
 
-        return (
-          <>
-            <div className="mt-4 w-full" dir="auto">
-              <div className="p-3 border border-gray-200 rounded-lg">
-                <div className="font-medium text-xs mb-1 pb-1 border-b">Agent Raw Output: {agentMessage.botName || `ID ${agentMessage.id}`}</div>
-                <AgentJsonView data={agentMessage.message} />
-              </div>
-            </div>
+        // If it looked like agent JSON (parsed or has known field)
+        if (isLikelyAgentJson) {
+          const messageForTypewriter = answerContent ? {
+            ...potentialAgentMessage,
+            message: answerContent, // Use extracted answer for display
+          } : null; // Don't display typewriter if only raw JSON shown
 
-            {messageForTypewriter && (
+          return (
+            <>
               <div className="mt-4 w-full" dir="auto">
-                <div className="font-medium text-xs mb-2">Agent Answer:</div>
-                <BotChatMessageWithTypewriter 
-                  m={messageForTypewriter} 
-                  isWaiting={isWaiting} 
-                  isLoadingFromHistory={isLoadingFromHistory}
-                />
+                <div className="p-3 border border-gray-200 rounded-lg">
+                  <div className="font-medium text-xs mb-1 pb-1 border-b">Agent Raw Output: {potentialAgentMessage.botName || `ID ${potentialAgentMessage.id}`}</div>
+                  {/* Pass the original message string (or stringified object) to AgentJsonView */}
+                  <AgentJsonView data={typeof potentialAgentMessage.message === 'string' ? potentialAgentMessage.message : JSON.stringify(potentialAgentMessage.message)} />
+                </div>
               </div>
-            )}
-            
-            {needsRebuild && !isWaiting && rebuild && (
-              <div className="mt-2 w-full flex justify-start">
-                <Button
-                  className="bg-gray-700 hover:bg-gray-600 text-white"
-                  onClick={rebuild}
-                  disabled={isWaiting}
-                  size="sm"
-                >
-                  <span className="mr-1">↻</span> Rebuild
-                </Button>
-              </div>
-            )}
-          </>
-        );
+
+              {messageForTypewriter && (
+                <div className="mt-4 w-full" dir="auto">
+                  <div className="font-medium text-xs mb-2">Agent Answer:</div>
+                  <BotChatMessageWithTypewriter
+                    m={messageForTypewriter}
+                    isWaiting={isWaiting}
+                    isLoadingFromHistory={isLoadingFromHistory}
+                  />
+                </div>
+              )}
+
+              {needsRebuild && !isWaiting && rebuild && (
+                <div className="mt-2 w-full flex justify-start">
+                  <Button
+                    className="bg-gray-700 hover:bg-gray-600 text-white"
+                    onClick={rebuild}
+                    disabled={isWaiting}
+                    size="sm"
+                  >
+                    <span className="mr-1">↻</span> Rebuild
+                  </Button>
+                </div>
+              )}
+            </>
+          );
+        }
       }
     }
     
