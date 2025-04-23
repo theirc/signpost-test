@@ -134,11 +134,9 @@ export function buildWorker(w: WorkerConfig) {
       }
 
       p.agent.update()
-
       worker.updateWorker()
       p.agent.currentWorker = null
       p.agent.update()
-
 
     },
 
@@ -146,7 +144,9 @@ export function buildWorker(w: WorkerConfig) {
       const connw = worker.getConnectedWokers(p)
       for (const { worker, source, target } of connw) {
         await worker.execute(p)
-        target.value = source.value || target.default
+        if (target.value === undefined) {
+          target.value = source.value || target.default
+        }
       }
     },
 
@@ -200,14 +200,14 @@ export function buildWorker(w: WorkerConfig) {
     },
 
     updateWorker() {
-      worker.lastUpdate = Date.now().valueOf()
+      worker.lastUpdate++ // = Date.now().valueOf()
     },
 
     addHandler(h: NodeIO): NodeIO {
       if (!h.id) h.id = ulid()
       w.handles[h.id] = h
       fields[h.name] = h
-      worker.lastUpdate = Date.now().valueOf()
+      worker.lastUpdate++ //= Date.now().valueOf()
       return h
     },
 
@@ -221,12 +221,12 @@ export function buildWorker(w: WorkerConfig) {
       if (w.handles[id]) {
         Object.assign(w.handles[id], h)
       }
-      worker.lastUpdate = Date.now().valueOf()
+      worker.lastUpdate++ // = Date.now().valueOf()
     },
 
     deleteHandler(id: string) {
       delete w.handles[id]
-      worker.lastUpdate = Date.now().valueOf()
+      worker.lastUpdate++ // = Date.now().valueOf()
     },
 
     getUserHandlers() {
