@@ -96,6 +96,9 @@ async function execute(worker: SchemaWorker, p: AgentParameters) {
 
   worker.fields.json.value = jsonout
 
+  console.log("Schema output", jsonout)
+
+
 }
 
 
