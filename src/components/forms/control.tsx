@@ -16,7 +16,7 @@ declare global {
 
 export function validateValue(v: any, required: boolean, field: Field, validate?: ZodType) {
   if (v != null && typeof v === "string") v = v.trim()
-  console.log("Validating: ", v)
+  // console.log("Validating: ", v)
 
   if (required && !v) return "This field is required"
 

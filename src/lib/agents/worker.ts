@@ -11,6 +11,7 @@ export const inputOutputTypes = {
   doc: "Documents",
   references: "References",
   chat: "Chat",
+  json: "JSON",
   // audio: "Audio",
   // image: "Image",
   // video: "Video",
