@@ -29,7 +29,7 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
   if (worker.error) {
     Icon = <HoverCard openDelay={200}>
       <HoverCardTrigger>
-        <CircleXIcon size={16} className="mt-[2px] mr-1 text-red-500" />
+        <CircleXIcon size={16} strokeWidth={4} className="mt-[2px] mr-1 text-red-500" />
       </HoverCardTrigger>
       <HoverCardContent side='top' className='overflow-auto border-red-500'>
         <Arrow />

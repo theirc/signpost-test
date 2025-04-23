@@ -6,6 +6,7 @@ declare global {
   interface SchemaWorker extends AIWorker {
     fields: {
       input: NodeIO
+      json: NodeIO
       condition: NodeIO
     }
     parameters: {
@@ -22,13 +23,14 @@ function create(agent: Agent) {
     [
       { type: "string", direction: "input", title: "Input", name: "input" },
       { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
+      { type: "json", direction: "output", title: "JSON", name: "json", system: true },
     ],
     schema
   )
 
 }
 
-async function execute(worker: AIWorker, p: AgentParameters) {
+async function execute(worker: SchemaWorker, p: AgentParameters) {
 
   const handlers = worker.getUserHandlers()
   const input = worker.fields.input.value
@@ -78,13 +80,21 @@ async function execute(worker: AIWorker, p: AgentParameters) {
   const translator = createJsonTranslator<any>(schemaModel, validator)
   const routeresponse = await translator.translate(input)
 
+  const jsonout = {}
 
   if (routeresponse.success) {
     for (const key in routeresponse.data) {
       const h = handlers.find((h) => h.name == key)
-      if (h) worker.fields[h.name].value = routeresponse.data[key]
+      if (h) {
+        worker.fields[h.name].value = routeresponse.data[key]
+        if (worker.fields[h.name].value) {
+          jsonout[h.name] = worker.fields[h.name].value
+        }
+      }
     }
   }
+
+  worker.fields.json.value = jsonout
 
 }
 
