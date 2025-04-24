@@ -15,6 +15,9 @@ const model: SupabaseModel<"agents"> = {
     created_at: { title: "Created At", type: "string" },
     edges: { title: "Edges", type: "json", hidden: true },
     workers: { title: "Workers", type: "json", hidden: true },
+    description: { title: "Description", type: "string" },
+    type: { title: "Type", type: "string", list: [{ value: "conversational", label: "Conversational" }, { value: "data", label: "Data" }] },
+    team_id: { title: "Team ID", type: "string" },
   },
 }
 
