@@ -26,6 +26,7 @@ import { UserForm } from "@/pages/settings/users"
 import Sources from "@/pages/sources"
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
+import { BotForm } from "@/pages/bots/bot-form"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -135,6 +136,18 @@ export function AppLayout() {
                 <BotManagement />
               </ProtectedRoute>
             } />
+            <Route path="/bots/new" element={
+              <ProtectedRoute resource="bots" action="create">
+                <BotForm/>
+              </ProtectedRoute>
+            }
+            />
+            <Route path="/bots/:id" element={
+              <ProtectedRoute resource="bots" action="update">
+                <BotForm/>
+              </ProtectedRoute>
+            }
+            />
             <Route path="/bots/prompts" element={
               <ProtectedRoute resource="prompts" action="update">
                 <SystemPrompts />

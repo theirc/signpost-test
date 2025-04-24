@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Play, RefreshCcw, Loader2 } from "lucide-react"
+import { Play, RefreshCcw, Loader2,Plus } from "lucide-react"
 import { useSupabase } from "@/hooks/use-supabase"
 import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
 import AddBotDialog from "@/components/bot_management/add-bot-dialog"
@@ -12,6 +13,7 @@ import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
 
 export function BotManagement() {
+    const navigate = useNavigate()
     const [models, setModels] = useState<Model[]>([])
     const [modelsLoading, setModelsLoading] = useState(true)
     const [collections, setCollections] = useState<Collection[]>([])
@@ -167,15 +169,34 @@ export function BotManagement() {
     const handleAddBot = async () => {
         if (newBot.name && newBot.model) {
             try {
+
+                const cleanedBot = { ...newBot }
+                
+                if (cleanedBot.collection === "") {
+                    cleanedBot.collection = undefined
+                }
+                
+                if (cleanedBot.system_prompt_id === "") {
+                    cleanedBot.system_prompt_id = undefined
+                }
+                
+                console.log('Submitting clean bot data:', cleanedBot)
+                
                 const { data, error } = await addBot({
-                    name: newBot.name,
-                    model: newBot.model,
-                    collection: newBot.collection,
-                    system_prompt: newBot.system_prompt,
-                    system_prompt_id: newBot.system_prompt_id,
-                    temperature: newBot.temperature || 0.7
+                    name: cleanedBot.name,
+                    model: cleanedBot.model,
+                    collection: cleanedBot.collection,
+                    system_prompt: cleanedBot.system_prompt,
+                    system_prompt_id: cleanedBot.system_prompt_id,
+                    temperature: cleanedBot.temperature || 0.7
                 })
-                if (error) throw error
+                
+                if (error) {
+                    console.error('Error adding bot:', error)
+                    alert(`Error adding bot: ${error.message || JSON.stringify(error)}`)
+                    throw error
+                }
+                
                 if (data) {
                     setBots(prev => [...prev, data])
                     setNewBot({})
@@ -344,7 +365,8 @@ export function BotManagement() {
                             <RefreshCcw className="h-4 w-4 mr-2" />
                             Refresh
                         </Button>
-                        <Button onClick={() => setIsAddDialogOpen(true)}>
+                        <Button onClick={() => navigate("/bots/new")}>
+                            <Plus className= "h-4 w-4 mr-2"/>
                             Create Bot
                         </Button>
                     </div>
