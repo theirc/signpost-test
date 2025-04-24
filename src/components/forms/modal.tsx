@@ -52,9 +52,7 @@ export function Modal(props: Props) {
     if (!open && form) {
       console.log("Resetting form")
       form.editing = false
-      // console.log("Values reset: ", form.methods.getValues())
       form.reset()
-      // console.log("Values reset: ", form.methods.getValues())
     }
 
   }

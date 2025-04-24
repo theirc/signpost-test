@@ -15,7 +15,10 @@
       "problemMatcher": [
         "$tsc-watch"
       ],
-      "group": "build",
+      "group": {
+        "isDefault": true,
+        "kind": "build"
+      },
       "label": "tsc: watch - tsconfig.json"
     }
   ]
