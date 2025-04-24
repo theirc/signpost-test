@@ -2,70 +2,19 @@ import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } fro
 import { workerRegistry } from "@/lib/agents/registry"
 import { createModel } from "@/lib/data/model"
 import { cloneDeep } from "lodash"
-import { EllipsisVertical, LoaderCircle, Play, Save } from "lucide-react"
+import { Cog, EllipsisVertical, LoaderCircle, Play, Save, Settings } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Input, Modal, Row, useForm } from "../forms"
+import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
 import { Separator } from "../ui/separator"
-
-
 import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
-
-async function executeAgent() {
-
-  //Load the agent by id
-  const agent = await agents.loadAgent(23)
-
-  //create the Agent parameters
-  const parameters: AgentParameters = {
-    //Put your input content here
-    input: {
-      question: "What is malaria?"
-    },
-    apikeys: app.getAPIkeys(), //this loads the API keys to execute the AI workers. Use the menu to set it
-  }
-
-  //Execute the agent
-  await agent.execute(parameters)
-
-
-  //Check if there is an error
-  if (parameters.error) {
-    //Check the error returned by the agent if any
-  }
-
-  console.log("Result: ", parameters.output) //The result of the agent
-
-}
-
 
 interface Props {
   update?: () => void
 }
 
 
-function MenuDragger(props: { icon: any, title: string, type: string }) {
-
-  const onDragStart = (event: React.DragEvent<HTMLAnchorElement>, nodeType) => {
-    event.dataTransfer.setData('nodeType', nodeType)
-    event.dataTransfer.effectAllowed = 'move'
-    console.log("drag")
-  }
-
-  const onClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
-    event.preventDefault()
-
-  }
-
-  return <a href={"#"} onDragStart={(event) => onDragStart(event, props.type)} onClick={onClick} draggable>
-    <div className="hover:bg-gray-100  rounded-sm  cursor-move flex gap-1 items-center select-none">
-      {props.icon && <props.icon size={16} />}
-      {props.title}
-    </div>
-  </a>
-
-}
 function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: WorkerRegistryItem }) {
 
   const onDragStart = (event: React.DragEvent<HTMLAnchorElement>, nodeType) => {
@@ -94,17 +43,22 @@ function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: 
 
 const model = createModel({
   fields: {
-    title: { type: 'string', title: 'Title' },
     openai: { type: 'string', title: 'OpenAI' },
     anthropic: { type: 'string', title: 'Anthropic' },
     zendesk: { type: 'string', title: 'Zendesk' },
   }
-}
-)
+})
+
+const agentModel = createModel({
+  fields: {
+    title: { type: 'string', title: 'Title' },
+    description: { type: 'string', title: 'Description' },
+    type: { type: 'string', title: 'Type', list: [{ value: "conversational", label: "Conversational" }, { value: "data", label: "Data" }] },
+  }
+})
+
 
 export function Toolbar(props: Props) {
-
-
 
   const { form, m, watch } = useForm(model, {
     values: {
@@ -112,15 +66,15 @@ export function Toolbar(props: Props) {
       ...app.getAPIkeys(),
     }
   })
+
+  const { form: agentForm, m: f } = useForm(agentModel, {
+    values: {
+      title: app.agent.title,
+    }
+  })
+
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
-      console.log(value, name, type)
-      if (name == "title") app.agent.title = value.title || ""
-    })
-    return () => subscription.unsubscribe()
-  }, [watch])
 
   form.onSubmit = async (data) => {
     const ak = app.getAPIkeys()
@@ -130,6 +84,12 @@ export function Toolbar(props: Props) {
     app.saveAPIkeys(ak)
   }
 
+  agentForm.onSubmit = async (data) => {
+    console.log("Agent Form Submit", data)
+    app.agent.title = data.title
+    app.agent.description = data.description
+    app.agent.type = data.type as any
+  }
 
   async function onSave() {
     if (saving) return
@@ -137,7 +97,6 @@ export function Toolbar(props: Props) {
     const clonedAgent = cloneDeep(app.agent)
     await agents.saveAgent(clonedAgent)
     toast("The flow was saved", {
-      // description: "Not Implemented!",
       action: {
         label: "Ok",
         onClick: () => console.log("Ok"),
@@ -170,7 +129,6 @@ export function Toolbar(props: Props) {
 
     await agent.execute(p)
 
-
     if (p.error) {
       toast("Error", {
         description: <div className="text-red-500 font-semibold">{p.error}</div>,
@@ -188,12 +146,26 @@ export function Toolbar(props: Props) {
     form.modal.show()
   }
 
+  function onSetAgent() {
+    agentForm.edit({
+      title: app.agent.title,
+      description: app.agent.description,
+      type: app.agent.type
+    })
+  }
+
   return <>
     <div className="flex gap-3 mb-2 text-xs items-center">
-      <div className="flex flex-grow">
+      {/* <div className="flex flex-grow">
         <form.context>
           <Input className="h-3 px-1 p-3 pr-2 border-gray-100 hover:border-gray-300 text w-full" field={m.title} hideLabel maxLength={24} />
         </form.context>
+      </div> */}
+      <div className="flex flex-grow items-center">
+        <div className="text-sm" >
+          <Settings size={18} className="inline mr-2 cursor-pointer" onClick={onSetAgent} />
+          {app.agent.title}
+        </div>
       </div>
       <Separator orientation="vertical" />
       <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => onSave()}>
@@ -205,24 +177,6 @@ export function Toolbar(props: Props) {
         <Play size={18} />
       </div>
       <Separator orientation="vertical" />
-      {/* {Object.entries(workerRegistry).map(([key, node]) => (
-        <MenuDragger title={node.title} type={key} icon={node.icon} key={key} />
-      ))}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <EllipsisVertical size={18} className="cursor-pointer" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={onSetAPIKey} >
-            <Key />
-            <span>Set API Keys</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <MenuDragger title="Schema" type={"schema"} icon={null} />
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu> */}
-
       <Menubar className="h-4 border-0 hi">
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">I/O</MenubarTrigger>
@@ -230,28 +184,24 @@ export function Toolbar(props: Props) {
             {Object.entries(workerRegistry).filter(([key, node]) => node.category == "io").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
           </MenubarContent>
         </MenubarMenu>
-
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">Generators</MenubarTrigger>
           <MenubarContent>
             {Object.entries(workerRegistry).filter(([key, node]) => node.category == "generator").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
           </MenubarContent>
         </MenubarMenu>
-
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">Tools</MenubarTrigger>
           <MenubarContent>
             {Object.entries(workerRegistry).filter(([key, node]) => node.category == "tool").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
           </MenubarContent>
         </MenubarMenu>
-
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">Debug</MenubarTrigger>
           <MenubarContent>
             {Object.entries(workerRegistry).filter(([key, node]) => node.category == "debug").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
           </MenubarContent>
         </MenubarMenu>
-
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs"><EllipsisVertical size={18} className="cursor-pointer" /></MenubarTrigger>
           <MenubarContent>
@@ -260,10 +210,20 @@ export function Toolbar(props: Props) {
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
-
       </Menubar>
-
     </div>
+
+    <Modal form={agentForm} title="Agent Configuration">
+      <Row>
+        <Input span={12} field={f.title} required />
+      </Row>
+      <Row>
+        <InputTextArea span={12} field={f.description} />
+      </Row>
+      <Row>
+        <Select span={12} field={f.type} required />
+      </Row>
+    </Modal>
 
     <Modal form={form} title="API Keys">
       <Row>
@@ -279,8 +239,6 @@ export function Toolbar(props: Props) {
 
 
   </>
-
-
 
 
 }

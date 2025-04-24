@@ -8,7 +8,13 @@ interface AgentConfig {
   edges?: object
   id?: number
   title?: string
+  description?: string
+  type?: AgentTypes
   workers?: object
+}
+
+declare global {
+  type AgentTypes = "conversational" | "data"
 }
 
 
@@ -25,6 +31,10 @@ export function createAgent(config: AgentConfig) {
     set title(v: string) { config.title = v },
     edges,
     workers,
+
+    type: "conversational" as AgentTypes,
+    description: "",
+
 
     currentWorker: null as AIWorker,
     update() {
@@ -127,6 +137,8 @@ export function configureAgent(data: AgentConfig) {
 
   const workers: WorkerConfig[] = (data.workers || []) as any
   const agent = createAgent(data)
+  agent.type = data.type || "data"
+  agent.description = data.description || ""
 
   for (const w of workers) {
     const { handles, ...rest } = w
@@ -174,7 +186,9 @@ export async function saveAgent(agent: Agent) {
 
   const agentData: AgentConfig = {
     title: agent.title,
-    edges: agent.edges
+    description: agent.description,
+    type: agent.type,
+    edges: agent.edges,
   }
   const workerlist = []
 
