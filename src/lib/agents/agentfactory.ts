@@ -32,7 +32,7 @@ export function createAgent(config: AgentConfig) {
     edges,
     workers,
 
-    type: "conversational" as AgentTypes,
+    type: "data" as AgentTypes,
     description: "",
 
 
