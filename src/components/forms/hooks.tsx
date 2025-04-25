@@ -33,6 +33,8 @@ export function useForm<T>(model: Model<T>, options?: Options) {
     submit: async () => {
       await methods.handleSubmit(internalOnSubmit)()
       form.editing = false
+      methods.clearErrors()
+      methods.reset()
     },
     methods,
     get editing() {
@@ -50,6 +52,7 @@ export function useForm<T>(model: Model<T>, options?: Options) {
     reset(data?: T) {
       console.log("useForm.reset()", data)
       methods.reset(data)
+      methods.clearErrors()
       const defaults = model.defaultValue || {}
       data ||= { ...defaults } as any
       //Added because reset does not works correctly in modal forms

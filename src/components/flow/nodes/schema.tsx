@@ -20,7 +20,7 @@ export function SchemaNode(props: NodeProps) {
 
     <NodeHandlers worker={worker} />
     <ConditionHandler />
-    <AddFieldsForm direction="output" includePrompt />
+    <AddFieldsForm direction="output" includePrompt ignoreTypes={["references", "doc", "chat", "json"]} />
   </NodeLayout >
 }
 
