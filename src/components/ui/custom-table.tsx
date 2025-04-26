@@ -190,9 +190,48 @@ function CustomTable<T extends { id: any }>({
     placeholder
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
-        if (!tableId) return columns?.map((col) => col.id as string)
-        const stored = localStorage.getItem(`columnOrder-${tableId}`)
-        return stored ? JSON.parse(stored) : columns?.map((col) => col.id as string)
+        const initialOrder = columns?.map((col) => col.id as string).filter(Boolean);
+        let finalOrder = initialOrder;
+        if (tableId) {
+            const stored = localStorage.getItem(`columnOrder-${tableId}`);
+            if (stored) {
+                try {
+                    const parsedOrder = JSON.parse(stored);
+                    const validStoredOrder = parsedOrder.filter((id: string | null) => id && initialOrder.includes(id));
+                    const selectExists = validStoredOrder.includes('select');
+                    
+                    if (selectExists) {
+                        finalOrder = ['select', ...validStoredOrder.filter(id => id !== 'select')];
+                    } else {
+                        if (initialOrder.includes('select')) {
+                           finalOrder = ['select', ...validStoredOrder];
+                        } else {
+                           finalOrder = validStoredOrder;
+                        }
+                    }                    
+                } catch (e) {
+                    console.error("Failed to parse stored column order:", e);
+                    if (initialOrder.includes('select')) {
+                         finalOrder = ['select', ...initialOrder.filter(id => id !== 'select')];
+                    } else {
+                         finalOrder = initialOrder;
+                    }
+                }
+            } else {
+                 if (initialOrder.includes('select')) {
+                     finalOrder = ['select', ...initialOrder.filter(id => id !== 'select')];
+                 } else {
+                     finalOrder = initialOrder;
+                 }
+            }
+        } else {
+             if (initialOrder.includes('select')) {
+                 finalOrder = ['select', ...initialOrder.filter(id => id !== 'select')];
+             } else {
+                 finalOrder = initialOrder;
+             }
+        }
+        return finalOrder.filter(id => id != null);
     })
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
         if (!tableId) return {}
@@ -226,13 +265,33 @@ function CustomTable<T extends { id: any }>({
             size: 150,
             enableSorting: true,
         },
-        state: { columnOrder, columnVisibility, columnSizingInfo },
+        state: { 
+            columnOrder,
+            columnVisibility, 
+            columnSizingInfo,
+        },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
-        onColumnOrderChange: setColumnOrder,
+        onColumnOrderChange: (newOrder) => {
+            if (typeof newOrder === 'function') {
+                 setColumnOrder(prev => {
+                     const resolvedOrder = newOrder(prev);
+                     if (resolvedOrder.includes('select') && resolvedOrder[0] !== 'select') {
+                         return ['select', ...resolvedOrder.filter(id => id !== 'select')];
+                     }
+                     return resolvedOrder;
+                 });
+            } else {
+                if (newOrder.includes('select') && newOrder[0] !== 'select') {
+                    setColumnOrder(['select', ...newOrder.filter(id => id !== 'select')]);
+                } else {
+                    setColumnOrder(newOrder);
+                }
+            }
+        },
         onColumnVisibilityChange: setColumnVisibility,
         columnResizeMode: "onChange",
         columnResizeDirection: "ltr",
@@ -293,10 +352,15 @@ function CustomTable<T extends { id: any }>({
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event
         if (active && over && active.id !== over.id) {
-            setColumnOrder((columnOrder) => {
-                const oldIndex = columnOrder.indexOf(active.id as string)
-                const newIndex = columnOrder.indexOf(over.id as string)
-                return arrayMove(columnOrder, oldIndex, newIndex)
+            setColumnOrder(currentOrder => {
+                const oldIndex = currentOrder.indexOf(active.id as string)
+                const newIndex = currentOrder.indexOf(over.id as string)
+                const newOrder = arrayMove(currentOrder, oldIndex, newIndex);
+                // Ensure 'select' remains first after drag
+                if (newOrder.includes('select') && newOrder[0] !== 'select') {
+                    return ['select', ...newOrder.filter(id => id !== 'select')];
+                }
+                return newOrder;
             })
         }
     }
