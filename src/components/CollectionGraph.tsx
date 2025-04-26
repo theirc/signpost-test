@@ -1,9 +1,11 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Collection, Source } from '@/lib/data/supabaseFunctions';
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, Minus, X, Check, ChevronsUpDown } from "lucide-react";
@@ -52,6 +54,7 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const zoomRef = useRef<d3.ZoomBehavior<Element, unknown>>();
+  const [previousView, setPreviousView] = useState<{ x: number; y: number; k: number } | null>(null);
   const [keywordSearch, setKeywordSearch] = useState("");
   const [activeKeywordSearch, setActiveKeywordSearch] = useState("");
   const [selectedSource, setSelectedSource] = useState<{
@@ -59,10 +62,14 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
     y: number;
     data: any;
   } | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [isPanelVisible, setIsPanelVisible] = useState(false);
   const nodePositionsRef = useRef(new Map<string, { x: number; y: number }>());
   const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
   const [userInteractedSinceSelection, setUserInteractedSinceSelection] = useState(false);
+  const [refocusTrigger, setRefocusTrigger] = useState<string | null>(null);
+  const [hideTitles, setHideTitles] = useState(false);
+  const [isRefocusing, setIsRefocusing] = useState(false);
 
   // Collection colors array
   const collectionColors = [
@@ -109,31 +116,103 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
   // Handle click on node
   const handleNodeClick = (event: any, d: any) => {
     if (d.type === 'source') {
+      // Deselect any selected collection first
+      setSelectedCollection(null);
+
+      // Store current view state before zooming
+      const currentTransform = d3.zoomTransform(svgRef.current!);
+      setPreviousView({
+        x: currentTransform.x,
+        y: currentTransform.y,
+        k: currentTransform.k
+      });
+
+      // Get node data coordinates
+      const nodeDataX = d.x;
+      const nodeDataY = d.y;
+
+      // Check if coordinates are valid and zoom is initialized
+      if (nodeDataX !== undefined && nodeDataY !== undefined && zoomRef.current) {
+        const panelWidth = 400; // Based on Tailwind class w-[400px]
+        const svgWidth = dimensions.width;
+        const svgHeight = dimensions.height;
+        const visibleWidth = svgWidth - panelWidth;
+        
+        // Target coordinates on screen (75% across the visible area)
+        const targetScreenX = (panelWidth + 3 * svgWidth) / 4;
+        const targetScreenY = svgHeight / 2;
+        
+        const targetScale = 1.75; // Zoom level when focused
+
+        // Calculate the required translation to center the node's data coordinates 
+        // in the visible area at the target scale
+        const targetTx = targetScreenX - targetScale * nodeDataX;
+        const targetTy = targetScreenY - targetScale * nodeDataY;
+
+        // Create the target zoom transform
+        const targetTransform = d3.zoomIdentity.translate(targetTx, targetTy).scale(targetScale);
+
+        // Animate to the target transform
+        d3.select(svgRef.current)
+          .transition()
+          .duration(750) // Animation duration
+          .call(zoomRef.current.transform, targetTransform);
+      }
+
       const [x, y] = d3.pointer(event, svgRef.current);
       setSelectedSource({ x, y, data: d });
+      setSelectedNodeId(d.id);
       setTimeout(() => setIsPanelVisible(true), 50);
-      // Clicking a node is a user interaction that might change focus
       setUserInteractedSinceSelection(true); 
+      setSelectedCollection(null);
+      
+      // Restore previous view if it exists
+      if (previousView && zoomRef.current) {
+        d3.select(svgRef.current)
+          .transition()
+          .duration(750)
+          .call(zoomRef.current.transform, d3.zoomIdentity
+            .translate(previousView.x, previousView.y)
+            .scale(previousView.k)
+          );
+      }
+    } else if (d.type === 'collection') {
+      // Trigger the same logic as clicking the legend item
+      handleLegendClick(d.id);
     }
   };
 
   // Handle click outside panel
   const handleBackgroundClick = (event: React.MouseEvent) => {
+    // Always deselect collection when clicking background
+    setSelectedCollection(null);
+
     if (selectedSource && event.target === svgRef.current) {
       setIsPanelVisible(false);
+      
+      // Restore previous view if it exists
+      if (previousView && zoomRef.current) {
+        d3.select(svgRef.current)
+          .transition()
+          .duration(750)
+          .call(zoomRef.current.transform, d3.zoomIdentity
+            .translate(previousView.x, previousView.y)
+            .scale(previousView.k)
+          );
+      }
+      
+      setSelectedNodeId(null);
       setTimeout(() => setSelectedSource(null), 300);
     }
-     // Clicking background doesn't necessarily mean interaction *with map pan/zoom*
-    // It might just close the panel. Keep interaction state as is unless it's a drag.
   };
 
   // Function to handle legend item click
-  const handleLegendClick = (collectionId: string) => {
+  const handleLegendClick = useCallback((collectionId: string) => {
     const newSelectedCollection = selectedCollection === collectionId ? null : collectionId;
     setSelectedCollection(newSelectedCollection);
-    // Reset interaction flag when legend selection changes
-    setUserInteractedSinceSelection(false); 
-  };
+    setUserInteractedSinceSelection(false);
+    setRefocusTrigger(newSelectedCollection);
+  }, [selectedCollection]);
 
   // Effect to observe container size
   useEffect(() => {
@@ -178,9 +257,64 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
       .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto;");
 
+    // Create defs for gradients
+    const defs = svg.append("defs");
+
+    // Add background gradient
+    const backgroundGradient = defs.append("linearGradient")
+      .attr("id", "background-gradient")
+      .attr("gradientUnits", "userSpaceOnUse")
+      .attr("x1", 0)
+      .attr("y1", 0)
+      .attr("x2", width)
+      .attr("y2", height);
+
+    backgroundGradient.append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", "#F8FFFB")
+      .attr("stop-opacity", 0.95);
+
+    backgroundGradient.append("stop")
+      .attr("offset", "50%")
+      .attr("stop-color", "#F9FBFF")
+      .attr("stop-opacity", 0.95);
+
+    backgroundGradient.append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", "white")
+      .attr("stop-opacity", 0.95);
+
+    // Add background rectangle
+    svg.append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("fill", "url(#background-gradient)");
+
+    // Initialize zoom behavior
+    const zoom = d3.zoom<Element, unknown>()
+      .scaleExtent([0.25, 2])
+      .on("zoom", (event) => {
+        const { transform } = event;
+        setZoomLevel(transform.k);
+        svg.selectAll("g").attr("transform", transform);
+        // Only count as interaction if it's a user event AND we are not programmatically refocusing
+        if (!isRefocusing && event.sourceEvent && event.sourceEvent.type !== 'api') {
+          setUserInteractedSinceSelection(true);
+          setRefocusTrigger(null); // Also clear trigger on manual interaction
+        }
+      });
+
+    // Store zoom reference
+    zoomRef.current = zoom;
+
+    // Apply zoom behavior to SVG
+    svg.call(zoom);
+
     // Prepare data for the graph
     const nodes: NodeType[] = [];
     const links: { source: string; target: string; value: number }[] = [];
+    const sourceToCollectionMap = new Map<string, string[]>();
+    const addedSourceIds = new Set<string>();
 
     // Add collection nodes
     collections.forEach(collection => {
@@ -201,8 +335,23 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
       }
       
       nodes.push(node);
+    });
 
-      // Add source nodes and links
+    // Process all sources first to build the source-to-collection map
+    collections.forEach(collection => {
+      const sources = collectionSources[collection.id] || [];
+      sources.forEach(source => {
+        // Add this collection to the source's collections array
+        if (!sourceToCollectionMap.has(source.id)) {
+          sourceToCollectionMap.set(source.id, [collection.id]);
+        } else {
+          sourceToCollectionMap.get(source.id)!.push(collection.id);
+        }
+      });
+    });
+
+    // Add source nodes and links
+    collections.forEach(collection => {
       const sources = collectionSources[collection.id] || [];
       sources.forEach(source => {
         const sourceTags = Array.isArray(source.tags) 
@@ -216,23 +365,29 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
           (source.content && source.content.toLowerCase().includes(activeKeywordSearch.toLowerCase()));
 
         if ((selectedTags.length === 0 || sourceTags.some(tag => selectedTags.includes(tag))) && matchesKeyword) {
-          const sourceNode: NodeType = {
-            id: source.id,
-            name: source.name,
-            type: 'source',
-            group: 1,
-            tags: sourceTags,
-            content: source.content
-          };
+          // Add source node only if it hasn't been added already
+          if (!addedSourceIds.has(source.id)) {
+            const sourceNode: NodeType = {
+              id: source.id,
+              name: source.name,
+              type: 'source',
+              group: 1,
+              tags: sourceTags,
+              content: source.content
+            };
 
-          // Restore previous position if it exists
-          const prevPos = nodePositionsRef.current.get(source.id);
-          if (prevPos) {
-            sourceNode.x = prevPos.x;
-            sourceNode.y = prevPos.y;
+            // Restore previous position if it exists
+            const prevPos = nodePositionsRef.current.get(source.id);
+            if (prevPos) {
+              sourceNode.x = prevPos.x;
+              sourceNode.y = prevPos.y;
+            }
+
+            nodes.push(sourceNode);
+            addedSourceIds.add(source.id);
           }
 
-          nodes.push(sourceNode);
+          // Create link from this collection to the source
           links.push({
             source: collection.id,
             target: source.id,
@@ -242,32 +397,41 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
       });
     });
 
+    // Find neighbors if a source is selected (use the full nodes array)
+    const parentCollectionIds: string[] = [];
+    const neighborIds = new Set<string>();
+    if (selectedNodeId && !selectedCollection) {
+      neighborIds.add(selectedNodeId);
+      const collectionIdsForSource = sourceToCollectionMap.get(selectedNodeId) || [];
+      collectionIdsForSource.forEach(collectionId => {
+        neighborIds.add(collectionId);
+        parentCollectionIds.push(collectionId);
+      });
+    }
+
     // Create a map of collection IDs to their colors
     const collectionColorMap = new Map();
     collections.forEach((collection, index) => {
       collectionColorMap.set(collection.id, collectionColors[index % collectionColors.length]);
     });
 
-    // Create a simulation with several forces
+    // Create a simulation (use the full nodes array)
     const simulation = d3.forceSimulation(nodes)
       .force("link", d3.forceLink(links)
         .id((d: any) => d.id)
         .distance(100)
         .strength(0.3))
       .force("charge", d3.forceManyBody()
-        .strength(-100))
+        .strength(-5))
       .force("center", d3.forceCenter(width / 2, height / 2)
         .strength(0.1))
       .force("collision", d3.forceCollide()
         .radius(30)
-        .strength(0.7))
-      .velocityDecay(0.6)
-      .alphaDecay(0.02);
+        .strength(0.2))
+      .velocityDecay(0.4)
+      .alphaDecay(0.05);
 
-    // Create defs for gradients
-    const defs = svg.append("defs");
-
-    // Add a line for each link
+    // Add links (bind to links, data still relies on full nodes)
     const link = svg.append("g")
       .attr("stroke-opacity", 0.6)
       .selectAll("path")
@@ -276,10 +440,20 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
       .attr("fill", "none")
       .attr("stroke-width", d => Math.sqrt(d.value))
       .style("opacity", (d: any) => {
-        if (!selectedCollection) return 1;
-        const sourceId = typeof d.source === 'string' ? d.source : d.source.id;
-        const targetId = typeof d.target === 'string' ? d.target : d.target.id;
-        return sourceId === selectedCollection || targetId === selectedCollection ? 1 : 0.1;
+        // d.source is the collection node object, d.target is the source node object
+        const collectionNodeId = d.source.id;
+        const sourceNodeId = d.target.id;
+
+        if (isPanelVisible && selectedNodeId && !selectedCollection) {
+          // Panel open: Show link if it connects selected source to any of its parent collections
+          return neighborIds.has(collectionNodeId) && neighborIds.has(sourceNodeId) ? 0.6 : 0.05;
+        } else if (selectedCollection) {
+          // Collection selected: Show link if its collection end matches the selected one
+          return collectionNodeId === selectedCollection ? 0.6 : 0.05;
+        } else {
+          // Default: Show all links (unless hidden by node opacity)
+          return 0.6;
+        }
       })
       .each(function(d: any) {
         // Get source and target colors
@@ -288,25 +462,25 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
         
         let sourceColor, targetColor;
         
-        if (sourceNode.type === 'collection') {
+        if (sourceNode?.type === 'collection') {
           sourceColor = collectionColorMap.get(sourceNode.id);
-        } else {
+        } else if (sourceNode) {
           const sourceCollection = collections.find(collection => 
             collectionSources[collection.id]?.some(source => source.id === sourceNode.id)
           );
           sourceColor = sourceCollection ? collectionColorMap.get(sourceCollection.id) : '#999';
         }
         
-        if (targetNode.type === 'collection') {
+        if (targetNode?.type === 'collection') {
           targetColor = collectionColorMap.get(targetNode.id);
-        } else {
+        } else if (targetNode) {
           const targetCollection = collections.find(collection => 
             collectionSources[collection.id]?.some(source => source.id === targetNode.id)
           );
           targetColor = targetCollection ? collectionColorMap.get(targetCollection.id) : '#999';
         }
         
-        if (sourceColor !== targetColor) {
+        if (sourceColor && targetColor && sourceColor !== targetColor) {
           // Create unique gradient ID
           const gradientId = `gradient-${d.source.id}-${d.target.id}`;
           
@@ -326,13 +500,13 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
           
           // Apply gradient to path
           d3.select(this).attr("stroke", `url(#${gradientId})`);
-        } else {
-          // Use solid color if source and target colors are the same
+        } else if (sourceColor) {
+          // Use solid color if source and target colors are the same or one is missing
           d3.select(this).attr("stroke", sourceColor);
         }
       });
 
-    // Add labels first (so they appear below nodes)
+    // Add labels (bind to full nodes array)
     const label = svg.append("g")
       .attr("class", "labels")
       .selectAll("text")
@@ -341,19 +515,27 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
       .text(d => d.name)
       .attr("font-size", 5)
       .attr("text-anchor", "middle")
+      .attr("fill", "#666")
       .attr("dy", d => d.type === 'collection' ? 15 : 10)
       .style("opacity", d => {
-        if (!selectedCollection) return 0.7;
-        if (d.type === 'collection') {
-          return d.id === selectedCollection ? 0.7 : 0.1;
+        // Hide titles if the checkbox is checked
+        if (hideTitles) {
+          return 0;
         }
-        const sourceCollection = collections.find(collection => 
-          collectionSources[collection.id]?.some(source => source.id === d.id)
-        );
-        return sourceCollection?.id === selectedCollection ? 0.7 : 0.1;
+        if (isPanelVisible && selectedNodeId && !selectedCollection) {
+          return neighborIds.has(d.id) ? 0.7 : 0.05;
+        } else if (selectedCollection) {
+          if (d.type === 'collection') {
+            return d.id === selectedCollection ? 0.7 : 0.05;
+          }
+          const collectionIds = sourceToCollectionMap.get(d.id) || [];
+          return collectionIds.includes(selectedCollection) ? 0.7 : 0.05;
+        } else {
+          return 0.7;
+        }
       });
 
-    // Add circles for nodes with opacity handling
+    // Add nodes (bind to full nodes array)
     const node = svg.append("g")
       .selectAll<SVGCircleElement, NodeType>("circle")
       .data(nodes)
@@ -363,31 +545,88 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
         if (d.type === 'collection') {
           return collectionColorMap.get(d.id);
         } else {
-          const sourceCollection = collections.find(collection => 
-            collectionSources[collection.id]?.some(source => source.id === d.id)
-          );
-          return sourceCollection ? collectionColorMap.get(sourceCollection.id) : '#999';
+          const collectionIds = sourceToCollectionMap.get(d.id) || [];
+          // Use the first collection's color as the fill
+          return collectionIds.length > 0 ? collectionColorMap.get(collectionIds[0]) : '#999';
         }
       })
-      .attr("stroke", "none")
-      .style("opacity", d => {
-        if (!selectedCollection) return 1;
+      .attr("stroke", d => {
         if (d.type === 'collection') {
-          return d.id === selectedCollection ? 1 : 0.1;
+          return "#fff";
+        } else if (d.id === selectedNodeId) {
+          return "#7F2A28";
+        } else {
+          return "none";
         }
-        const sourceCollection = collections.find(collection => 
-          collectionSources[collection.id]?.some(source => source.id === d.id)
-        );
-        return sourceCollection?.id === selectedCollection ? 1 : 0.1;
       })
-      .on('mouseover', function() {
-        d3.select(this)
-          .attr("stroke", "#7F2A28")
-          .attr("stroke-width", 2);
+      .attr("stroke-width", d => {
+        if (d.type === 'collection') {
+          return 2;
+        } else if (d.id === selectedNodeId) {
+          return 2;
+        } else {
+          return 0;
+        }
       })
-      .on('mouseout', function() {
-        d3.select(this)
-          .attr("stroke", "none");
+      .style("opacity", d => {
+        if (isPanelVisible && selectedNodeId && !selectedCollection) {
+          return neighborIds.has(d.id) ? 1 : 0.05;
+        } else if (selectedCollection) {
+          if (d.type === 'collection') {
+            return d.id === selectedCollection ? 1 : 0.05;
+          }
+          const collectionIds = sourceToCollectionMap.get(d.id) || [];
+          return collectionIds.includes(selectedCollection) ? 1 : 0.05;
+        } else {
+          return 1;
+        }
+      })
+      .on('mouseover', function(event, d) {
+        if (d.type === 'collection') {
+          const nodeElement = d3.select(this);
+          nodeElement
+            .attr("stroke", "#7F2A28")
+            .attr("stroke-width", 2)
+            .transition()
+            .duration(1000)
+            .ease(d3.easeSin)
+            .attr("stroke-width", 3)
+            .transition()
+            .duration(1000)
+            .ease(d3.easeSin)
+            .attr("stroke-width", 2)
+            .on("end", function() {
+              if (nodeElement.attr("stroke") === "#7F2A28") {
+                const pulse = () => {
+                  nodeElement
+                    .transition()
+                    .duration(1000)
+                    .ease(d3.easeSin)
+                    .attr("stroke-width", 3)
+                    .transition()
+                    .duration(1000)
+                    .ease(d3.easeSin)
+                    .attr("stroke-width", 2)
+                    .on("end", pulse);
+                };
+                pulse();
+              }
+            });
+        } else if (d.id !== selectedNodeId) {
+          d3.select(this)
+            .attr("stroke", "#7F2A28")
+            .attr("stroke-width", 2);
+        }
+      })
+      .on('mouseout', function(event, d) {
+        if (d.type === 'collection') {
+          d3.select(this)
+            .attr("stroke", "#fff")
+            .attr("stroke-width", 2);
+        } else if (d.id !== selectedNodeId) {
+          d3.select(this)
+            .attr("stroke", "none");
+        }
       })
       .on('click', handleNodeClick)
       .call(d3.drag<SVGCircleElement, NodeType>()
@@ -424,17 +663,8 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
       // Update labels
       label
         .attr("x", d => d.x)
-        .attr("y", d => d.y)
-        .style("opacity", d => {
-          if (!selectedCollection) return 0.7;
-          if (d.type === 'collection') {
-            return d.id === selectedCollection ? 0.7 : 0.1;
-          }
-          const sourceCollection = collections.find(collection => 
-            collectionSources[collection.id]?.some(source => source.id === d.id)
-          );
-          return sourceCollection?.id === selectedCollection ? 0.7 : 0.1;
-        });
+        .attr("y", d => d.y);
+        // Opacity is handled during initialization and updates based on state changes
 
       // Update nodes
       node
@@ -475,15 +705,75 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
     node.append("title")
       .text(d => `${d.name}\nType: ${d.type}\n${d.tags ? `Tags: ${d.tags.join(', ')}` : ''}`);
       
-    // --- Initial Centering / Re-centering Logic --- 
-    // This logic needs the final calculated positions
-    // Check if the simulation has stabilized enough or run centering after a small delay?
-    // For now, keep it as is, might need adjustment depending on timing
-    if (selectedCollection && !userInteractedSinceSelection) {
-      const nodePos = nodePositionsRef.current.get(selectedCollection);
-      if (nodePos && nodePos.x !== undefined && nodePos.y !== undefined && zoomRef.current) {
-        console.log(`Applying centering post-render for ${selectedCollection}`);
-        svg.call(zoomRef.current.translateTo, nodePos.x, nodePos.y);
+    // --- Refocus Logic --- 
+    if (refocusTrigger && !userInteractedSinceSelection && zoomRef.current && !isRefocusing) {
+      // Find the target collection node
+      const targetNode = nodes.find(n => n.id === refocusTrigger && n.type === 'collection');
+
+      if (targetNode) {
+         // Get the node's position (prefer stored, fallback to current simulation position)
+         const pos = nodePositionsRef.current.get(targetNode.id);
+         let targetX = pos?.x ?? targetNode.x;
+         let targetY = pos?.y ?? targetNode.y;
+
+         // Ensure coordinates are valid before attempting to fix/focus
+         if (targetX !== undefined && targetY !== undefined) {
+             // Fix the node's position *before* calculating the transform and starting the animation
+             targetNode.fx = targetX;
+             targetNode.fy = targetY;
+
+             // Indicate that a refocus animation is starting
+             setIsRefocusing(true);
+
+             // Use a slight delay to allow the fix to register and potentially let other nodes adjust briefly
+             setTimeout(() => {
+                 // Double check user hasn't interacted, trigger is still active, and we are meant to be refocusing
+                 if (!userInteractedSinceSelection && refocusTrigger === targetNode.id && zoomRef.current && isRefocusing) { 
+                    const targetScale = 1.5; // Fixed scale for collection focus
+                    
+                    // Calculate translation needed to center the *fixed* target node coordinates
+                    const tx = width / 2 - targetScale * targetNode.fx!;
+                    const ty = height / 2 - targetScale * targetNode.fy!;
+
+                    // Create the target transform
+                    const targetTransform = d3.zoomIdentity.translate(tx, ty).scale(targetScale);
+
+                    // Animate the zoom
+                    d3.select(svgRef.current)
+                      .transition()
+                      .duration(750)
+                      .call(zoomRef.current.transform, targetTransform)
+                      .on('end', () => {
+                        // Release the fixed position *after* the animation completes
+                        targetNode.fx = null;
+                        targetNode.fy = null;
+                        // Mark interaction as complete and refocusing finished
+                        setUserInteractedSinceSelection(true); 
+                        setIsRefocusing(false);
+                      })
+                      .on('interrupt', () => {
+                        // If interrupted (e.g., by user scroll), release fix and refocus flag
+                        targetNode.fx = null;
+                        targetNode.fy = null;
+                        setIsRefocusing(false);
+                      });
+                 } else {
+                   // If conditions changed before animation started, release fix and refocus flag
+                   targetNode.fx = null;
+                   targetNode.fy = null;
+                   setIsRefocusing(false);
+                 }
+                 // Clear the trigger after initiating focus or if conditions changed
+                 setRefocusTrigger(null); 
+             }, 50); // Short delay after fixing position
+         } else {
+            console.warn("Target node for refocus had undefined coordinates", targetNode.id);
+            setRefocusTrigger(null); // Clear trigger if node has no coords
+         }
+      }
+      else {
+         // If target node wasn't found (e.g., filtered out), clear trigger
+         setRefocusTrigger(null);
       }
     }
 
@@ -491,7 +781,7 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
     return () => {
       simulation.stop();
     };
-  }, [collections, collectionSources, selectedTags, activeKeywordSearch, selectedCollection, userInteractedSinceSelection, dimensions]);
+  }, [collections, collectionSources, selectedTags, activeKeywordSearch, selectedCollection, userInteractedSinceSelection, dimensions, isPanelVisible, selectedNodeId, refocusTrigger, handleLegendClick, hideTitles, isRefocusing]);
 
   const handleZoomIn = () => {
     if (zoomLevel < 2 && zoomRef.current) {
@@ -504,8 +794,8 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
   };
 
   const handleZoomOut = () => {
-    if (zoomLevel > 0.5 && zoomRef.current) {
-      const newZoom = Math.max(zoomLevel - 0.2, 0.5);
+    if (zoomLevel > 0.25 && zoomRef.current) {
+      const newZoom = Math.max(zoomLevel - 0.2, 0.25);
       d3.select(svgRef.current)
         .transition()
         .duration(200)
@@ -520,11 +810,19 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
         className="relative w-full h-[600px] border rounded-lg overflow-hidden"
         onClick={handleBackgroundClick}
       >
+        <div className="absolute top-4 left-4 z-10 flex items-center space-x-2 bg-white/80 backdrop-blur-sm p-2 rounded border shadow-sm">
+          <Checkbox 
+            id="hide-titles"
+            checked={hideTitles}
+            onCheckedChange={(checked) => setHideTitles(checked as boolean)}
+          />
+          <Label htmlFor="hide-titles" className="text-xs font-normal text-[#444]">
+            Hide Titles
+          </Label>
+        </div>
         {selectedSource && (
           <div 
-            className={`absolute left-0 top-0 h-full w-[400px] bg-white border-r shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${
-              isPanelVisible ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className={`absolute left-0 top-0 h-full w-[400px] bg-white border-r shadow-lg transform transition-transform duration-300 ease-in-out z-40 ${isPanelVisible ? 'translate-x-0' : '-translate-x-full'}`}
           >
             <div className="h-full flex flex-col overflow-auto">
               <div className="p-6">
@@ -555,7 +853,18 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsPanelVisible(false);
+                      setSelectedNodeId(null);
                       setTimeout(() => setSelectedSource(null), 300);
+                      // Optionally restore zoom here too if closing via button
+                      if (previousView && zoomRef.current) {
+                        d3.select(svgRef.current)
+                          .transition()
+                          .duration(750)
+                          .call(zoomRef.current.transform, d3.zoomIdentity
+                            .translate(previousView.x, previousView.y)
+                            .scale(previousView.k)
+                          );
+                      }
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -639,7 +948,6 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
         </div>
         <svg ref={svgRef} className="w-full h-full" />
         
-        {/* Legend with click handlers */}
         <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur-sm p-2 rounded border shadow-sm">
           <div className="text-[0.7rem] text-[#666] mb-1">Collections</div>
           <div className="space-y-1">
@@ -669,7 +977,6 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
           </div>
         </div>
 
-        {/* Zoom Controls */}
         <div className="absolute bottom-4 right-4 z-10 flex flex-col gap-2">
           <Button
             size="icon"
@@ -685,7 +992,7 @@ export const CollectionGraph: React.FC<CollectionGraphProps> = ({ collections, c
             variant="outline"
             className="h-8 w-8 bg-white"
             onClick={handleZoomOut}
-            disabled={zoomLevel <= 0.5}
+            disabled={zoomLevel <= 0.25}
           >
             <Minus className="h-4 w-4" />
           </Button>
