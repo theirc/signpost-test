@@ -20,6 +20,13 @@ export interface BotHistory {
   message: string
 }
 
+export interface SourceReference {
+  sourceId: string;
+  textChunk: string;
+  startIndex: number;
+  endIndex: number;
+}
+
 export interface ChatMessage {
   type?: "human" | "bot"
   id?: number
@@ -29,6 +36,7 @@ export interface ChatMessage {
   isContacts?: boolean
   messages?: ChatMessage[]
   docs?: DocumentReference[]
+  references?: SourceReference[]
   error?: string
   command?: "rebuild" | null
   needsRebuild?: boolean

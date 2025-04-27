@@ -187,6 +187,7 @@ export function SearchInput(props: SearchInputProps) {
                   type="button"
                   onClick={value.trim() ? () => submitText(value) : onModeChanged}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-black text-white"
+                  disabled={disabled}
                 >
                   {value.trim()
                     ? <ArrowUp className="h-5 w-5" />

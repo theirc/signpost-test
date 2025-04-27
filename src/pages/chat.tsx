@@ -4,45 +4,33 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 import { useEffect, useRef, useState } from 'react'
 import { api } from '@/api/getBots'
 import { app } from '@/lib/app'
-import { MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle, Copy, Check, History } from 'lucide-react'
+import { MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle, Copy, Check, ThumbsUp, ThumbsDown, Flag, Code, Volume2 } from 'lucide-react'
 import AgentJsonView from '@/bot/agentview'
 import { Button } from '@/components/ui/button'
-import { useMultiState } from '@/hooks/use-multistate'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
 import { ChatHistory, ChatSession } from '@/bot/history'
 import { BotHistory } from '@/types/types.ai'
-import type { ChatMessage } from '@/types/types.ai'
+import type { ChatMessage, SourceReference, DocumentReference } from '@/types/types.ai'
 import { SearchInput } from '@/bot/search'
 import { useReactMediaRecorder } from "react-media-recorder"
 import { agents } from "@/lib/agents"
 import { availableSources } from "@/components/source_input/files-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MultiSelectDropdown } from '@/components/ui/multiselect'
-import type { Option } from '@/components/ui/multiselect'
 import "../index.css"
+import { cn } from "@/lib/utils"
+import { useChatContext } from '@/context/ChatContext'
 
-interface Bots {
-  [index: number]: {
-    name: string
-    id: string
-    history: BotHistory[]
-  }
-}
-
-// Define constants for known agent IDs
 const AGENT_ID_23 = 23;
 const AGENT_ID_27 = 27;
 const KNOWN_AGENT_IDS = [AGENT_ID_23, AGENT_ID_27];
 
-// Helper function to check for image URLs
 export const isImageUrl = (url: string | undefined | null): boolean => {
   if (!url) return false;
   // Basic check for http/https and common image extensions
   return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
 };
 
-// Helper function to parse markdown image and text
 export const parseMarkdownImage = (text: string | undefined | null): { imageUrl: string | null; remainingText: string | null } => {
   if (!text) return { imageUrl: null, remainingText: null };
   
@@ -66,53 +54,48 @@ export const parseMarkdownImage = (text: string | undefined | null): { imageUrl:
 };
 
 export default function Chat() {
-  const [sidebarVisible, setSidebarVisible] = useState(false)
+  const {
+    bots,
+    selectedBots,
+    sidebarVisible,
+    handleBotSelectionChange,
+    loadingBots
+  } = useChatContext();
+
   const [showFileDialog, setShowFileDialog] = useState(false)
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [sources, setSources] = useState(availableSources)
   const [message, setMessage] = useState("")
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
-  const [agentInstance, setAgentInstance] = useState<any>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
-  const chatContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const [state, setState] = useMultiState({
+  const [localCompState, setLocalCompState] = useState({
     isSending: false,
     rebuilding: false,
-    loadingBotList: false,
-    bots: {} as Bots,
-    selectedBots: [] as number[],
     audioMode: false,
-  })
+  });
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible)
-  }
+  const prevSelectedBotsRef = useRef<number[]>();
+  useEffect(() => {
+    const currentSelectedBots = selectedBots;
+    const previousSelectedBots = prevSelectedBotsRef.current;
+
+    if (JSON.stringify(currentSelectedBots) !== JSON.stringify(previousSelectedBots)) {
+       console.log("Chat component detected bot selection change from context:", currentSelectedBots);
+       setMessages([]);
+       setActiveChat(null);
+    }
+
+    prevSelectedBotsRef.current = currentSelectedBots;
+  }, [selectedBots]);
 
   const handleResetChat = () => {
     setMessages([])
     setActiveChat(null)
-    setState({ selectedBots: [] })
-    setSidebarVisible(false)
+    handleBotSelectionChange([]);
   }
-
-  useEffect(() => {
-    async function initBots() {
-      const sb = await api.getBots()
-      const bots: Bots = {}
-      for (const key in sb) {
-        bots[Number(key)] = { name: sb[key], id: key, history: [] }
-      }
-
-      // Add known agents manually
-      bots[AGENT_ID_23] = { name: `Agent ${AGENT_ID_23}`, id: AGENT_ID_23.toString(), history: [] }
-      bots[AGENT_ID_27] = { name: `Aprendia Test`, id: AGENT_ID_27.toString(), history: [] }
-      
-      setState({ bots })
-    }
-    initBots()
-  }, [])
 
   useEffect(() => {
     setSources(availableSources)
@@ -134,144 +117,120 @@ export default function Chat() {
   })
 
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
-  }, [chatHistory])
-
-
-const handleLoadChatHistory = (chatSession: ChatSession) => {
-  setIsLoadingFromHistory(true)
-  setActiveChat(chatSession)
-
-  setTimeout(() => {
-    if (chatSession.messages && chatSession.messages.length > 0) {
-      setMessages([...chatSession.messages])
-    } else {
-      setMessages([])
-    }
-    
-    if (chatSession.selectedBots && chatSession.selectedBots.length > 0) {
-      setState({ selectedBots: [...chatSession.selectedBots] })
-    } else if (chatSession.botName) {
-  
-      const botEntry = Object.entries(state.bots).find(
-        ([_, bot]) => bot.name === chatSession.botName
-      )
-
-      if (botEntry) {
-        const botId = Number(botEntry[0])
-        setState({ selectedBots: [botId] })
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
+    } catch (error) {
+      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
+        console.warn(`LocalStorage quota exceeded. Could not save chat history for key: ${LOCAL_STORAGE_KEY}`);
+      } else {
+        console.error("Error saving chat history to localStorage:", error);
       }
     }
+  }, [chatHistory])
+
+  const handleLoadChatHistory = (chatSession: ChatSession) => {
+    setIsLoadingFromHistory(true)
+    setActiveChat(chatSession)
+
+    setTimeout(() => {
+      if (chatSession.messages && chatSession.messages.length > 0) {
+        setMessages([...chatSession.messages])
+      } else {
+        setMessages([])
+      }
+      
+      if (chatSession.selectedBots && chatSession.selectedBots.length > 0) {
+        handleBotSelectionChange(chatSession.selectedBots.map(Number));
+      } else if (chatSession.botName) {
     
-    setMessage(prev => prev + "")
-    setIsLoadingFromHistory(false)
-  }, 50)
-}
+        const botEntry = Object.entries(bots).find(
+          ([_, bot]) => bot.name === chatSession.botName
+        )
 
-  const onMultiSelectBot = (selected: number[]) => {
-    if (JSON.stringify(state.selectedBots) !== JSON.stringify(selected)) {
-      setState({ selectedBots: selected })
-      setMessages([])
-      setActiveChat(null)
-    }
+        if (botEntry) {
+          const botId = Number(botEntry[0])
+          handleBotSelectionChange([botId])
+        }
+      }
+      
+      setMessage(prev => prev + "")
+      setIsLoadingFromHistory(false)
+    }, 50)
   }
-
-const onSelectBot = (e: string[] | string) => {
-  console.log("Selecting bot:", e)
-
-  const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
-
-  if (!e || (Array.isArray(e) && e.length === 0)) {
-    setState({ selectedBots: [] })
-    return
-  }
-
-  let newSelectedBots: number[] = []
-
-  if (Array.isArray(e)) {
-    newSelectedBots = e.map(Number)
-    setState({ selectedBots: newSelectedBots })
-  } else if (typeof e === "string") {
-    newSelectedBots = [Number(e)]
-    setState({ selectedBots: newSelectedBots })
-  }
-
-  const selectionChanged = 
-    previousSelectedBot !== newSelectedBots[0] || 
-    state.selectedBots.length !== newSelectedBots.length ||
-    !state.selectedBots.every(id => newSelectedBots.includes(id))
-  
-  if (selectionChanged) {
-    setMessages([])
-    setActiveChat(null)
-  }
-}
 
   const onSend = async (message?: string, audio?: any, tts?: boolean) => {
+    if (selectedBots.length === 0) {
+      console.warn("onSend prevented: No bot selected.");
+      return;
+    }
+
+    console.log("onSend started", { message, audio });
     message ||= "where can i find english classes in athens?"
-    if (!message && !audio) return
+    if (!message && !audio) {
+      console.log("onSend aborted: No message or audio.");
+      return;
+    }
 
-    const selectedBotsConfig = state.selectedBots.map(b => ({
-      label: state.bots[b].name,
+    const selectedBotsConfig = selectedBots.map(b => ({
+      label: bots[b].name,
       value: b,
-      history: state.bots[b].history,
+      history: bots[b].history,
     }))
+    console.log("Selected Bots Config:", selectedBotsConfig);
 
-    const currentBotName = state.selectedBots.length > 0
-      ? state.bots[state.selectedBots[0]].name
+    const currentBotName = selectedBots.length > 0
+      ? bots[selectedBots[0]].name
       : "Chat"
 
     const userMessage: ChatMessage = { type: "human", message }
     if (message) {
-      setMessages(prev => [...prev, userMessage])
+      setMessages(prev => [...prev, userMessage]) 
     }
 
-    let currentActiveChat: ChatSession
-    if (!activeChat) {
+    let currentActiveChat: ChatSession | null = activeChat;
+    if (!currentActiveChat) {
       currentActiveChat = {
         id: new Date().toISOString(),
         botName: currentBotName,
-        selectedBots: [...state.selectedBots], 
-        messages: [userMessage],
+        selectedBots: [...selectedBots], 
+        messages: message ? [userMessage] : [],
         timestamp: new Date().toISOString(),
       }
       setActiveChat(currentActiveChat)
-      setChatHistory(prev => [currentActiveChat, ...prev])
-    } else {
+      setChatHistory(prev => [currentActiveChat!, ...prev]) 
+    } else if (message) {
       currentActiveChat = {
         ...activeChat,
         messages: [...activeChat.messages, userMessage],
-        selectedBots: [...state.selectedBots], 
+        selectedBots: [...selectedBots], 
       }
       setActiveChat(currentActiveChat)
-      setChatHistory(prev =>
-        prev.map(chat =>
-          chat.id === currentActiveChat.id ? currentActiveChat : chat
-        )
-      )
     }
-    setState({ isSending: true })
 
-    // Determine if an agent is selected and which one
-    const selectedAgentId = state.selectedBots.find(id => KNOWN_AGENT_IDS.includes(id));
+    if (!currentActiveChat) {
+      console.error("onSend failed: currentActiveChat is null after setup.");
+      return;
+    }
+
+    setLocalCompState(prev => ({ ...prev, isSending: true }))
+
+    const selectedAgentId = selectedBots.find(id => KNOWN_AGENT_IDS.includes(id));
     const useAgent = selectedAgentId !== undefined;
+    console.log("Agent Check:", { selectedAgentId, useAgent });
     
     let botResponseForHistory: ChatMessage
 
     if (useAgent && selectedAgentId) {
+      console.log(`Attempting to use Agent ID: ${selectedAgentId}`);
       try {
-        const agent = await agents.loadAgent(selectedAgentId); // Use the detected agent ID
-
-        // Format the entire conversation history including the latest user message
+        const agent = await agents.loadAgent(selectedAgentId);
         const formattedHistory = currentActiveChat.messages
           .map(msg => {
             if (msg.type === 'human') {
               return `User: ${msg.message}`;
             } else if (msg.type === 'bot') {
-              // Extract bot message content (handle potential variations)
               let botContent = "[Bot message not found]";
               if (msg.messages && msg.messages.length > 0) {
-                  // Prioritize agent-specific message if available, using the selectedAgentId
                   const agentMsg = msg.messages.find(m => m.id === selectedAgentId);
                   botContent = agentMsg?.message || msg.messages[0]?.message || msg.message || "[Empty bot message]";
               } else if (msg.message) {
@@ -279,137 +238,102 @@ const onSelectBot = (e: string[] | string) => {
               }
               return `Assistant: ${botContent}`;
             }
-            return null; // Ignore other message types or malformed messages
+            return null;
           })
-          .filter(Boolean) // Remove null entries
-          .join('\\n\\n'); // Separate messages with double newline
+          .filter(Boolean)
+          .join('\\n\\n');
 
-        // Ensure the input object exists if it doesn't (though it should)
-        const agentInput = { 
-            question: formattedHistory // Pass the combined history string
-        };
-
-        const parameters: AgentParameters = {
-          input: agentInput,
-          apikeys: app.getAPIkeys(),
-        };
+        const agentInput = { question: formattedHistory };
+        const parameters: AgentParameters = { input: agentInput, apikeys: app.getAPIkeys() };
         
-        console.log(`Sending to agent ${selectedAgentId} with combined history in input:`, parameters); // Log for verification
-
+        console.log("Calling agent.execute with params:", parameters);
         await agent.execute(parameters);
+        console.log("agent.execute finished. Params after:", parameters);
         
-        // Set isSending to false *after* agent execution completes
-        setState({ isSending: false }); 
+        setLocalCompState(prev => ({ ...prev, isSending: false })); 
 
-        const raw = parameters.error
-          ? `Agent error: ${parameters.error}`
-          : parameters.output;
+        const raw = parameters.error ? `Agent error: ${parameters.error}` : parameters.output;
+        const text = typeof raw === "string" ? raw : JSON.stringify(raw, null, 2)
 
-        const text = typeof raw === "string"
-          ? raw
-          : JSON.stringify(raw, null, 2)
-
-        const rbot = state.bots[selectedAgentId]!; // Use the correct agent ID here
+        const rbot = bots[selectedAgentId]!;
         if (!rbot.history.some(h => h.isHuman && h.message === message))
           rbot.history.push({ isHuman: true, message });
         if (!rbot.history.some(h => !h.isHuman && h.message === text))
           rbot.history.push({ isHuman: false, message: text });
 
         botResponseForHistory = {
-          type: "bot",
-          message: text,
-          messages: [{
-            id: selectedAgentId, // Use the correct agent ID here
-            botName: `Agent ${selectedAgentId}`, // Use the correct agent ID here
-            message: text,
-            needsRebuild: false,
-          }],
-          needsRebuild: false
+          type: "bot", message: text, messages: [{ id: selectedAgentId, botName: `Agent ${selectedAgentId}`, message: text, needsRebuild: false }], needsRebuild: false
         };
       } catch (err: unknown) {
+        console.error("Agent execution failed:", err);
         let errorMsg = "Oops, something went wrong with the agent.";
         if (err && typeof err === "object") {
           const e = err as any;
-          if (typeof e.message === "string") {
-            errorMsg = e.message;
-          } else if (typeof e.status === "number") {
-            errorMsg = `Agent server returned ${e.status}`;
-          }
+          if (typeof e.message === "string") errorMsg = e.message;
+          else if (typeof e.status === "number") errorMsg = `Agent server returned ${e.status}`;
         }
-        botResponseForHistory = {
-          type: "bot",
-          message: errorMsg,
-          messages: [{
-            id: selectedAgentId, // Use the correct agent ID here
-            botName: `Agent ${selectedAgentId}`, // Use the correct agent ID here
-            message: errorMsg,
-            needsRebuild: false,
-          }],
-          needsRebuild: false
-        }
+        botResponseForHistory = { type: "bot", message: errorMsg, messages: [{ id: selectedAgentId!, botName: `Agent ${selectedAgentId!}`, message: errorMsg, needsRebuild: false }], needsRebuild: false };
+        setLocalCompState(prev => ({ ...prev, isSending: false }));
       }
     } else {
-      // Fetch response from non-agent bot
-      const response = message ? await api.askbot({ message }, tts, selectedBotsConfig) : await api.askbot({ audio }, tts, selectedBotsConfig)
-      
-      // Set isSending to false *after* API call completes
-      setState({ isSending: false }); 
+      console.log("Attempting to use standard Bot API");
+      try {
+        console.log("Calling api.askbot with config:", selectedBotsConfig);
+        const response = message ? await api.askbot({ message }, tts, selectedBotsConfig) : await api.askbot({ audio }, tts, selectedBotsConfig)
+        console.log("api.askbot finished. Response:", response);
+        
+        setLocalCompState(prev => ({ ...prev, isSending: false })); 
 
-      if (!response.error) {
-        for (const m of response.messages) {
-          const rbot = state.bots[m.id]
-          if (!rbot) continue
-
-          if (
-            !rbot.history.find(h => h.isHuman && h.message === message)
-          ) {
-            rbot.history.push({ isHuman: true, message })
-          }
-          if (!m.needsRebuild && !m.error) {
-            if (
-              !rbot.history.find(
-                h => !h.isHuman && h.message === m.message
-              )
-            ) {
-              rbot.history.push({
-                isHuman: false,
-                message: m.message,
-              })
+        if (!response.error) {
+          for (const m of response.messages) {
+            const rbot = bots[m.id]
+            if (!rbot) continue
+            if (!rbot.history.find(h => h.isHuman && h.message === message)) {
+              rbot.history.push({ isHuman: true, message })
+            }
+            if (!m.needsRebuild && !m.error && !rbot.history.find(h => !h.isHuman && h.message === m.message)) {
+              rbot.history.push({ isHuman: false, message: m.message })
             }
           }
         }
-      }
 
-      response.rebuild = async () => {
-        setState({ isSending: true }) // Keep true here for rebuild action
-        response.needsRebuild = false
-        await onRebuild()
-        setState({ isSending: false }) // Set false after rebuild completes
-      }
+        response.rebuild = async () => {
+          setLocalCompState(prev => ({ ...prev, isSending: true }))
+          response.needsRebuild = false
+          await onRebuild()
+          setLocalCompState(prev => ({ ...prev, isSending: false }))
+        }
 
-      botResponseForHistory = { type: "bot", message: response.message || "", messages: response.messages || [], needsRebuild: response.needsRebuild || false, rebuild: response.rebuild }
+        botResponseForHistory = { type: "bot", message: response.message || "", messages: response.messages || [], needsRebuild: response.needsRebuild || false, rebuild: response.rebuild }
+      } catch (error) {
+         console.error("Standard Bot API call failed:", error);
+         botResponseForHistory = { type: "bot", message: "Failed to get response from bot.", messages: [], needsRebuild: false };
+         setLocalCompState(prev => ({ ...prev, isSending: false }));
+      }
     }
 
-    // Add the bot response to messages AFTER setting isSending to false
+    console.log("Adding bot response to messages:", botResponseForHistory);
     setMessages(prev => [...prev, botResponseForHistory])
 
-    const updatedChatWithResponse: ChatSession = {
+    const finalChatForHistory: ChatSession = {
       ...currentActiveChat, 
       messages: [...currentActiveChat.messages, botResponseForHistory],
-      selectedBots: [...state.selectedBots], 
+      selectedBots: [...selectedBots], 
+      timestamp: new Date().toISOString(),
     }
-    setActiveChat(updatedChatWithResponse)
+    setActiveChat(finalChatForHistory)
     setChatHistory(prev => prev.map(chat => 
-      chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat
-    ))
+      chat.id === finalChatForHistory.id ? finalChatForHistory : chat
+    )) 
+    console.log("onSend finished.");
   }
 
   const onRebuild = async () => {
-    setState({ isSending: true })
-    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-    const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
+    setLocalCompState(prev => ({ ...prev, isSending: true }))
+    const selectedBotsConfig = selectedBots.map(b => ({ label: bots[b].name, value: b, history: bots[b].history }))
+    const response = await api.askbot({ command: "rebuild", }, false, selectedBotsConfig)
     setMessages(prev => [...prev, response])
-    setState({ isSending: false })
+    setLocalCompState(prev => ({ ...prev, isSending: false }))
   }
 
   const handleToggleSelect = (id: string) => {
@@ -438,139 +362,142 @@ const onSelectBot = (e: string[] | string) => {
   }
 
   function onModeChanged() {
-    setState({ audioMode: !state.audioMode })
+    setLocalCompState(prev => ({ ...prev, audioMode: !prev.audioMode }))
   }
 
   function onExitAudioMode() {
-    setState({ audioMode: false })
+    setLocalCompState(prev => ({ ...prev, audioMode: false }))
     console.log("Exiting audio mode")
   }
 
-  const hasSelectedBots = state.selectedBots.length > 0
-  const options: Option[] = Object.keys(state.bots).map((k) => ({
-    label: state.bots[Number(k)].name,
-    value: k,
-  }))
+  const hasSelectedBots = selectedBots.length > 0
 
-  // Scroll Effect for new messages
-  useEffect(() => {
+  const scrollToBottom = () => {
     const container = chatContainerRef.current;
-    if (!container) return;
+    if (container) {
+      requestAnimationFrame(() => {
+         container.scrollTop = container.scrollHeight; 
+      });
+    }
+  };
 
-    // Always scroll to the bottom smoothly when messages change
-    container.scrollTo({
-      top: container.scrollHeight, // Scroll to the very bottom
-      behavior: 'smooth'
-    });
+  useEffect(() => {
+    if (!localCompState.isSending && !isLoadingFromHistory) {
+        scrollToBottom();
+    }
+  }, [messages, localCompState.isSending, isLoadingFromHistory]);
 
-  }, [messages]); // Dependency array includes messages
+  const isSendingOrLoading = localCompState.isSending || isLoadingFromHistory;
+  const noBotsSelected = selectedBots.length === 0;
 
   return (
     <div className="relative" style={{ height: "calc(100vh - 40px)" }}>
       <div className="flex h-full">
         <div className="flex-1 flex flex-col relative">
-          <div className="py-4 border-b flex justify-between items-center bg-white px-4">
-            <h2 className="text-3xl font-bold tracking-tight">Playground</h2>
-            <div className="flex items-center gap-2">
-              <div className={state.selectedBots.length === 0 ? 'empty-model-select rounded-md' : ''}>
-                <MultiSelectDropdown 
-                  options={options} 
-                  selected={state.selectedBots} 
-                  onChange={(selected) => {
-                    setState({ selectedBots: selected })
-                    setMessages([])
-                    setActiveChat(null)
-                  }}
-                />
-              </div>
-              <Button 
-                onClick={toggleSidebar} 
-                size="sm"
-                variant="ghost"
-                className="flex items-center gap-1"
+          {messages.length === 0 && !localCompState.audioMode ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-4">
+              <h1 
+                className="text-4xl font-bold text-center text-transparent bg-clip-text gradient-text-animation slide-reveal-greeting mb-8"
+                style={{
+                  backgroundImage: 'linear-gradient(to right, #6286F7, #EA5850)',
+                }}
               >
-                <History className="h-5 w-5" />
-              </Button>
+                Hello, how can I help you?
+              </h1>
+              <div className="w-full max-w-2xl px-4">
+                {(() => {
+                  const isSendDisabled = localCompState.isSending || !hasSelectedBots;
+                  const disabledBecauseNoBot = !hasSelectedBots && !localCompState.isSending;
+                  return (
+                    <SearchInput 
+                      onSearch={onSend} 
+                      disabled={isSendDisabled} 
+                      openFileDialog={() => setShowFileDialog(true)}
+                      audioMode={localCompState.audioMode}
+                      onModeChanged={onModeChanged}
+                    />
+                  );
+                })()}
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Signpost AI is experimental. Please validate results.
+                </p>
+              </div>
             </div>
-          </div>
-          <div 
-            ref={chatContainerRef}
-            className="overflow-y-auto chat-messages-container flex-1"
-            style={{ paddingBottom: "180px" }}
-          >
-            <div className="p-4 space-y-4">
-              {!state.audioMode && (
-                <div className="flex flex-col space-y-6 w-full">
-                  {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full min-h-[65vh]">
-                      <h1 
-                        className="text-4xl font-bold text-center text-transparent bg-clip-text gradient-text-animation slide-reveal-greeting"
-                        style={{
-                          backgroundImage: 'linear-gradient(to right, #6286F7, #EA5850)',
-                        }}
-                      >
-                        Hello, how can I help you?
-                      </h1>
-                    </div>
-                  ) : (
-                    messages.map((m, i) => (
-                      <ChatMessage 
-                        key={m.id || i}
-                        message={m} 
-                        isWaiting={state.isSending && i === messages.length -1}
-                        isLoadingFromHistory={isLoadingFromHistory}
-                      />
-                    ))
-                  )}
-                  {state.isSending && (
-                    <div className="flex justify-start w-fit">
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {state.audioMode && hasSelectedBots && (
-                <Comm 
-                  bot={state.selectedBots[0]} 
-                  onExit={onExitAudioMode} 
-                />
-              )}
-            </div>
-          </div>
-          
-          {!state.audioMode && (
-            <div className="bg-white pb-6 pt-2 px-4 sticky bottom-0 z-10">
-              {hasSelectedBots ? (
-                <>
-                  <SearchInput 
-                    onSearch={onSend} 
-                    disabled={state.isSending} 
-                    openFileDialog={() => setShowFileDialog(true)}
-                    audioMode={state.audioMode}
-                    onModeChanged={onModeChanged}
-                  />
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Signpost AI is experimental. Please validate results.
-                  </p>
-                </>
-              ) : (
-                <div className="flex justify-center items-center py-4 text-gray-500">
-                  {/* Remove this span */}
-                  {/* <span>Please select a bot to start chatting</span> */}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+          ) : (
+            <>
+              <div 
+                ref={chatContainerRef}
+                className={cn(
+                  "chat-messages-container flex-1",
+                  "overflow-y-auto"
+                )}
+                style={{ paddingBottom: "180px" }}
+              >
+                <div className="p-4 space-y-4">
+                  {!localCompState.audioMode ? (
+                     <div className="flex flex-col space-y-6 w-full">
+                       {messages.map((m, i) => {
+                         // Determine if this message should animate
+                         const shouldAnimate = i === messages.length - 1 && 
+                                               m.type === 'bot' && 
+                                               !isLoadingFromHistory;
+                         return (
+                            <ChatMessage 
+                              key={m.id || i}
+                              message={m} 
+                              isWaiting={localCompState.isSending && i === messages.length -1}
+                              isLoadingFromHistory={isLoadingFromHistory}
+                              onTypewriterTick={scrollToBottom}
+                              // Pass the calculated animation flag
+                              isAnimating={shouldAnimate} 
+                            />
+                         );
+                       })}
+                       {localCompState.isSending && (
+                         <div className="flex justify-start w-fit items-center gap-2">
+                           <div className="flex gap-1">
+                             <div className="w-1.5 h-1.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                             <div className="w-1.5 h-1.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+                             <div className="w-1.5 h-1.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
+                           </div>
+                           <span className="thinking-gradient-text text-sm">Thinking...</span>
+                         </div>
+                       )}
+                     </div>
+                   ) : (
+                     hasSelectedBots && <Comm bot={selectedBots[0]} onExit={onExitAudioMode} />
+                   )}
+                 </div>
+               </div>
+              
+              {!localCompState.audioMode && (
+                <div className="bg-background pb-6 pt-2 px-4 sticky bottom-0 z-10">
+                   {(() => {
+                     const isSendDisabled = localCompState.isSending || !hasSelectedBots;
+                     const disabledBecauseNoBot = !hasSelectedBots && !localCompState.isSending;
+                     return (
+                       <SearchInput 
+                         onSearch={onSend} 
+                         disabled={isSendDisabled}
+                         openFileDialog={() => setShowFileDialog(true)}
+                         audioMode={localCompState.audioMode}
+                         onModeChanged={onModeChanged}
+                       />
+                     );
+                   })()}
+                    <p className="text-xs text-gray-500 text-center mt-2">
+                     Signpost AI is experimental. Please validate results.
+                   </p>
+                 </div>
+               )}
+             </>
+           )}
+         </div>
         
         <div className={`flex flex-col transition-all duration-300 border-l ${
          sidebarVisible ? 'w-1/4' : 'w-0 overflow-hidden border-none'
           }`}>
-          <div className="py-4 flex justify-between items-center bg-white px-4">
+          <div className="py-4 flex justify-between items-center bg-background px-4">
             <h2 className="text-2xl font-bold tracking-tight ml-2">Chat History</h2>
             <Button 
               onClick={handleResetChat}
@@ -589,10 +516,8 @@ const onSelectBot = (e: string[] | string) => {
             <div className="p-4">
               <ChatHistory 
                 setActiveChat={handleLoadChatHistory} 
-                onSelectBot={(botIds) => {
-                  onSelectBot(botIds)
-                }} 
-                bots={state.bots}
+                onSelectBot={(botIds) => handleBotSelectionChange(botIds.map(Number))} 
+                bots={bots}
                 chatHistory={chatHistory}
               />
             </div>
@@ -626,17 +551,14 @@ const onSelectBot = (e: string[] | string) => {
   )
 }
 
+const TYPEWRITER_BASE_SPEED = 8;
+const TYPEWRITER_MIN_SPEED = 2;
 
-// Base speed for typewriter effect (milliseconds per character)
-const TYPEWRITER_BASE_SPEED = 8; // Changed from 15
-const TYPEWRITER_MIN_SPEED = 2; // Minimum speed
-
-function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete }: { text: string, speed?: number, onComplete?: () => void }) {
+function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete, onTick }: { text: string; speed?: number; onComplete?: () => void; onTick?: () => void }) {
   const [displayedText, setDisplayedText] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const textElementRef = useRef<HTMLDivElement>(null);
 
-  // Effect for typing animation
   useEffect(() => {
     setDisplayedText("");
     setIsComplete(false);
@@ -645,6 +567,7 @@ function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete }: { t
     const timer = setInterval(() => {
       if (index < text.length) {
         setDisplayedText(text.substring(0, index + 1));
+        onTick?.();
         index++;
       } else {
         clearInterval(timer);
@@ -654,10 +577,7 @@ function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete }: { t
     }, speed);
 
     return () => clearInterval(timer);
-  }, [text, speed, onComplete]);
-
-  // REMOVED: useEffect for auto-scrolling while typing
-  // useEffect(() => { ... }, [displayedText]);
+  }, [text, speed, onComplete, onTick]);
 
   return (
     <div 
@@ -669,31 +589,27 @@ function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete }: { t
   );
 }
 
-function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHistory }: { m: any, isWaiting?: boolean, rebuild?: () => void, isLoadingFromHistory?: boolean }) {
-
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
-
-  // Parse the message immediately to check for images
+function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHistory, onTypewriterTick, isAnimating }: { 
+  m: any, 
+  isWaiting?: boolean, 
+  rebuild?: () => void, 
+  isLoadingFromHistory?: boolean, 
+  onTypewriterTick?: () => void, 
+  isAnimating?: boolean 
+}) {
+  const [isTypingComplete, setIsTypingComplete] = useState(!isAnimating);
   const { imageUrl, remainingText } = parseMarkdownImage(m.message);
   const isPlainImage = !imageUrl && isImageUrl(m.message);
   const hasImage = !!imageUrl || isPlainImage;
-  const textToType = imageUrl ? remainingText : (hasImage ? null : m.message); // Text for typewriter is remainingText or full message
+  const textToType = imageUrl ? remainingText : (hasImage ? null : m.message);
+  const skipTypewriter = !isAnimating || !textToType;
 
-  // Determine if we should skip the typewriter effect for the textual part
-  // Skip if loading from history, or if there's no text to type
-  const skipTypewriter = isLoadingFromHistory || !textToType || (m.type && m.type !== "bot");
-
-  // Reset completion state if the relevant text content changes
   useEffect(() => {
-    if (!isLoadingFromHistory) {
+    if (isAnimating) {
       setIsTypingComplete(false);
     }
-    // Reset only if the text content intended for typing changes
-  }, [textToType, isLoadingFromHistory]); 
+  }, [textToType, isAnimating]);
 
-  // --- Rendering Logic --- 
-
-  // Part 1: Render the image immediately if it exists
   const renderImage = () => {
     if (imageUrl) {
       return (
@@ -721,40 +637,33 @@ function BotChatMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHist
     return null;
   };
 
-  // Part 2: Render the text part (with or without typewriter)
   const renderText = () => {
     if (!textToType) {
-      return null; // No text to render
+      return null;
     }
-
-    // If skipping typewriter or typing is complete, render text directly
     if (skipTypewriter || isTypingComplete) {
       return <div className={`whitespace-pre-wrap ${hasImage ? 'mt-2' : ''}`}>{textToType}</div>;
     }
-
-    // Otherwise, render with typewriter effect
     const dynamicSpeed = Math.max(
       TYPEWRITER_MIN_SPEED, 
       TYPEWRITER_BASE_SPEED - Math.floor((textToType.length || 0) / 150)
     );
-    
     return (
-      <div className={`${hasImage ? 'mt-2' : ''}`}> {/* Add margin if there was an image */} 
+      <div className={`${hasImage ? 'mt-2' : ''}`}> 
         <TypewriterText 
           text={textToType} 
           speed={dynamicSpeed} 
           onComplete={() => setIsTypingComplete(true)} 
+          onTick={onTypewriterTick}
         />
       </div>
     );
   };
 
-  // Combine image and text rendering
   return (
-    <div className="bot-message-content">
+    <div className="bot-message-content-wrapper"> 
       {renderImage()}
       {renderText()}
-      {/* Action buttons (like Copy, Rebuild) are handled externally by ChatMessage */}
     </div>
   );
 }
@@ -763,16 +672,21 @@ interface MessageProps {
   message: ChatMessage
   isWaiting?: boolean
   isLoadingFromHistory?: boolean
+  onTypewriterTick?: () => void
+  isAnimating?: boolean
 }
 
 function ChatMessage(props: MessageProps) {
-  const { isWaiting, isLoadingFromHistory, message: msg } = props;
-  let { type, message, messages, needsRebuild, rebuild } = msg;
+  const { isWaiting, isLoadingFromHistory, message: msg, onTypewriterTick, isAnimating } = props;
+  let { type, message, messages, needsRebuild, rebuild, docs } = msg;
   messages = messages || [];
   const [copied, setCopied] = useState(false);
   const [isSingleLine, setIsSingleLine] = useState(true);
   const messageTextRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
+  const [isSourceDialogOpen, setIsSourceDialogOpen] = useState(false); 
+  const [currentDialogSources, setCurrentDialogSources] = useState<DocumentReference[]>([]);
+  const [dialogTitle, setDialogTitle] = useState("Sources");
 
   useEffect(() => {
     if (type === "human" && message) {
@@ -791,12 +705,10 @@ function ChatMessage(props: MessageProps) {
     let textToCopy = message; // Default to copying the raw message
 
     if (imageUrl) {
-      // If markdown image, decide what to copy (e.g., URL + text)
       textToCopy = imageUrl + (remainingText ? ` ${remainingText}` : '');
     } else if (isImageUrl(message)) {
-      // If plain image URL, copy the URL
       textToCopy = message;
-    } // Otherwise, textToCopy remains the original message text
+    }
 
     if (textToCopy) {
       navigator.clipboard.writeText(textToCopy).then(() => {
@@ -806,12 +718,93 @@ function ChatMessage(props: MessageProps) {
     }
   };
 
-  const isLastMessage = messages.length === 1 && messages[0].type === "human";
+  const handleCopyCode = (contentToCopy: string | undefined | null) => {
+    let code = '';
+    if (typeof contentToCopy === 'string') {
+      const codeBlockRegex = /```[\\w-]*\\n([\\s\\S]*?)\\n```/g;
+      let match;
+      while ((match = codeBlockRegex.exec(contentToCopy)) !== null) {
+        code += match[1] + '\\n';
+      }
+      if (code) {
+        navigator.clipboard.writeText(code.trim()).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      } else {
+        // Fallback: copy the whole message if no code blocks found
+        navigator.clipboard.writeText(contentToCopy).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      }
+    }
+  };
 
-  if (type === "bot") {
-    // Agent messages
-    if (messages.length > 0) {
-      const agentMessage = messages.find(m => KNOWN_AGENT_IDS.includes(m.id));
+  const handleTextToSpeech = (contentToSpeak: string | undefined | null) => {
+    if ('speechSynthesis' in window && typeof contentToSpeak === 'string') {
+      // Clean up markdown/code blocks for better speech
+      const cleanedText = contentToSpeak
+        .replace(/```[\\w-]*\\n[\\s\\S]*?\\n```/g, ' code block ') // Replace code blocks
+        .replace(/!?\\[.*?\\]\\(.*?\\)/g, ' image ') // Replace markdown images
+        .replace(/\\*\\*/g, '') // Remove bold/italic markers
+        .replace(/`/g, '') // Remove inline code backticks
+        .replace(/#+\\s/g, ''); // Remove markdown headers
+
+      const utterance = new SpeechSynthesisUtterance(cleanedText);
+      speechSynthesis.speak(utterance);
+    } else {
+      console.warn("Text-to-speech not supported in this browser.");
+    }
+  };
+
+  // Modified renderSourceLinks
+  const renderSourceLinks = (sourceDocs: DocumentReference[] | undefined) => {
+    if (!sourceDocs || sourceDocs.length === 0) return null;
+
+    const handleButtonClick = (doc: DocumentReference) => {
+      setCurrentDialogSources([doc]);
+      setDialogTitle(`Source: ${doc.metadata?.title || doc.metadata?.source || 'Details'}`);
+      setIsSourceDialogOpen(true);
+    };
+
+    return (
+      <div className="mt-3 pt-3 border-t border-muted/50 flex flex-wrap items-center gap-1.5">
+        {sourceDocs.map((doc, index) => {
+          let buttonText = 'Unknown Source';
+          if (doc.metadata?.title) {
+            buttonText = doc.metadata.title;
+          } else if (doc.metadata?.source) {
+            try {
+              const url = new URL(doc.metadata.source);
+              let hostname = url.hostname.replace(/^(www\.)|(staging\.)/i, '');
+              buttonText = hostname; 
+            } catch (e) { 
+              buttonText = doc.metadata.source; 
+            }
+          }
+
+          return (
+            <Button 
+              key={`${doc.metadata?.source || 'doc'}-${index}`}
+              variant="outline" 
+              size="sm"
+              onClick={() => handleButtonClick(doc)}
+              className="h-auto text-xs py-0.5 px-2 whitespace-nowrap bg-gray-700 text-white hover:bg-gray-600 border-gray-600"
+            >
+              {buttonText}
+            </Button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Define renderBotMessage INSIDE ChatMessage to access props and state
+  const renderBotMessage = () => {
+    // Agent message logic
+    if (msg.messages && msg.messages.length > 0) { 
+      const agentMessage = msg.messages.find(m => KNOWN_AGENT_IDS.includes(m.id));
       if (agentMessage) {
         let answerContent: string | null = null;
         try {
@@ -819,229 +812,361 @@ function ChatMessage(props: MessageProps) {
           if (parsedJson && typeof parsedJson.answer === 'string') {
             answerContent = parsedJson.answer;
           }
-        } catch (e) {
-          console.warn("Agent message was not valid JSON for extracting answer:", agentMessage.message);
-        }
+        } catch (e) {}
         const messageForTypewriter = answerContent ? {
           ...agentMessage,
           message: answerContent,
         } : null;
+        const rawAgentMsgHasCode = typeof agentMessage.message === 'string' && agentMessage.message.includes('```');
+        const answerHasCode = typeof answerContent === 'string' && answerContent.includes('```');
 
         return (
-          <>
-            <div className="mt-4 w-full" dir="auto">
-              <div className="p-3 border border-gray-200 rounded-lg">
-                <div className="font-medium text-xs mb-1 pb-1 border-b">Agent Raw Output: {agentMessage.botName || `ID ${agentMessage.id}`}</div>
-                <AgentJsonView data={agentMessage.message} />
-              </div>
+          <div className="mt-4 w-full" dir="auto">
+            <div className="p-3 rounded-lg bg-background">
+              <div className="font-medium text-xs mb-1 pb-1 border-b">Agent Raw Output: {agentMessage.botName || `ID ${agentMessage.id}`}</div>
+              <AgentJsonView data={agentMessage.message} />
             </div>
-
             {messageForTypewriter && (
-              <div className="mt-4 w-full" dir="auto">
+              <div className="mt-2">
                 <div className="font-medium text-xs mb-2">Agent Answer:</div>
-                <BotChatMessageWithTypewriter 
-                  m={messageForTypewriter} 
-                  isWaiting={isWaiting} 
-                  isLoadingFromHistory={isLoadingFromHistory}
-                />
+                <div className="rounded-lg p-3 bg-background">
+                  <BotChatMessageWithTypewriter
+                    m={messageForTypewriter}
+                    isWaiting={isWaiting}
+                    isLoadingFromHistory={isLoadingFromHistory} 
+                    onTypewriterTick={onTypewriterTick} 
+                    isAnimating={isAnimating}
+                  />
+                  {renderSourceLinks(agentMessage.docs)} 
+                </div>
               </div>
             )}
-            
+            {!messageForTypewriter && renderSourceLinks(agentMessage.docs)}
+            <div className="flex items-center gap-1 mt-2">
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Up"><ThumbsUp className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Down"><ThumbsDown className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Flag"><Flag className="h-4 w-4" /></Button>
+                {(rawAgentMsgHasCode || answerHasCode) && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleCopyCode(answerContent || agentMessage.message)} title={copied ? "Copied!" : "Copy Code"}>
+                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Code className="h-4 w-4" />}
+                  </Button>
+                )}
+                {answerContent && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleTextToSpeech(answerContent)} title="Read Aloud"><Volume2 className="h-4 w-4" /></Button>
+                )}
+                 <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => {
+                   navigator.clipboard.writeText(answerContent || agentMessage.message).then(() => {
+                     setCopied(true);
+                     setTimeout(() => setCopied(false), 2000);
+                   });
+                 }} title={copied ? "Copied!" : "Copy"}>
+                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                 </Button>
+            </div>
             {needsRebuild && !isWaiting && rebuild && (
-              <div className="mt-2 w-full flex justify-start">
-                <Button
-                  className="bg-gray-700 hover:bg-gray-600 text-white"
-                  onClick={rebuild}
-                  disabled={isWaiting}
-                  size="sm"
-                >
-                  <span className="mr-1">↻</span> Rebuild
-                </Button>
-              </div>
+                <div className="mt-2 w-full flex justify-start">
+                    <Button
+                        className="bg-gray-700 hover:bg-gray-600 text-white"
+                        onClick={rebuild}
+                        disabled={isWaiting}
+                        size="sm"
+                    >
+                        <span className="mr-1">↻</span> Rebuild
+                    </Button>
+                </div>
             )}
-          </>
+          </div>
         );
       }
     }
-    
-    // Multiple bot messages side-by-side
-    if (messages.length > 1) {
+    // Multiple bot messages logic
+    if (msg.messages && msg.messages.length > 1) { 
+      const combinedMessage = msg.messages.map(m => m.message).join('\\n\\n');
+      const hasCode = typeof combinedMessage === 'string' && combinedMessage.includes('```');
       return (
         <div className="w-full mt-4" dir="auto">
           <div className="flex gap-4 w-full">
-            {messages.map((m) => {
+            {msg.messages.map((m) => { // Use msg.messages
               const { imageUrl, remainingText } = parseMarkdownImage(m.message);
               const isPlainImage = !imageUrl && isImageUrl(m.message);
-
               return (
                 <div
                   key={m.id}
-                  className="flex-1 border border-gray-300 rounded-lg p-3 bot-message-content"
+                  className="flex-1 rounded-lg p-3 bot-message-content bg-background flex flex-col"
                   dir="auto"
                 >
                   <div className="font-medium text-xs mb-2">{m.botName}</div>
-                  {imageUrl ? (
-                    <div>
-                      <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                        <img 
-                          src={imageUrl} 
-                          alt="Bot image" 
-                          className="max-w-md h-auto rounded"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </a>
-                      {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
-                    </div>
-                  ) : isPlainImage ? (
-                     <a href={m.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                       <img 
-                         src={m.message} 
-                         alt="Bot image" 
-                         className="max-w-md h-auto rounded"
-                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                       />
-                     </a>
-                  ) : (
-                    <BotChatMessageWithTypewriter 
-                      m={m} 
-                      isWaiting={isWaiting} 
-                      rebuild={rebuild} 
-                      isLoadingFromHistory={isLoadingFromHistory}
-                    />
-                  )}
+                  <div className="flex-grow">
+                    {imageUrl || isPlainImage ? (
+                      <div>
+                        <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                          <img
+                            src={imageUrl}
+                            alt="Bot image"
+                            className="max-w-md h-auto rounded"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        </a>
+                        {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+                      </div>
+                    ) : (
+                      <BotChatMessageWithTypewriter
+                        m={m}
+                        isWaiting={isWaiting}
+                        rebuild={rebuild}
+                        isLoadingFromHistory={isLoadingFromHistory}
+                        onTypewriterTick={onTypewriterTick}
+                        isAnimating={isAnimating}
+                      />
+                    )}
+                  </div>
+                  {renderSourceLinks(m.docs)} 
                 </div>
               );
             })}
           </div>
+          <div className="flex items-center gap-1 mt-2">
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Up"><ThumbsUp className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Down"><ThumbsDown className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Flag"><Flag className="h-4 w-4" /></Button>
+              {hasCode && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleCopyCode(combinedMessage)} title={copied ? "Copied!" : "Copy Code"}>
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Code className="h-4 w-4" />}
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleTextToSpeech(combinedMessage)} title="Read Aloud"><Volume2 className="h-4 w-4" /></Button>
+               <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => {
+                 navigator.clipboard.writeText(combinedMessage).then(() => {
+                   setCopied(true);
+                   setTimeout(() => setCopied(false), 2000);
+                 });
+               }} title={copied ? "Copied!" : "Copy"}>
+                 {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+               </Button>
+          </div>
+          {needsRebuild && !isWaiting && rebuild && (
+                <div className="mt-2 w-full flex justify-start">
+                    <Button
+                        className="bg-gray-700 hover:bg-gray-600 text-white"
+                        onClick={rebuild}
+                        disabled={isWaiting}
+                        size="sm"
+                    >
+                        <span className="mr-1">↻</span> Rebuild
+                    </Button>
+                </div>
+           )}
         </div>
       );
     }
-    
-    // Single bot message
-    if (messages.length === 1) {
-      const single = messages[0];
+    // Single bot message logic
+    if (msg.messages && msg.messages.length === 1) { 
+      const single = msg.messages[0];
       const { imageUrl, remainingText } = parseMarkdownImage(single.message);
       const isPlainImage = !imageUrl && isImageUrl(single.message);
-
+      const hasCode = typeof single.message === 'string' && single.message.includes('```');
       return (
-        <div className="mt-4" dir="auto">
-          <div className="p-3 bot-message-content">
+        <div className="mt-4 w-full" dir="auto">
+          <div className="p-3 bot-message-content rounded-lg bg-background" dir="auto">
             <div
               className="inline-block px-2 py-1 border border-gray-300 rounded text-xs font-medium mb-2"
               dir="auto"
             >
               {single.botName}
             </div>
-            {imageUrl ? (
-              <div>
-                 <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                  <img 
-                    src={imageUrl} 
-                    alt="Bot image" 
-                    className="max-w-md h-auto rounded"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                 </a>
-                 {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
-              </div>
-            ) : isPlainImage ? (
-               <a href={single.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                 <img 
-                   src={single.message} 
-                   alt="Bot image" 
-                   className="max-w-md h-auto rounded"
-                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                 />
-               </a>
-            ) : (
-              <BotChatMessageWithTypewriter 
-                m={single} 
-                isWaiting={isWaiting} 
-                rebuild={rebuild} 
-                isLoadingFromHistory={isLoadingFromHistory}
-              />
-            )}
+            <div className="message-content-area">
+              {imageUrl || isPlainImage ? (
+                <div>
+                  <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                    <img
+                      src={imageUrl}
+                      alt="Bot image"
+                      className="max-w-md h-auto rounded"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                  </a>
+                  {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+                </div>
+              ) : (
+                <BotChatMessageWithTypewriter
+                  m={single} 
+                  isWaiting={isWaiting}
+                  rebuild={rebuild}
+                  isLoadingFromHistory={isLoadingFromHistory}
+                  onTypewriterTick={onTypewriterTick}
+                  isAnimating={isAnimating}
+                />
+              )}
+            </div>
+            {renderSourceLinks(single.docs)} 
           </div>
+           <div className="flex items-center gap-1 mt-2">
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Up"><ThumbsUp className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Down"><ThumbsDown className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Flag"><Flag className="h-4 w-4" /></Button>
+              {hasCode && (
+                <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleCopyCode(single.message)} title={copied ? "Copied!" : "Copy Code"}>
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Code className="h-4 w-4" />}
+                </Button>
+              )}
+              {typeof single.message === 'string' && !isPlainImage && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleTextToSpeech(single.message)} title="Read Aloud"><Volume2 className="h-4 w-4" /></Button>
+              )}
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => {
+                 const textToCopy = imageUrl ? (imageUrl + (remainingText ? ` ${remainingText}` : '')) : single.message;
+                 navigator.clipboard.writeText(textToCopy).then(() => {
+                   setCopied(true);
+                   setTimeout(() => setCopied(false), 2000);
+                 });
+               }} title={copied ? "Copied!" : "Copy"}>
+                 {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+               </Button>
+           </div>
+          {needsRebuild && !isWaiting && rebuild && (
+                <div className="mt-2 w-full flex justify-start">
+                    <Button
+                        className="bg-gray-700 hover:bg-gray-600 text-white"
+                        onClick={rebuild}
+                        disabled={isWaiting}
+                        size="sm"
+                    >
+                        <span className="mr-1">↻</span> Rebuild
+                    </Button>
+                </div>
+           )}
         </div>
       );
     }
-    
-    // Fallback case: Bot message directly on the main message object
-    const { imageUrl, remainingText } = parseMarkdownImage(message);
-    const isPlainImage = !imageUrl && isImageUrl(message);
-
+    // Fallback logic
+    const { imageUrl, remainingText } = parseMarkdownImage(msg.message);
+    const isPlainImage = !imageUrl && isImageUrl(msg.message);
+    const hasCode = typeof msg.message === 'string' && msg.message.includes('```');
+    const fallbackMessageObject = { message: msg.message, type: "bot" };
     return (
       <div className="w-full mt-4" dir="auto">
-        <div className="border border-gray-300 rounded-lg p-3 bot-message-content" dir="auto" style={{ minWidth: "80px" }}>
-           {imageUrl ? (
-             <div>
-               <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
-                 <img 
-                   src={imageUrl} 
-                   alt="Bot image" 
-                   className="max-w-md h-auto rounded"
-                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                 />
-               </a>
-               {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
-             </div>
-           ) : isPlainImage ? (
-             <a href={message} target="_blank" rel="noopener noreferrer" className="block mb-2">
-               <img 
-                 src={message} 
-                 alt="Bot image" 
-                 className="max-w-md h-auto rounded"
-                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-             </a>
-           ) : (
-            <div className="px-1 text-gray-700" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}>
-              <BotChatMessageWithTypewriter 
-                m={{ message, type: "bot" }} 
-                isWaiting={isWaiting} 
-                rebuild={rebuild} 
-                isLoadingFromHistory={isLoadingFromHistory}
-              />
+         <div className="rounded-lg p-3 bot-message-content bg-background" dir="auto" style={{ minWidth: "80px" }}>
+            <div className="message-content-area">
+              {imageUrl || isPlainImage ? (
+                <div>
+                  <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                    <img
+                      src={imageUrl}
+                      alt="Bot image"
+                      className="max-w-md h-auto rounded"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                   />
+                  </a>
+                  {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
+                </div>
+              ) : (
+                <div className="px-1" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}>
+                  <BotChatMessageWithTypewriter
+                    m={fallbackMessageObject} 
+                    isWaiting={isWaiting}
+                    rebuild={rebuild}
+                    isLoadingFromHistory={isLoadingFromHistory}
+                    onTypewriterTick={onTypewriterTick}
+                    isAnimating={isAnimating}
+                  />
+                </div>
+              )}
             </div>
-           )}
-        </div>
-      </div>
+            {renderSourceLinks(msg.docs)} 
+         </div>
+         
+         <div className="flex items-center gap-1 mt-2">
+             <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Up"><ThumbsUp className="h-4 w-4" /></Button>
+             <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Thumbs Down"><ThumbsDown className="h-4 w-4" /></Button>
+             <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" title="Flag"><Flag className="h-4 w-4" /></Button>
+             {hasCode && (
+               <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleCopyCode(msg.message)} title={copied ? "Copied!" : "Copy Code"}>
+                 {copied ? <Check className="h-4 w-4 text-green-500" /> : <Code className="h-4 w-4" />}
+               </Button>
+             )}
+             {typeof msg.message === 'string' && !isPlainImage && (
+               <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => handleTextToSpeech(msg.message)} title="Read Aloud"><Volume2 className="h-4 w-4" /></Button>
+             )}
+              <Button variant="ghost" size="icon" className="h-6 w-6 p-1 text-gray-400 hover:text-black hover:bg-gray-100 rounded-md" onClick={() => {
+                const textToCopy = imageUrl ? (imageUrl + (remainingText ? ` ${remainingText}` : '')) : msg.message;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                });
+              }} title={copied ? "Copied!" : "Copy"}>
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+         </div>
+
+         {needsRebuild && !isWaiting && rebuild && (
+             <div className="mt-2 w-full flex justify-start">
+                 <Button
+                     className="bg-gray-700 hover:bg-gray-600 text-white"
+                     onClick={rebuild}
+                     disabled={isWaiting}
+                     size="sm"
+                 >
+                     <span className="mr-1">↻</span> Rebuild
+                 </Button>
+             </div>
+         )}
+       </div>
     );
-  }
-  
-  // Human messages remain unchanged
+  };
+
+  // Main return statement for ChatMessage
   return (
-    <div className="w-full mt-4 message-fade-in" dir="auto" ref={messageContainerRef}>
-      <div className="flex flex-col items-end">
-        <div
-          className={`bg-gray-100 text-black message-bubble shadow-sm ${isSingleLine ? 'single-line' : ''}`}
-          dir="auto"
-        >
-          <div 
-            ref={messageTextRef}
-            className="break-words whitespace-pre-wrap" 
-            style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
-          >
-            {message}
+    <>
+      {type === 'human' ? (
+        <div className="w-full mt-4 message-fade-in" dir="auto" ref={messageContainerRef}>
+          <div className="flex flex-col items-end">
+            <div
+              className={`bg-gray-100 text-black message-bubble shadow-sm ${isSingleLine ? 'single-line' : ''}`}
+              dir="auto"
+            >
+              <div
+                ref={messageTextRef}
+                className="break-words whitespace-pre-wrap"
+                style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
+              >
+                {message} 
+              </div>
+            </div>
+            <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">
+              {copied ? 
+                <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} /> :
+                message ? <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} /> : null
+              }
+            </div>
           </div>
         </div>
-        <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">
-          {copied ? 
-            <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} /> :
-            message ? <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} /> : null
-          }
-          {!isWaiting && needsRebuild && (
-            <Button
-              className="bg-gray-700 hover:bg-gray-600 text-white"
-              onClick={rebuild}
-              disabled={isWaiting}
-              size="sm"
-            >
-              <span className="mr-1">↻</span> Rebuild
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+      ) : (
+         renderBotMessage()
+      )}
+
+      <Dialog open={isSourceDialogOpen} onOpenChange={setIsSourceDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4 flex flex-col gap-3">
+            {currentDialogSources.map((doc, index) => (
+              <a 
+                href={doc.metadata.source} 
+                key={`${doc.metadata.source}-${index}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline truncate block p-2 bg-muted/50 rounded-md"
+                title={doc.metadata.source}
+              >
+                {doc.metadata.title || doc.metadata.source}
+              </a>
+            ))}
+            {currentDialogSources.length === 0 && (
+               <p className="text-sm text-muted-foreground">No source links found for this group.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

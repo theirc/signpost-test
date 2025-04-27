@@ -236,16 +236,19 @@ body {
 }
 
 .animate-typing-1 {
+  background-color: hsl(var(--accent));
   animation: typing 1s infinite, colorShift1 3s infinite linear;
   background-size: 200% 200%;
 }
 
 .animate-typing-2 {
+  background-color: hsl(var(--accent));
   animation: typing 1s infinite 0.2s, colorShift2 3s infinite linear;
   background-size: 200% 200%;
 }
 
 .animate-typing-3 {
+  background-color: hsl(var(--accent));
   animation: typing 1s infinite 0.4s, colorShift3 3s infinite linear;
   background-size: 200% 200%;
 }
@@ -293,6 +296,7 @@ body {
 }
 
 .gradient-text-animation {
+  background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
   background-size: 200% auto;
   animation: gradientText 3s ease infinite;
 }
@@ -322,10 +326,10 @@ body {
 /* Pulsing animation for model selection */
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 0 hsla(var(--accent), 0.2);
   }
   50% {
-    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 15px 5px hsla(var(--accent), 0.4);
   }
 }
 
@@ -367,10 +371,10 @@ body {
 /* Pulsing animation for model selection */
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 0 hsla(var(--accent), 0.2);
   }
   50% {
-    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 15px 5px hsla(var(--accent), 0.4);
   }
 }
 .empty-model-select {
@@ -380,12 +384,10 @@ body {
 /* Pulsing shadow for empty input */
 @keyframes pulseInputShadow {
   0%, 100% {
-    /* Start with the base shadow defined in Tailwind */
-    box-shadow: 4px 4px 20px -4px rgba(236,72,153,0.1), -4px 4px 20px -4px rgba(124,58,237,0.1), 0 4px 20px -4px rgba(34,211,238,0.1);
+    box-shadow: 0 0 15px 2px hsla(var(--accent), 0.15);
   }
   50% {
-    /* Slightly more intense/larger shadow */
-    box-shadow: 4px 4px 25px -2px rgba(236,72,153,0.15), -4px 4px 25px -2px rgba(124,58,237,0.15), 0 4px 25px -2px rgba(34,211,238,0.15);
+    box-shadow: 0 0 25px 5px hsla(var(--accent), 0.25);
   }
 }
 .pulse-input-shadow {
@@ -412,7 +414,31 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: white; /* Match the page background */
+  background-color: hsl(var(--background));
   animation: slideReveal 0.6s ease-out forwards;
   animation-delay: 0.2s; /* Optional: slight delay before reveal starts */
+}
+
+/* Rotating Gradient Text Animation */
+@keyframes rotate-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.thinking-gradient-text {
+  font-weight: 500; /* Make it slightly bolder */
+  background: linear-gradient(45deg, hsl(var(--accent-foreground)), hsl(var(--accent)), hsl(var(--accent-foreground)));
+  background-size: 300% 300%; /* Increase size for smoother rotation */
+  background-clip: text;
+  -webkit-background-clip: text; /* Vendor prefix for Safari/Chrome */
+  color: transparent;
+  -webkit-text-fill-color: transparent; /* Vendor prefix for Safari/Chrome */
+  animation: rotate-gradient 3s linear infinite;
 }
