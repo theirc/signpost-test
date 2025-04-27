@@ -34,14 +34,10 @@ export function SearchInput(props: SearchInputProps) {
     clearBlobUrl,
   } = useReactMediaRecorder({ audio: true })
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-    }
-  }, [value])
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value)
+    e.target.style.height = "auto"
+    e.target.style.height = `${e.target.scrollHeight}px`
   }
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

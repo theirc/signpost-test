@@ -1,7 +1,7 @@
 import { Brain, ChevronRight, type LucideIcon } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger, } from "@/components/ui/collapsible"
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, } from "@/components/ui/sidebar"
-import { Link } from "react-router-dom"
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from "@/components/ui/sidebar"
+import { Link, useNavigate } from "react-router-dom"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 
 interface Props {
@@ -21,6 +21,34 @@ interface Props {
 
 export function NavMain({ items }: Props) {
   const { canRead, loading: permissionsLoading } = usePermissions()
+  const { state } = useSidebar()
+  const navigate = useNavigate()
+
+  const handleIconClick = (event: React.MouseEvent, title: string) => {
+    if (state === 'collapsed') {
+      let targetUrl = "";
+      switch (title) {
+        case "Bots":
+          targetUrl = "/bots";
+          break;
+        case "Evaluation":
+          targetUrl = "/logs";
+          break;
+        case "Knowledge":
+          targetUrl = "/collections";
+          break;
+        case "Settings":
+          targetUrl = "/settings/projects";
+          break;
+      }
+      
+      if (targetUrl) {
+        event.preventDefault();
+        event.stopPropagation();
+        navigate(targetUrl);
+      }
+    }
+  };
 
   return <SidebarGroup>
     <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -56,7 +84,10 @@ export function NavMain({ items }: Props) {
           <Collapsible key={item.title} asChild defaultOpen={item.isActive} className="group/collapsible">
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
+                <SidebarMenuButton 
+                  tooltip={item.title} 
+                  onClick={(e) => handleIconClick(e, item.title)}
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                   <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />

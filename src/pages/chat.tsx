@@ -431,7 +431,7 @@ export default function Chat() {
                   "chat-messages-container flex-1",
                   "overflow-y-auto"
                 )}
-                style={{ paddingBottom: "180px" }}
+                style={{ paddingBottom: "0px" }}
               >
                 <div className="p-4 space-y-4">
                   {!localCompState.audioMode ? (
@@ -443,13 +443,13 @@ export default function Chat() {
                                                !isLoadingFromHistory;
                          return (
                             <ChatMessage 
-                              key={m.id || i}
-                              message={m} 
-                              isWaiting={localCompState.isSending && i === messages.length -1}
+                              key={`msg-${i}`}
+                              message={m}
+                              isWaiting={localCompState.isSending && i === messages.length - 1}
                               isLoadingFromHistory={isLoadingFromHistory}
                               onTypewriterTick={scrollToBottom}
-                              // Pass the calculated animation flag
-                              isAnimating={shouldAnimate} 
+                              isAnimating={shouldAnimate}
+                              selectedBots={selectedBots}
                             />
                          );
                        })}
@@ -674,10 +674,11 @@ interface MessageProps {
   isLoadingFromHistory?: boolean
   onTypewriterTick?: () => void
   isAnimating?: boolean
+  selectedBots: number[]
 }
 
 function ChatMessage(props: MessageProps) {
-  const { isWaiting, isLoadingFromHistory, message: msg, onTypewriterTick, isAnimating } = props;
+  const { isWaiting, isLoadingFromHistory, message: msg, onTypewriterTick, isAnimating, selectedBots } = props;
   let { type, message, messages, needsRebuild, rebuild, docs } = msg;
   messages = messages || [];
   const [copied, setCopied] = useState(false);
@@ -790,7 +791,7 @@ function ChatMessage(props: MessageProps) {
               variant="outline" 
               size="sm"
               onClick={() => handleButtonClick(doc)}
-              className="h-auto text-xs py-0.5 px-2 whitespace-nowrap bg-gray-700 text-white hover:bg-gray-600 border-gray-600"
+              className="h-auto text-xs py-0.5 px-2 whitespace-nowrap bg-white text-primary border-border hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:border-sidebar-accent"
             >
               {buttonText}
             </Button>
@@ -802,6 +803,10 @@ function ChatMessage(props: MessageProps) {
 
   // Define renderBotMessage INSIDE ChatMessage to access props and state
   const renderBotMessage = () => {
+    const botMessage = msg.messages.find(m => selectedBots.includes(m.id))
+    const content = botMessage ? botMessage.message : message
+    const sourceDocs = botMessage ? botMessage.docs : docs
+
     // Agent message logic
     if (msg.messages && msg.messages.length > 0) { 
       const agentMessage = msg.messages.find(m => KNOWN_AGENT_IDS.includes(m.id));

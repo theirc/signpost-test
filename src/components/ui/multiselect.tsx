@@ -1,6 +1,6 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from '@radix-ui/react-checkbox'
-import { X } from "lucide-react"
+import { X, ChevronsUpDown } from "lucide-react"
 
 export interface Option {
     label: string
@@ -28,32 +28,24 @@ export interface Option {
       }
     }
   
+    const selectedOptions = selected.map(val => options.find(o => o.value === val.toString())).filter(Boolean) as Option[];
+  
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <div className="relative w-full min-h-[2.5rem] border border-gray-300 rounded-md px-2 py-1 flex items-center gap-2 cursor-pointer">
-            {selected.length === 0 && (
-              <span className="text-gray-400">Select Bots</span>
+          <div className="relative w-auto text-sm font-medium text-foreground hover:text-accent-foreground flex items-center gap-1 cursor-pointer">
+            {selectedOptions.length === 0 ? (
+              <span className="text-muted-foreground">Select Bots</span>
+            ) : (
+              <div className="flex items-center gap-1 flex-wrap">
+                {selectedOptions.map((opt) => (
+                  <div key={opt.value} className="flex items-center">
+                    <span>{opt.label}</span>
+                  </div>
+                ))}
+              </div>
             )}
-            {selected.map((val) => {
-              const opt = options.find((o) => o.value === val.toString())
-              if (!opt) return null
-              return (
-                <div
-                  key={opt.value}
-                  className="flex items-center bg-gray-200 text-sm px-2 py-1 rounded"
-                >
-                  <span className="mr-1">{opt.label}</span>
-                  <X
-                    className="h-4 w-4 cursor-pointer text-gray-600 hover:text-gray-800"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      removeBot(val)
-                    }}
-                  />
-                </div>
-              )
-            })}
+            <ChevronsUpDown className="h-4 w-4 ml-1 text-muted-foreground" />
           </div>
         </PopoverTrigger>
         <PopoverContent align="start"
@@ -70,7 +62,7 @@ export interface Option {
                 <Checkbox
                   checked={isChecked}
                   onCheckedChange={() => {}}
-                  className=""
+                  className="mr-2"
                 />
                 <span>{opt.label}</span>
               </div>
