@@ -8,6 +8,7 @@ import { MessageSquarePlus, AudioWaveform, ArrowUp, CirclePlus, Circle, Copy, Ch
 import AgentJsonView from '@/bot/agentview'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
+import { BotEntry, useAllBots } from '@/hooks/use-all-bots'
 import { Comm } from '../bot/comm'
 import { BotChatMessage } from '@/bot/botmessage'
 import { ChatHistory, ChatSession } from '@/bot/history'
@@ -20,20 +21,10 @@ import { availableSources } from "@/components/source_input/files-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MultiSelectDropdown } from '@/components/ui/multiselect'
 import type { Option } from '@/components/ui/multiselect'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup,
+  DropdownMenuSeparator, DropdownMenuCheckboxItem,} from "@/components/ui/dropdown-menu"
 import "../index.css"
 
-interface Bots {
-  [index: number]: {
-    name: string
-    id: string
-    history: BotHistory[]
-  }
-}
-
-// Define constants for known agent IDs
-const AGENT_ID_23 = 23;
-const AGENT_ID_27 = 27;
-const KNOWN_AGENT_IDS = [AGENT_ID_23, AGENT_ID_27];
 
 // Helper function to check for image URLs
 export const isImageUrl = (url: string | undefined | null): boolean => {
@@ -66,22 +57,22 @@ export const parseMarkdownImage = (text: string | undefined | null): { imageUrl:
 };
 
 export default function Chat() {
+  const {bots, loading, error} = useAllBots()
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [showFileDialog, setShowFileDialog] = useState(false)
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [sources, setSources] = useState(availableSources)
   const [message, setMessage] = useState("")
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
-  const [agentInstance, setAgentInstance] = useState<any>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
-  const chatContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const [state, setState] = useMultiState({
     isSending: false,
     rebuilding: false,
     loadingBotList: false,
-    bots: {} as Bots,
+    bots: {} as Record<number, BotEntry>,
     selectedBots: [] as number[],
     audioMode: false,
   })
@@ -98,21 +89,11 @@ export default function Chat() {
   }
 
   useEffect(() => {
-    async function initBots() {
-      const sb = await api.getBots()
-      const bots: Bots = {}
-      for (const key in sb) {
-        bots[Number(key)] = { name: sb[key], id: key, history: [] }
-      }
-
-      // Add known agents manually
-      bots[AGENT_ID_23] = { name: `Agent ${AGENT_ID_23}`, id: AGENT_ID_23.toString(), history: [] }
-      bots[AGENT_ID_27] = { name: `Aprendia Test`, id: AGENT_ID_27.toString(), history: [] }
-      
+    if (!loading && !error) {
       setState({ bots })
     }
-    initBots()
-  }, [])
+  }, [loading, error, bots, setState])
+
 
   useEffect(() => {
     setSources(availableSources)
@@ -168,13 +149,19 @@ const handleLoadChatHistory = (chatSession: ChatSession) => {
   }, 50)
 }
 
-  const onMultiSelectBot = (selected: number[]) => {
-    if (JSON.stringify(state.selectedBots) !== JSON.stringify(selected)) {
-      setState({ selectedBots: selected })
-      setMessages([])
-      setActiveChat(null)
-    }
-  }
+function toggleBot(id: number) {
+  const next = state.selectedBots.includes(id)
+    ? state.selectedBots.filter(x => x !== id)
+    : [...state.selectedBots, id]
+  setState({ selectedBots: next })
+  setMessages([])      
+  setActiveChat(null)
+}
+
+const label =
+  state.selectedBots.length > 0
+    ? state.selectedBots.map(id => state.bots[id].name).join(", ")
+    : "Select Bots & Agents…"
 
 const onSelectBot = (e: string[] | string) => {
   console.log("Selecting bot:", e)
@@ -207,210 +194,91 @@ const onSelectBot = (e: string[] | string) => {
   }
 }
 
-  const onSend = async (message?: string, audio?: any, tts?: boolean) => {
-    message ||= "where can i find english classes in athens?"
-    if (!message && !audio) return
+async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
+  if (!userText && !audio) return;
+  setState({ isSending: true });
 
-    const selectedBotsConfig = state.selectedBots.map(b => ({
-      label: state.bots[b].name,
-      value: b,
-      history: state.bots[b].history,
-    }))
+  const humanMsg: ChatMessage = {
+    type:    "human",
+    message: userText || "",
+  };
+  setMessages(prev => [...prev, humanMsg]);
 
-    const currentBotName = state.selectedBots.length > 0
-      ? state.bots[state.selectedBots[0]].name
-      : "Chat"
+  const selected = state.selectedBots.map(id => state.bots[id]);
 
-    const userMessage: ChatMessage = { type: "human", message }
-    if (message) {
-      setMessages(prev => [...prev, userMessage])
-    }
+  let reply: ChatMessage;
 
-    let currentActiveChat: ChatSession
-    if (!activeChat) {
-      currentActiveChat = {
-        id: new Date().toISOString(),
-        botName: currentBotName,
-        selectedBots: [...state.selectedBots], 
-        messages: [userMessage],
-        timestamp: new Date().toISOString(),
-      }
-      setActiveChat(currentActiveChat)
-      setChatHistory(prev => [currentActiveChat, ...prev])
-    } else {
-      currentActiveChat = {
-        ...activeChat,
-        messages: [...activeChat.messages, userMessage],
-        selectedBots: [...state.selectedBots], 
-      }
-      setActiveChat(currentActiveChat)
-      setChatHistory(prev =>
-        prev.map(chat =>
-          chat.id === currentActiveChat.id ? currentActiveChat : chat
-        )
+  const agentEntry = selected.find(b => b.type === "agent");
+  if (agentEntry) {
+    const worker = await agents.loadAgent(Number(agentEntry.id));
+
+    const historyText = messages
+      .map(m =>
+        m.type === "human"
+          ? `User: ${m.message}`
+          : `Assistant: ${
+              m.messages?.find(x => x.id === Number(agentEntry.id))?.message
+              || m.message
+            }`
       )
-    }
-    setState({ isSending: true })
+      .join("\n\n");
 
-    // Determine if an agent is selected and which one
-    const selectedAgentId = state.selectedBots.find(id => KNOWN_AGENT_IDS.includes(id));
-    const useAgent = selectedAgentId !== undefined;
-    
-    let botResponseForHistory: ChatMessage
+    const parameters: AgentParameters = {
+      input:   { question: historyText },
+      apikeys: app.getAPIkeys(),
+    };
+    await worker.execute(parameters);
+    const outputText = parameters.output as string;
+    agentEntry.history.push({ isHuman: false, message: outputText });
 
-    if (useAgent && selectedAgentId) {
-      try {
-        const agent = await agents.loadAgent(selectedAgentId); // Use the detected agent ID
+    reply = {
+      type: "bot",
+      message: outputText,
+      messages: [{
+        id:         Number(agentEntry.id),
+        botName:    agentEntry.name,
+        message:    outputText,
+        needsRebuild: false,
+      }],
+      needsRebuild: false,
+    };
+  } else {
+    const config = selected.map(b => ({
+      label: b.name,
+      value: Number(b.id),
+      history: b.history,
+    }));
+    const res = await api.askbot({ message: userText, audio }, tts, config);
+    res.messages.forEach(m => {
+      const bot = state.bots[m.id];
+      bot.history.push({ isHuman: false, message: m.message });
+    });
 
-        // Format the entire conversation history including the latest user message
-        const formattedHistory = currentActiveChat.messages
-          .map(msg => {
-            if (msg.type === 'human') {
-              return `User: ${msg.message}`;
-            } else if (msg.type === 'bot') {
-              // Extract bot message content (handle potential variations)
-              let botContent = "[Bot message not found]";
-              if (msg.messages && msg.messages.length > 0) {
-                  // Prioritize agent-specific message if available, using the selectedAgentId
-                  const agentMsg = msg.messages.find(m => m.id === selectedAgentId);
-                  botContent = agentMsg?.message || msg.messages[0]?.message || msg.message || "[Empty bot message]";
-              } else if (msg.message) {
-                  botContent = msg.message;
-              }
-              return `Assistant: ${botContent}`;
-            }
-            return null; // Ignore other message types or malformed messages
-          })
-          .filter(Boolean) // Remove null entries
-          .join('\\n\\n'); // Separate messages with double newline
-
-        // Ensure the input object exists if it doesn't (though it should)
-        const agentInput = { 
-            question: formattedHistory // Pass the combined history string
-        };
-
-        const parameters: AgentParameters = {
-          input: agentInput,
-          apikeys: app.getAPIkeys(),
-        };
-        
-        console.log(`Sending to agent ${selectedAgentId} with combined history in input:`, parameters); // Log for verification
-
-        await agent.execute(parameters);
-        
-        // Set isSending to false *after* agent execution completes
-        setState({ isSending: false }); 
-
-        const raw = parameters.error
-          ? `Agent error: ${parameters.error}`
-          : parameters.output;
-
-        const text = typeof raw === "string"
-          ? raw
-          : JSON.stringify(raw, null, 2)
-
-        const rbot = state.bots[selectedAgentId]!; // Use the correct agent ID here
-        if (!rbot.history.some(h => h.isHuman && h.message === message))
-          rbot.history.push({ isHuman: true, message });
-        if (!rbot.history.some(h => !h.isHuman && h.message === text))
-          rbot.history.push({ isHuman: false, message: text });
-
-        botResponseForHistory = {
-          type: "bot",
-          message: text,
-          messages: [{
-            id: selectedAgentId, // Use the correct agent ID here
-            botName: `Agent ${selectedAgentId}`, // Use the correct agent ID here
-            message: text,
-            needsRebuild: false,
-          }],
-          needsRebuild: false
-        };
-      } catch (err: unknown) {
-        let errorMsg = "Oops, something went wrong with the agent.";
-        if (err && typeof err === "object") {
-          const e = err as any;
-          if (typeof e.message === "string") {
-            errorMsg = e.message;
-          } else if (typeof e.status === "number") {
-            errorMsg = `Agent server returned ${e.status}`;
-          }
-        }
-        botResponseForHistory = {
-          type: "bot",
-          message: errorMsg,
-          messages: [{
-            id: selectedAgentId, // Use the correct agent ID here
-            botName: `Agent ${selectedAgentId}`, // Use the correct agent ID here
-            message: errorMsg,
-            needsRebuild: false,
-          }],
-          needsRebuild: false
-        }
-      }
-    } else {
-      // Fetch response from non-agent bot
-      const response = message ? await api.askbot({ message }, tts, selectedBotsConfig) : await api.askbot({ audio }, tts, selectedBotsConfig)
-      
-      // Set isSending to false *after* API call completes
-      setState({ isSending: false }); 
-
-      if (!response.error) {
-        for (const m of response.messages) {
-          const rbot = state.bots[m.id]
-          if (!rbot) continue
-
-          if (
-            !rbot.history.find(h => h.isHuman && h.message === message)
-          ) {
-            rbot.history.push({ isHuman: true, message })
-          }
-          if (!m.needsRebuild && !m.error) {
-            if (
-              !rbot.history.find(
-                h => !h.isHuman && h.message === m.message
-              )
-            ) {
-              rbot.history.push({
-                isHuman: false,
-                message: m.message,
-              })
-            }
-          }
-        }
-      }
-
-      response.rebuild = async () => {
-        setState({ isSending: true }) // Keep true here for rebuild action
-        response.needsRebuild = false
-        await onRebuild()
-        setState({ isSending: false }) // Set false after rebuild completes
-      }
-
-      botResponseForHistory = { type: "bot", message: response.message || "", messages: response.messages || [], needsRebuild: response.needsRebuild || false, rebuild: response.rebuild }
-    }
-
-    // Add the bot response to messages AFTER setting isSending to false
-    setMessages(prev => [...prev, botResponseForHistory])
-
-    const updatedChatWithResponse: ChatSession = {
-      ...currentActiveChat, 
-      messages: [...currentActiveChat.messages, botResponseForHistory],
-      selectedBots: [...state.selectedBots], 
-    }
-    setActiveChat(updatedChatWithResponse)
-    setChatHistory(prev => prev.map(chat => 
-      chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat
-    ))
+    reply = {
+      type:        "bot",
+      message:     res.message || "",
+      messages:    res.messages || [],
+      needsRebuild: res.needsRebuild || false,
+      rebuild:     res.rebuild,
+    };
   }
 
-  const onRebuild = async () => {
-    setState({ isSending: true })
-    const selectedBots = state.selectedBots.map(b => ({ label: state.bots[b].name, value: b, history: state.bots[b].history }))
-    const response = await api.askbot({ command: "rebuild", }, false, selectedBots)
-    setMessages(prev => [...prev, response])
-    setState({ isSending: false })
-  }
+  setMessages(prev => [...prev, reply]);
+
+  setChatHistory(prev => [
+    {
+      id:           new Date().toISOString(),
+      botName:      state.bots[state.selectedBots[0]]?.name ?? "Chat",
+      selectedBots: [...state.selectedBots],
+      messages:     [humanMsg, reply],
+      timestamp:    new Date().toISOString(),
+    },
+    ...prev,
+  ]);
+
+  setState({ isSending: false });
+}
+
 
   const handleToggleSelect = (id: string) => {
     setSelectedSources(prev =>
@@ -472,16 +340,46 @@ const onSelectBot = (e: string[] | string) => {
           <div className="py-4 border-b flex justify-between items-center bg-white px-4">
             <h2 className="text-2xl font-bold tracking-tight">Playground</h2>
             <div className="flex items-center gap-2">
-              <div className={state.selectedBots.length === 0 ? 'empty-model-select rounded-md' : ''}>
-                <MultiSelectDropdown 
-                  options={options} 
-                  selected={state.selectedBots} 
-                  onChange={(selected) => {
-                    setState({ selectedBots: selected })
-                    setMessages([])
-                    setActiveChat(null)
-                  }}
-                />
+              <div>
+              <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="w-full justify-between">
+            {label}
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent className="w-60 max-h-60 overflow-y-auto p-1">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Bots</DropdownMenuLabel>
+            {Object.entries(state.bots)
+              .filter(([, b]) => b.type === "api")
+              .map(([key, b]) => (
+                <DropdownMenuCheckboxItem
+                  key={key}
+                  checked={state.selectedBots.includes(Number(key))}
+                  onCheckedChange={() => toggleBot(Number(key))}
+                >
+                  {b.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Agents</DropdownMenuLabel>
+            {Object.entries(state.bots)
+              .filter(([, b]) => b.type === "agent")
+              .map(([key, b]) => (
+                <DropdownMenuCheckboxItem
+                  key={key}
+                  checked={state.selectedBots.includes(Number(key))}
+                  onCheckedChange={() => toggleBot(Number(key))}
+                >
+                  {b.name}
+                </DropdownMenuCheckboxItem>
+              ))}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
               </div>
               <Button 
                 onClick={toggleSidebar} 
@@ -763,10 +661,11 @@ interface MessageProps {
   message: ChatMessage
   isWaiting?: boolean
   isLoadingFromHistory?: boolean
+  agentIds?: number[] // Add this new prop for dynamic agent IDs
 }
 
 function ChatMessage(props: MessageProps) {
-  const { isWaiting, isLoadingFromHistory, message: msg } = props;
+  const { isWaiting, isLoadingFromHistory, message: msg, agentIds = [] } = props;
   let { type, message, messages, needsRebuild, rebuild } = msg;
   messages = messages || [];
   const [copied, setCopied] = useState(false);
@@ -811,7 +710,8 @@ function ChatMessage(props: MessageProps) {
   if (type === "bot") {
     // Agent messages
     if (messages.length > 0) {
-      const agentMessage = messages.find(m => KNOWN_AGENT_IDS.includes(m.id));
+      // Use passed-in agentIds instead of KNOWN_AGENT_IDS
+      const agentMessage = messages.find(m => agentIds.includes(m.id));
       if (agentMessage) {
         let answerContent: string | null = null;
         try {
@@ -864,6 +764,7 @@ function ChatMessage(props: MessageProps) {
       }
     }
     
+    // Rest of the component remains the same
     // Multiple bot messages side-by-side
     if (messages.length > 1) {
       return (
