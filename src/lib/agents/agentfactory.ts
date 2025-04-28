@@ -2,6 +2,7 @@ import { supabase } from "./db"
 import { workerRegistry } from "./registry"
 import { buildWorker } from "./worker"
 import { ulid } from 'ulid'
+import { ApiWorker } from "./workers/api"
 
 
 interface AgentConfig {
@@ -53,6 +54,19 @@ export function createAgent(config: AgentConfig) {
       }
       return null
     },
+    getEndAPIWorkers(p: AgentParameters) {
+      const apiWorkers: ApiWorker[] = []
+      for (const key in workers) {
+        const w = workers[key]
+        if (w.config.type !== "api") continue
+        const outputHandles = Object.values(w.handles).filter((h) => h.direction === "output")
+        if (outputHandles.length === 0) continue
+        const cw = w.getConnectedWokers(p)
+        if (cw.length === 0) continue
+        apiWorkers.push(w as any)
+      }
+      return apiWorkers
+    },
 
     getInputWorker() {
       for (const key in workers) {
@@ -95,9 +109,15 @@ export function createAgent(config: AgentConfig) {
       p.agent = agent
       console.log(`Executing agent '${agent.title}'`)
       const worker = agent.getResponseWorker()
-      if (!worker) return
+      const apiWorkers = agent.getEndAPIWorkers(p)
+      if (!worker && !apiWorkers.length) return
       try {
         await worker.execute(p)
+
+        for (const w of apiWorkers) {
+          await w.execute(p)
+        }
+
       } catch (error) {
         console.error(error)
         p.error = error.toString()
