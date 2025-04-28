@@ -1,23 +1,17 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import LoginPage from "@/pages/login"
-import { ProtectedRoute } from "@/components/protected-route"
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { Login } from "@/pages/login"
 import { AppLayout } from "@/components/app-layout"
+import { Toaster } from "@/components/ui/toaster"
 
-export function App() {
+export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/*" element={<AppLayout />} />
       </Routes>
-    </BrowserRouter>
+      <Toaster />
+    </Router>
   )
 }
 

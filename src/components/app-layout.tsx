@@ -22,7 +22,7 @@ import { RoleForm } from "@/pages/settings/roles"
 import { TeamForm } from "@/pages/settings/team"
 import { TeamSettings } from "@/pages/settings/teams"
 import { UsageSettings } from "@/pages/settings/usage"
-import { UserForm } from "@/pages/settings/users"
+import { UserForm } from "@/pages/settings/user"
 import Sources from "@/pages/sources"
 import { Routes, Route, useLocation, useNavigate, useMatch } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
@@ -30,7 +30,7 @@ import { BotForm } from "@/pages/bots/bot-form"
 import { MultiSelectDropdown } from '@/components/ui/multiselect';
 import { Button } from '@/components/ui/button';
 import { History } from 'lucide-react';
-import React, { useState } from 'react';
+import React from 'react';
 import { ChatProvider } from '@/context/ChatContext';
 import { useChatContext } from '@/context/ChatContext';
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar"
@@ -44,6 +44,8 @@ import { Input, InputTextArea, Modal, Row, Select, useForm } from "@/components/
 import { Separator } from "@/components/ui/separator"
 import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
+import { UsersSettings } from "@/pages/settings/users"
+import { AddTeamMembers } from "@/pages/settings/team-members"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -60,7 +62,8 @@ const routeNames: Record<string, string> = {
   '/settings/teams': 'Settings / Teams',
   '/settings/billing': 'Settings / Billing',
   '/settings/usage': 'Settings / Usage',
-  '/settings/roles': 'Settings / Access Control'
+  '/settings/roles': 'Settings / Access Control',
+  '/settings/users': 'Settings / Users',
 }
 
 function NavigationLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -228,7 +231,17 @@ export function AppLayout() {
                       <TeamForm />
                     </ProtectedRoute>
                   } />
-                  <Route path="teams/users/:id" element={
+                  <Route path="teams/members/:id" element={
+                    <ProtectedRoute resource="teams" action="update">
+                      <AddTeamMembers />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="users" element={
+                    <ProtectedRoute resource="users" action="read">
+                      <UsersSettings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="users/:id" element={
                     <ProtectedRoute resource="users" action="update">
                       <UserForm />
                     </ProtectedRoute>

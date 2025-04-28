@@ -7,6 +7,7 @@ import { fetchRoles, Role } from "@/lib/data/supabaseFunctions"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { Loader2 } from "lucide-react"
 
 const defaultPageSize = 10
 
@@ -14,8 +15,10 @@ export function AccessControlSettings() {
     const navigate = useNavigate()
     const { canCreate, canUpdate } = usePermissions()
     const [roles, setRoles] = useState<Role[]>([])
+    const [isLoading, setIsLoading] = useState(false)
 
     const fetchRole = async () => {
+        setIsLoading(true)
         const { data, error } = await fetchRoles()
         if (error) {
             console.error('Error fetching roles:', error)
@@ -25,6 +28,7 @@ export function AccessControlSettings() {
             created_at: role.created_at || new Date().toISOString()
         }))
         setRoles(formattedRoles || [])
+        setIsLoading(false)
     }
 
     const handleEdit = (id: string) => {
@@ -78,14 +82,20 @@ export function AccessControlSettings() {
                     <Button onClick={() => navigate("/settings/roles/new")}>Create Role</Button>
                 )}
             </div>
-            <CustomTable
-                tableId="roles-table"
-                columns={columns as any}
-                data={roles}
-                onRowClick={(row) => {
-                    canUpdate("roles") ? handleEdit(row.id) : undefined
-                }}
-                placeholder="No roles found" />
+            {isLoading ? (
+                <div className="flex items-center justify-center h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <CustomTable
+                    tableId="roles-table"
+                    columns={columns as any}
+                    data={roles}
+                    onRowClick={(row) => {
+                        canUpdate("roles") ? handleEdit(row.id) : undefined
+                    }}
+                    placeholder="No roles found" />
+            )}
         </div>
     )
 }

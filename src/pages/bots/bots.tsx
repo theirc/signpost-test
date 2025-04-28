@@ -11,9 +11,11 @@ import TestResultDialog from "@/components/bot_management/test-result-dialog"
 import { fetchBots, addBot, updateBot, deleteBot, Bot, fetchCollections, Collection, fetchModels, Model } from '@/lib/data/supabaseFunctions'
 import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 export function BotManagement() {
     const navigate = useNavigate()
+    const { selectedTeam } = useTeamStore()
     const [models, setModels] = useState<Model[]>([])
     const [modelsLoading, setModelsLoading] = useState(true)
     const [collections, setCollections] = useState<Collection[]>([])
@@ -92,7 +94,7 @@ export function BotManagement() {
         fetchBotsData()
         fetchCollectionsData()
         fetchModelsData() // Fetch models on mount
-    }, [fetchCollectionsData, fetchModelsData])
+    }, [fetchCollectionsData, fetchModelsData, selectedTeam])
 
     // Real-time subscription to bots
     useEffect(() => {
@@ -378,8 +380,8 @@ export function BotManagement() {
                     </div>
 
                     {loading ? (
-                        <div className="w-full h-64 flex items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin" />
+                        <div className="flex items-center justify-center h-[400px]">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
                         <CustomTable

@@ -8,8 +8,10 @@ import { ColumnDef } from '@tanstack/react-table'
 import SearchFilter from '@/components/ui/search-filter'
 import DateFilter from '@/components/ui/date-filter'
 import SelectFilter from '@/components/ui/select-filter'
+import { useTeamStore } from '@/lib/hooks/useTeam'
 
 export function CustomView() {
+    const { selectedTeam } = useTeamStore()
     const [selectedScoreFields, setSelectedScoreFields] = useState<string[]>(() => {
         const saved = localStorage.getItem('customViewScoreFields')
         return saved ? JSON.parse(saved) : []
@@ -40,7 +42,7 @@ export function CustomView() {
             setLogs(logsData)
         }
         loadData()
-    }, [])
+    }, [selectedTeam])
 
     useEffect(() => {
         if (isCreated && scores.length > 0 && logs.length > 0) {
