@@ -34,14 +34,10 @@ export function SearchInput(props: SearchInputProps) {
     clearBlobUrl,
   } = useReactMediaRecorder({ audio: true })
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto"
-    }
-  }, [value])
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value)
+    e.target.style.height = "auto"
+    e.target.style.height = `${e.target.scrollHeight}px`
   }
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -187,6 +183,7 @@ export function SearchInput(props: SearchInputProps) {
                   type="button"
                   onClick={value.trim() ? () => submitText(value) : onModeChanged}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-black text-white"
+                  disabled={disabled}
                 >
                   {value.trim()
                     ? <ArrowUp className="h-5 w-5" />

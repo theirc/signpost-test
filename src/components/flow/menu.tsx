@@ -85,7 +85,6 @@ export function Toolbar(props: Props) {
   }
 
   agentForm.onSubmit = async (data) => {
-    console.log("Agent Form Submit", data)
     app.agent.title = data.title
     app.agent.description = data.description
     app.agent.type = data.type as any
@@ -116,10 +115,10 @@ export function Toolbar(props: Props) {
       return
     }
 
-    if (!agent.hasInput()) {
-      toast("Add an Input Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
-      return
-    }
+    // if (!agent.hasInput()) {
+    //   toast("Add an Input Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
+    //   return
+    // }
 
     const p: AgentParameters = {
       debug: true,
@@ -156,11 +155,6 @@ export function Toolbar(props: Props) {
 
   return <>
     <div className="flex gap-3 mb-2 text-xs items-center">
-      {/* <div className="flex flex-grow">
-        <form.context>
-          <Input className="h-3 px-1 p-3 pr-2 border-gray-100 hover:border-gray-300 text w-full" field={m.title} hideLabel maxLength={24} />
-        </form.context>
-      </div> */}
       <div className="flex flex-grow items-center">
         <div className="text-sm" >
           <Settings size={18} className="inline mr-2 cursor-pointer" onClick={onSetAgent} />
@@ -177,7 +171,7 @@ export function Toolbar(props: Props) {
         <Play size={18} />
       </div>
       <Separator orientation="vertical" />
-      <Menubar className="h-4 border-0 hi">
+      <Menubar className="h-4 border-0">
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">I/O</MenubarTrigger>
           <MenubarContent>
@@ -218,7 +212,7 @@ export function Toolbar(props: Props) {
         <Input span={12} field={f.title} required />
       </Row>
       <Row>
-        <InputTextArea span={12} field={f.description} />
+        <InputTextArea rows={10} span={12} field={f.description} />
       </Row>
       <Row>
         <Select span={12} field={f.type} required />
@@ -236,7 +230,6 @@ export function Toolbar(props: Props) {
         <Input span={12} field={m.zendesk} required />
       </Row>
     </Modal>
-
 
   </>
 

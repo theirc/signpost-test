@@ -140,8 +140,16 @@ const saveChatHistory = (userMessage: ChatMessage, botResponse: ChatMessage) => 
     existingHistory.unshift(newChat)
   }
     
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existingHistory));
-  console.log("Saved Chat History in LocalStorage")
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(existingHistory));
+    console.log("Saved Chat History in LocalStorage")
+  } catch (error) {
+    if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
+      console.warn(`LocalStorage quota exceeded in saveChatHistory. Could not save history for key: ${LOCAL_STORAGE_KEY}`);
+    } else {
+      console.error("Error saving chat history within saveChatHistory:", error);
+    }
+  }
 }
 
 async function getFromServer<T>(url: string): Promise<Awaited<T>> {

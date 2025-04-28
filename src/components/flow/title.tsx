@@ -38,7 +38,7 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
     </HoverCard>
   }
 
-  return <div className='w-full p-1 pl-2 mb-1 bg-yellow-200 text-sm flex border-b-gray-200 border-b relative group'>
+  return <div className='w-full p-1 pl-2 mb-1 bg-[#FAE264] text-sm flex border-b-gray-200 border-b relative group'>
     {Icon}
     <div className="flex-grow">{worker?.registry.title ?? "Title"}</div>
     <DropdownMenu>

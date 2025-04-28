@@ -215,6 +215,7 @@ function Flow() {
       nodeTypes={nodeTypes}
       edgeTypes={{ executeEdge: ButtonEdge }}
       fitView
+      minZoom={0.2}
     >
       <Background />
       <Controls />
@@ -256,11 +257,14 @@ export function FlowDesigner({ id }: { id?: string }) {
   </div>
 
   return <>
-    <Toolbar />
-    <ReactFlowProvider>
-      <Flow />
-      <Toaster />
-    </ReactFlowProvider>
+    {/* <Toolbar /> Now removed as it will be in HeaderControls */}
+    {/* Added h-full to ensure this container takes full height */}
+    <div className="h-full"> 
+      <ReactFlowProvider>
+        <Flow />
+        <Toaster />
+      </ReactFlowProvider>
+    </div>
   </>
 }
 

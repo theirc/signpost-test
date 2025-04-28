@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database, LayoutGrid, Map } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useSupabase } from "@/hooks/use-supabase"
 import { formatDate } from "@/components/source_input/utils"
@@ -30,6 +30,10 @@ import {
   removeSourceFromCollection,
   getTagsForSource
 } from '@/lib/data/supabaseFunctions'
+import { Switch } from "@/components/ui/switch"
+import { CollectionGraph } from "@/components/CollectionGraph"
+import { Checkbox } from "@/components/ui/checkbox"
+import { CheckedState } from "@radix-ui/react-checkbox"
 
 export function CollectionsManagement() {
   // Replace useCollections hook with useState
@@ -53,6 +57,9 @@ export function CollectionsManagement() {
   const [isMapping, setIsMapping] = useState(false)
   const [sources, setSources] = useState<Source[]>([])
   const [sourcesLoading, setSourcesLoading] = useState(true)
+  // Add view mode state
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+  const [sourceSearchQuery, setSourceSearchQuery] = useState("")
 
   // Fetch sources on mount and when refresh is triggered
   const refreshSources = useCallback(async () => {
@@ -305,12 +312,19 @@ export function CollectionsManagement() {
     );
   };
 
-  // Update handleSelectAll to accept a ChangeEvent
+  // Update handleSelectAll logic
   const handleSelectAll = () => {
-    if (selectedSources.length === 0) {
-      setSelectedSources(sourcesDisplay.map(source => source.id));
+    // Use filteredSources for select all logic
+    const allFilteredIds = filteredSources.map(source => source.id);
+    
+    // If all *filtered* sources are already selected, deselect all.
+    // Otherwise, select all *filtered* sources.
+    const allFilteredSelected = allFilteredIds.every(id => selectedSources.includes(id)) && selectedSources.length === allFilteredIds.length;
+
+    if (allFilteredSelected) {
+      setSelectedSources([]); // Deselect all
     } else {
-      setSelectedSources([]);
+      setSelectedSources(allFilteredIds); // Select all filtered
     }
   };
 
@@ -560,7 +574,41 @@ export function CollectionsManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  // Define columns for the source selection table
+  const sourceColumns: ColumnDef<SourceDisplay>[] = [
+    // --- Selection Checkbox Column ---
+    {
+      id: "select",
+      header: ({ table }) => {
+        const isAllSelected = table.getIsAllPageRowsSelected();
+        const isSomeSelected = table.getIsSomePageRowsSelected();
+        let checkedState: CheckedState = false;
+        if (isAllSelected) {
+          checkedState = true;
+        } else if (isSomeSelected) {
+          checkedState = "indeterminate";
+        }
+
+        return (
+          <Checkbox
+            checked={checkedState}
+            onCheckedChange={handleSelectAll} // Use direct handler
+            aria-label="Select all"
+          />
+        );
+      },
+      cell: ({ row }) => (
+        <Checkbox
+          checked={selectedSources.includes(row.original.id)} // Check against selectedSources state
+          onCheckedChange={() => handleToggleSelect(row.original.id)} // Use direct handler
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 40, // Fixed size for checkbox column
+    },
+    // --- Other Columns (Name, Type, etc.) ---
     { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
     { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: true, cell: (info) => info.getValue() },
     { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
@@ -615,36 +663,61 @@ export function CollectionsManagement() {
     }
   ]
 
+  // Filter sources based on search query
+  const filteredSources = useMemo(() => {
+    if (!sourceSearchQuery) {
+      return sourcesDisplay
+    }
+    const lowerCaseQuery = sourceSearchQuery.toLowerCase()
+    return sourcesDisplay.filter(source => 
+      source.name.toLowerCase().includes(lowerCaseQuery) ||
+      (source.content && source.content.toLowerCase().includes(lowerCaseQuery))
+    )
+  }, [sourcesDisplay, sourceSearchQuery])
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={handleRefreshSources}>
-              <RefreshCcw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button onClick={() => {
-              setIsEditModalOpen(true)
-              setEditingCollection(null)
-              setNewCollectionName("")
-              setSelectedSources([])
-            }}>
-              Create Collection
-            </Button>
+      <div className="flex-1 p-8 pt-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
+            <p className="text-sm text-muted-foreground mt-1"> 
+              Manage your collections and their sources.
+            </p>
+          </div>
+          <div className="flex flex-col items-end space-y-2">
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={handleRefreshSources}>
+                <RefreshCcw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button onClick={() => {
+                setIsEditModalOpen(true)
+                setEditingCollection(null)
+                setNewCollectionName("")
+                setSelectedSources([])
+              }}>
+                Create Collection
+              </Button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <LayoutGrid className={`h-4 w-4 ${viewMode === 'grid' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <Switch
+                checked={viewMode === 'map'}
+                onCheckedChange={(checked) => setViewMode(checked ? 'map' : 'grid')}
+              />
+              <Map className={`h-4 w-4 ${viewMode === 'map' ? 'text-primary' : 'text-muted-foreground'}`} />
+            </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="text-sm text-muted-foreground">
-            Manage your collections and their sources.
-          </div>
-
+        <div>
           {collectionsLoading ? (
             <div className="w-full h-64 flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
+          ) : viewMode === 'map' ? (
+            <CollectionGraph collections={collections} collectionSources={collectionSources} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {collections.map(collection => (
@@ -723,7 +796,6 @@ export function CollectionsManagement() {
 
       <Dialog open={isEditModalOpen} onOpenChange={(open) => {
         if (!open) {
-          // When closing the dialog, make sure to reset all states
           resetEditState();
         } else {
           setIsEditModalOpen(open);
@@ -749,7 +821,15 @@ export function CollectionsManagement() {
                   placeholder="Enter collection name"
                 />
               </div>
-              {/* Use the 'loading' state here, controlled by loadCollectionSources */}
+              <div>
+                <Label htmlFor="source-search">Search Sources</Label>
+                <Input
+                  id="source-search"
+                  placeholder="Search by name or content..."
+                  value={sourceSearchQuery}
+                  onChange={(e) => setSourceSearchQuery(e.target.value)}
+                />
+              </div>
               {loading ? ( 
                 <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -757,13 +837,10 @@ export function CollectionsManagement() {
               ) : (
                 <CustomTable 
                   tableId="knowledge-table" 
-                  selectedRows={selectedSources} 
-                  columns={columns as any} 
-                  data={sourcesDisplay} 
+                  columns={sourceColumns as any}
+                  data={filteredSources} 
                   filters={filters} 
                   placeholder="No sources found" 
-                  onToggleSelect={handleToggleSelect} 
-                  onSelectAll={handleSelectAll} 
                 />
               )}
             </div>

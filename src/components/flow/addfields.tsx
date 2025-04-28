@@ -1,12 +1,10 @@
-import { workerRegistry } from "@/lib/agents/registry"
-import { useUpdateNodeInternals } from "@xyflow/react"
-import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
-import { model } from "../data/addfieldsmodels"
-import { useWorkerContext } from "./hooks"
-import { DeleteButton, SubmitButton } from "../forms/submitbutton"
-import { MemoizedWorker } from "./memoizedworkers"
-import { useForceUpdate } from "@/lib/utils"
 import { app } from "@/lib/app"
+import { useUpdateNodeInternals } from "@xyflow/react"
+import { model } from "../data/addfieldsmodels"
+import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
+import { DeleteButton, SubmitButton } from "../forms/submitbutton"
+import { useWorkerContext } from "./hooks"
+
 
 export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
   return <div className="w-full px-1 pt-2 -mb-2 flex justify-center" onClick={props.onClick}>
@@ -14,16 +12,19 @@ export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
   </div>
 }
 
+interface Props {
+  includePrompt?: boolean
+  direction: "input" | "output"
+  ignoreTypes?: IOTypes[]
+}
 
-
-export function AddFieldsForm(props: { includePrompt?: boolean, direction: "input" | "output" }) {
+export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) {
 
   const ctx = useWorkerContext()
   const { worker } = ctx
   const { agent } = app
 
   // console.log("AddFieldsForm: ", worker.id, props.direction)
-
 
   const updateNodeInternals = useUpdateNodeInternals()
   const { form, m, } = useForm(model)
@@ -37,8 +38,8 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
     const h: NodeIO = {
       name: data.name,
       type: data.type as any,
-      direction: props.direction,
-      prompt: props.includePrompt ? data.prompt : undefined,
+      direction: direction,
+      prompt: includePrompt ? data.prompt : undefined,
     }
     if (data.id) {
       worker.updateHandler(data.id, h)
@@ -67,14 +68,20 @@ export function AddFieldsForm(props: { includePrompt?: boolean, direction: "inpu
     form.modal.show()
   }
 
+  let list = [...model.fields.type.list]
+
+  if (ignoreTypes) {
+    list = list.filter(t => !(ignoreTypes.includes(t.value as IOTypes)))
+  }
+
   return <>
     <AddFields onClick={onAddFieldClick} />
 
     <Modal form={form} title="Add Field">
       <Row>
         <Input span={12} field={m.name} required />
-        {props.includePrompt && <InputTextArea span={12} field={m.prompt} required />}
-        <Select span={12} field={m.type} placeholder="Select Type" required />
+        {includePrompt && <InputTextArea rows={10} span={12} field={m.prompt} required />}
+        <Select span={12} field={m.type} placeholder="Select Type" required options={list} />
       </Row>
       <Modal.Footer>
         {form.editing && <DeleteButton onClick={onDelete} />}

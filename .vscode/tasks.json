@@ -5,8 +5,7 @@
       "type": "npm",
       "script": "dev",
       "problemMatcher": [],
-      "label": "🚀 Start",
-      "detail": "vite"
+      "label": "🚀 Start"
     },
     {
       "type": "typescript",
@@ -19,7 +18,7 @@
         "isDefault": true,
         "kind": "build"
       },
-      "label": "tsc: watch - tsconfig.json"
+      "label": "🏭 Build"
     }
   ]
 }
