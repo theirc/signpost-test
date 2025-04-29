@@ -40,7 +40,7 @@ ${doc.body}
 `}).join("\n\n")
   }
 
-  return <NodeLayout worker={worker} resizable={type == "string" || type == "doc"} className="flex flex-col" maxWidth={700} maxHeight={800}>
+  return <NodeLayout worker={worker} resizable={type == "string" || type == "doc"} className="flex flex-col" maxWidth={700} maxHeight={1024}>
 
     <InlineHandles>
       <WorkerLabeledHandle handler={worker.fields.input} />
@@ -50,7 +50,7 @@ ${doc.body}
     {type == "unknown" && <h3 className="flex justify-center font-semibold my-4 text-red-600">Connect the Input Node</h3>}
 
     {type == "string" && <div className="mx-2 mt-2 border border-solid border-gray-200 overflow-y-auto nodrag h-full min-h-10 p-2" >
-      <div className="max-w-[500px] min-h-10 h-full flex-grow">
+      <div className="max-w-[500px] min-h-10 h-full flex-grow ">
         <Markdown content={worker.fields.input.value} />
       </div>
     </div>}

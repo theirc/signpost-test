@@ -25,6 +25,7 @@ import { useForceUpdate } from '@/lib/utils'
 import { SearchNode } from './nodes/search'
 import { AgentNode } from './nodes/agent'
 import { ApiNode } from './nodes/api'
+import { DocumentSelectorNode } from './nodes/documentselector'
 
 const nodeTypes = {
   request: RequestNode,
@@ -41,6 +42,7 @@ const nodeTypes = {
   search: SearchNode,
   agentWorker: AgentNode,
   api: ApiNode,
+  documentSelector: DocumentSelectorNode,
 }
 
 function Flow() {
@@ -257,9 +259,8 @@ export function FlowDesigner({ id }: { id?: string }) {
   </div>
 
   return <>
-    {/* <Toolbar /> Now removed as it will be in HeaderControls */}
-    {/* Added h-full to ensure this container takes full height */}
-    <div className="h-full"> 
+    <Toolbar />
+    <div className="h-full">
       <ReactFlowProvider>
         <Flow />
         <Toaster />
