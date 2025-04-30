@@ -21,6 +21,7 @@ import {
   Source,
   addTag
 } from '@/lib/data/supabaseFunctions'
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 // Define Tag type if not already globally available (or import if defined in supabaseFunctions)
 type Tag = { id: string; name: string; }; 
@@ -38,6 +39,7 @@ export default function Sources() {
   console.log("[Sources Page] Component Mounting/Rendering"); // Mount Log
 
   const [sources, setSources] = useState<Source[]>([])
+  const { selectedTeam } = useTeamStore()
   const [loading, setLoading] = useState(true) // Start loading true
   const [previewContent, setPreviewContent] = React.useState<PreviewContent | null>(null)
   const [selectedElement, setSelectedElement] = React.useState<LiveDataElement | null>(null)
@@ -78,9 +80,9 @@ export default function Sources() {
   useEffect(() => {
     console.log("[Initial Fetch Effect] Running...");
     fetchSourcesData()
-  }, [fetchSourcesData])
+  }, [fetchSourcesData, selectedTeam])
 
-  React.useEffect(() => {
+  useEffect(() => {
     console.log(`[Transform Effect] Running. Loading: ${loading}, Sources Count: ${sources.length}`);
     if (!loading && sources.length > 0) {
       console.log("[Transform Effect] Transforming sources...");

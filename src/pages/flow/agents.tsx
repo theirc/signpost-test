@@ -6,18 +6,23 @@ import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from "react"
 import { format } from "date-fns"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 export function AgentList() {
   const navigate = useNavigate()
   const [agents, setAgents] = useState<any[]>([])
+  const { selectedTeam } = useTeamStore()
 
   useEffect(() => {
     const fetchAgents = async () => {
-      const { data } = await agentsModel.data.select("*")
+      if (!selectedTeam) {
+          throw new Error('No team selected')
+      }
+      const { data } = await agentsModel.data.select("*").or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
       setAgents(data || [])
     }
     fetchAgents()
-  }, [])
+  }, [selectedTeam])
 
   const handleRowClick = (agentId: string) => {
     navigate(`/agent/${agentId}`)

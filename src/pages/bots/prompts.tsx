@@ -11,6 +11,7 @@ import SearchFilter from '@/components/ui/search-filter';
 import SelectFilter from '@/components/ui/select-filter';
 import DateFilter from '@/components/ui/date-filter';
 import CustomTable from '@/components/ui/custom-table';
+import { useTeamStore } from '@/lib/hooks/useTeam';
 
 // Default prompt structure for form
 const defaultPrompt = {
@@ -23,6 +24,7 @@ const defaultPrompt = {
 
 export function SystemPrompts() {
     const { fetchPrompts, addPrompt, updatePrompt, deletePrompt } = useSystemPrompts();
+    const { selectedTeam } = useTeamStore()
     const [prompts, setPrompts] = useState<SystemPrompt[]>([]);
     const [loading, setLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -33,7 +35,7 @@ export function SystemPrompts() {
     // Load prompts on mount
     useEffect(() => {
         loadPrompts();
-    }, []);
+    }, [selectedTeam]);
 
     const loadPrompts = async () => {
         setLoading(true);
@@ -181,8 +183,8 @@ export function SystemPrompts() {
                 {/* Table */}
                 <div className="space-y-4">
                     {loading ? (
-                        <div className="w-full h-64 flex items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin" />
+                        <div className="flex items-center justify-center h-[400px]">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
                         <CustomTable

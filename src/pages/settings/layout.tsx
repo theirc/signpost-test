@@ -24,7 +24,12 @@ export function SettingsLayout() {
             )}
             {canRead("teams") && (
               <TabsTrigger value="teams" onClick={() => navigate("/settings/teams")}>
-                Team
+                Teams
+              </TabsTrigger>
+            )}
+            {canRead("users") && (
+              <TabsTrigger value="users" onClick={() => navigate("/settings/users")}>
+                Users
               </TabsTrigger>
             )}
             {canRead("billing") && (

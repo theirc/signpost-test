@@ -4,7 +4,7 @@ import CustomTable from "@/components/ui/custom-table"
 import { fetchTeams, Team, User, getTeamUsers } from "@/lib/data/supabaseFunctions"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Loader2, UserPlus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -15,9 +15,11 @@ interface TeamWithUsers extends Team {
 export function TeamSettings() {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([])
   const [teams, setTeams] = useState<TeamWithUsers[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
 
   const fetchTeam = async () => {
+    setIsLoading(true)
     const { data: teamsData, error: teamsError } = await fetchTeams()
     if (teamsError) {
       console.error('Error fetching teams:', teamsError)
@@ -35,6 +37,7 @@ export function TeamSettings() {
     )
 
     setTeams(teamsWithUsers)
+    setIsLoading(false)
   }
 
   const isTeamExpanded = (teamId: string) => expandedTeams.includes(teamId)
@@ -48,7 +51,7 @@ export function TeamSettings() {
   }
 
   const handleEdit = (id: string) => {
-    navigate(`/settings/teams/users/${id}`)
+    navigate(`/settings/users/${id}`)
   }
 
   const columns: ColumnDef<{ id: any }>[] = [
@@ -130,37 +133,49 @@ export function TeamSettings() {
         </div>
         <Button onClick={() => navigate("/settings/teams/new")}>Create Team</Button>
       </div>
-
-      <div className="space-y-4">
-        {teams.map((team) => (
-          <div key={team.id} className="space-y-4">
-            <div className="flex items-center justify-between p-4 cursor-pointer">
-              <div className="flex items-center" onClick={() => toggleTeam(team.id)}>
-                <Button variant="ghost" size="icon">
-                  <ChevronDown
-                    className={`h-4 w-4 transform transition-transform ${isTeamExpanded(team.id) ? "rotate-180" : ""
-                      }`}
-                  />
-                </Button>
-                <div>
-                  <div className="font-medium">{team.name}</div>
-                  <div className="text-sm text-muted-foreground">{team.description}</div>
+      {isLoading ? (
+        <div className="flex items-center justify-center h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {teams.map((team) => (
+            <div key={team.id} className="space-y-4">
+              <div className="flex items-center justify-between p-4 cursor-pointer">
+                <div className="flex items-center" onClick={() => toggleTeam(team.id)}>
+                  <Button variant="ghost" size="icon">
+                    <ChevronDown
+                      className={`h-4 w-4 transform transition-transform ${isTeamExpanded(team.id) ? "rotate-180" : ""
+                        }`}
+                    />
+                  </Button>
+                  <div>
+                    <div className="font-medium">{team.name}</div>
+                    <div className="text-sm text-muted-foreground">{team.description}</div>
+                  </div>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/settings/teams/members/${team.id}`)}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Team Member
+                </Button>
               </div>
-              <Button onClick={() => navigate("/settings/teams/users/new")}>Add Team Member</Button>
+              {isTeamExpanded(team.id) && (
+                <CustomTable
+                  data={team.users || []}
+                  columns={columns}
+                  tableId={`team-${team.id}-users`}
+                  pageSize={5}
+                  onRowClick={(row) => handleEdit(row.id)}
+                />
+              )}
             </div>
-            {isTeamExpanded(team.id) && (
-              <CustomTable
-                data={team.users || []}
-                columns={columns}
-                tableId={`team-${team.id}-users`}
-                pageSize={5}
-                onRowClick={(row) => handleEdit(row.id)}
-              />
-            )}
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 } 

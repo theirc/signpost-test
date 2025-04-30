@@ -1,3 +1,4 @@
+import { useTeamStore } from "@/lib/hooks/useTeam"
 import { useSupabase } from "./use-supabase"
 import { useState, useCallback } from "react"
 
@@ -21,11 +22,16 @@ export function useSystemPrompts() {
         try {
             setLoading(true)
             console.log("Fetching prompts from Supabase...")
+            const selectedTeam = useTeamStore.getState().selectedTeam
+            if (!selectedTeam) {
+                throw new Error('No team selected')
+            }
             
             // First verify the connection and table
             const { error: tableError } = await supabase
                 .from('system_prompts')
                 .select('count')
+                .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
                 .limit(1)
             
             if (tableError) {

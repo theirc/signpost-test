@@ -81,6 +81,7 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { pipeline, env } from '@xenova/transformers'
+import { useTeamStore } from '@/lib/hooks/useTeam'
 
 // Configure transformers.js environment
 env.useBrowserCache = false
@@ -91,7 +92,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 // Create a truly singleton client at the module level
-// This ensures only one client exists across the entire application
 let supabaseClient: SupabaseClient
 
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -103,7 +103,6 @@ try {
   console.info('✅ Supabase client initialized successfully')
 } catch (error) {
   console.error('❌ Failed to initialize Supabase client:', error)
-  // Create a fake client that throws errors when methods are called
   supabaseClient = new Proxy({} as SupabaseClient, {
     get: (_, prop) => () => {
       throw new Error(`Supabase client failed to initialize. Cannot call method "${String(prop)}".`)
@@ -432,7 +431,6 @@ export async function deleteModel(id: string): Promise<{
 }
 
 // =========== BOT FUNCTIONS ===========
-
 /**
  * Fetches all bots from the database
  * 
@@ -443,12 +441,18 @@ export async function fetchBots(): Promise<{
   error: Error | null
 }> {
   try {
-    const { data, error } = await supabaseClient
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { data, error: fetchError } = await supabaseClient
       .from('bots')
       .select('*')
+      .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
       .order('created_at', { ascending: false })
 
-    if (error) throw error
+    if (fetchError) throw fetchError
     return { data: data || [], error: null }
   } catch (error) {
     console.error('Error fetching bots:', error)
@@ -467,17 +471,22 @@ export async function addBot(botData: Partial<Bot>): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     if (!botData.name || !botData.model) {
       throw new Error('Name and model are required')
     }
 
-    const { data, error } = await supabaseClient
+    const { data, error: insertError } = await supabaseClient
       .from('bots')
-      .insert([botData])
+      .insert([{ ...botData, team_id: selectedTeam.id }])
       .select()
       .single()
 
-    if (error) throw error
+    if (insertError) throw insertError
     return { data, error: null }
   } catch (error) {
     console.error('Error adding bot:', error)
@@ -567,9 +576,15 @@ export async function fetchCollections(): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('collections')
       .select('*')
+      .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -591,9 +606,14 @@ export async function addCollection(name: string): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('collections')
-      .insert([{ name }])
+      .insert([{ name, team_id: selectedTeam.id }])
       .select()
 
     if (error) throw error
@@ -617,9 +637,15 @@ export async function updateCollection(id: string, name: string): Promise<{
 }> {
   try {
     console.log(`[supabaseFunctions] Updating collection ${id} with name: ${name}`)
+
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { error } = await supabaseClient
       .from('collections')
-      .update({ name })
+      .update({ name, team_id: selectedTeam.id })
       .eq('id', id)
       .select()
 
@@ -627,14 +653,14 @@ export async function updateCollection(id: string, name: string): Promise<{
       console.error(`[supabaseFunctions] Error updating collection ${id}:`, error)
       throw error
     }
-    
+
     console.log(`[supabaseFunctions] Successfully updated collection ${id} to name: ${name}`)
     return { success: true, error: null }
   } catch (error) {
     console.error(`[supabaseFunctions] Exception in updateCollection:`, error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
@@ -651,7 +677,12 @@ export async function deleteCollection(id: string): Promise<{
 }> {
   try {
     console.log(`[supabaseFunctions] Starting deletion of collection ${id}`)
-    
+
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     // 1. Get any bots using this collection
     const { data: linkedBots, error: botsError } = await supabaseClient
       .from('bots')
@@ -694,19 +725,19 @@ export async function deleteCollection(id: string): Promise<{
       .from('collections')
       .delete()
       .eq('id', id)
-
+      .eq('team_id', selectedTeam.id)
     if (deleteCollectionError) {
       console.error(`[supabaseFunctions] Error deleting collection:`, deleteCollectionError)
       throw deleteCollectionError
     }
-    
+
     console.log(`[supabaseFunctions] Successfully deleted collection ${id} and its relationships`)
     return { success: true, error: null }
   } catch (error) {
     console.error(`[supabaseFunctions] Error in deleteCollection:`, error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
@@ -723,10 +754,10 @@ export async function generateEmbedding(text: string): Promise<{
 }> {
   try {
     console.log('[supabaseFunctions] Starting OpenAI embedding generation...')
-    
+
     // OpenAI recommends replacing newlines with spaces for best results
     const input = text.replace(/\n/g, ' ')
-    
+
     const response = await fetch('https://api.openai.com/v1/embeddings', {
       method: 'POST',
       headers: {
@@ -738,30 +769,30 @@ export async function generateEmbedding(text: string): Promise<{
         input
       })
     })
-    
+
     if (!response.ok) {
       const error = await response.json()
       throw new Error(`OpenAI API error: ${error.error?.message || 'Unknown error'}`)
     }
-    
+
     const data = await response.json()
     const embedding = data.data[0].embedding
-    
+
     console.log('[supabaseFunctions] OpenAI embedding generated successfully')
-    
+
     // Verify the embedding is the correct size (1536 for text-embedding-ada-002)
     if (embedding.length !== 1536) {
       throw new Error(`Expected embedding dimension of 1536, but got ${embedding.length}`)
     }
-    
+
     return { data: embedding, error: null }
   } catch (error) {
     console.error('[supabaseFunctions] Error generating OpenAI embedding:', error)
     console.error('[supabaseFunctions] Error type:', error instanceof Error ? error.constructor.name : typeof error)
     console.error('[supabaseFunctions] Error message:', error instanceof Error ? error.message : String(error))
-    
+
     let errorMessage = 'Unknown error occurred during OpenAI embedding generation.'
-    
+
     if (error instanceof Error) {
       if (error.message.includes('API key')) {
         errorMessage = 'Invalid or missing OpenAI API key. Please check your environment configuration.'
@@ -771,9 +802,9 @@ export async function generateEmbedding(text: string): Promise<{
         errorMessage = error.message
       }
     }
-    
-    return { 
-      data: null, 
+
+    return {
+      data: null,
       error: new Error(errorMessage)
     }
   }
@@ -787,7 +818,7 @@ export async function generateEmbedding(text: string): Promise<{
  * @returns {Promise<boolean>} True if successful, false if an error occurred
  */
 export async function generateCollectionVector(
-  id: string, 
+  id: string,
   sources?: { id: string; content: string }[]
 ): Promise<{
   success: boolean,
@@ -795,7 +826,7 @@ export async function generateCollectionVector(
 }> {
   try {
     console.log(`[supabaseFunctions] Starting vector generation for collection ${id}`)
-    
+
     // First get total count of sources for reporting
     const { count: totalSources } = await supabaseClient
       .from('collection_sources')
@@ -814,7 +845,7 @@ export async function generateCollectionVector(
         )
       `)
       .eq('collection_id', id)
-      .is('sources.vector', null) as { 
+      .is('sources.vector', null) as {
         data: Array<{
           source_id: string;
           sources: {
@@ -832,28 +863,28 @@ export async function generateCollectionVector(
     const sourcesToProcess = (collectionSources || []).filter(cs => cs.sources?.content)
     const skippedCount = totalSources - (sourcesToProcess.length || 0)
     console.log(`[supabaseFunctions] Found ${sourcesToProcess.length} sources that need vectors (${skippedCount} already vectorized)`)
-    
+
     if (sourcesToProcess.length === 0) {
       console.log('[supabaseFunctions] No sources need vectorization - all vectors are up to date')
       return { success: true, error: null }
     }
-    
+
     // Process sources
     for (const cs of sourcesToProcess) {
       console.log(`[supabaseFunctions] Generating vector for source ${cs.source_id}`)
-      
+
       const { data: embedding, error: embeddingError } = await generateEmbedding(cs.sources.content)
-      
+
       if (embeddingError) {
         console.error(`[supabaseFunctions] Error generating embedding for source ${cs.source_id}:`, embeddingError)
         continue
       }
-      
+
       if (!embedding) {
         console.error(`[supabaseFunctions] Failed to generate embedding for source ${cs.source_id}`)
         continue
       }
-      
+
       const { error: updateError } = await supabaseClient
         .from('sources')
         .update({ vector: embedding })
@@ -884,27 +915,27 @@ export async function generateCollectionVector(
         const { data: elements, error: liveDataError } = await supabaseClient
           .from('live_data_elements')
           .select('id, content, vector')
-          .in('source_config_id', sourceConfigs.map(config => config.source)) as { 
-            data: LiveDataElement[] | null, 
-            error: any 
+          .in('source_config_id', sourceConfigs.map(config => config.source)) as {
+            data: LiveDataElement[] | null,
+            error: any
           }
 
         if (liveDataError) {
           console.error('[supabaseFunctions] Error fetching live data elements:', liveDataError)
         } else if (elements) {
           // Process live data elements in batches to avoid overwhelming the system
-          const elementsToProcess = elements.filter(element => 
+          const elementsToProcess = elements.filter(element =>
             // Only process elements that don't have a vector and have content
             !element.vector && element.content
           )
 
           console.log(`[supabaseFunctions] Found ${elementsToProcess.length} live data elements that need vectors`)
-          
+
           for (const element of elementsToProcess) {
             try {
               // Log both ID and a preview of the content
-              const contentPreview = element.content.length > 100 
-                ? `${element.content.substring(0, 100)}...` 
+              const contentPreview = element.content.length > 100
+                ? `${element.content.substring(0, 100)}...`
                 : element.content;
               console.log(`[supabaseFunctions] Processing live data element ${element.id}:
                 Content: ${contentPreview}
@@ -912,17 +943,17 @@ export async function generateCollectionVector(
               );
 
               const { data: embedding, error: embeddingError } = await generateEmbedding(element.content)
-              
+
               if (embeddingError) {
                 console.error(`[supabaseFunctions] Error generating embedding for element ${element.id}:`, embeddingError)
                 continue
               }
-              
+
               if (!embedding) {
                 console.error(`[supabaseFunctions] Failed to generate embedding for element ${element.id}`)
                 continue
               }
-              
+
               const { error: updateError } = await supabaseClient
                 .from('live_data_elements')
                 .update({ vector: embedding })
@@ -932,7 +963,7 @@ export async function generateCollectionVector(
                 console.error(`[supabaseFunctions] Error updating live data element ${element.id}:`, updateError)
                 continue
               }
-              
+
               console.log(`[supabaseFunctions] Successfully vectorized element ${element.id}`)
             } catch (elementError) {
               console.error(`[supabaseFunctions] Error processing element ${element.id}:
@@ -942,7 +973,7 @@ export async function generateCollectionVector(
               continue
             }
           }
-          
+
           // Store all elements for reference
           liveDataElements = elements
         }
@@ -957,9 +988,9 @@ export async function generateCollectionVector(
   } catch (error) {
     console.error(`[supabaseFunctions] Error in generateCollectionVector:`, error)
     console.error('[supabaseFunctions] Stack trace:', error instanceof Error ? error.stack : 'No stack trace available')
-    return { 
-      success: false, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
@@ -977,7 +1008,7 @@ export async function getSourcesForCollection(collectionId: string): Promise<{
   error: Error | null
 }> {
   console.log(`[supabaseFunctions] Getting sources for collection: ${collectionId}`)
-  
+
   try {
     // Define the expected response type
     type CollectionSourceResponse = {
@@ -991,18 +1022,18 @@ export async function getSourcesForCollection(collectionId: string): Promise<{
         source_id,
         sources:source_id(*)
       `)
-      .eq('collection_id', collectionId) as { 
-        data: CollectionSourceResponse[] | null, 
-        error: Error | null 
+      .eq('collection_id', collectionId) as {
+        data: CollectionSourceResponse[] | null,
+        error: Error | null
       }
 
     if (error) {
       console.error(`[supabaseFunctions] Error fetching sources for collection ${collectionId}:`, error)
       throw error
     }
-    
+
     console.log(`[supabaseFunctions] Retrieved ${data?.length || 0} sources for collection ${collectionId}`)
-    
+
     // Extract the sources from the nested structure
     const sources = (data || []).map(item => {
       if (!item.sources) {
@@ -1011,12 +1042,12 @@ export async function getSourcesForCollection(collectionId: string): Promise<{
       }
       return item.sources
     }).filter((source): source is Source => source !== null)
-    
+
     return { data: sources, error: null }
   } catch (err) {
     console.error(`[supabaseFunctions] Exception in getSourcesForCollection:`, err)
     return {
-      data: [], 
+      data: [],
       error: err instanceof Error ? err : new Error(String(err))
     }
   }
@@ -1034,7 +1065,7 @@ export async function addSourceToCollection(collectionId: string, sourceId: stri
   error: Error | null
 }> {
   console.log(`[supabaseFunctions] Adding source ${sourceId} to collection ${collectionId}`)
-  
+
   try {
     const { error, data } = await supabaseClient
       .from('collection_sources')
@@ -1045,14 +1076,14 @@ export async function addSourceToCollection(collectionId: string, sourceId: stri
       console.error(`[supabaseFunctions] Error adding source ${sourceId} to collection ${collectionId}:`, error)
       throw error
     }
-    
+
     console.log(`[supabaseFunctions] Successfully added source ${sourceId} to collection ${collectionId}`, data)
     return { success: true, error: null }
   } catch (err) {
     console.error(`[supabaseFunctions] Exception in addSourceToCollection:`, err)
-    return { 
-      success: false, 
-      error: err instanceof Error ? err : new Error(String(err)) 
+    return {
+      success: false,
+      error: err instanceof Error ? err : new Error(String(err))
     }
   }
 }
@@ -1070,7 +1101,7 @@ export async function removeSourceFromCollection(collectionId: string, sourceId:
   error: Error | null
 }> {
   console.log(`[supabaseFunctions] Removing source ${sourceId} from collection ${collectionId}`)
-  
+
   try {
     const { error, data } = await supabaseClient
       .from('collection_sources')
@@ -1082,14 +1113,14 @@ export async function removeSourceFromCollection(collectionId: string, sourceId:
       console.error(`[supabaseFunctions] Error removing source ${sourceId} from collection ${collectionId}:`, error)
       throw error
     }
-    
+
     console.log(`[supabaseFunctions] Successfully removed source ${sourceId} from collection ${collectionId}`, data)
     return { success: true, error: null }
   } catch (err) {
     console.error(`[supabaseFunctions] Exception in removeSourceFromCollection:`, err)
-    return { 
-      success: false, 
-      error: err instanceof Error ? err : new Error(String(err)) 
+    return {
+      success: false,
+      error: err instanceof Error ? err : new Error(String(err))
     }
   }
 }
@@ -1101,14 +1132,21 @@ export async function removeSourceFromCollection(collectionId: string, sourceId:
  * 
  * @returns {Promise<Source[]>} Array of Source objects
  */
+
 export async function fetchSources(): Promise<{
   data: Source[],
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('sources')
       .select('*')
+      .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -1205,9 +1243,9 @@ export async function deleteSource(id: string): Promise<{
     return { success: true, error: null }
   } catch (error) {
     console.error('Error deleting source:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
@@ -1271,8 +1309,8 @@ export async function getConfigForSource(sourceId: string): Promise<{
     return { data: data as SourceConfig | null, error: null }
   } catch (err) {
     console.error('Error getting source config:', err)
-    return { 
-      data: null, 
+    return {
+      data: null,
       error: err instanceof Error ? err : new Error(String(err))
     }
   }
@@ -1292,18 +1330,18 @@ export async function updateSourceConfig(
 }> {
   try {
     console.log('Starting updateSourceConfig with config:', config);
-    
+
     // Check if config exists directly by source
     const { data: existingConfig, error: checkError } = await supabaseClient
       .from('source_configs')
       .select('*')
       .eq('source', config.source)
       .maybeSingle();
-    
+
     console.log('Existing config check result:', existingConfig);
-    
+
     let result;
-    
+
     if (existingConfig) {
       console.log('Updating existing config for source:', config.source);
       const { data, error } = await supabaseClient
@@ -1311,7 +1349,7 @@ export async function updateSourceConfig(
         .update(config)
         .eq('source', config.source)
         .select('*');
-      
+
       if (error) {
         console.error('Error updating config:', error);
         throw error;
@@ -1324,7 +1362,7 @@ export async function updateSourceConfig(
         .from('source_configs')
         .insert([config])
         .select('*');
-      
+
       if (error) {
         console.error('Error inserting config:', error);
         throw error;
@@ -1332,7 +1370,7 @@ export async function updateSourceConfig(
       console.log('Insert response:', data);
       result = data?.[0];
     }
-    
+
     console.log('Final result:', result);
     return { data: result as SourceConfig, error: null };
   } catch (err) {
@@ -1364,11 +1402,11 @@ export async function createLiveDataElement(
 }> {
   try {
     console.log('Creating live data element:', element);
-    
+
     if (!element.source_config_id || !element.content) {
       throw new Error('source_config_id and content are required for live data elements');
     }
-    
+
     const { data, error } = await supabaseClient
       .from('live_data_elements')
       .insert([{
@@ -1380,12 +1418,12 @@ export async function createLiveDataElement(
         fetch_timestamp: element.fetch_timestamp || new Date().toISOString()
       }])
       .select()
-    
+
     if (error) {
       console.error('Error creating live data element:', error);
       throw error;
     }
-    
+
     console.log('Created live data element:', data);
     return { data: data?.[0] as LiveDataElement, error: null }
   } catch (err) {
@@ -1413,7 +1451,7 @@ export async function getLiveDataElements(sourceConfigId: string): Promise<{
       .select('*')
       .eq('source_config_id', sourceConfigId)
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return { data: data as LiveDataElement[], error: null }
   } catch (err) {
@@ -1554,11 +1592,11 @@ export async function addTag(name: string): Promise<{
       .from('tags')
       .select('*')
       .eq('name', name)
-    
+
     if (existingTags && existingTags.length > 0) {
       return { data: existingTags[0], error: null }
     }
-    
+
     // Tag doesn't exist, create it
     const { data, error } = await supabaseClient
       .from('tags')
@@ -1597,29 +1635,29 @@ export async function uploadSources(
   if (sources.length === 0) {
     return { success: false, error: new Error('No sources to upload') }
   }
-  
+
   try {
     // Ensure tags exist
     const tagPromises = ['File Upload', ...currentTags].map(async tagName => {
       const { data: tags } = await fetchTags()
       const existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
       if (existingTag) return existingTag.id
-      
+
       const { data: newTag } = await addTag(tagName)
       return newTag?.id
     })
     await Promise.all(tagPromises)
-    
+
     // Add sources
     const sourcePromises = sources.map(async source => {
       const name = sourceNames[source.id]?.trim() || source.name
-      
+
       // Format tags properly for PostgreSQL array
       const formattedTags = JSON.stringify(['File Upload', ...currentTags, source.name.split('.').pop() || ''])
         .replace(/"/g, '')
         .replace('[', '{')
         .replace(']', '}')
-      
+
       await addSource({
         name,
         type: 'File',
@@ -1627,14 +1665,14 @@ export async function uploadSources(
         tags: formattedTags
       })
     })
-    
+
     await Promise.all(sourcePromises)
     return { success: true, error: null }
   } catch (error) {
     console.error('Error uploading sources:', error)
-    return { 
-      success: false, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
@@ -1786,6 +1824,11 @@ export async function fetchBotLogs(): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_logs')
       .select(`
@@ -1797,6 +1840,7 @@ export async function fetchBotLogs(): Promise<{
           name
         )
       `)
+      .eq('team_id', selectedTeam.id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -1819,6 +1863,11 @@ export async function fetchBotLogById(id: string): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_logs')
       .select(`
@@ -1831,6 +1880,7 @@ export async function fetchBotLogById(id: string): Promise<{
         )
       `)
       .eq('id', id)
+      .eq('team_id', selectedTeam.id)
       .maybeSingle()
 
     if (error) throw error
@@ -1857,9 +1907,14 @@ export async function addBotLog(logData: Partial<BotLog>): Promise<{
       throw new Error('Bot is required')
     }
 
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_logs')
-      .insert([logData])
+      .insert([{ ...logData, team_id: selectedTeam.id }])
       .select()
       .single()
 
@@ -1876,10 +1931,16 @@ export async function updateBotLog(id: string, logData: Partial<BotLog>): Promis
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_logs')
-      .update(logData)
+      .update({ ...logData, team_id: selectedTeam.id })
       .eq('id', id)
+      .eq('team_id', selectedTeam.id)
       .select()
       .single()
 
@@ -1896,11 +1957,16 @@ export async function deleteBotLog(id: string): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { error } = await supabaseClient
       .from('bot_logs')
       .delete()
       .eq('id', id)
-
+      .eq('team_id', selectedTeam.id)
     if (error) throw error
     return { success: true, error: null }
   } catch (error) {
@@ -1997,6 +2063,11 @@ export async function fetchBotScores(): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_scores')
       .select(`
@@ -2008,6 +2079,7 @@ export async function fetchBotScores(): Promise<{
           name
         )
       `)
+      .eq('team_id', selectedTeam.id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -2030,6 +2102,11 @@ export async function fetchBotScoreById(id: string): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_scores')
       .select(`
@@ -2042,6 +2119,7 @@ export async function fetchBotScoreById(id: string): Promise<{
         )
       `)
       .eq('id', id)
+      .eq('team_id', selectedTeam.id)
       .maybeSingle()
 
     if (error) throw error
@@ -2068,9 +2146,14 @@ export async function addBotScore(scoreData: Partial<BotScore>): Promise<{
       throw new Error('Bot is required')
     }
 
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_scores')
-      .insert([scoreData])
+      .insert([{ ...scoreData, team_id: selectedTeam.id }])
       .select()
       .single()
 
@@ -2087,10 +2170,16 @@ export async function updateBotScore(id: string, scoreData: Partial<BotScore>): 
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { data, error } = await supabaseClient
       .from('bot_scores')
-      .update(scoreData)
+      .update({ ...scoreData, team_id: selectedTeam.id })
       .eq('id', id)
+      .eq('team_id', selectedTeam.id)
       .select()
       .single()
 
@@ -2107,11 +2196,16 @@ export async function deleteBotScore(id: string): Promise<{
   error: Error | null
 }> {
   try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
     const { error } = await supabaseClient
       .from('bot_scores')
       .delete()
       .eq('id', id)
-
+      .eq('team_id', selectedTeam.id)
     if (error) throw error
     return { success: true, error: null }
   } catch (error) {
@@ -2155,9 +2249,10 @@ export async function fetchRoleById(id: string) {
 
 export async function addRole(role: Omit<Role, 'id' | 'created_at' | 'updated_at'>) {
   try {
+
     const { data, error } = await supabase
       .from('roles')
-      .insert([role])
+      .insert(role)
       .select()
       .single()
 
@@ -2195,7 +2290,6 @@ export async function deleteRole(id: string) {
       .from('roles')
       .delete()
       .eq('id', id)
-
     if (error) throw error
     return { error: null }
   } catch (error) {
@@ -2210,7 +2304,7 @@ export async function createRole(roleData: Omit<Role, 'id' | 'created_at' | 'upd
       .from('roles')
       .insert([{
         ...roleData,
-        permissions: roleData.permissions || []
+        permissions: roleData.permissions || [],
       }])
       .select()
       .single()
@@ -2231,8 +2325,7 @@ export async function fetchUsers() {
       .from('users')
       .select(`
         *,
-        roles(name),
-        teams(name)
+        roles(name)
       `)
       .order('first_name', { ascending: true })
 
@@ -2241,7 +2334,6 @@ export async function fetchUsers() {
     const transformedData = data?.map(user => ({
       ...user,
       role_name: user.roles?.name,
-      team_name: user.teams?.name
     })) || []
 
     return { data: transformedData, error: null }
@@ -2411,88 +2503,120 @@ export async function deleteTeam(id: string) {
 // =========== Projects FUNCTIONS ===========
 
 export async function fetchProjects() {
-    try {
-        const { data, error } = await supabase
-            .from('projects')
-            .select(`
-                *,
-                teams:team (*)
-            `)
-            .order('name', { ascending: true })
-
-        if (error) throw error
-        return { data, error: null }
-    } catch (error) {
-        console.error('Error fetching projects:', error)
-        return { data: null, error }
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
     }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
+        *,
+        teams:team(name)
+      `)
+      .eq('team', selectedTeam.id)
+      .order('name', { ascending: true })
+
+    const transformedData = data?.map(project => ({
+      ...project,
+      team_name: project.teams?.name,
+    })) || []
+
+    if (error) throw error
+    return { data: transformedData, error: null }
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+    return { data: null, error }
+  }
 }
 
 export async function fetchProjectById(id: string) {
-    try {
-        const { data, error } = await supabase
-            .from('projects')
-            .select(`
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .select(`
                 *,
                 teams:team (*)
             `)
-            .eq('id', id)
-            .single()
+      .eq('id', id)
+      .eq('team', selectedTeam.id)
+      .single()
 
-        if (error) throw error
-        return { data, error: null }
-    } catch (error) {
-        console.error('Error fetching project:', error)
-        return { data: null, error }
-    }
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching project:', error)
+    return { data: null, error }
+  }
 }
 
 export async function addProject(project: Omit<Project, 'id' | 'created_at'>) {
-    try {
-        const { data, error } = await supabase
-            .from('projects')
-            .insert([project])
-            .select()
-            .single()
-
-        if (error) throw error
-        return { data, error: null }
-    } catch (error) {
-        console.error('Error adding project:', error)
-        return { data: null, error }
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
     }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([{ ...project, team: selectedTeam.id }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding project:', error)
+    return { data: null, error }
+  }
 }
 
 export async function updateProject(id: string, project: Partial<Project>) {
-    try {
-        const { data, error } = await supabase
-            .from('projects')
-            .update(project)
-            .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
-        return { data, error: null }
-    } catch (error) {
-        console.error('Error updating project:', error)
-        return { data: null, error }
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
     }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .update({ ...project, team: selectedTeam.id })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating project:', error)
+    return { data: null, error }
+  }
 }
 
 export async function deleteProject(id: string) {
-    try {
-        const { error } = await supabase
-            .from('projects')
-            .delete()
-            .eq('id', id)
-
-        if (error) throw error
-        return { error: null }
-    } catch (error) {
-        console.error('Error deleting project:', error)
-        return { error }
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
     }
+
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id)
+      .eq('team', selectedTeam.id)
+    if (error) throw error
+    return { error: null }
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    return { error }
+  }
 }
 
 export async function loginUser(email: string, password: string) {
@@ -2505,7 +2629,7 @@ export async function loginUser(email: string, password: string) {
 
 export async function getCurrentUser() {
   const { data: authData, error: authError } = await supabase.auth.getUser()
-  
+
   if (authError || !authData?.user) {
     return { data: null, error: authError }
   }
@@ -2524,14 +2648,14 @@ export async function getCurrentUser() {
     return { data: authData.user, error: publicUserError }
   }
 
-  return { 
+  return {
     data: {
       ...authData.user,
       ...publicUserData,
       role_name: publicUserData.roles?.name,
       team_name: publicUserData.teams?.name
-    }, 
-    error: null 
+    },
+    error: null
   }
 }
 
@@ -2613,7 +2737,7 @@ export async function createNewUser(userData: {
           teams:team (*)
         `)
         .single()
-      
+
       publicUserData = data
       publicUserError = error
     } else {
@@ -2637,7 +2761,7 @@ export async function createNewUser(userData: {
           teams:team (*)
         `)
         .single()
-      
+
       publicUserData = data
       publicUserError = error
     }
@@ -2648,20 +2772,20 @@ export async function createNewUser(userData: {
       return { data: null, error: publicUserError }
     }
 
-    return { 
+    return {
       data: {
         ...authData.user,
         ...publicUserData,
         role_name: publicUserData.roles?.name,
         team_name: publicUserData.teams?.name
-      }, 
-      error: null 
+      },
+      error: null
     }
   } catch (error) {
     console.error('Error in createNewUser:', error)
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
@@ -2705,19 +2829,19 @@ export async function updateUserData(id: string, userData: {
       return { data: null, error }
     }
 
-    return { 
+    return {
       data: {
         ...data,
         role_name: data.roles?.name,
         team_name: data.teams?.name
-      }, 
-      error: null 
+      },
+      error: null
     }
   } catch (error) {
     console.error('Error in updateUserData:', error)
-    return { 
-      data: null, 
-      error: error instanceof Error ? error : new Error(String(error)) 
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error))
     }
   }
 }
