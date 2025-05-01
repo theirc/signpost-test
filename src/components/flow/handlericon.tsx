@@ -1,5 +1,5 @@
 import { app } from "@/lib/app"
-import { Binary, Braces, CircleHelp, File, Hash, Link, MessageCircleMore, Type } from "lucide-react"
+import { Binary, Braces, CircleHelp, File, Hash, Link, List, MessageCircleMore, Type } from "lucide-react"
 
 const iconSize = 12
 
@@ -15,6 +15,9 @@ export function HanlderIcon({ handler, worker }: { handler: NodeIO, worker: AIWo
   return <>
     {type == "string" && <Type size={iconSize} className="mt-[8px]" />}
     {type == "number" && <Hash size={iconSize} className="mt-[8px]" />}
+    {type == "enum" && <List size={iconSize} className="mt-[8px]" />}
+    {type == "string[]" && <div className="flex"> <Type size={iconSize} className="mt-[8px]" />[]</div>}
+    {type == "number[]" && <div className="flex"> <Hash size={iconSize} className="mt-[8px]" />[]</div>}
     {type == "boolean" && <Binary size={iconSize} className="mt-[8px]" />}
     {type == "unknown" && <CircleHelp size={iconSize} className="mt-[8px]" />}
     {type == "doc" && <File size={iconSize} className="mt-[8px]" />}
