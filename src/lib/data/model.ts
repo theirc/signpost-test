@@ -2,7 +2,7 @@ import { ZodType } from "zod"
 import { Database } from "../agents/supabase"
 import { supabase } from "."
 
-type FieldTypes = "string" | "number" | "boolean" | "json"
+type FieldTypes = "string" | "number" | "boolean" | "json" | "string[]"
 
 type FieldsOfType<T> = {
   [K in keyof T]: Field<T[K]>

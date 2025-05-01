@@ -5,7 +5,10 @@ import { error } from "console"
 
 export const inputOutputTypes = {
   string: "Text",
+  "string[]": "Text List",
   number: "Number",
+  "number[]": "Number List",
+  enum: "Enumeration",
   boolean: "Boolean",
   unknown: "Unknown",
   doc: "Documents",
@@ -15,7 +18,7 @@ export const inputOutputTypes = {
   // audio: "Audio",
   // image: "Image",
   // video: "Video",
-  execute: "Execute",
+  // execute: "Execute",
 }
 
 interface WorkerCondition {
@@ -37,9 +40,9 @@ declare global {
     prompt?: string
     direction: "output" | "input"
     type: IOTypes
+    enum?: string[]
     system?: boolean
     condition?: boolean
-    // persistent?: boolean
     value?: any
     default?: any
   }

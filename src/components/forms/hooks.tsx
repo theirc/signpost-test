@@ -32,9 +32,11 @@ export function useForm<T>(model: Model<T>, options?: Options) {
     onSubmit,
     submit: async () => {
       await methods.handleSubmit(internalOnSubmit)()
-      form.editing = false
-      methods.clearErrors()
-      methods.reset()
+      if (!methods.formState.errors) {
+        form.editing = false
+        methods.clearErrors()
+        methods.reset()
+      }
     },
     methods,
     get editing() {
@@ -64,7 +66,7 @@ export function useForm<T>(model: Model<T>, options?: Options) {
       }
       for (let key in data) {
         const v = data[key]
-        if (typeof v === "function" || typeof v === "object" || typeof v == "symbol") continue
+        if ((typeof v === "function" || typeof v === "object" || typeof v == "symbol") && !Array.isArray(v)) continue
         methods.setValue(key as any, data[key] as any)
       }
     },

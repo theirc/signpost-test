@@ -15,10 +15,9 @@ export function ResponseNode(props: NodeProps) {
 
   const worker = useWorker(props.id)
 
-
   return <NodeLayout worker={worker} >
     <NodeHandlers worker={worker} />
-    <AddFieldsForm direction="input" />
+    <AddFieldsForm direction="input" ignoreTypes={["enum"]} />
   </NodeLayout >
 
 }

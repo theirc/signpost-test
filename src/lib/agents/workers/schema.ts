@@ -51,6 +51,12 @@ async function execute(worker: SchemaWorker, p: AgentParameters) {
       type = "number"
     } else if (s.type == "string") {
       type = "string"
+    } else if (s.type == "string[]") {
+      type = "string[]"
+    } else if (s.type == "number[]") {
+      type = "number[]"
+    } else if (s.type == "enum") {
+      type = `${s.enum ? s.enum?.map((e) => `"${e}"`).join(" | ") : "string[]"}`
     } else {
       type = "any"
     }

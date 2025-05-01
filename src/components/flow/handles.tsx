@@ -31,12 +31,6 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
     const handlet = workert.handles[h.targetHandle]
 
     if (!handles || !handlet) continue
-
-    if (handles.type === "execute" || handlet.type === "execute") {
-      isConnectable = false
-      break
-    }
-
   }
 
   function isValidConnection(e: Connection) {
@@ -50,9 +44,6 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
 
     if (handlet.type === "unknown") return true
     if (handles.type === "unknown") return true
-
-    // if (handles.type === "execute" || handlet.type === "execute") return (handles.type === "execute" && handlet.type === "execute")
-    // if (handles.type === "unknown") return true
 
     return handles.type === handlet.type
 

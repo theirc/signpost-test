@@ -131,9 +131,9 @@ function Flow() {
     worker.updateWorker()
 
 
-    if (handle.type === "execute") {
-      c = { ...c, type: 'executeEdge', animated: true } as any
-    }
+    // if (handle.type === "execute") {
+    //   c = { ...c, type: 'executeEdge', animated: true } as any
+    // }
 
     setEdges((eds) => {
       const added = addEdge(c, eds)
