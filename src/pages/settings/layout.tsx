@@ -42,6 +42,11 @@ export function SettingsLayout() {
                 Usage
               </TabsTrigger>
             )}
+            {canRead("apikeys") && (
+              <TabsTrigger value="apikeys" onClick={() => navigate("/settings/apikeys")}>
+                Api Keys
+              </TabsTrigger>
+            )}
             {canRead("roles") && (
               <TabsTrigger value="roles" onClick={() => navigate("/settings/roles")}>
                 Access Control
