@@ -46,6 +46,8 @@ import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
 import { UsersSettings } from "@/pages/settings/users"
 import { AddTeamMembers } from "@/pages/settings/team-members"
+import { ApiKeysSettings } from "@/pages/settings/api-keys"
+import ApiKeyView from "@/pages/settings/api-key"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -64,6 +66,7 @@ const routeNames: Record<string, string> = {
   '/settings/usage': 'Settings / Usage',
   '/settings/roles': 'Settings / Access Control',
   '/settings/users': 'Settings / Users',
+  '/settings/apikeys': 'Settings / Api Keys',
 }
 
 function NavigationLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -249,6 +252,16 @@ export function AppLayout() {
                   <Route path="projects/:id" element={
                     <ProtectedRoute resource="projects" action="update">
                       <ProjectForm />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="apikeys" element={
+                    <ProtectedRoute resource="apikeys" action="read">
+                      <ApiKeysSettings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="apikeys/:id" element={
+                    <ProtectedRoute resource="apikeys" action="update">
+                      <ApiKeyView />
                     </ProtectedRoute>
                   } />
                 </Route>

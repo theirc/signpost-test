@@ -117,6 +117,7 @@ export function AppSidebar() {
         { title: "Users", url: "/settings/users", permission: "users" },
         { title: "Billing", url: "/settings/billing", permission: "billing" },
         { title: "Usage", url: "/settings/usage", permission: "usage" },
+        { title: "Api Keys", url: "/settings/apikeys", permission: "apikeys" },
         { title: "Access Control", url: "/settings/roles", permission: "roles" },
       ],
       show: !permissionsLoading && (canRead("projects") || canRead("teams") || canRead('billing') || canRead('usage') || canRead("roles"))

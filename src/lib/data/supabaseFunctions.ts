@@ -325,6 +325,15 @@ export interface Project {
   team?: string
 }
 
+export interface ApiKey {
+  id: string
+  key?: string
+  type?: string
+  team_id?: string
+  created_at?: string
+  description?: string
+}
+
 // =========== MODEL FUNCTIONS ===========
 
 /**
@@ -2896,4 +2905,117 @@ export async function getTeamUsers(teamId: string) {
   })) || []
 
   return { data: transformedData, error: null }
+}
+
+// =========== API KEYS FUNCTIONS ===========
+
+export async function fetchApiKeys() {
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { data, error } = await supabase
+      .from('api_keys')
+      .select('*')
+      .eq('team_id', selectedTeam.id)
+      .order('description', { ascending: true })
+
+    const transformedData = data?.map(apiKey => ({
+      ...apiKey,
+      team_name: apiKey.teams?.name,
+    })) || []
+
+    if (error) throw error
+    return { data: transformedData, error: null }
+  } catch (error) {
+    console.error('Error fetching api keys:', error)
+    return { data: null, error }
+  }
+}
+
+export async function fetchApiKeyById(id: string) {
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { data, error } = await supabase
+      .from('api_keys')
+      .select('*')
+      .eq('id', id)
+      .eq('team_id', selectedTeam.id)
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error fetching api key:', error)
+    return { data: null, error }
+  }
+}
+
+export async function addApiKey(apiKey: Omit<ApiKey, 'id' | 'created_at'>) {
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { data, error } = await supabase
+      .from('api_keys')
+      .insert([{ ...apiKey, team_id: selectedTeam.id }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error adding api key:', error)
+    return { data: null, error }
+  }
+}
+
+export async function updateApiKey(id: string, apiKey: Partial<ApiKey>) {
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { data, error } = await supabase
+      .from('api_keys')
+      .update({ ...apiKey, team_id: selectedTeam.id })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    console.error('Error updating api key:', error)
+    return { data: null, error }
+  }
+}
+
+export async function deleteApiKey(id: string) {
+  try {
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    const { error } = await supabase
+      .from('api_keys')
+      .delete()
+      .eq('id', id)
+      .eq('team_id', selectedTeam.id)
+    if (error) throw error
+    return { error: null }
+  } catch (error) {
+    console.error('Error deleting api key:', error)
+    return { error }
+  }
 }

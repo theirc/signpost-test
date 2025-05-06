@@ -40,6 +40,7 @@ const APP_RESOURCES = [
     { id: 'usage', label: 'Usage' },
     { id: 'roles', label: 'Roles' },
     { id: 'users', label: 'Users' },
+    { id: 'apikeys', label: 'Api Keys' },
 ]
 
 type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
