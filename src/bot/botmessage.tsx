@@ -14,6 +14,24 @@ import Markdown from "react-markdown"
 import { useReactMediaRecorder } from "react-media-recorder"
 import { ChatMessage, AI_SCORES } from "@/types/types.ai"
 
+const ensureString = (value: any): string => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      console.warn('Failed to stringify object:', e);
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
 export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebuild: () => void }) {
 
   let { isWaiting, rebuild, m } = props
@@ -230,7 +248,7 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
               ),
             }}
           >
-            {m.message}
+       {ensureString(m.message)}
           </Markdown>
         </div>
       )}

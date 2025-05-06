@@ -4,115 +4,66 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Copy, Check } from 'lucide-react'
 import AgentJsonView from '@/bot/agentview'
-// Import BotChatMessage - we need to use this in our component
 import { BotChatMessage } from '@/bot/botmessage'
 import type { ChatMessage as ChatMessageType } from '@/types/types.ai'
 
-// Helper function to check for image URLs
+// Helper function to ensure any value is converted to a string
+const ensureString = (value: any): string => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      console.warn('Failed to stringify object:', e);
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
 export const isImageUrl = (url: string | undefined | null): boolean => {
   if (!url) return false;
   // Basic check for http/https and common image extensions
   return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
 };
 
-// Helper function to parse markdown image and text
-export const parseMarkdownImage = (text: string | undefined | null): { imageUrl: string | null; remainingText: string | null } => {
-  if (!text) return { imageUrl: null, remainingText: null };
+export const parseMarkdownImage = (text: any): { imageUrl: string | null; remainingText: string | null } => {
+  // Ensure text is a string
+  const textStr = ensureString(text);
   
-  // Regex to capture ![alt](url) and any subsequent text
-  // Allows optional leading '!' for formats like [![Image](...)]
-  // Captures URL in group 1, remaining text in group 2
+  if (!textStr) return { imageUrl: null, remainingText: null };
+  
   const markdownRegex = /^!?\[.*?\]\((.+?)\)\s*(.*)$/s; 
-  const match = text.match(markdownRegex);
+  const match = textStr.match(markdownRegex);
 
   if (match && match[1]) {
     const imageUrl = match[1];
-    const remainingText = match[2] ? match[2].trim() : null; // Get text after the markdown
-    // Basic validation if the extracted URL looks like an image URL
+    const remainingText = match[2] ? match[2].trim() : null;
     if (isImageUrl(imageUrl)) { 
       return { imageUrl, remainingText };
     }
   }
   
-  // If no markdown match, return nulls
   return { imageUrl: null, remainingText: null };
 };
 
-// Typewriter effect constants
-const TYPEWRITER_BASE_SPEED = 8; // Changed from 15
-const TYPEWRITER_MIN_SPEED = 2; // Minimum speed
-
-// TypewriterText component for animated text display
-function TypewriterText({ text, speed = TYPEWRITER_BASE_SPEED, onComplete }: { text: string, speed?: number, onComplete?: () => void }) {
-  const [displayedText, setDisplayedText] = useState("");
-  const [isComplete, setIsComplete] = useState(false);
-  const textElementRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setDisplayedText("");
-    setIsComplete(false);
-    
-    let index = 0;
-    const timer = setInterval(() => {
-      if (index < text.length) {
-        setDisplayedText(text.substring(0, index + 1));
-        index++;
-      } else {
-        clearInterval(timer);
-        setIsComplete(true);
-        onComplete?.(); 
-      }
-    }, speed);
-
-    return () => clearInterval(timer);
-  }, [text, speed, onComplete]);
-
-  return (
-    <div 
-      ref={textElementRef}
-      className={`whitespace-pre-wrap ${isComplete ? "typewriter-text-complete" : ""}`}
-    >
-      {isComplete ? text : displayedText} 
-    </div>
-  );
+interface AgentResponse {
+  answer?: string;
+  [key: string]: any;
 }
 
-// BotChatMessageWithTypewriter component for animated message display
-// This is a wrapper that adds typewriter effect to BotChatMessage
-function BotMessageWithTypewriter({ m, isWaiting, rebuild, isLoadingFromHistory }: { m: any, isWaiting?: boolean, rebuild?: () => void, isLoadingFromHistory?: boolean }) {
-  // We're going to use your existing BotChatMessage component,
-  // but potentially control when and how it renders based on typewriter state
-  
-  // If loading from history, just render BotChatMessage directly
-  if (isLoadingFromHistory) {
-    return (
-      <BotChatMessage
-        m={m}
-        isWaiting={isWaiting}
-        rebuild={rebuild}
-      />
-    );
-  }
-  
-  // Otherwise, pass the props to your BotChatMessage
-  return (
-    <BotChatMessage
-      m={m}
-      isWaiting={isWaiting}
-      rebuild={rebuild}
-    />
-  );
-}
-
-// Main ChatMessageComponent props interface
 export interface MessageProps {
   message: ChatMessageType;
   isWaiting?: boolean;
   isLoadingFromHistory?: boolean;
-  agentIds?: number[]; // Add this new prop for dynamic agent IDs
+  agentIds?: number[]; 
 }
 
-// Main component
 export default function ChatMessageComponent(props: MessageProps) {
   const { isWaiting, isLoadingFromHistory, message: msg, agentIds = [] } = props;
   let { type, message, messages, needsRebuild, rebuild } = msg;
@@ -124,7 +75,9 @@ export default function ChatMessageComponent(props: MessageProps) {
 
   useEffect(() => {
     if (type === "human" && message) {
-      const hasNewlines = message.includes('\\n');
+      const messageStr = ensureString(message);
+      
+      const hasNewlines = messageStr.includes('\\n');
       if (!hasNewlines && messageTextRef.current) {
         const lineHeight = 23;
         setIsSingleLine(messageTextRef.current.clientHeight <= lineHeight * 1.2);
@@ -135,16 +88,16 @@ export default function ChatMessageComponent(props: MessageProps) {
   }, [message, type]);
 
   const handleCopyText = () => {
-    const { imageUrl, remainingText } = parseMarkdownImage(message);
-    let textToCopy = message; // Default to copying the raw message
+    const messageStr = ensureString(message);
+    
+    const { imageUrl, remainingText } = parseMarkdownImage(messageStr);
+    let textToCopy = messageStr; 
 
     if (imageUrl) {
-      // If markdown image, decide what to copy (e.g., URL + text)
       textToCopy = imageUrl + (remainingText ? ` ${remainingText}` : '');
-    } else if (isImageUrl(message)) {
-      // If plain image URL, copy the URL
-      textToCopy = message;
-    } // Otherwise, textToCopy remains the original message text
+    } else if (isImageUrl(messageStr)) {
+      textToCopy = messageStr;
+    }
 
     if (textToCopy) {
       navigator.clipboard.writeText(textToCopy).then(() => {
@@ -154,27 +107,46 @@ export default function ChatMessageComponent(props: MessageProps) {
     }
   };
 
-  const isLastMessage = messages.length === 1 && messages[0].type === "human";
-
   if (type === "bot") {
-    // Agent messages
     if (messages.length > 0) {
-      // Use passed-in agentIds instead of KNOWN_AGENT_IDS
       const agentMessage = messages.find(m => agentIds.includes(m.id));
+      
       if (agentMessage) {
         let answerContent: string | null = null;
+        
         try {
-          const parsedJson = JSON.parse(agentMessage.message);
-          if (parsedJson && typeof parsedJson.answer === 'string') {
-            answerContent = parsedJson.answer;
+          if (typeof agentMessage.message === 'string') {
+            try {
+              const parsedJson = JSON.parse(agentMessage.message) as AgentResponse;
+              if (parsedJson && parsedJson.answer !== undefined) {
+                answerContent = ensureString(parsedJson.answer);
+              } else {
+                answerContent = agentMessage.message;
+              }
+            } catch (e) {
+              answerContent = agentMessage.message;
+            }
+          } 
+          else if (typeof agentMessage.message === 'object') {
+            const messageObj = agentMessage.message as AgentResponse;
+            if (messageObj && messageObj.answer !== undefined) {
+              answerContent = ensureString(messageObj.answer);
+            } else {
+              answerContent = ensureString(messageObj);
+            }
+          } else {
+            answerContent = ensureString(agentMessage.message);
           }
         } catch (e) {
-          console.warn("Agent message was not valid JSON for extracting answer:", agentMessage.message);
+          console.warn("Agent message processing error:", e);
+          answerContent = ensureString(agentMessage.message);
         }
-        const messageForTypewriter = answerContent ? {
+        
+        const messageForDisplay = answerContent ? {
           ...agentMessage,
           message: answerContent,
         } : null;
+  
 
         return (
           <>
@@ -185,11 +157,11 @@ export default function ChatMessageComponent(props: MessageProps) {
               </div>
             </div>
 
-            {messageForTypewriter && (
+            {messageForDisplay && (
               <div className="mt-4 w-full" dir="auto">
                 <div className="font-medium text-xs mb-2">Agent Answer:</div>
                 <BotChatMessage 
-                  m={messageForTypewriter} 
+                  m={messageForDisplay} 
                   isWaiting={isWaiting} 
                   rebuild={rebuild} 
                 />
@@ -213,14 +185,13 @@ export default function ChatMessageComponent(props: MessageProps) {
       }
     }
     
-    // Multiple bot messages side-by-side
     if (messages.length > 1) {
       return (
         <div className="w-full mt-4" dir="auto">
           <div className="flex gap-4 w-full">
             {messages.map((m) => {
-              const { imageUrl, remainingText } = parseMarkdownImage(m.message);
-              const isPlainImage = !imageUrl && isImageUrl(m.message);
+              const { imageUrl, remainingText } = parseMarkdownImage(ensureString(m.message));
+              const isPlainImage = !imageUrl && isImageUrl(ensureString(m.message));
 
               return (
                 <div
@@ -242,20 +213,19 @@ export default function ChatMessageComponent(props: MessageProps) {
                       {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
                     </div>
                   ) : isPlainImage ? (
-                     <a href={m.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                     <a href={ensureString(m.message)} target="_blank" rel="noopener noreferrer" className="block mb-2">
                        <img 
-                         src={m.message} 
+                         src={ensureString(m.message)} 
                          alt="Bot image" 
                          className="max-w-md h-auto rounded"
                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                        />
                      </a>
                   ) : (
-                    <BotMessageWithTypewriter 
+                    <BotChatMessage 
                       m={m} 
                       isWaiting={isWaiting} 
                       rebuild={rebuild}
-                      isLoadingFromHistory={isLoadingFromHistory} 
                     />
                   )}
                 </div>
@@ -266,11 +236,10 @@ export default function ChatMessageComponent(props: MessageProps) {
       );
     }
     
-    // Single bot message
     if (messages.length === 1) {
       const single = messages[0];
-      const { imageUrl, remainingText } = parseMarkdownImage(single.message);
-      const isPlainImage = !imageUrl && isImageUrl(single.message);
+      const { imageUrl, remainingText } = parseMarkdownImage(ensureString(single.message));
+      const isPlainImage = !imageUrl && isImageUrl(ensureString(single.message));
 
       return (
         <div className="mt-4" dir="auto">
@@ -294,20 +263,19 @@ export default function ChatMessageComponent(props: MessageProps) {
                  {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
               </div>
             ) : isPlainImage ? (
-               <a href={single.message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+               <a href={ensureString(single.message)} target="_blank" rel="noopener noreferrer" className="block mb-2">
                  <img 
-                   src={single.message} 
+                   src={ensureString(single.message)} 
                    alt="Bot image" 
                    className="max-w-md h-auto rounded"
                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                  />
                </a>
             ) : (
-              <BotMessageWithTypewriter 
+              <BotChatMessage 
                 m={single} 
                 isWaiting={isWaiting} 
                 rebuild={rebuild}
-                isLoadingFromHistory={isLoadingFromHistory} 
               />
             )}
           </div>
@@ -315,9 +283,8 @@ export default function ChatMessageComponent(props: MessageProps) {
       );
     }
     
-    // Fallback case: Bot message directly on the main message object
-    const { imageUrl, remainingText } = parseMarkdownImage(message);
-    const isPlainImage = !imageUrl && isImageUrl(message);
+    const { imageUrl, remainingText } = parseMarkdownImage(ensureString(message));
+    const isPlainImage = !imageUrl && isImageUrl(ensureString(message));
 
     return (
       <div className="w-full mt-4" dir="auto">
@@ -335,9 +302,9 @@ export default function ChatMessageComponent(props: MessageProps) {
                {remainingText && <div className="mt-2 text-sm whitespace-pre-wrap">{remainingText}</div>}
              </div>
            ) : isPlainImage ? (
-             <a href={message} target="_blank" rel="noopener noreferrer" className="block mb-2">
+             <a href={ensureString(message)} target="_blank" rel="noopener noreferrer" className="block mb-2">
                <img 
-                 src={message} 
+                 src={ensureString(message)} 
                  alt="Bot image" 
                  className="max-w-md h-auto rounded"
                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -345,11 +312,10 @@ export default function ChatMessageComponent(props: MessageProps) {
              </a>
            ) : (
             <div className="px-1 text-gray-700" style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}>
-              <BotMessageWithTypewriter 
-                m={{ message, type: "bot" }} 
+              <BotChatMessage 
+                m={{ message: ensureString(message), type: "bot" }} 
                 isWaiting={isWaiting} 
                 rebuild={rebuild}
-                isLoadingFromHistory={isLoadingFromHistory} 
               />
             </div>
            )}
@@ -371,7 +337,7 @@ export default function ChatMessageComponent(props: MessageProps) {
             className="break-words whitespace-pre-wrap" 
             style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
           >
-            {message}
+            {ensureString(message)}
           </div>
         </div>
         <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">

@@ -1,12 +1,30 @@
 import ReactJson from 'react-json-view'
 import { isImageUrl, parseMarkdownImage } from '../pages/chat' // Import helpers
 
+const ensureString = (value: any): string => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value);
+    } catch (e) {
+      console.warn('Failed to stringify object:', e);
+      return String(value);
+    }
+  }
+  return String(value);
+};
+
 export default function AgentJsonView({ data }) {
-  // First, check if the raw data string contains a markdown image
-  const { imageUrl, remainingText } = parseMarkdownImage(typeof data === 'string' ? data : null);
+  const dataString = typeof data === 'string' ? data : ensureString(data);
+  
+  const { imageUrl, remainingText } = parseMarkdownImage(dataString);
 
   if (imageUrl) {
-    // If markdown image found, render it and the remaining text directly
     return (
       <div className="agent-message-content">
         <img 
@@ -27,37 +45,48 @@ export default function AgentJsonView({ data }) {
     );
   }
 
-  // If no markdown image, proceed with existing JSON parsing logic
-  let jsonData = data
-  if (typeof data === 'string') {
-    try {
-      jsonData = JSON.parse(data);
-    } catch (e) {
-      // Parsing failed, keep raw data (which we know isn't a markdown image at this point)
-      jsonData = data 
-    }
+  if (typeof data === 'object' && data !== null) {
+    return (
+      <ReactJson
+        src={data}
+        collapsed={1}
+        enableClipboard={true}
+        displayObjectSize={true}
+        name={null}
+      />
+    );
   }
 
-  // Render using ReactJson if it's an object, otherwise render raw string
-  if (typeof jsonData !== 'object' || jsonData === null) {
-    // It's a string, but not a markdown image (checked above)
-    return (
+  if (typeof data === 'string') {
+    try {
+      const jsonData = JSON.parse(data);
+      return (
+        <ReactJson
+          src={jsonData}
+          collapsed={1}
+          enableClipboard={true}
+          displayObjectSize={true}
+          name={null}
+        />
+      );
+    } catch (e) {
+      return (
         <div 
-            className="whitespace-pre-wrap" 
-            style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
+          className="whitespace-pre-wrap" 
+          style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
         >
-            {data}
+          {data}
         </div>
-    );
+      );
+    }
   }
   
   return (
-    <ReactJson
-      src={jsonData} // It's a valid JSON object
-      collapsed={1}
-      enableClipboard={true}
-      displayObjectSize={true}
-      name={null}
-    />
-  )
+    <div 
+      className="whitespace-pre-wrap" 
+      style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
+    >
+      {ensureString(data)}
+    </div>
+  );
 }
