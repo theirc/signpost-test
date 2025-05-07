@@ -26,16 +26,14 @@ import { SearchNode } from './nodes/search'
 import { AgentNode } from './nodes/agent'
 import { ApiNode } from './nodes/api'
 import { DocumentSelectorNode } from './nodes/documentselector'
+import { StateNode } from './nodes/state'
 
 const nodeTypes = {
   request: RequestNode,
   schema: SchemaNode,
   response: ResponseNode,
-  // condition: ConditionNode,
   text: TextNode,
   ai: AINode,
-  // stt: SpeechToText,
-  // background: BackgroundNode,
   combine: CombineNode,
   display: DisplayNode,
   mock: MockNode,
@@ -43,6 +41,7 @@ const nodeTypes = {
   agentWorker: AgentNode,
   api: ApiNode,
   documentSelector: DocumentSelectorNode,
+  state: StateNode,
 }
 
 function Flow() {
@@ -52,7 +51,6 @@ function Flow() {
   const counter = useRef(0)
   const { screenToFlowPosition, updateNode } = useReactFlow()
   const { agent } = app
-  const update = useForceUpdate()
 
   useEffect(() => {
     const initialNodes: Node[] = []
