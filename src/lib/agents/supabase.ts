@@ -75,6 +75,41 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string | null
+          team_id: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string | null
+          team_id?: string | null
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string | null
+          team_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bot_conversations: {
         Row: {
           bot_id: string | null
@@ -583,6 +618,7 @@ export type Database = {
           id: string
           name: string | null
           permissions: Json[] | null
+          team_id: string | null
         }
         Insert: {
           created_at?: string
@@ -590,6 +626,7 @@ export type Database = {
           id?: string
           name?: string | null
           permissions?: Json[] | null
+          team_id?: string | null
         }
         Update: {
           created_at?: string
@@ -597,8 +634,17 @@ export type Database = {
           id?: string
           name?: string | null
           permissions?: Json[] | null
+          team_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "roles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_categories: {
         Row: {
@@ -740,6 +786,21 @@ export type Database = {
           },
         ]
       }
+      states: {
+        Row: {
+          id: string
+          state: Json | null
+        }
+        Insert: {
+          id?: string
+          state?: Json | null
+        }
+        Update: {
+          id?: string
+          state?: Json | null
+        }
+        Relationships: []
+      }
       system_prompts: {
         Row: {
           content: string
@@ -871,7 +932,6 @@ export type Database = {
           role: string | null
           status: string | null
           team: string | null
-          teams: string[] | null
           title: string | null
         }
         Insert: {
@@ -885,7 +945,6 @@ export type Database = {
           role?: string | null
           status?: string | null
           team?: string | null
-          teams?: string[] | null
           title?: string | null
         }
         Update: {
@@ -899,7 +958,6 @@ export type Database = {
           role?: string | null
           status?: string | null
           team?: string | null
-          teams?: string[] | null
           title?: string | null
         }
         Relationships: [

@@ -16,7 +16,7 @@ export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
 
 interface Props {
   includePrompt?: boolean
-  direction: "input" | "output"
+  direction: "input" | "output" | "both"
   ignoreTypes?: IOTypes[]
 }
 
@@ -46,15 +46,38 @@ export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) 
     const h: NodeIO = {
       name: data.name,
       type: data.type as any,
-      direction,
+      direction: null,
       prompt: includePrompt ? data.prompt : undefined,
       enum: data.enum,
     }
-    if (data.id) {
-      worker.updateHandler(data.id, h)
-    } else {
-      worker.addHandler(h)
+
+    if (direction === "input") {
+      if (data.id) {
+        worker.updateHandler(data.id, { ...h, direction: "input" })
+      } else {
+        worker.addHandler({ ...h, direction: "input" })
+      }
+    } else if (direction === "output") {
+      if (data.id) {
+        worker.updateHandler(data.id, { ...h, direction: "output" })
+      } else {
+        worker.addHandler({ ...h, direction: "output" })
+      }
+    } else if (direction === "both") {
+      console.log("both")
+
+      let id = data.id
+      if (id) {
+        if (id.endsWith("_out")) id = id.replace("_out", "")
+        worker.updateHandler(id, { ...h, direction: "input" })
+        worker.updateHandler(id + "_out", { ...h, direction: "output" })
+      } else {
+        id = worker.createHandlerId()
+        worker.addHandler({ ...h, id, direction: "input" })
+        worker.addHandler({ ...h, id: id + "_out", direction: "output" })
+      }
     }
+
     updateNodeInternals(worker.id)
     agent.updateWorkers()
     agent.update()
@@ -65,7 +88,17 @@ export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) 
     const id = form.methods.getValues()["id"]
     if (!id) return
     console.log("Deleting: ", id)
-    worker.deleteHandler(id)
+
+    if (id.endsWith("_out")) {
+      const id2 = id.replace("_out", "")
+      worker.deleteHandler(id2)
+      worker.deleteHandler(id)
+    } else {
+      worker.deleteHandler(id)
+      worker.deleteHandler(id + "_out")
+    }
+
+    // worker.deleteHandler(id)
     form.modal.hide()
     updateNodeInternals(worker.id)
     agent.updateWorkers()

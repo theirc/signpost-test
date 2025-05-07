@@ -171,6 +171,25 @@ export function buildWorker(w: WorkerConfig) {
       return connwh
     },
 
+    getInputHandlersByName() {
+      const handlers: { [index: string]: NodeIO } = {}
+      for (const e of Object.values(worker.handles)) {
+        if (e.direction === "input") {
+          handlers[e.name] = e
+        }
+      }
+      return handlers
+    },
+    getOutputHandlersByName() {
+      const handlers: { [index: string]: NodeIO } = {}
+      for (const e of Object.values(worker.handles)) {
+        if (e.direction === "output") {
+          handlers[e.name] = e
+        }
+      }
+      return handlers
+    },
+
     getConnectedHandler(h: NodeIO, curAgent: any) {
       return worker.getConnectedHandlers(h, curAgent)[0] || null
     },
@@ -214,6 +233,10 @@ export function buildWorker(w: WorkerConfig) {
       return h
     },
 
+    createHandlerId() {
+      return ulid()
+    },
+
     addHandlers(handlers: NodeIO[]) {
       for (const h of handlers) {
         worker.addHandler(h)
@@ -225,6 +248,14 @@ export function buildWorker(w: WorkerConfig) {
         Object.assign(w.handles[id], h)
       }
       worker.lastUpdate++ // = Date.now().valueOf()
+    },
+
+    upsertHandler(id: string, h: Partial<NodeIO>) {
+      if (id) {
+        worker.updateHandler(id, h)
+      } else {
+        worker.addHandler(h as NodeIO)
+      }
     },
 
     deleteHandler(id: string) {
