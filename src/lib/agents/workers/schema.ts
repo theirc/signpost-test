@@ -10,7 +10,7 @@ declare global {
       condition: NodeIO
     }
     parameters: {
-      temperature?: number
+      model?: string
     }
 
   }
@@ -19,7 +19,12 @@ declare global {
 function create(agent: Agent) {
 
   return agent.initializeWorker(
-    { type: "schema" },
+    {
+      type: "schema",
+      parameters: {
+        model: "gpt-4o",
+      },
+    },
     [
       { type: "string", direction: "input", title: "Input", name: "input" },
       { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
@@ -77,8 +82,11 @@ async function execute(worker: SchemaWorker, p: AgentParameters) {
   }
   `
 
+  const OPENAI_MODEL = worker.parameters.model || "gpt-4o"
+  console.log("OPENAI_MODEL", OPENAI_MODEL)
+
   const schemaModel = createLanguageModel({
-    OPENAI_MODEL: "gpt-4o",
+    OPENAI_MODEL,
     OPENAI_API_KEY: p.apikeys.openai,
   })
 
