@@ -18,7 +18,7 @@ export function AgentList() {
       if (!selectedTeam) {
           throw new Error('No team selected')
       }
-      const { data } = await agentsModel.data.select("*").or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
+      const { data } = await agentsModel.data.select("*").eq('team_id', selectedTeam.id)
       setAgents(data || [])
     }
     fetchAgents()
