@@ -13,11 +13,6 @@ state.icon = Database
 export function StateNode(props: NodeProps) {
   const worker = useWorker<StateWorker>(props.id)
   return <NodeLayout worker={worker}>
-    {/* <InlineHandles>
-      <WorkerLabeledHandle handler={worker.fields.input} />
-      <WorkerLabeledHandle handler={worker.fields.json} />
-    </InlineHandles> */}
-
     <NodeHandlers worker={worker} />
     <AddFieldsForm direction="both" ignoreTypes={["references", "doc", "chat", "json"]} />
   </NodeLayout >

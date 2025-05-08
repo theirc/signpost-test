@@ -1,7 +1,5 @@
 import { ulid } from "ulid"
-// import { app } from "../app"
 import { loadAgent } from "./agentfactory"
-import { error } from "console"
 
 export const inputOutputTypes = {
   string: "Text",
