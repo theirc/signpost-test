@@ -458,7 +458,7 @@ export async function fetchBots(): Promise<{
     const { data, error: fetchError } = await supabaseClient
       .from('bots')
       .select('*')
-      .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
+      .eq('team_id', selectedTeam.id)
       .order('created_at', { ascending: false })
 
     if (fetchError) throw fetchError
@@ -593,7 +593,7 @@ export async function fetchCollections(): Promise<{
     const { data, error } = await supabaseClient
       .from('collections')
       .select('*')
-      .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
+      .eq('team_id', selectedTeam.id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -1155,7 +1155,7 @@ export async function fetchSources(): Promise<{
     const { data, error } = await supabaseClient
       .from('sources')
       .select('*')
-      .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
+      .eq('team_id', selectedTeam.id)
       .order('created_at', { ascending: false })
 
     if (error) throw error

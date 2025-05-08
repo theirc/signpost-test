@@ -31,7 +31,7 @@ export function useSystemPrompts() {
             const { error: tableError } = await supabase
                 .from('system_prompts')
                 .select('count')
-                .or(`team_id.eq.${selectedTeam.id},team_id.is.null`)
+                .eq('team_id', selectedTeam.id)
                 .limit(1)
             
             if (tableError) {
