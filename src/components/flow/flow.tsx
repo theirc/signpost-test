@@ -260,12 +260,10 @@ export function FlowDesigner({ id }: { id?: string }) {
 
   return <>
     <Toolbar />
-    <div className="h-full">
       <ReactFlowProvider>
         <Flow />
         <Toaster />
       </ReactFlowProvider>
-    </div>
   </>
 }
 
