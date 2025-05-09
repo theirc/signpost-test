@@ -345,7 +345,7 @@ export default function ChatMessageComponent(props: MessageProps) {
             <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} /> :
             message ? <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} /> : null
           }
-          {!isWaiting && needsRebuild && (
+          {/* {!isWaiting && needsRebuild && (
             <Button
               className="bg-gray-700 hover:bg-gray-600 text-white"
               onClick={rebuild}
@@ -354,7 +354,7 @@ export default function ChatMessageComponent(props: MessageProps) {
             >
               <span className="mr-1">↻</span> Rebuild
             </Button>
-          )}
+          )} */}
         </div>
       </div>
     </div>

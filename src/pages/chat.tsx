@@ -19,8 +19,8 @@ import { useReactMediaRecorder } from "react-media-recorder"
 import { agents } from "@/lib/agents"
 import { availableSources } from "@/components/source_input/files-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { MultiSelectDropdown } from '@/components/ui/multiselect'
-import type { Option } from '@/components/ui/multiselect'
+// import { MultiSelectDropdown } from '@/components/ui/multiselect'
+// import type { Option } from '@/components/ui/multiselect'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup,
   DropdownMenuSeparator, DropdownMenuCheckboxItem,} from "@/components/ui/dropdown-menu"
 import ChatMessageComponent from "@/bot/chatmessage"
@@ -310,10 +310,10 @@ async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
   }
 
   const hasSelectedBots = state.selectedBots.length > 0
-  const options: Option[] = Object.keys(state.bots).map((k) => ({
-    label: state.bots[Number(k)].name,
-    value: k,
-  }))
+  // const options: Option[] = Object.keys(state.bots).map((k) => ({
+  //   label: state.bots[Number(k)].name,
+  //   value: k,
+  // }))
 
   // Scroll Effect for new messages
   useEffect(() => {
