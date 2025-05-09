@@ -69,7 +69,7 @@ function Header() {
   );
 }
 
-function AppContent() {
+export function AppLayout() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -103,7 +103,7 @@ function AppContent() {
 export function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AppLayout />
     </BrowserRouter>
   );
 }
