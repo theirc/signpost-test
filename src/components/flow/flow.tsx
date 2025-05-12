@@ -201,7 +201,7 @@ function Flow() {
     }
   }, [])
 
-  return <div className='w-full h-full'>
+  return <div className='w-full h-full pb-10'>
     <ReactFlow
       nodes={nodes}
       edges={edges}
@@ -258,12 +258,10 @@ export function FlowDesigner({ id }: { id?: string }) {
 
   return <>
     <Toolbar />
-    <div className="h-full">
       <ReactFlowProvider>
         <Flow />
         <Toaster />
       </ReactFlowProvider>
-    </div>
   </>
 }
 

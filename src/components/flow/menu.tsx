@@ -155,7 +155,7 @@ export function Toolbar(props: Props) {
 
   return <>
     <div className="flex gap-3 mb-2 text-xs items-center" id="menuroot">
-      <div className="flex flex-grow items-center">
+      <div className="flex flex-grow items-center p-2">
         <div className="text-sm" >
           <Settings size={18} className="inline mr-2 cursor-pointer" onClick={onSetAgent} />
           {app.agent.title}

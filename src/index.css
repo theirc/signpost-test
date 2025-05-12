@@ -4,174 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  .elevated-page {
-    @apply shadow-lg; /* You can adjust the shadow intensity: shadow-md, shadow-lg, shadow-xl, shadow-2xl */
-  }
-}
-
-:root {
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 3.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 3.9%;
-  --primary: 224 89% 68%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 96.1%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --accent: 0 0% 96.1%;
-  --accent-foreground: 0 0% 9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 89.8%;
-  --input: 0 0% 89.8%;
-  --ring: 0 0% 3.9%;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
-  --radius: 0.5rem;
-  --sidebar-background: 225 91% 99%;
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 210 65% 81%;
-  --sidebar-accent-foreground: 210 100% 30%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
-  --node-running-color: 3 77% 63%; /* Added variable for #EA5850 */
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  font-family: 'Inter', sans-serif;
-}
-.bot-message-content a {
-  color: #3B82F6;
-  text-decoration: none;
-}
-.bot-message-content a:hover {
-  color: #2563EB;
-  text-decoration: none;
-}
-
-.bot-message-content ul {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-  margin: 0.75rem 0;
-}
-
-.bot-message-content ol {
-  list-style-type: decimal;
-  padding-left: 1.5rem;
-  margin: 0.75rem 0;
-}
-.bot-message-content p {
-  margin-bottom: 1rem; 
-  line-height: 1.5; 
-  color: #374151; 
-  font-family: 'Inter', sans-serif;
-}
-
-.bot-message-content p:last-child {
-  margin-bottom: 0;
-}
-
-.bot-message-content p strong {
-  font-weight: 600;
-}
-
-.bot-message-content p em {
-  font-style: italic;
-  color: #4B5563; 
-}
-
-/* Chat interface font and spacing */
-.chat-messages-container {
-  font-size: 0.925rem;
-  font-family: 'Inter', sans-serif;
-  scroll-behavior: smooth;
-  padding-bottom: 60vh; /* Add extra padding at bottom for response viewing */
-}
-
-/* Chat interface text styles */
-.chat-messages-container p, 
-.bot-message-content p, 
-.bot-message-content,
-.font-sans.text-base,
-.font-sans.text-sm {
-  font-family: 'Inter', sans-serif;
-  line-height: 1.5;
-  font-size: 0.925rem;
-}
-
-.bot-message-content ul li,
-.bot-message-content ol li {
-  font-family: 'Inter', sans-serif;
-  line-height: 1.5;
-  font-size: 0.925rem;
-}
-
-/* User message text */
-.break-words.whitespace-pre-wrap {
-  font-family: 'Inter', sans-serif;
-  line-height: 1.5;
-  font-size: 0.925rem;
-  word-break: break-word;
-  hyphens: auto;
-  overflow-wrap: break-word;
-}
-
-/* Message bubble styles - simplified approach */
-.message-bubble {
-  display: inline-block;
-  min-width: 80px;
-  max-width: 48%;
-  background-color: rgba(59, 130, 246, 0.04);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-  margin-top: -10px;
-}
-
-/* Single line messages also get the same subtle rounding */
-.message-bubble.single-line {
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-}
-
-/* Multi-line messages have the same styling */
-.message-bubble:not(.single-line) {
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
-}
-
-/* Ensure text always has proper padding */
-.message-bubble .break-words.whitespace-pre-wrap {
-  display: inline;
-}
-
-/* Space for waiting response below user message */
-.message-waiting-area {
-  min-height: 40vh;
-}
-
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }
 
   :root {
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -191,12 +34,15 @@ body {
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
+
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
     --radius: 0.5rem;
+
     --sidebar-background: 225 91% 99%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -205,7 +51,8 @@ body {
     --sidebar-accent-foreground: 210 100% 30%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --node-running-color: 3 77% 63%; /* Added variable for #EA5850 */
+
+    --node-running-color: 3 77% 63%;
   }
 
   .dark {
@@ -215,8 +62,6 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 224 89% 68%;
-    --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
@@ -241,150 +86,101 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-    --node-running-color: 3 77% 63%; /* Add for dark mode too, or adjust if needed */
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
+    --node-running-color: 3 77% 63%;
   }
 
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-@layer base {
-  * {
+  *, *::before, *::after {
     @apply border-border outline-ring/50;
   }
+
   body {
+    margin: 0;
+    overflow: hidden;
+    height: 100vh;
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
   }
 }
 
-@keyframes typing {
-  0%, 100% {
-    transform: translateY(0px);
-    opacity: 0.8;
-    background-position: 0% 50%;
-  }
-  50% {
-    transform: translateY(-4px);
-    opacity: 1;
-    background-position: 100% 50%;
+@layer components {
+  .elevated-page {
+    @apply shadow-lg;
   }
 }
 
-.animate-typing-1 {
-  background-color: hsl(var(--accent));
-  animation: typing 1s infinite, colorShift1 3s infinite linear;
-  background-size: 200% 200%;
+.bot-message-content {
+  font-family: 'Inter', sans-serif;
+  color: #374151;
+  line-height: 1.5;
+}
+.bot-message-content a {
+  color: #3B82F6;
+  text-decoration: none;
+}
+.bot-message-content a:hover {
+  color: #2563EB;
+}
+.bot-message-content ul,
+.bot-message-content ol {
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+.bot-message-content ul { list-style: disc; }
+.bot-message-content ol { list-style: decimal; }
+.bot-message-content p {
+  margin-bottom: 1rem;
+}
+.bot-message-content p:last-child {
+  margin-bottom: 0;
+}
+.bot-message-content p strong {
+  font-weight: 600;
+}
+.bot-message-content p em {
+  font-style: italic;
+  color: #4B5563;
 }
 
-.animate-typing-2 {
-  background-color: hsl(var(--accent));
-  animation: typing 1s infinite 0.2s, colorShift2 3s infinite linear;
-  background-size: 200% 200%;
+.chat-messages-container,
+.font-sans.text-base,
+.font-sans.text-sm {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.925rem;
+  line-height: 1.5;
+  scroll-behavior: smooth;
+}
+.bot-message-content ul li,
+.bot-message-content ol li,
+.break-words.whitespace-pre-wrap {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.925rem;
+  line-height: 1.5;
 }
 
-.animate-typing-3 {
-  background-color: hsl(var(--accent));
-  animation: typing 1s infinite 0.4s, colorShift3 3s infinite linear;
-  background-size: 200% 200%;
+.message-bubble {
+  display: inline-block;
+  min-width: 80px;
+  max-width: 48%;
+  background-color: rgba(59, 130, 246, 0.04);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin-top: -10px;
+}
+.message-bubble .break-words.whitespace-pre-wrap {
+  display: inline;
 }
 
-@keyframes colorShift1 {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
+.message-waiting-area {
+  min-height: 40vh;
 }
 
-@keyframes colorShift2 {
-  0%, 100% { filter: hue-rotate(120deg); }
-  50% { filter: hue-rotate(300deg); }
-}
-
-@keyframes colorShift3 {
-  0%, 100% { filter: hue-rotate(240deg); }
-  50% { filter: hue-rotate(60deg); }
-}
-
-@keyframes messagePopup {
-  0% {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-message-popup {
-  animation: messagePopup 0.3s ease-out forwards;
-}
-
-@keyframes gradientText {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.gradient-text-animation {
-  background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
-  background-size: 200% auto;
-  animation: gradientText 3s ease infinite;
-}
-
-/* Transition style for text when animation completes */
-.typewriter-text-complete {
-  transition: all 0.5s ease-out;
-  color: black;
-}
-
-/* Fade in animation for new messages */
-@keyframes fadeInMessage {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.message-fade-in {
-  animation: fadeInMessage 0.3s ease-out forwards;
-}
-
-/* Pulsing animation for model selection */
-@keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 hsla(var(--accent), 0.2);
-  }
-  50% {
-    box-shadow: 0 0 15px 5px hsla(var(--accent), 0.4);
-  }
-}
-
-.empty-model-select {
-  animation: pulseGlow 2s ease-in-out infinite;
-}
-
-/* Added animation styles from chat.tsx */
 @keyframes typing-bounce {
   0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1.0); }
+  40% { transform: scale(1); }
 }
-.animate-typing-1, .animate-typing-2, .animate-typing-3 {
+.animate-typing-1,
+.animate-typing-2,
+.animate-typing-3 {
   animation: typing-bounce 1s infinite ease-in-out both;
 }
 .animate-typing-1 { animation-delay: -0.2s; }
@@ -392,95 +188,52 @@ body {
 .animate-typing-3 { animation-delay: 0s; }
 
 @keyframes fadeInMessage {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .message-fade-in {
   animation: fadeInMessage 0.2s ease-out forwards;
 }
 
-.typewriter-text-complete {
-  transition: all 0.3s ease-out;
-  color: black;
-}
-
-/* Pulsing animation for model selection */
 @keyframes pulseGlow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 hsla(var(--accent), 0.2);
-  }
-  50% {
-    box-shadow: 0 0 15px 5px hsla(var(--accent), 0.4);
-  }
+  0%, 100% { box-shadow: 0 0 0 0 hsla(var(--accent), 0.2); }
+  50%      { box-shadow: 0 0 15px 5px hsla(var(--accent), 0.4); }
 }
 .empty-model-select {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
-/* Pulsing shadow for empty input */
 @keyframes pulseInputShadow {
-  0%, 100% {
-    box-shadow: 0 0 15px 2px hsla(var(--accent), 0.15);
-  }
-  50% {
-    box-shadow: 0 0 25px 5px hsla(var(--accent), 0.25);
-  }
+  0%, 100% { box-shadow: 0 0 15px 2px hsla(var(--accent), 0.15); }
+  50%      { box-shadow: 0 0 25px 5px hsla(var(--accent), 0.25); }
 }
 .pulse-input-shadow {
   animation: pulseInputShadow 2.5s ease-in-out infinite;
 }
 
-/* Slide reveal animation for the initial greeting */
 @keyframes slideReveal {
-  from {
-    transform: translateX(0%);
-  }
-  to {
-    transform: translateX(100%);
-  }
+  from { transform: translateX(0); }
+  to   { transform: translateX(100%); }
 }
 .slide-reveal-greeting {
-  position: relative; /* Needed for pseudo-element positioning */
-  overflow: hidden; /* Hide the overlay outside the bounds */
+  position: relative;
+  overflow: hidden;
 }
 .slide-reveal-greeting::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background-color: hsl(var(--background));
   animation: slideReveal 0.6s ease-out forwards;
-  animation-delay: 0.2s; /* Optional: slight delay before reveal starts */
+  animation-delay: 0.2s;
 }
 
-/* Rotating Gradient Text Animation */
-@keyframes rotate-gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+@keyframes gradientText {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
 }
-
-.thinking-gradient-text {
-  font-weight: 500; /* Make it slightly bolder */
-  background: linear-gradient(45deg, hsl(var(--accent-foreground)), hsl(var(--accent)), hsl(var(--accent-foreground)));
-  background-size: 300% 300%; /* Increase size for smoother rotation */
-  background-clip: text;
-  -webkit-background-clip: text; /* Vendor prefix for Safari/Chrome */
-  color: transparent;
-  -webkit-text-fill-color: transparent; /* Vendor prefix for Safari/Chrome */
-  animation: rotate-gradient 3s linear infinite;
+.gradient-text-animation {
+  background-image: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
+  background-size: 200% auto;
+  animation: gradientText 3s ease infinite;
 }
