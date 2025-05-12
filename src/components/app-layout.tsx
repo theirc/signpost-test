@@ -1,5 +1,4 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { FlowDesigner } from "@/components/flow/flow"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { BotManagement } from "@/pages/bots/bots"
@@ -27,18 +26,7 @@ import Sources from "@/pages/sources"
 import { Routes, Route, useLocation, useNavigate, useMatch } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
 import { BotForm } from "@/pages/bots/bot-form"
-import { Button } from '@/components/ui/button';
 import React from 'react';
-import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from "@/components/ui/menubar"
-import { workerRegistry } from "@/lib/agents/registry"
-import { createModel } from "@/lib/data/model"
-import { cloneDeep } from "lodash"
-import { Cog, EllipsisVertical, LoaderCircle, Play, Save, Settings, Trash2 } from "lucide-react"
-import { useEffect, useState as useReactState } from "react"
-import { toast } from "sonner"
-import { Input, InputTextArea, Modal, Row, Select, useForm } from "@/components/forms"
-import { Separator } from "@/components/ui/separator"
-import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
 import { UsersSettings } from "@/pages/settings/users"
 import { AddTeamMembers } from "@/pages/settings/team-members"
@@ -85,8 +73,8 @@ export function AppLayout() {
         <AppSidebar />
         <SidebarInset>
           <HeaderControls isAgentRoute={!!isAgentRoute} />
-          <div className="flex flex-1 flex-col rounded-xl bg-background border border-border elevated-page overflow-hidden">
-            <div className={`flex-1 ${isAgentRoute ? '' : 'p-4'} h-full`}>
+          <div className="flex flex-1 flex-col rounded-xl bg-background border border-border overflo">
+            <div className={`flex-1 ${isAgentRoute ? '' : ''} `}>
               <Routes>
                 <Route path="/" element={
                   <ProtectedRoute resource="agents" action="read">
@@ -239,77 +227,6 @@ function HeaderControls({ isAgentRoute }: { isAgentRoute: boolean }) {
   const location = useLocation()
   const currentPath = location.pathname
   const currentName = routeNames[currentPath] || 'Unknown'
-  // const { selectedBots, options, handleBotSelectionChange, toggleSidebar, loadingBots } = useChatContext();
-  // const isBotListEmpty = selectedBots.length === 0;
-
-
-
-  // const [saving, setSaving] = useReactState(false)
-
-  // useEffect(() => {
-  //   if (app.agent) {
-  //     form.reset({ ...app.getAPIkeys() });
-  //     agentForm.reset({
-  //         title: app.agent.title,
-  //         description: app.agent.description ?? '',
-  //         type: app.agent.type ?? 'conversational'
-  //     });
-  //   }
-  // }, [app.agent]);
-
-  // form.onSubmit = async (data) => {
-  //   const ak = app.getAPIkeys()
-  //   ak.openai = data.openai
-  //   ak.anthropic = data.anthropic
-  //   ak.zendesk = data.zendesk
-  //   app.saveAPIkeys(ak)
-  // }
-
-  // agentForm.onSubmit = async (data) => {
-  //   if (!app.agent) return;
-  //   app.agent.title = data.title
-  //   app.agent.description = data.description
-  //   app.agent.type = data.type as any
-  // }
-
-  // async function onSave() {
-  //   if (saving || !app.agent) return;
-  //   setSaving(true)
-  //   const clonedAgent = cloneDeep(app.agent)
-  //   await agents.saveAgent(clonedAgent)
-  //   toast("The flow was saved", { action: { label: "Ok", onClick: () => console.log("Ok") } })
-  //   setTimeout(() => { setSaving(false) }, 1000)
-  // }
-
-  // async function onPlay() {
-  //   if (!app.agent) return;
-  //   console.log("Play")
-  //   const { agent } = app
-
-  //   if (!agent.hasResponse()) {
-  //     toast("Add a Response Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok") } })
-  //     return
-  //   }
-
-  //   const p: AgentParameters = { debug: true, input: {}, apikeys: app.getAPIkeys() }
-  //   await agent.execute(p)
-
-  //   if (p.error) {
-  //     toast("Error", { description: <div className="text-red-500 font-semibold">{p.error}</div>, action: { label: "Ok", onClick: () => console.log("Ok") } })
-  //   }
-  //   console.log("Result: ", p.output)
-  // }
-
-  // function onSetAPIKey() { form.modal.show() }
-
-  // function onSetAgent() {
-  //   if (!app.agent) return;
-  //   agentForm.edit({
-  //     title: app.agent.title,
-  //     description: app.agent.description,
-  //     type: app.agent.type
-  //   })
-  // }
 
   return (
     <>
@@ -329,11 +246,6 @@ function HeaderControls({ isAgentRoute }: { isAgentRoute: boolean }) {
                   <BreadcrumbItem>
                     {isAgentRoute && app.agent ? (
                       <div className="text-sm flex items-center">
-                        {/* <Settings
-                          size={16}
-                          className="inline mr-2 cursor-pointer text-muted-foreground hover:text-foreground"
-                          onClick={onSetAgent}
-                        /> */}
                         <span className="font-medium text-foreground">
                           {app.agent.title}
                         </span>

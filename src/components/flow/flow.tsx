@@ -203,7 +203,7 @@ function Flow() {
     }
   }, [])
 
-  return <div className='w-full h-full'>
+  return <div className='w-full h-full pb-10'>
     <ReactFlow
       nodes={nodes}
       edges={edges}
