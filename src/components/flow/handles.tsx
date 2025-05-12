@@ -42,6 +42,8 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
     const handlet = workert.handles[e.targetHandle]
     if (!handles || !handlet) return false
 
+    if (handlet.condition && handles.type != "boolean" && handles.type != "number" && handles.type != "string") return false
+
     if (handlet.type === "unknown") return true
     if (handles.type === "unknown") return true
 
@@ -66,6 +68,7 @@ export function WorkerLabeledHandle({ handler, ...props }: WorkerHandleProps) {
   if (!handler) return null
 
   function onClick() {
+    if (handler.system) return
     ct?.onEdit?.(handler)
   }
 

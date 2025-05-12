@@ -20,8 +20,9 @@ export const inputOutputTypes = {
 }
 
 interface WorkerCondition {
-  operator?: "equals"
+  operator?: "equals" | "notEquals" | "gt" | "lt" | "gte" | "lte" | "between" | "contains" | "notContains"
   value?: any
+  value2?: any // For "between" operator
 }
 
 declare global {
@@ -111,7 +112,8 @@ export function buildWorker(w: WorkerConfig) {
       const cond = Object.values(worker.handles).filter(h => h.condition)[0]
       if (cond) {
         // console.log("Worker - Condition: ", cond)
-        if ((!!worker.condition.value) !== (!!cond.value)) {
+        const conditionMet = worker.evaluateCondition(cond.value)
+        if (!conditionMet) {
           console.log(`Worker ${w.type} - Condition not met`)
           worker.updateWorker()
           p.agent.currentWorker = null
@@ -139,6 +141,50 @@ export function buildWorker(w: WorkerConfig) {
       p.agent.currentWorker = null
       p.agent.update()
 
+    },
+
+    evaluateCondition(condValue: any): boolean {
+      const { operator, value, value2 } = worker.condition
+
+      if (operator === "equals") {
+        return condValue === value
+      }
+
+      if (operator === "notEquals") {
+        return condValue !== value
+      }
+
+      // String operators
+      if (typeof condValue === "string" && typeof value === "string") {
+        if (operator === "contains") {
+          return condValue.includes(value)
+        }
+        if (operator === "notContains") {
+          return !condValue.includes(value)
+        }
+      }
+
+      // Number operators
+      if (typeof condValue === "number" && typeof value === "number") {
+        if (operator === "gt") {
+          return condValue > value
+        }
+        if (operator === "lt") {
+          return condValue < value
+        }
+        if (operator === "gte") {
+          return condValue >= value
+        }
+        if (operator === "lte") {
+          return condValue <= value
+        }
+        if (operator === "between" && typeof value2 === "number") {
+          return condValue >= value && condValue <= value2
+        }
+      }
+
+      // Boolean fallback (for backward compatibility)
+      return (!!value) === (!!condValue)
     },
 
     async getValues(p: AgentParameters) {
@@ -293,9 +339,3 @@ export function buildWorker(w: WorkerConfig) {
 
   return worker
 }
-
-
-
-
-
-
