@@ -13,7 +13,7 @@ export const inputOutputTypes = {
   references: "References",
   chat: "Chat",
   json: "JSON",
-  // audio: "Audio",
+  audio: "Audio",
   // image: "Image",
   // video: "Video",
   // execute: "Execute",
