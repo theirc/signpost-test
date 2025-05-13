@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect, } from "react"
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, SortingState, } from "@tanstack/react-table"
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from "@/components/ui/table"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
-import { ArrowUpDown, SlidersHorizontal, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
+import { ArrowUpDown, SlidersHorizontal, GripVertical } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/components/ui/dropdown-menu"
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors, } from "@dnd-kit/core"
@@ -35,10 +35,6 @@ interface CustomTableProps<T extends { id: any }> {
     tableId?: string
     filters?: FilterDefinition<T>[]
     placeholder?: string
-    sorting?: SortingState
-    onSortingChange?: (sorting: SortingState) => void
-    currentPage?: number
-    onPageChange?: (page: number) => void
 }
 
 const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>, table: any }) => {
@@ -99,15 +95,6 @@ const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>,
         })
     }
 
-    // Determine sorting state
-    const isSorted = header.column.getIsSorted()
-    let sortIcon = <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-    if (isSorted === 'asc') {
-        sortIcon = <ChevronUp className="h-4 w-4 text-blue-500" />
-    } else if (isSorted === 'desc') {
-        sortIcon = <ChevronDown className="h-4 w-4 text-blue-500" />
-    }
-
     return (
         <TableHead
             key={header.id}
@@ -134,7 +121,7 @@ const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>,
                         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                             {flexRender(header.column.columnDef.header, header.getContext())}
                         </span>
-                        {sortIcon}
+                        <ArrowUpDown className="h-4 w-4" />
                     </div>
                 </div>
                 <button {...attributes} {...listeners}>
@@ -200,9 +187,7 @@ function CustomTable<T extends { id: any }>({
     onRowClick,
     tableId,
     filters,
-    placeholder,
-    sorting,
-    onSortingChange
+    placeholder
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
         const initialOrder = columns?.map((col) => col.id as string).filter(Boolean);
@@ -265,14 +250,8 @@ function CustomTable<T extends { id: any }>({
 
     const pageCount = Math.ceil(filteredData.length / pageSize)
 
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize
-        const endIndex = startIndex + pageSize
-        return filteredData?.slice(startIndex, endIndex)
-    }, [filteredData, currentPage, pageSize])
-
     const table = useReactTable<T>({
-        data: paginatedData,
+        data: filteredData,
         columns,
         defaultColumn: {
             minSize: 40,
@@ -284,19 +263,16 @@ function CustomTable<T extends { id: any }>({
             columnOrder,
             columnVisibility, 
             columnSizingInfo,
-            sorting: sorting || []
+            pagination: {
+                pageIndex: currentPage - 1,
+                pageSize: pageSize,
+            },
         },
         getCoreRowModel: getCoreRowModel(),
-        ...(onSortingChange ? {} : { getSortedRowModel: getSortedRowModel() }),
+        getSortedRowModel: getSortedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
-        onSortingChange: (updater) => {
-            if (onSortingChange) {
-                const newSorting = typeof updater === 'function' ? updater(sorting || []) : updater
-                onSortingChange(newSorting)
-            }
-        },
         onColumnOrderChange: (newOrder) => {
             if (typeof newOrder === 'function') {
                  setColumnOrder(prev => {
@@ -335,17 +311,14 @@ function CustomTable<T extends { id: any }>({
     })
 
     useEffect(() => {
-        if (!tableId) return;
-        const storedVisibility = localStorage.getItem(`columnVisibility-${tableId}`);
-        const visibility = storedVisibility ? JSON.parse(storedVisibility) : {};
-        if (visibility['action'] === false && columnVisibility['action'] !== true) {
-            setColumnVisibility(prev => {
-                if (prev['action'] === true) return prev;
-                return { ...prev, action: true };
-            });
+        if (tableId) {
+            const storedVisibility = localStorage.getItem(`columnVisibility-${tableId}`)
+            const visibility = storedVisibility ? JSON.parse(storedVisibility) : {}
+            if (visibility['action'] === false) {
+                setColumnVisibility(prev => ({ ...prev, action: true }))
+            }
         }
-        // Only run when tableId changes
-    }, [tableId]);
+    }, [tableId])
 
     useEffect(() => {
         if (columnSizingInfo.isResizingColumn) {
@@ -362,6 +335,10 @@ function CustomTable<T extends { id: any }>({
         () => table.getHeaderGroups(),
         [table.getHeaderGroups()]
     )
+
+    const memoizedRows = useMemo(() => table.getRowModel().rows, [
+        table.getRowModel().rows,
+    ])
 
     const handleToggleSelect = useCallback(
         (rowId: any) => {
@@ -579,7 +556,7 @@ function CustomTable<T extends { id: any }>({
                                 ))}
                             </TableHeader>
                             <TableBody>
-                                {table.getRowModel().rows.length ? table.getRowModel().rows.map((row) => (
+                                {memoizedRows.length ? memoizedRows.map((row) => (
                                     <TableRow 
                                         key={row.id} 
                                         className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
@@ -615,7 +592,7 @@ function CustomTable<T extends { id: any }>({
                         </Table>
                     </div>
                 </div>
-                {data?.length > pageSize &&<Pagination>
+                {filteredData.length > pageSize &&<Pagination>
                     <PaginationContent>
                         {currentPage === 1 ? (
                             <span aria-disabled="true">
