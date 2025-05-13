@@ -8,7 +8,8 @@ import React from "react"
 import { useFileParser } from "@/lib/fileUtilities/use-file-parser"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FolderCrawler } from "./folder-crawler"
-import { uploadSources, ParsedFile, fetchTags, addTag as addTagToDb } from '@/lib/data/supabaseFunctions'
+import { supabase } from '@/lib/data/supabaseFunctions'
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 // Define Tag type if needed
 type Tag = { id: string; name: string; };
@@ -25,9 +26,10 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated, initialFiles 
   const { isLoading: parsingFiles, parseFiles, supportedTypes } = useFileParser()
   const [tags, setTags] = useState<Tag[]>([])
   const [tagsLoading, setTagsLoading] = useState(true)
+  const { selectedTeam } = useTeamStore()
   
   const [uploading, setUploading] = useState(false)
-  const [processedSources, setProcessedSources] = useState<ParsedFile[]>([])
+  const [processedSources, setProcessedSources] = useState<any[]>([])
   const [sourceNames, setSourceNames] = useState<Record<string, string>>({})
   const [currentTags, setCurrentTags] = useState<string[]>([])
   const [tagInput, setTagInput] = useState("")
@@ -38,7 +40,11 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated, initialFiles 
     const fetchTagsData = async () => {
       setTagsLoading(true);
       try {
-        const { data, error } = await fetchTags();
+        const { data, error } = await supabase
+          .from('tags')
+          .select('*')
+          .order('name', { ascending: true });
+          
         if (error) {
           console.error("Error fetching tags:", error);
           setTags([]);
@@ -58,9 +64,12 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated, initialFiles 
   }, [open]);
 
   const handleFiles = useCallback(async (files: File[]) => {
+    console.log("handleFiles called with files:", files)
     if (!files.length) return;
     try {
+      console.log("Starting to parse files...")
       const parsedSources = await parseFiles(Array.from(files));
+      console.log("Files parsed successfully:", parsedSources)
       setProcessedSources(parsedSources);
     } catch (error) {
       console.error('Error processing files:', error);
@@ -75,6 +84,7 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated, initialFiles 
   }, [initialFiles, handleFiles]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("File input changed:", e.target.files)
     if (!e.target.files?.length) return;
     await handleFiles(Array.from(e.target.files));
   };
@@ -96,44 +106,95 @@ export function FilesModal({ open, onOpenChange, onSourcesUpdated, initialFiles 
   }
 
   const handleAddSources = async () => {
-    if (processedSources.length === 0) return false
+    console.log("handleAddSources called")
+    if (processedSources.length === 0) {
+      console.log("No processed sources to upload")
+      return false
+    }
+
+    if (!selectedTeam) {
+      console.error("No team selected")
+      return false
+    }
+    
+    console.log("Starting handleAddSources with processedSources:", processedSources)
+    console.log("Current tags:", currentTags)
+    console.log("Source names:", sourceNames)
     
     setUploading(true)
     try {
       // Ensure tags exist
       const tagPromises = ['File Upload', ...currentTags].map(async tagName => {
+        console.log("Processing tag:", tagName)
         const existingTag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
-        if (existingTag) return existingTag.id
+        if (existingTag) {
+          console.log("Found existing tag:", existingTag)
+          return existingTag.id
+        }
         try {
-          const result = await addTagToDb(tagName);
-          if (result.error) throw result.error;
-          return result.data?.id;
+          console.log("Creating new tag:", tagName)
+          const { data, error } = await supabase
+            .from('tags')
+            .insert([{ name: tagName }])
+            .select()
+            .single();
+            
+          if (error) throw error;
+          console.log("Created new tag:", data)
+          return data?.id;
         } catch (err) {
           console.error(`Error creating tag ${tagName}:`, err);
           throw err;
         }
       })
       const tagIds = (await Promise.all(tagPromises)).filter(id => id !== undefined);
+      console.log("Final tag IDs:", tagIds)
 
       if (tagIds.length < ['File Upload', ...currentTags].length) {
         throw new Error('Failed to create/find all required tags.');
       }
+
+      // Add sources
+      const sourcePromises = processedSources.map(async source => {
+        const name = sourceNames[source.id]?.trim() || source.name
+        console.log(`Processing source: ${name}`)
+
+        // Format tags properly for PostgreSQL array
+        const formattedTags = JSON.stringify(['File Upload', ...currentTags, source.name.split('.').pop() || ''])
+          .replace(/"/g, '')
+          .replace('[', '{')
+          .replace(']', '}')
+        console.log(`Formatted tags for ${name}:`, formattedTags)
+
+        const { data, error } = await supabase
+          .from('sources')
+          .insert([{
+            name,
+            type: 'File',
+            content: source.content,
+            tags: formattedTags,
+            team_id: selectedTeam.id
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error(`Error adding source ${name}:`, error)
+          throw error
+        }
+
+        console.log(`Added source ${name}:`, data)
+        return data
+      })
+
+      await Promise.all(sourcePromises)
+      console.log("All sources added successfully")
       
-      const { success, error } = await uploadSources(processedSources, sourceNames, currentTags)
-      if (error) {
-        console.error('Error uploading sources:', error)
-        return false
-      }
-      
-      if (success) {
-        onOpenChange(false)
-        onSourcesUpdated()
-        return true
-      }
-      
-      return false
+      onOpenChange(false)
+      onSourcesUpdated()
+      return true
     } catch (error) {
-      console.error('Error uploading sources:', error)
+      console.error('Error in handleAddSources:', error)
       return false
     } finally {
       setUploading(false)
