@@ -58,7 +58,7 @@ export function AgentList() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex-1 overflow-auto space-y-4 p-8 pt-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
           <Link to={`/agent/new`}>
