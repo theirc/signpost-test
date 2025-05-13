@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, } from "react"
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, } from "@tanstack/react-table"
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, SortingState } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from "@/components/ui/table"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
 import { ArrowUpDown, SlidersHorizontal, GripVertical } from "lucide-react"
@@ -35,6 +35,8 @@ interface CustomTableProps<T extends { id: any }> {
     tableId?: string
     filters?: FilterDefinition<T>[]
     placeholder?: string
+    sorting?: SortingState
+    onSortingChange?: (sorting: SortingState) => void
 }
 
 const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>, table: any }) => {
@@ -187,7 +189,9 @@ function CustomTable<T extends { id: any }>({
     onRowClick,
     tableId,
     filters,
-    placeholder
+    placeholder,
+    sorting,
+    onSortingChange,
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
         const initialOrder = columns?.map((col) => col.id as string).filter(Boolean);
@@ -267,6 +271,7 @@ function CustomTable<T extends { id: any }>({
                 pageIndex: currentPage - 1,
                 pageSize: pageSize,
             },
+            sorting,
         },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -291,6 +296,7 @@ function CustomTable<T extends { id: any }>({
             }
         },
         onColumnVisibilityChange: setColumnVisibility,
+        onSortingChange: onSortingChange,
         columnResizeMode: "onChange",
         columnResizeDirection: "ltr",
         onColumnSizingInfoChange: (updatedColumnSizingInfo: ColumnSizingInfoState) => {
