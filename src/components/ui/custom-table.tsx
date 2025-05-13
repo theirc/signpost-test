@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, } from "react"
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, } from "@tanstack/react-table"
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, ColumnDef, ColumnOrderState, VisibilityState, getFacetedRowModel, getFacetedUniqueValues, getPaginationRowModel, Header, Cell, ColumnSizingInfoState, SortingState } from "@tanstack/react-table"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell, } from "@/components/ui/table"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, } from "@/components/ui/pagination"
 import { ArrowUpDown, SlidersHorizontal, GripVertical } from "lucide-react"
@@ -35,6 +35,10 @@ interface CustomTableProps<T extends { id: any }> {
     tableId?: string
     filters?: FilterDefinition<T>[]
     placeholder?: string
+    sorting?: SortingState
+    onSortingChange?: (sorting: SortingState) => void
+    currentPage?: number
+    onPageChange?: (page: number) => void
 }
 
 const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>, table: any }) => {
@@ -187,7 +191,11 @@ function CustomTable<T extends { id: any }>({
     onRowClick,
     tableId,
     filters,
-    placeholder
+    placeholder,
+    sorting,
+    onSortingChange,
+    currentPage = 1,
+    onPageChange,
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
         const initialOrder = columns?.map((col) => col.id as string).filter(Boolean);
@@ -238,7 +246,6 @@ function CustomTable<T extends { id: any }>({
         const stored = localStorage.getItem(`columnVisibility-${tableId}`)
         return stored ? JSON.parse(stored) : {}
     })
-    const [currentPage, setCurrentPage] = useState(1)
     const [columnSizingInfo, setColumnSizingInfo] = useState<ColumnSizingInfoState>({} as ColumnSizingInfoState)
     const [columnSizes, setColumnSizes] = useState<Record<string, number>>(() => {
         if (!tableId) return {}
@@ -250,14 +257,8 @@ function CustomTable<T extends { id: any }>({
 
     const pageCount = Math.ceil(filteredData.length / pageSize)
 
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize
-        const endIndex = startIndex + pageSize
-        return filteredData?.slice(startIndex, endIndex)
-    }, [filteredData, currentPage, pageSize])
-
     const table = useReactTable<T>({
-        data: paginatedData,
+        data: filteredData,
         columns,
         defaultColumn: {
             minSize: 40,
@@ -269,6 +270,11 @@ function CustomTable<T extends { id: any }>({
             columnOrder,
             columnVisibility, 
             columnSizingInfo,
+            pagination: {
+                pageIndex: currentPage - 1,
+                pageSize: pageSize,
+            },
+            sorting,
         },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -293,6 +299,15 @@ function CustomTable<T extends { id: any }>({
             }
         },
         onColumnVisibilityChange: setColumnVisibility,
+        onSortingChange: onSortingChange,
+        onPaginationChange: (updater) => {
+            if (typeof updater === 'function') {
+                const newPaginationState = updater(table.getState().pagination)
+                onPageChange?.(newPaginationState.pageIndex + 1)
+            } else {
+                onPageChange?.(updater.pageIndex + 1)
+            }
+        },
         columnResizeMode: "onChange",
         columnResizeDirection: "ltr",
         onColumnSizingInfoChange: (updatedColumnSizingInfo: ColumnSizingInfoState) => {
@@ -363,10 +378,6 @@ function CustomTable<T extends { id: any }>({
                 return newOrder;
             })
         }
-    }
-
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
     }
 
     const sensors = useSensors(
@@ -594,20 +605,20 @@ function CustomTable<T extends { id: any }>({
                         </Table>
                     </div>
                 </div>
-                {data?.length > pageSize &&<Pagination>
+                {filteredData.length > pageSize &&<Pagination>
                     <PaginationContent>
                         {currentPage === 1 ? (
                             <span aria-disabled="true">
                                 <PaginationPrevious />
                             </span>
                         ) : (
-                            <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                            <PaginationPrevious onClick={() => onPageChange?.(currentPage - 1)} />
                         )}
 
                         {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
                             <PaginationItem key={page}>
                                 <PaginationLink
-                                    onClick={() => handlePageChange(page)}
+                                    onClick={() => onPageChange?.(page)}
                                     isActive={currentPage === page}
                                 >
                                     {page}
@@ -620,7 +631,7 @@ function CustomTable<T extends { id: any }>({
                                 <PaginationNext />
                             </span>
                         ) : (
-                            <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                            <PaginationNext onClick={() => onPageChange?.(currentPage + 1)} />
                         )}
                     </PaginationContent>
                 </Pagination>}

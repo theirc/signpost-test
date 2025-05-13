@@ -1019,20 +1019,21 @@ export async function getSourcesForCollection(collectionId: string): Promise<{
   console.log(`[supabaseFunctions] Getting sources for collection: ${collectionId}`)
 
   try {
-    // Define the expected response type
-    type CollectionSourceResponse = {
+    // Define the expected response type for the raw Supabase data
+    // This reflects that 'sources' is a related record and we only select specific fields from it.
+    type CollectionSourceResponseFromDB = {
       source_id: string;
-      sources: Source;
+      sources: Pick<Source, 'id' | 'name' | 'type' | 'tags' | 'created_at' | 'last_updated' | 'vector'> | null;
     }
 
     const { data, error } = await supabaseClient
       .from('collection_sources')
       .select(`
         source_id,
-        sources:source_id(*)
+        sources:source_id(id, name, type, tags, created_at, last_updated, vector)
       `)
       .eq('collection_id', collectionId) as {
-        data: CollectionSourceResponse[] | null,
+        data: CollectionSourceResponseFromDB[] | null,
         error: Error | null
       }
 
@@ -1043,21 +1044,35 @@ export async function getSourcesForCollection(collectionId: string): Promise<{
 
     console.log(`[supabaseFunctions] Retrieved ${data?.length || 0} sources for collection ${collectionId}`)
 
-    // Extract the sources from the nested structure
-    const sources = (data || []).map(item => {
+    // Extract and transform the sources from the nested structure
+    const sourcesWithEmptyContent: Source[] = (data || []).map(item => {
       if (!item.sources) {
-        console.warn(`[supabaseFunctions] No source data found for source_id in collection ${collectionId}`)
-        return null
+        console.warn(`[supabaseFunctions] No source data found for source_id ${item.source_id} in collection ${collectionId}`)
+        // Return a placeholder or handle as an error, depending on desired behavior.
+        // For now, let's create a minimal Source object with an empty content string.
+        return {
+          id: item.source_id, // Use source_id as a fallback if item.sources is null
+          name: 'Unknown Source',
+          type: 'unknown',
+          content: '',
+          created_at: new Date().toISOString(), // Provide a fallback created_at
+          tags: []
+        } as Source; 
       }
-      return item.sources
-    }).filter((source): source is Source => source !== null)
+      // Add content: '' to each source for type compatibility with the Source interface
+      return {
+        ...item.sources,
+        tags: item.sources.tags || [], // Ensure tags is an array
+        content: '' 
+      } as Source;
+    }).filter((source): source is Source => source !== null);
 
-    return { data: sources, error: null }
-  } catch (err) {
-    console.error(`[supabaseFunctions] Exception in getSourcesForCollection:`, err)
+    return { data: sourcesWithEmptyContent, error: null }
+  } catch (e) { // Changed variable name from err to e to match common practice
+    console.error(`[supabaseFunctions] Exception in getSourcesForCollection:`, e)
     return {
       data: [],
-      error: err instanceof Error ? err : new Error(String(err))
+      error: e instanceof Error ? e : new Error(String(e))
     }
   }
 }
@@ -1152,17 +1167,39 @@ export async function fetchSources(): Promise<{
       throw new Error('No team selected')
     }
 
+    // Only select summary fields, not content
     const { data, error } = await supabaseClient
       .from('sources')
-      .select('*')
+      .select('id, name, type, tags, created_at, last_updated')
       .eq('team_id', selectedTeam.id)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return { data: data || [], error: null }
+    // Patch: add content: '' to each source for type compatibility
+    const patchedData = (data || []).map((item: any) => ({ ...item, content: '' }));
+    return { data: patchedData, error: null }
   } catch (error) {
     console.error('Error fetching sources:', error)
     return { data: [], error: error instanceof Error ? error : new Error(String(error)) }
+  }
+}
+
+// Fetch a single source by id, including content
+export async function fetchSourceById(id: string): Promise<{
+  data: Source | null,
+  error: Error | null
+}> {
+  try {
+    const { data, error } = await supabaseClient
+      .from('sources')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error fetching source by id:', error);
+    return { data: null, error: error instanceof Error ? error : new Error(String(error)) };
   }
 }
 

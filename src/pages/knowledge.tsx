@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import React, { useEffect, useState, useCallback, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database, LayoutGrid, Map } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database, LayoutGrid, Map, ChevronUp, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useSupabase } from "@/hooks/use-supabase"
 import { formatDate } from "@/components/source_input/utils"
@@ -28,12 +28,14 @@ import {
   getSourcesForCollection,
   addSourceToCollection,
   removeSourceFromCollection,
-  getTagsForSource
+  getTagsForSource,
+  fetchSourceById
 } from '@/lib/data/supabaseFunctions'
 import { Switch } from "@/components/ui/switch"
 import { CollectionGraph } from "@/components/CollectionGraph"
 import { Checkbox } from "@/components/ui/checkbox"
 import { CheckedState } from "@radix-ui/react-checkbox"
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 
 export function CollectionsManagement() {
   // Replace useCollections hook with useState
@@ -60,6 +62,13 @@ export function CollectionsManagement() {
   // Add view mode state
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
   const [sourceSearchQuery, setSourceSearchQuery] = useState("")
+  // Add state for table dialog
+  const [page, setPage] = useState(1)
+  const pageSize = 5
+  const [tagFilter, setTagFilter] = useState("")
+  const [sortKey, setSortKey] = useState<'name' | 'lastUpdated'>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [previewSource, setPreviewSource] = useState<{id: string, name: string, content: string, loading: boolean} | null>(null)
 
   // Fetch sources on mount and when refresh is triggered
   const refreshSources = useCallback(async () => {
@@ -574,106 +583,32 @@ export function CollectionsManagement() {
     }
   }
 
-  // Define columns for the source selection table
-  const sourceColumns: ColumnDef<SourceDisplay>[] = [
-    // --- Selection Checkbox Column ---
-    {
-      id: "select",
-      header: ({ table }) => {
-        const isAllSelected = table.getIsAllPageRowsSelected();
-        const isSomeSelected = table.getIsSomePageRowsSelected();
-        let checkedState: CheckedState = false;
-        if (isAllSelected) {
-          checkedState = true;
-        } else if (isSomeSelected) {
-          checkedState = "indeterminate";
-        }
+  // Get all unique tags for the filter dropdown
+  const allTags = Array.from(new Set(sourcesDisplay.flatMap(s => s.tags || [])));
 
-        return (
-          <Checkbox
-            checked={checkedState}
-            onCheckedChange={handleSelectAll} // Use direct handler
-            aria-label="Select all"
-          />
-        );
-      },
-      cell: ({ row }) => (
-        <Checkbox
-          checked={selectedSources.includes(row.original.id)} // Check against selectedSources state
-          onCheckedChange={() => handleToggleSelect(row.original.id)} // Use direct handler
-          aria-label="Select row"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-      size: 40, // Fixed size for checkbox column
-    },
-    // --- Other Columns (Name, Type, etc.) ---
-    { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-    { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: true, cell: (info) => info.getValue() },
-    { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
-    {
-      id: "tags",
-      accessorKey: "tags",
-      header: "Tags",
-      enableResizing: true,
-      enableHiding: true,
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          {(row.original.tags || []).map(tag => {
-            let tagStyle = "bg-muted"
-            if (tag === 'File Upload') {
-              tagStyle = "bg-blue-100 text-blue-800"
-            } else if (tag === 'Live Data') {
-              tagStyle = "bg-purple-100 text-purple-800"
-            }
-            return (
-              <span
-                key={tag}
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
-              >
-                {tag}
-              </span>
-            )
-          })}
-        </div>
-      ),
+  // Filtering and sorting
+  let filteredSources = sourcesDisplay;
+  if (tagFilter) {
+    filteredSources = filteredSources.filter(s => (s.tags || []).includes(tagFilter));
+  }
+  filteredSources = [...filteredSources].sort((a, b) => {
+    if (sortKey === 'lastUpdated') {
+      const aTime = new Date(a.lastUpdated).getTime();
+      const bTime = new Date(b.lastUpdated).getTime();
+      if (aTime < bTime) return sortDirection === 'asc' ? -1 : 1;
+      if (aTime > bTime) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    } else {
+      if (a.name < b.name) return sortDirection === 'asc' ? -1 : 1;
+      if (a.name > b.name) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
     }
-  ]
+  });
 
-  const filters = [
-    {
-      id: "search",
-      label: "Search",
-      component: SearchFilter,
-      props: { filterKey: "search", placeholder: "Search sources..." },
-    },
-    {
-      id: "types",
-      label: "Types",
-      component: SelectFilter,
-      props: { filterKey: "type", placeholder: "All Types" },
-    },
-    {
-      id: "tags",
-      label: "Tags",
-      component: TagsFilter,
-      props: { filterKey: "tags", placeholder: "All Tags" },
-    }
-  ]
+  const pageCount = Math.ceil(filteredSources.length / pageSize);
+  const paginatedSources = filteredSources.slice((page - 1) * pageSize, page * pageSize);
 
-  // Filter sources based on search query
-  const filteredSources = useMemo(() => {
-    if (!sourceSearchQuery) {
-      return sourcesDisplay
-    }
-    const lowerCaseQuery = sourceSearchQuery.toLowerCase()
-    return sourcesDisplay.filter(source => 
-      source.name.toLowerCase().includes(lowerCaseQuery) ||
-      (source.content && source.content.toLowerCase().includes(lowerCaseQuery))
-    )
-  }, [sourcesDisplay, sourceSearchQuery])
+  useEffect(() => { setPage(1); }, [tagFilter, sortKey, sortDirection]);
 
   return (
     <div className="flex flex-col h-full">
@@ -835,13 +770,135 @@ export function CollectionsManagement() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <CustomTable 
-                  tableId="knowledge-table" 
-                  columns={sourceColumns as any}
-                  data={filteredSources} 
-                  filters={filters} 
-                  placeholder="No sources found" 
-                />
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <label htmlFor="tag-filter" className="text-sm">Filter by tag:</label>
+                    <select
+                      id="tag-filter"
+                      value={tagFilter}
+                      onChange={e => setTagFilter(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="">All</option>
+                      {allTags.map(tag => (
+                        <option key={tag} value={tag}>{tag}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead></TableHead>
+                        <TableHead
+                          className="cursor-pointer select-none"
+                          onClick={() => {
+                            if (sortKey === 'name') {
+                              setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortKey('name');
+                              setSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            Name
+                            {sortKey === 'name' && (sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                          </span>
+                        </TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead
+                          className="cursor-pointer select-none"
+                          onClick={() => {
+                            if (sortKey === 'lastUpdated') {
+                              setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortKey('lastUpdated');
+                              setSortDirection('asc');
+                            }
+                          }}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            Last Updated
+                            {sortKey === 'lastUpdated' && (sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                          </span>
+                        </TableHead>
+                        <TableHead>Tags</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedSources.length ? paginatedSources.map((source) => (
+                        <TableRow key={source.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedSources.includes(source.id)}
+                              onCheckedChange={() => handleToggleSelect(source.id)}
+                              aria-label="Select row"
+                            />
+                          </TableCell>
+                          <TableCell
+                            className="cursor-pointer hover:underline"
+                            onClick={async () => {
+                              setPreviewSource({ id: source.id, name: source.name, content: '', loading: true });
+                              const { data, error } = await fetchSourceById(source.id);
+                              if (error || !data) {
+                                setPreviewSource({ id: source.id, name: source.name, content: 'Error loading content', loading: false });
+                              } else {
+                                setPreviewSource({ id: data.id, name: data.name, content: data.content, loading: false });
+                              }
+                            }}
+                          >
+                            {source.name}
+                          </TableCell>
+                          <TableCell>{source.type}</TableCell>
+                          <TableCell>{format(new Date(source.lastUpdated), "MMM dd, yyyy")}</TableCell>
+                          <TableCell>
+                            {(source.tags || []).map(tag => {
+                              let tagStyle = "bg-muted px-2 py-0.5 rounded-full text-xs mr-1";
+                              if (tag === 'File Upload') tagStyle += " bg-blue-100 text-blue-800";
+                              if (tag === 'Live Data') tagStyle += " bg-purple-100 text-purple-800";
+                              return <span key={tag} className={tagStyle}>{tag}</span>;
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8">
+                            {"No sources found"}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-center gap-2 mt-4 items-center">
+                    <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} size="sm">Previous</Button>
+                    <span>Page {page} of {pageCount}</span>
+                    <Button onClick={() => setPage(p => Math.min(pageCount, p + 1))} disabled={page === pageCount} size="sm">Next</Button>
+                  </div>
+                  {/* Preview Dialog */}
+                  <Dialog open={!!previewSource} onOpenChange={() => setPreviewSource(null)}>
+                    <DialogContent className="sm:max-w-[800px] h-[80vh] flex flex-col">
+                      <DialogHeader>
+                        <DialogTitle>{previewSource?.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex-1 mt-4 min-h-0">
+                        <div className="bg-muted p-4 rounded-md h-full overflow-y-auto">
+                          {previewSource?.loading ? (
+                            <div className="flex items-center justify-center h-40">
+                              <Loader2 className="h-8 w-8 animate-spin" />
+                            </div>
+                          ) : (
+                            <pre className="text-sm font-mono whitespace-pre-wrap break-words">
+                              {previewSource?.content}
+                            </pre>
+                          )}
+                        </div>
+                      </div>
+                      <DialogFooter className="mt-4 border-t pt-4">
+                        <Button variant="outline" onClick={() => setPreviewSource(null)}>Close</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
             </div>
           </div>

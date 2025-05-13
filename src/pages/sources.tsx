@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import React, { useState, useCallback, useMemo, useEffect } from "react"
 import { FilesModal } from "@/components/source_input/files-modal"
 import { LiveDataModal } from "@/components/source_input/live-data-modal"
-import { Loader2, RefreshCcw, Plus, X } from "lucide-react"
+import { Loader2, RefreshCcw, Plus, X, ChevronUp, ChevronDown } from "lucide-react"
 import { formatDate } from "@/components/source_input/utils"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
@@ -17,11 +17,13 @@ import {
   SourceDisplay,
   LiveDataElement,
   fetchSources,
+  fetchSourceById,
   updateSource,
   Source,
   addTag
 } from '@/lib/data/supabaseFunctions'
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 
 // Define Tag type if not already globally available (or import if defined in supabaseFunctions)
 type Tag = { id: string; name: string; }; 
@@ -49,6 +51,39 @@ export default function Sources() {
   const [savingTags, setSavingTags] = useState(false)
   const [sourcesDisplay, setSourcesDisplay] = useState<SourceDisplay[]>([])
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+  const [tagFilter, setTagFilter] = useState("");
+  const [sortKey, setSortKey] = useState<'name' | 'lastUpdated'>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Get all unique tags for the filter dropdown
+  const allTags = Array.from(new Set(sourcesDisplay.flatMap(s => s.tags || [])));
+
+  // Filtering and sorting
+  let filteredSources = sourcesDisplay;
+  if (tagFilter) {
+    filteredSources = filteredSources.filter(s => (s.tags || []).includes(tagFilter));
+  }
+  filteredSources = [...filteredSources].sort((a, b) => {
+    if (sortKey === 'lastUpdated') {
+      const aTime = new Date(a.lastUpdated).getTime();
+      const bTime = new Date(b.lastUpdated).getTime();
+      if (aTime < bTime) return sortDirection === 'asc' ? -1 : 1;
+      if (aTime > bTime) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    } else {
+      if (a.name < b.name) return sortDirection === 'asc' ? -1 : 1;
+      if (a.name > b.name) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    }
+  });
+
+  const pageCount = Math.ceil(filteredSources.length / pageSize);
+  const paginatedSources = filteredSources.slice((page - 1) * pageSize, page * pageSize);
+
+  // Reset to page 1 if filter or sort changes
+  useEffect(() => { setPage(1); }, [tagFilter, sortDirection]);
 
   const fetchSourcesData = useCallback(async () => {
     console.log("[fetchSourcesData] Starting fetch...");
@@ -105,6 +140,7 @@ export default function Sources() {
   const handlePreview = useCallback(async (id: string) => {
     const source = sources.find(source => source.id === id)
     if (!source) return
+    setPreviewContent({ id: source.id, name: source.name, content: '', tags: source.tags, isLiveData: false }) // show loading
     const isLiveData = source.tags?.includes('Live Data')
     if (isLiveData) {
       const { data: config, error: configError } = await getConfigForSource(source.id)
@@ -126,11 +162,17 @@ export default function Sources() {
         isLiveData: true
       })
     } else {
+      // Fetch content on demand
+      const { data: fullSource, error } = await fetchSourceById(source.id)
+      if (error || !fullSource) {
+        setPreviewContent({ id: source.id, name: source.name, content: 'Error loading content', tags: source.tags, isLiveData: false })
+        return
+      }
       setPreviewContent({
-        id: source.id,
-        name: source.name,
-        content: source.content,
-        tags: source.tags,
+        id: fullSource.id,
+        name: fullSource.name,
+        content: fullSource.content,
+        tags: fullSource.tags,
         isLiveData: false
       })
     }
@@ -223,43 +265,6 @@ export default function Sources() {
     }
   }, [selectedElement])
 
-  const columns: ColumnDef<any>[] = [
-    { id: "name", accessorKey: "name", header: "Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-    { id: "type", enableResizing: true, enableHiding: true, accessorKey: "type", header: "Type", enableSorting: false, cell: (info) => info.getValue() },
-    { id: "lastUpdated", enableResizing: true, enableHiding: true, accessorKey: "lastUpdated", header: "Last Updated", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
-    {
-      id: "tags",
-      accessorKey: "tags",
-      header: "Tags",
-      enableResizing: true,
-      enableHiding: true,
-      enableSorting: false,
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-1">
-          {(row.original.tags || []).map(tag => {
-            let tagStyle = "bg-muted"
-            if (tag === 'File Upload') {
-              tagStyle = "bg-blue-100 text-blue-800"
-            } else if (tag === 'Live Data') {
-              tagStyle = "bg-purple-100 text-purple-800"
-            }
-            return (
-              <span
-                key={tag}
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
-              >
-                {tag}
-              </span>
-            )
-          })}
-        </div>
-      ),
-    }
-  ]
-
-  // Log state just before render
-  console.log(`[Render] SourcesDisplay length: ${sourcesDisplay.length}, Loading: ${loading}`);
-
   return (
     <DropZone onFilesDrop={handleFilesDrop} className="flex flex-col h-full">
       <div className="flex-1 space-y-4 p-8 pt-6">
@@ -283,6 +288,20 @@ export default function Sources() {
           <div className="text-sm text-muted-foreground">
             Manage your data sources and their content. Drag and drop files anywhere to upload.
           </div>
+          <div className="flex items-center gap-2 mb-2">
+            <label htmlFor="tag-filter" className="text-sm">Filter by tag:</label>
+            <select
+              id="tag-filter"
+              value={tagFilter}
+              onChange={e => setTagFilter(e.target.value)}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value="">All</option>
+              {allTags.map(tag => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
+          </div>
 
           {loading ? (
             <div className="w-full h-64 flex items-center justify-center">
@@ -290,14 +309,74 @@ export default function Sources() {
             </div>
           ) : (
             <div className="space-y-4">
-              <CustomTable 
-                tableId="sources-table" 
-                columns={columns as any} 
-                data={sourcesDisplay} 
-                filters={[]} // Pass empty array to disable filters
-                placeholder="No sources found"
-                onRowClick={(row) => handlePreview(row.id)}
-              />
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead
+                      className="cursor-pointer select-none"
+                      onClick={() => {
+                        if (sortKey === 'name') {
+                          setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortKey('name');
+                          setSortDirection('asc');
+                        }
+                      }}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Name
+                        {sortKey === 'name' && (sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                      </span>
+                    </TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead
+                      className="cursor-pointer select-none"
+                      onClick={() => {
+                        if (sortKey === 'lastUpdated') {
+                          setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+                        } else {
+                          setSortKey('lastUpdated');
+                          setSortDirection('asc');
+                        }
+                      }}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        Last Updated
+                        {sortKey === 'lastUpdated' && (sortDirection === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+                      </span>
+                    </TableHead>
+                    <TableHead>Tags</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSources.length ? paginatedSources.map((source) => (
+                    <TableRow key={source.id} className="cursor-pointer hover:bg-muted/50" onClick={() => handlePreview(source.id)}>
+                      <TableCell>{source.name}</TableCell>
+                      <TableCell>{source.type}</TableCell>
+                      <TableCell>{format(new Date(source.lastUpdated), "MMM dd, yyyy")}</TableCell>
+                      <TableCell>
+                        {(source.tags || []).map(tag => {
+                          let tagStyle = "bg-muted px-2 py-0.5 rounded-full text-xs mr-1";
+                          if (tag === 'File Upload') tagStyle += " bg-blue-100 text-blue-800";
+                          if (tag === 'Live Data') tagStyle += " bg-purple-100 text-purple-800";
+                          return <span key={tag} className={tagStyle}>{tag}</span>;
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  )) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8">
+                        {"No sources found"}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <div className="flex justify-center gap-2 mt-4 items-center">
+                <Button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} size="sm">Previous</Button>
+                <span>Page {page} of {pageCount}</span>
+                <Button onClick={() => setPage(p => Math.min(pageCount, p + 1))} disabled={page === pageCount} size="sm">Next</Button>
+              </div>
             </div>
           )}
         </div>
@@ -333,7 +412,10 @@ export default function Sources() {
                   <span>{tag}</span>
                   <button
                     className="ml-1 text-muted-foreground hover:text-foreground"
-                    onClick={() => handleRemoveTag(tag)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveTag(tag);
+                    }}
                     disabled={savingTags}
                   >
                     <X className="h-3 w-3" />
@@ -359,7 +441,10 @@ export default function Sources() {
               />
               <Button
                 size="sm"
-                onClick={handleAddTag}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddTag();
+                }}
                 disabled={!newTag.trim() || savingTags}
               >
                 {savingTags ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -377,7 +462,10 @@ export default function Sources() {
                     {previewContent.liveDataElements?.map((element) => (
                       <div
                         key={element.id}
-                        onClick={() => setSelectedElement(element)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedElement(element);
+                        }}
                         className="p-4 bg-background rounded cursor-pointer hover:bg-accent"
                       >
                         <div className="font-medium">{element.metadata?.title || 'Untitled'}</div>
@@ -399,9 +487,15 @@ export default function Sources() {
               </div>
             ) : (
               <div className="bg-muted p-4 rounded-md h-full overflow-y-auto">
-                <pre className="text-sm font-mono whitespace-pre-wrap break-words">
-                  {previewContent?.content}
-                </pre>
+                {previewContent?.content === '' && !previewContent?.isLiveData ? (
+                  <div className="flex items-center justify-center h-40">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  <pre className="text-sm font-mono whitespace-pre-wrap break-words">
+                    {previewContent?.content}
+                  </pre>
+                )}
               </div>
             )}
           </div>
