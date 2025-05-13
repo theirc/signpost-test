@@ -12,17 +12,7 @@ import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2 } from "lucid
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/data/supabaseFunctions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useToast } from "@/hooks/use-toast"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteSourceDialog } from "./delete-source-dialog"
 
 interface SourceDisplay {
   id: string
@@ -44,8 +34,6 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
   const [sortBy, setSortBy] = useState<"name" | "lastUpdated">("lastUpdated")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [sourceToDelete, setSourceToDelete] = useState<SourceDisplay | null>(null)
-  const [deleting, setDeleting] = useState(false)
-  const { toast } = useToast()
   const itemsPerPage = 10
 
   const fetchSources = async () => {
@@ -85,38 +73,6 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
   useEffect(() => {
     fetchSources()
   }, [])
-
-  const handleDelete = async () => {
-    if (!sourceToDelete) return
-
-    try {
-      setDeleting(true)
-      const { error } = await supabase
-        .from('sources')
-        .delete()
-        .eq('id', sourceToDelete.id)
-
-      if (error) throw error
-
-      toast({
-        title: "Success",
-        description: "Source deleted successfully"
-      })
-
-      // Refresh the sources list
-      await fetchSources()
-    } catch (error) {
-      console.error('Error deleting source:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete source",
-        variant: "destructive"
-      })
-    } finally {
-      setDeleting(false)
-      setSourceToDelete(null)
-    }
-  }
 
   // Filtering
   const filteredData = allData.filter(row =>
@@ -300,26 +256,11 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
         </div>
       </div>
 
-      <AlertDialog open={!!sourceToDelete} onOpenChange={() => setSourceToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the source "{sourceToDelete?.name}". This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {deleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteSourceDialog
+        source={sourceToDelete}
+        onClose={() => setSourceToDelete(null)}
+        onSourceDeleted={fetchSources}
+      />
     </div>
   )
 } 

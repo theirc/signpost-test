@@ -28,6 +28,7 @@ interface LiveDataElement {
   version: string
   status: string
   fetch_timestamp: string
+  metadata?: any
 }
 
 export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePreviewProps) {
@@ -57,7 +58,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       // Fetch basic source data
       const { data: sourceData, error: sourceError } = await supabase
         .from('sources')
-        .select('id, name, type, tags')
+        .select('id, name, type, content, tags, created_at, last_updated')
         .eq('id', sourceId)
         .eq('team_id', selectedTeam.id)
         .single()
@@ -71,20 +72,16 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
 
       setSource({
         ...sourceData,
-        content: '', // Don't load content initially
-        tags,
-        last_updated: '',
-        created_at: ''
+        tags
       })
 
       // If it's a live data source, fetch the elements
-      if (sourceData.type === 'Live Data') {
+      if (sourceData.type === 'web-scraping' || sourceData.type === 'zendesk' || sourceData.type === 'directus' || sourceData.type === 'bot-logs') {
         const { data: elements, error: elementsError } = await supabase
           .from('live_data_elements')
-          .select('id, content, version, status, fetch_timestamp')
+          .select('id, content, version, status, fetch_timestamp, metadata')
           .eq('source_config_id', sourceId)
-          .order('created_at', { ascending: false })
-          .limit(5)
+          .order('fetch_timestamp', { ascending: false })
 
         if (elementsError) throw elementsError
         setLiveDataElements(elements || [])
@@ -133,32 +130,6 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       console.error('Error removing tag:', error)
     } finally {
       setSaving(false)
-    }
-  }
-
-  const handleViewContent = async () => {
-    if (!sourceId || !source) return
-
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('sources')
-        .select('content, last_updated, created_at')
-        .eq('id', sourceId)
-        .single()
-
-      if (error) throw error
-
-      setSource(prev => prev ? {
-        ...prev,
-        content: data.content,
-        last_updated: data.last_updated || data.created_at,
-        created_at: data.created_at
-      } : null)
-    } catch (error) {
-      console.error('Error fetching source content:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -214,10 +185,10 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
               </div>
             </div>
 
-            {source.type === 'Live Data' ? (
+            {liveDataElements.length > 0 ? (
               <div>
                 <h4 className="font-medium mb-2">Live Data Elements</h4>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {liveDataElements.map(element => (
                     <div
                       key={element.id}
@@ -233,6 +204,11 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                       <div className="text-sm text-muted-foreground mt-1">
                         Status: {element.status}
                       </div>
+                      {element.metadata?.title && (
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Title: {element.metadata.title}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -240,15 +216,9 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
             ) : (
               <div>
                 <h4 className="font-medium mb-2">Content</h4>
-                {source.content ? (
-                  <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
-                    {source.content}
-                  </div>
-                ) : (
-                  <Button onClick={handleViewContent} disabled={loading}>
-                    View Content
-                  </Button>
-                )}
+                <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
+                  {source.content}
+                </div>
               </div>
             )}
           </div>
@@ -274,8 +244,18 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                 <p className="text-sm text-muted-foreground">
                   Status: {selectedElement.status}
                 </p>
+                {selectedElement.metadata?.title && (
+                  <p className="text-sm text-muted-foreground">
+                    Title: {selectedElement.metadata.title}
+                  </p>
+                )}
+                {selectedElement.metadata?.url && (
+                  <p className="text-sm text-muted-foreground">
+                    URL: {selectedElement.metadata.url}
+                  </p>
+                )}
               </div>
-              <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap">
+              <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
                 {selectedElement.content}
               </div>
             </div>
