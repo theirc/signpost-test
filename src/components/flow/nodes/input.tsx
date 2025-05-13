@@ -11,7 +11,7 @@ request.icon = Cable
 export function RequestNode(props: NodeProps) {
   const worker = useWorker(props.id)
   return <NodeLayout worker={worker}>
-    <NodeHandlers worker={worker} />
+    <NodeHandlers worker={worker} mockable />
     <AddFieldsForm direction="output" ignoreTypes={["references", "enum"]} />
   </NodeLayout >
 }

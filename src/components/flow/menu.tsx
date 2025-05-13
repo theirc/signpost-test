@@ -9,6 +9,7 @@ import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
 import { Separator } from "../ui/separator"
 import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 interface Props {
   update?: () => void
@@ -60,6 +61,8 @@ const agentModel = createModel({
 
 export function Toolbar(props: Props) {
 
+
+  const { selectedTeam } = useTeamStore()
   const { form, m, watch } = useForm(model, {
     values: {
       title: app.agent.title,
@@ -94,7 +97,7 @@ export function Toolbar(props: Props) {
     if (saving) return
     setSaving(true)
     const clonedAgent = cloneDeep(app.agent)
-    await agents.saveAgent(clonedAgent)
+    await agents.saveAgent(clonedAgent, selectedTeam.id)
     toast("The flow was saved", {
       action: {
         label: "Ok",

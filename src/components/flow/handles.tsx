@@ -6,8 +6,50 @@ import { MemoizedWorker } from "./memoizedworkers"
 import { cn } from "@/lib/utils"
 import { useWorkerContext } from "./hooks"
 import { HanlderIcon } from "./handlericon"
+import { createModel } from "@/lib/data/model"
+import { boolean, number } from "zod"
+import { useForm } from "../forms/hooks"
+import { Input, InputTextArea, Row, Select } from "../forms"
 
-type WorkerHandleProps = Partial<HandleProps> & React.HTMLAttributes<HTMLDivElement> & { handler?: NodeIO }
+type WorkerHandleProps = Partial<HandleProps> & React.HTMLAttributes<HTMLDivElement> & {
+  handler?: NodeIO
+  mockable?: boolean
+}
+
+const model = createModel({
+  fields: {
+    text: { title: "Text", type: "string" },
+    number: { title: "Text", type: "number" },
+  }
+})
+
+function Mockable({ handle }: { handle: NodeIO }) {
+
+  const { form, m, watch } = useForm(model, {
+    values: {
+      text: handle.mock,
+      number: Number(handle.mock) || 0,
+    }
+  })
+
+  watch((value, { name }) => {
+    if (name === "text") handle.mock = value.text
+    if (name === "number") handle.mock = Number(value.number) || 0
+  })
+
+  return <form.context>
+    <div className='px-2 nodrag w-full flex-grow flex flex-col'>
+      {handle.type === "string" && <Row className='py-2'>
+        <InputTextArea field={m.text} span={12} hideLabel />
+      </Row>}
+      {handle.type === "number" && <Row className='py-2'>
+        <Input field={m.text} type="number" span={12} hideLabel />
+      </Row>}
+    </div>
+  </form.context>
+
+}
+
 
 
 export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps) {
@@ -63,7 +105,7 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
 
 }
 
-export function WorkerLabeledHandle({ handler, ...props }: WorkerHandleProps) {
+export function WorkerLabeledHandle({ handler, mockable, ...props }: WorkerHandleProps) {
   const ct = useWorkerContext()
   if (!handler) return null
 
@@ -71,6 +113,8 @@ export function WorkerLabeledHandle({ handler, ...props }: WorkerHandleProps) {
     if (handler.system) return
     ct?.onEdit?.(handler)
   }
+
+  if (handler.type != "string" && handler.type != "number") mockable = false
 
   return <div>
     <div className="relative flex">
@@ -88,8 +132,11 @@ export function WorkerLabeledHandle({ handler, ...props }: WorkerHandleProps) {
       </h3>
 
       {handler.direction == "input" && <div className="flex-grow" />}
-      {handler.direction == "output" && <div className="mr-[6px]"><HanlderIcon handler={handler} worker={ct?.worker} /></div>}
+      {handler.direction == "output" && <div className="mr-[6px]">
+        <HanlderIcon handler={handler} worker={ct?.worker} />
+      </div>}
     </div>
+    {mockable && <Mockable handle={handler} />}
     {props.children}
   </div>
 
@@ -111,19 +158,19 @@ export function InlineHandles({ children }: { children: [React.ReactNode, React.
 
 
 
-export function NodeHandlers({ worker }: { worker: AIWorker }) {
+export function NodeHandlers({ worker, mockable }: { worker: AIWorker, mockable?: boolean }) {
   return <MemoizedWorker worker={worker}>
-    <InternalNodeHandlers worker={worker} />
+    <InternalNodeHandlers worker={worker} mockable={mockable} />
   </MemoizedWorker>
 }
 
 
-function InternalNodeHandlers(props: { worker: AIWorker }) {
+function InternalNodeHandlers(props: { worker: AIWorker, mockable?: boolean }) {
   const { worker } = props
   const hs = Object.values(worker.handles).filter(h => !h.system)
   const handlers = hs
   return <div className="my-2">
-    {handlers.map((h, i) => <WorkerLabeledHandle key={i} handler={h} />)}
+    {handlers.map((h, i) => <WorkerLabeledHandle key={i} handler={h} mockable={props.mockable} />)}
   </div>
 }
 
