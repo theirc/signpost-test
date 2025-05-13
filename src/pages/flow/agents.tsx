@@ -155,27 +155,34 @@ export function AgentList() {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="icon"
+        <div className="flex items-center">
+          <span
             title="Duplicate agent"
-            onClick={(e) => handleDuplicate(row.original, e)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDuplicate(row.original, e);
+            }}
+            className="cursor-pointer hover:text-blue-600"
           >
             <Copy className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
+          </span>
+          <span
             title="Delete agent"
-            onClick={(e) => handleDelete(row.original, e)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row.original, e);
+            }}
+            className="cursor-pointer hover:text-red-600 ml-6"
           >
             <Trash2 className="h-4 w-4" />
-          </Button>
+          </span>
         </div>
       ),
       enableSorting: false,
       enableHiding: false,
+      size: 60,
+      minSize: 40,
+      maxSize: 80,
     }
   ]
 
