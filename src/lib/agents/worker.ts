@@ -44,6 +44,7 @@ declare global {
     condition?: boolean
     value?: any
     default?: any
+    mock?: string | number
   }
 
   interface WorkerConfig {

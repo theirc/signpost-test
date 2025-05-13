@@ -12,6 +12,7 @@ interface AgentConfig {
   description?: string
   type?: AgentTypes
   workers?: object
+  team_id?: string
 }
 
 declare global {
@@ -202,13 +203,14 @@ export function configureAgent(data: AgentConfig) {
 
 }
 
-export async function saveAgent(agent: Agent) {
+export async function saveAgent(agent: Agent, team_id?: string) {
 
   const agentData: AgentConfig = {
     title: agent.title,
     description: agent.description,
     type: agent.type,
     edges: agent.edges,
+    team_id,
   }
   const workerlist = []
 
