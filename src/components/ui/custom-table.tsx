@@ -37,6 +37,8 @@ interface CustomTableProps<T extends { id: any }> {
     placeholder?: string
     sorting?: SortingState
     onSortingChange?: (sorting: SortingState) => void
+    currentPage?: number
+    onPageChange?: (page: number) => void
 }
 
 const DraggableTableHeader = ({ header, table }: { header: Header<any, unknown>, table: any }) => {
@@ -192,6 +194,8 @@ function CustomTable<T extends { id: any }>({
     placeholder,
     sorting,
     onSortingChange,
+    currentPage = 1,
+    onPageChange,
 }: CustomTableProps<T>) {
     const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
         const initialOrder = columns?.map((col) => col.id as string).filter(Boolean);
@@ -242,7 +246,6 @@ function CustomTable<T extends { id: any }>({
         const stored = localStorage.getItem(`columnVisibility-${tableId}`)
         return stored ? JSON.parse(stored) : {}
     })
-    const [currentPage, setCurrentPage] = useState(1)
     const [columnSizingInfo, setColumnSizingInfo] = useState<ColumnSizingInfoState>({} as ColumnSizingInfoState)
     const [columnSizes, setColumnSizes] = useState<Record<string, number>>(() => {
         if (!tableId) return {}
@@ -297,6 +300,14 @@ function CustomTable<T extends { id: any }>({
         },
         onColumnVisibilityChange: setColumnVisibility,
         onSortingChange: onSortingChange,
+        onPaginationChange: (updater) => {
+            if (typeof updater === 'function') {
+                const newPaginationState = updater(table.getState().pagination)
+                onPageChange?.(newPaginationState.pageIndex + 1)
+            } else {
+                onPageChange?.(updater.pageIndex + 1)
+            }
+        },
         columnResizeMode: "onChange",
         columnResizeDirection: "ltr",
         onColumnSizingInfoChange: (updatedColumnSizingInfo: ColumnSizingInfoState) => {
@@ -367,10 +378,6 @@ function CustomTable<T extends { id: any }>({
                 return newOrder;
             })
         }
-    }
-
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page)
     }
 
     const sensors = useSensors(
@@ -605,13 +612,13 @@ function CustomTable<T extends { id: any }>({
                                 <PaginationPrevious />
                             </span>
                         ) : (
-                            <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                            <PaginationPrevious onClick={() => onPageChange?.(currentPage - 1)} />
                         )}
 
                         {Array.from({ length: pageCount }, (_, i) => i + 1).map((page) => (
                             <PaginationItem key={page}>
                                 <PaginationLink
-                                    onClick={() => handlePageChange(page)}
+                                    onClick={() => onPageChange?.(page)}
                                     isActive={currentPage === page}
                                 >
                                     {page}
@@ -624,7 +631,7 @@ function CustomTable<T extends { id: any }>({
                                 <PaginationNext />
                             </span>
                         ) : (
-                            <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                            <PaginationNext onClick={() => onPageChange?.(currentPage + 1)} />
                         )}
                     </PaginationContent>
                 </Pagination>}
