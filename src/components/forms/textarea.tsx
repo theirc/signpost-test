@@ -7,6 +7,7 @@ import { Control, validateValue } from "./control"
 interface Props extends TextareaProps {
   field: Field
   span?: ColumnSpans
+  controlClassName?: string
 }
 
 export function InputTextArea(props: Props & DefaultInputProps) {
@@ -15,8 +16,8 @@ export function InputTextArea(props: Props & DefaultInputProps) {
   const { register } = useFormContext()
   const validateFn = v => validateValue(v, required, field, validate)
 
-  return <Control {...props}>
+  return <Control {...props} className={props.controlClassName} >
     <Textarea className={cn("focus-visible:ring-transparent h-full nodrag", className)} {...register(field.name, { validate: validateFn })}  {...rest} />
-  </Control>
+  </Control >
 
 }
