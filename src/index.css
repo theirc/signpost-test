@@ -95,7 +95,6 @@
 
   body {
     margin: 0;
-    overflow: hidden;
     height: 100vh;
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
