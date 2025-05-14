@@ -1,4 +1,3 @@
-import { fetchBotLogs } from "@/lib/data/supabaseFunctions"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -16,6 +15,7 @@ import jsPDF from "jspdf"
 import { utils, writeFile } from "xlsx"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { useSupabase } from "@/hooks/use-supabase"
 
 type Log = {
     id: string
@@ -46,12 +46,25 @@ export function BotLogsTable() {
     const fetchLogs = async () => {
         setIsLoading(true)
         try {
-            const { data, error } = await fetchBotLogs()
+            const { data, error } = await useSupabase().from('bot_logs')
+                .select(`
+              *,
+              bots (
+                name
+              ),
+              service_categories (
+                name
+              )
+            `)
+                .eq('team_id', selectedTeam.id)
+                .order('created_at', { ascending: false })
             if (error) {
                 console.error('Error fetching bot logs:', error)
             }
             const formattedLogs = data.map(log => ({
                 ...log,
+                bot_name: log.bots?.name,
+                category_name: log.service_categories?.name,
                 created_at: log.created_at || new Date().toISOString()
             }))
             setLogs(formattedLogs)

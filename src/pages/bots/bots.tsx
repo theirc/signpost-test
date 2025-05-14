@@ -1,17 +1,35 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Play, RefreshCcw, Loader2,Plus } from "lucide-react"
+import { Play, RefreshCcw, Loader2, Plus } from "lucide-react"
 import { useSupabase } from "@/hooks/use-supabase"
-import { useSimilaritySearch, SimilaritySearchResult } from "@/lib/fileUtilities/use-similarity-search"
-import AddBotDialog from "@/components/bot_management/add-bot-dialog"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
-import { fetchBots, addBot, updateBot, deleteBot, Bot, fetchCollections, Collection, fetchModels, Model } from '@/lib/data/supabaseFunctions'
 import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { Collection } from "../knowledge"
+
+export interface Model {
+    id: string
+    name: string
+    model_id: string
+    provider: string
+    created_at: string
+}
+
+export interface Bot {
+    id: string
+    name: string
+    collection?: string
+    model: string
+    system_prompt?: string
+    system_prompt_id?: string
+    temperature: number
+    created_at: string
+    updated_at?: string
+}
 
 export function BotManagement() {
     const navigate = useNavigate()
@@ -20,9 +38,8 @@ export function BotManagement() {
     const [modelsLoading, setModelsLoading] = useState(true)
     const [collections, setCollections] = useState<Collection[]>([])
     const [collectionsLoading, setCollectionsLoading] = useState(true)
-    const { searchSimilarContent } = useSimilaritySearch()
     const supabase = useSupabase()
-    
+
     const [bots, setBots] = useState<Bot[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<Error | null>(null)
@@ -41,7 +58,7 @@ export function BotManagement() {
     const fetchBotsData = async () => {
         try {
             setLoading(true)
-            const { data, error } = await fetchBots()
+            const { data, error } = await useSupabase().from('bots').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
             if (error) throw error
             setBots(data)
         } catch (error) {
@@ -54,40 +71,43 @@ export function BotManagement() {
 
     // Fetch collections data function
     const fetchCollectionsData = useCallback(async () => {
-      setCollectionsLoading(true)
-      try {
-        const { data, error } = await fetchCollections()
-        if (error) {
-          console.error('Error fetching collections:', error)
-          setCollections([])
-        } else {
-          setCollections(data || [])
+        setCollectionsLoading(true)
+        try {
+            const { data, error } = await useSupabase().from('collections')
+                .select('*')
+                .eq('team_id', selectedTeam.id)
+                .order('created_at', { ascending: false })
+            if (error) {
+                console.error('Error fetching collections:', error)
+                setCollections([])
+            } else {
+                setCollections(data || [])
+            }
+        } catch (err) {
+            console.error('Error fetching collections:', err)
+            setCollections([])
+        } finally {
+            setCollectionsLoading(false)
         }
-      } catch (err) {
-        console.error('Error fetching collections:', err)
-        setCollections([])
-      } finally {
-        setCollectionsLoading(false)
-      }
     }, [])
 
     // Fetch models data function
     const fetchModelsData = useCallback(async () => {
-      setModelsLoading(true)
-      try {
-        const { data, error } = await fetchModels()
-        if (error) {
-          console.error('Error fetching models:', error)
-          setModels([])
-        } else {
-          setModels(data || [])
+        setModelsLoading(true)
+        try {
+            const { data, error } = await useSupabase().from('models').select('*').order('created_at', { ascending: false })
+            if (error) {
+                console.error('Error fetching models:', error)
+                setModels([])
+            } else {
+                setModels(data || [])
+            }
+        } catch (err) {
+            console.error('Error fetching models:', err)
+            setModels([])
+        } finally {
+            setModelsLoading(false)
         }
-      } catch (err) {
-        console.error('Error fetching models:', err)
-        setModels([])
-      } finally {
-        setModelsLoading(false)
-      }
     }, [])
 
     useEffect(() => {
@@ -118,8 +138,8 @@ export function BotManagement() {
     useEffect(() => {
         const channel = supabase
             .channel('collections-changes-bots-page') // Use a unique channel name
-            .on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'collections' }, 
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'collections' },
                 payload => {
                     console.log('Collections real-time update received (Bots Page):', payload);
                     fetchCollectionsData(); // Refresh collections on change
@@ -136,8 +156,8 @@ export function BotManagement() {
     useEffect(() => {
         const channel = supabase
             .channel('models-changes-bots-page') // Unique channel name
-            .on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'models' }, 
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'models' },
                 payload => {
                     console.log('Models real-time update received (Bots Page):', payload);
                     fetchModelsData(); // Refresh models on change
@@ -158,9 +178,9 @@ export function BotManagement() {
 
     const handleDelete = async (id: string) => {
         try {
-            const { success, error } = await deleteBot(id)
+            const { data, error } = await useSupabase().from('bots').delete().eq('id', id)
             if (error) throw error
-            if (success) {
+            if (data) {
                 setBots(prev => prev.filter(bot => bot.id !== id))
             }
         } catch (error) {
@@ -173,32 +193,33 @@ export function BotManagement() {
             try {
 
                 const cleanedBot = { ...newBot }
-                
+
                 if (cleanedBot.collection === "") {
                     cleanedBot.collection = undefined
                 }
-                
+
                 if (cleanedBot.system_prompt_id === "") {
                     cleanedBot.system_prompt_id = undefined
                 }
-                
+
                 console.log('Submitting clean bot data:', cleanedBot)
-                
-                const { data, error } = await addBot({
+
+                const { data, error } = await useSupabase().from('bots').insert([{
                     name: cleanedBot.name,
                     model: cleanedBot.model,
                     collection: cleanedBot.collection,
                     system_prompt: cleanedBot.system_prompt,
                     system_prompt_id: cleanedBot.system_prompt_id,
-                    temperature: cleanedBot.temperature || 0.7
-                })
-                
+                    temperature: cleanedBot.temperature || 0.7,
+                    team_id: selectedTeam.id
+                }])
+
                 if (error) {
                     console.error('Error adding bot:', error)
                     alert(`Error adding bot: ${error.message || JSON.stringify(error)}`)
                     throw error
                 }
-                
+
                 if (data) {
                     setBots(prev => [...prev, data])
                     setNewBot({})
@@ -213,14 +234,15 @@ export function BotManagement() {
     const handleEditBot = async () => {
         if (editingBot && editingBot.name && editingBot.model) {
             try {
-                const { data, error } = await updateBot(editingBot.id, {
+                const { data, error } = await useSupabase().from('bots').update({
                     name: editingBot.name,
                     model: editingBot.model,
                     collection: editingBot.collection,
                     system_prompt: editingBot.system_prompt,
                     system_prompt_id: editingBot.system_prompt_id,
-                    temperature: editingBot.temperature
-                })
+                    temperature: editingBot.temperature,
+                    team_id: selectedTeam.id
+                }).eq('id', editingBot.id)
                 if (error) throw error
                 if (data) {
                     setBots(prev => prev.map(bot => bot.id === editingBot.id ? data : bot))
@@ -263,26 +285,26 @@ export function BotManagement() {
 
     const handleRunTest = async () => {
         if (!currentTestBot || !testPrompt.trim()) return;
-        
+
         setTestLoading(true);
         setTestResult(null);
         setTestDialogOpen(false);
         setTestResultOpen(true);
-        
+
         try {
             setCurrentStep('Connecting to AI service...');
-            
+
             const bot = currentTestBot;
             console.log('Testing bot:', bot.name, '(ID:', bot.id, ')');
-            
+
             // Simplified parameters - just send bot ID and prompt
             const paramsObj = {
                 botId: bot.id,
                 userPrompt: testPrompt
             };
-            
+
             console.log('Testing bot function with params:', JSON.stringify(paramsObj, null, 2));
-            
+
             // Make API request
             setCurrentStep('Getting AI response...');
             const response = await fetch('/api/botResponse', {
@@ -292,11 +314,11 @@ export function BotManagement() {
                 },
                 body: JSON.stringify(paramsObj)
             });
-            
+
             console.log('Response status:', response.status);
             const responseText = await response.text();
             console.log('Raw response:', responseText);
-            
+
             // Process response
             setCurrentStep('Processing response...');
             let data;
@@ -306,7 +328,7 @@ export function BotManagement() {
                 console.error('Failed to parse response as JSON:', e);
                 throw new Error(`Invalid JSON response: ${responseText}`);
             }
-            
+
             // Add original prompt for reference
             data.originalPrompt = testPrompt;
             setTestResult(JSON.stringify(data, null, 2));
@@ -341,9 +363,9 @@ export function BotManagement() {
 
     // Handle toggle select for a single row
     const handleToggleSelect = (id: string) => {
-        setSelectedBots(prev => 
-            prev.includes(id) 
-                ? prev.filter(botId => botId !== id) 
+        setSelectedBots(prev =>
+            prev.includes(id)
+                ? prev.filter(botId => botId !== id)
                 : [...prev, id]
         );
     };
@@ -368,7 +390,7 @@ export function BotManagement() {
                             Refresh
                         </Button>
                         <Button onClick={() => navigate("/bots/new")}>
-                            <Plus className= "h-4 w-4 mr-2"/>
+                            <Plus className="h-4 w-4 mr-2" />
                             Create Bot
                         </Button>
                     </div>

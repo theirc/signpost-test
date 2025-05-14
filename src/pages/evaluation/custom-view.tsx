@@ -2,13 +2,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import React, { useState, useEffect } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
-import { fetchBotScores, fetchBotLogs } from '@/lib/data/supabaseFunctions'
 import CustomTable from '@/components/ui/custom-table'
 import { ColumnDef } from '@tanstack/react-table'
 import SearchFilter from '@/components/ui/search-filter'
 import DateFilter from '@/components/ui/date-filter'
 import SelectFilter from '@/components/ui/select-filter'
 import { useTeamStore } from '@/lib/hooks/useTeam'
+import { useSupabase } from '@/hooks/use-supabase'
 
 export function CustomView() {
     const { selectedTeam } = useTeamStore()
@@ -35,11 +35,42 @@ export function CustomView() {
     useEffect(() => {
         const loadData = async () => {
             const [{ data: scoresData }, { data: logsData }] = await Promise.all([
-                fetchBotScores(),
-                fetchBotLogs()
+                useSupabase().from('bot_scores').select(`
+                    *,
+                    bots (
+                      name
+                    ),
+                    service_categories (
+                      name
+                    )
+                  `)
+                    .eq('team_id', selectedTeam.id).order('created_at', { ascending: false }),
+                useSupabase().from('bot_logs').select(`
+                    *,
+                    bots (
+                      name
+                    ),
+                    service_categories (
+                      name
+                    )
+                  `)
+                    .eq('team_id', selectedTeam.id).order('created_at', { ascending: false }),
             ])
-            setScores(scoresData)
-            setLogs(logsData)
+
+            const transformedScoresData = scoresData?.map(score => ({
+                ...score,
+                bot_name: score.bots?.name,
+                category_name: score.service_categories?.name
+            })) || []
+
+            const transformedLogsData = logsData?.map(log => ({
+                ...log,
+                bot_name: log.bots?.name,
+                category_name: log.service_categories?.name
+            })) || []
+
+            setScores(transformedScoresData)
+            setLogs(transformedLogsData)
         }
         loadData()
     }, [selectedTeam])
@@ -393,7 +424,7 @@ export function CustomView() {
                         </div>
                     </div>
                 ) : null}
-                
+
                 {!isCreated && (
                     <div className="flex justify-end gap-4">
                         <Button onClick={generatePreview}>
@@ -404,7 +435,7 @@ export function CustomView() {
                         </Button>
                     </div>
                 )}
-                
+
                 {columns.length > 0 && (
                     <div className="space-y-4">
                         <CustomTable
@@ -413,8 +444,8 @@ export function CustomView() {
                             tableId="custom-view-table"
                             filters={filters}
                             selectedRows={[]}
-                            onToggleSelect={() => {}}
-                            onSelectAll={() => {}}
+                            onToggleSelect={() => { }}
+                            onSelectAll={() => { }}
                         />
                     </div>
                 )}

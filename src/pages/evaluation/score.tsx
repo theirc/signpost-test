@@ -2,9 +2,25 @@ import { useParams, useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { fetchBotScoreById, updateBotScore, addBotScore } from "@/lib/data/supabaseFunctions"
 import { EntityForm } from "@/components/ui/entity-form"
 import { useEntityForm } from "@/hooks/use-entity-form"
+import { useTeamStore } from "@/lib/hooks/useTeam"
+import { useSupabase } from "@/hooks/use-supabase"
+
+export interface BotScore {
+    id: string
+    reporter?: string
+    score?: string
+    question?: string
+    answer?: string
+    bot?: string
+    message?: string
+    category?: string
+    created_at?: string
+    bot_name?: string
+    category_name?: string
+    log_id?: string
+}
 
 const initialFormData = {
     reporter: "",
@@ -17,10 +33,46 @@ const initialFormData = {
     log_id: "",
 }
 
+const updateBotScore = async (id: string, scoreData: Partial<BotScore>, teamId: string) => {
+    const { data, error } = await useSupabase().from('bot_scores')
+        .update({ ...scoreData, team_id: teamId })
+        .eq('id', id)
+        .eq('team_id', teamId)
+        .select()
+        .single()
+    return { data, error }
+}
+
+const addBotScore = async (scoreData: Partial<BotScore>, teamId: string) => {
+    const { data, error } = await useSupabase().from('bot_scores')
+        .insert([{ ...scoreData, team_id: teamId }])
+        .select()
+        .single()
+    return { data, error }
+}
+
+const fetchBotScoreById = async (id: string, teamId: string) => {
+    const { data, error } = await useSupabase().from('bot_scores')
+        .select(`
+      *,
+      bots (
+        name
+      ),
+      service_categories (
+        name
+      )
+    `)
+        .eq('id', id)
+        .eq('team_id', teamId)
+        .single()
+    return { data, error }
+}
+
 export function ScoreForm() {
     const { id } = useParams()
     const navigate = useNavigate()
-    
+    const { selectedTeam } = useTeamStore()
+
     const {
         isLoading,
         isFetching,

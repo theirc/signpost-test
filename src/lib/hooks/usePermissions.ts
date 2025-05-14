@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchRoleById } from '@/lib/data/supabaseFunctions'
 import { useUser } from './useUser'
 import { useEffect } from 'react'
+import { useSupabase } from '@/hooks/use-supabase'
 
 type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
 
@@ -22,7 +22,7 @@ export function usePermissions() {
         queryKey: ['permissions', user?.role],
         queryFn: async () => {
             if (!user?.role) return []
-            const { data: role } = await fetchRoleById(user.role)
+            const { data: role } = await useSupabase().from("roles").select("permissions").eq("id", user.role).single()
             return role?.permissions || []
         },
         enabled: !!user?.role,

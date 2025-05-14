@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
-import { Bot, Model, Collection } from "@/lib/data/supabaseFunctions"
 import SystemPromptSelector from "./system-prompt-selector"
+import { Model, Bot } from '@/pages/bots/bots'
+import { Collection } from "@/pages/knowledge";
 
 interface EditBotDialogProps {
     open: boolean
@@ -32,7 +33,7 @@ export default function EditBotDialog({
 
     const handleCombinedPromptChange = useCallback((content: string | undefined) => {
         if (!bot || content === bot.system_prompt) return;
-        
+
         onBotChange({
             ...bot,
             system_prompt: content,
@@ -139,7 +140,7 @@ export default function EditBotDialog({
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
-                    <Button 
+                    <Button
                         onClick={onSubmit}
                         disabled={!bot.name || !bot.model || isLoading}
                     >

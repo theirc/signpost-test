@@ -12,27 +12,348 @@ import SelectFilter from "@/components/ui/select-filter"
 import TagsFilter from "@/components/ui/tags-filter"
 import { ColumnDef } from "@tanstack/react-table"
 import CustomTable from "@/components/ui/custom-table"
-import { 
-  SourceDisplay, 
-  transformSourcesForDisplay,
-  Source,
-  fetchSources,
-  deleteSource,
-  fetchCollections,
-  addCollection,
-  deleteCollection,
-  updateCollection,
-  generateCollectionVector,
-  Collection,
-  getSourcesForCollection,
-  addSourceToCollection,
-  removeSourceFromCollection,
-  getTagsForSource
-} from '@/lib/data/supabaseFunctions'
 import { Switch } from "@/components/ui/switch"
 import { CollectionGraph } from "@/components/CollectionGraph"
 import { Checkbox } from "@/components/ui/checkbox"
 import { CheckedState } from "@radix-ui/react-checkbox"
+import { useTeamStore } from "@/lib/hooks/useTeam"
+import { SourceDisplay } from "./sources/types"
+import { useSimilaritySearch } from "@/lib/fileUtilities/use-similarity-search"
+
+export interface Collection {
+  id: string
+  name: string
+  created_at: string
+  vector?: number[]
+}
+
+export interface Source {
+  id: string
+  name: string
+  type: string
+  content: string
+  url?: string
+  tags?: string[] | string
+  created_at: string
+  last_updated?: string
+  vector?: number[]
+}
+
+export type LiveDataElement = {
+  id?: string
+  source_config_id: string
+  content: string
+  version?: string
+  fetch_timestamp?: string
+  status?: string
+  metadata?: any
+  last_updated?: string
+  created_at?: string
+  vector?: number[]
+}
+
+const generateCollectionVector = async (
+  id: string,
+  sources?: { id: string; content: string }[]
+): Promise<{
+  success: boolean,
+  error: Error | null
+}> => {
+  const { generateEmbedding } = useSimilaritySearch()
+  try {
+    console.log(`[supabaseFunctions] Starting vector generation for collection ${id}`)
+
+    // First get total count of sources for reporting
+    const { count: totalSources } = await useSupabase()
+      .from('collection_sources')
+      .select('*', { count: 'exact', head: true })
+      .eq('collection_id', id)
+
+    // Get only sources that need vectors
+    const { data: collectionSources, error: sourcesError } = await useSupabase()
+      .from('collection_sources')
+      .select(`
+        source_id,
+        sources (
+          id,
+          content,
+          vector
+        )
+      `)
+      .eq('collection_id', id)
+      .is('sources.vector', null) as {
+        data: Array<{
+          source_id: string;
+          sources: {
+            id: string;
+            content: string;
+            vector?: number[];
+          };
+        }> | null;
+        error: any;
+      }
+
+    if (sourcesError) throw sourcesError
+
+    // Further filter to ensure we only process sources with content
+    const sourcesToProcess = (collectionSources || []).filter(cs => cs.sources?.content)
+    const skippedCount = totalSources - (sourcesToProcess.length || 0)
+    console.log(`[supabaseFunctions] Found ${sourcesToProcess.length} sources that need vectors (${skippedCount} already vectorized)`)
+
+    if (sourcesToProcess.length === 0) {
+      console.log('[supabaseFunctions] No sources need vectorization - all vectors are up to date')
+      return { success: true, error: null }
+    }
+
+    // Process sources
+    for (const cs of sourcesToProcess) {
+      console.log(`[supabaseFunctions] Generating vector for source ${cs.source_id}`)
+
+      const { data: embedding, error: embeddingError } = await generateEmbedding(cs.sources.content)
+
+      if (embeddingError) {
+        console.error(`[supabaseFunctions] Error generating embedding for source ${cs.source_id}:`, embeddingError)
+        continue
+      }
+
+      if (!embedding) {
+        console.error(`[supabaseFunctions] Failed to generate embedding for source ${cs.source_id}`)
+        continue
+      }
+
+      const { error: updateError } = await useSupabase()
+        .from('sources')
+        .update({ vector: embedding })
+        .eq('id', cs.source_id)
+
+      if (updateError) {
+        console.error(`[supabaseFunctions] Error updating source ${cs.source_id}:`, updateError)
+        continue
+      }
+    }
+
+    // Get source configs separately - only get enabled configs
+    const { data: sourceConfigs, error: configsError } = await useSupabase()
+      .from('source_configs')
+      .select('source')
+      .eq('enabled', 1)
+      .in('source', collectionSources?.map(cs => cs.source_id) || [])
+
+    if (configsError) {
+      console.error('[supabaseFunctions] Error fetching source configs:', configsError)
+      // Don't throw error, just continue with sources only
+    }
+
+    let liveDataElements: LiveDataElement[] = []
+    if (sourceConfigs && sourceConfigs.length > 0) {
+      try {
+        // Get live data elements only for sources that have enabled configs
+        const { data: elements, error: liveDataError } = await useSupabase()
+          .from('live_data_elements')
+          .select('id, content, vector')
+          .in('source_config_id', sourceConfigs.map(config => config.source)) as {
+            data: LiveDataElement[] | null,
+            error: any
+          }
+
+        if (liveDataError) {
+          console.error('[supabaseFunctions] Error fetching live data elements:', liveDataError)
+        } else if (elements) {
+          // Process live data elements in batches to avoid overwhelming the system
+          const elementsToProcess = elements.filter(element =>
+            // Only process elements that don't have a vector and have content
+            !element.vector && element.content
+          )
+
+          console.log(`[supabaseFunctions] Found ${elementsToProcess.length} live data elements that need vectors`)
+
+          for (const element of elementsToProcess) {
+            try {
+              // Log both ID and a preview of the content
+              const contentPreview = element.content.length > 100
+                ? `${element.content.substring(0, 100)}...`
+                : element.content;
+              console.log(`[supabaseFunctions] Processing live data element ${element.id}:
+                Content: ${contentPreview}
+                Length: ${element.content.length} characters`
+              );
+
+              const { data: embedding, error: embeddingError } = await generateEmbedding(element.content)
+
+              if (embeddingError) {
+                console.error(`[supabaseFunctions] Error generating embedding for element ${element.id}:`, embeddingError)
+                continue
+              }
+
+              if (!embedding) {
+                console.error(`[supabaseFunctions] Failed to generate embedding for element ${element.id}`)
+                continue
+              }
+
+              const { error: updateError } = await useSupabase()
+                .from('live_data_elements')
+                .update({ vector: embedding })
+                .eq('id', element.id)
+
+              if (updateError) {
+                console.error(`[supabaseFunctions] Error updating live data element ${element.id}:`, updateError)
+                continue
+              }
+
+              console.log(`[supabaseFunctions] Successfully vectorized element ${element.id}`)
+            } catch (elementError) {
+              console.error(`[supabaseFunctions] Error processing element ${element.id}:
+                Content preview: ${element.content.substring(0, 100)}...
+                Error: ${elementError}
+              `)
+              continue
+            }
+          }
+
+          // Store all elements for reference
+          liveDataElements = elements
+        }
+      } catch (error) {
+        // Log the error but don't throw it - allow the function to complete
+        console.error('[supabaseFunctions] Error in live data elements processing:', error)
+      }
+    }
+
+    console.log(`[supabaseFunctions] Vector generation completed for collection ${id}`)
+    return { success: true, error: null }
+  } catch (error) {
+    console.error(`[supabaseFunctions] Error in generateCollectionVector:`, error)
+    console.error('[supabaseFunctions] Stack trace:', error instanceof Error ? error.stack : 'No stack trace available')
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
+    }
+  }
+}
+
+const deleteCollection = async (id: string): Promise<{
+  success: boolean,
+  error: Error | null
+}> => {
+  try {
+    console.log(`[supabaseFunctions] Starting deletion of collection ${id}`)
+
+    const selectedTeam = useTeamStore.getState().selectedTeam
+    if (!selectedTeam) {
+      throw new Error('No team selected')
+    }
+
+    // 1. Get any bots using this collection
+    const { data: linkedBots, error: botsError } = await useSupabase()
+      .from('bots')
+      .select('id')
+      .eq('collection', id)
+
+    if (botsError) {
+      console.error(`[supabaseFunctions] Error checking for linked bots:`, botsError)
+      throw botsError
+    }
+
+    if (linkedBots && linkedBots.length > 0) {
+      console.log(`[supabaseFunctions] Found ${linkedBots.length} bots linked to collection ${id}`)
+      // 1a. Unlink the bots by setting their collection to null
+      const { error: unlinkError } = await useSupabase()
+        .from('bots')
+        .update({ collection: null })
+        .eq('collection', id)
+
+      if (unlinkError) {
+        console.error(`[supabaseFunctions] Error unlinking bots:`, unlinkError)
+        throw unlinkError
+      }
+      console.log(`[supabaseFunctions] Successfully unlinked ${linkedBots.length} bots`)
+    }
+
+    // 2. Delete collection_sources relationships
+    const { error: deleteRelationshipsError } = await useSupabase()
+      .from('collection_sources')
+      .delete()
+      .eq('collection_id', id)
+
+    if (deleteRelationshipsError) {
+      console.error(`[supabaseFunctions] Error deleting collection relationships:`, deleteRelationshipsError)
+      throw deleteRelationshipsError
+    }
+
+    // 3. Delete the collection itself
+    const { error: deleteCollectionError } = await useSupabase()
+      .from('collections')
+      .delete()
+      .eq('id', id)
+      .eq('team_id', selectedTeam.id)
+    if (deleteCollectionError) {
+      console.error(`[supabaseFunctions] Error deleting collection:`, deleteCollectionError)
+      throw deleteCollectionError
+    }
+
+    console.log(`[supabaseFunctions] Successfully deleted collection ${id} and its relationships`)
+    return { success: true, error: null }
+  } catch (error) {
+    console.error(`[supabaseFunctions] Error in deleteCollection:`, error)
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
+    }
+  }
+}
+
+const getSourcesForCollection = async (collectionId: string) => {
+  type CollectionSourceResponse = {
+    source_id: string;
+    sources: Source;
+  }
+  const { data, error } = await useSupabase().from('collection_sources')
+    .select(`
+    source_id,
+    sources:source_id(*)
+  `)
+    .eq('collection_id', collectionId) as {
+      data: CollectionSourceResponse[] | null,
+      error: Error | null
+    }
+  const sources = (data || []).map(item => {
+    if (!item.sources) {
+      console.warn(`[supabaseFunctions] No source data found for source_id in collection ${collectionId}`)
+      return null
+    }
+    return item.sources
+  }).filter((source): source is Source => source !== null)
+
+  return { data: sources, error }
+}
+
+function transformSourcesForDisplay(sources: Source[]): SourceDisplay[] {
+  return sources.map(source => {
+    // Process tags: convert from string or string[] to string[]
+    let tags: string[] = [];
+    if (source.tags) {
+      if (typeof source.tags === 'string') {
+        // Handle PostgreSQL array format: '{tag1,tag2}'
+        tags = source.tags
+          .replace('{', '')
+          .replace('}', '')
+          .split(',')
+          .filter(tag => tag.length > 0);
+      } else if (Array.isArray(source.tags)) {
+        tags = source.tags;
+      }
+    }
+
+    return {
+      id: source.id,
+      name: source.name,
+      type: source.type,
+      lastUpdated: source.last_updated || source.created_at,
+      content: source.content,
+      tags: tags
+    };
+  });
+}
 
 // Simple date formatting utility
 const formatDate = (date: string) => {
@@ -43,9 +364,8 @@ export function CollectionsManagement() {
   // Replace useCollections hook with useState
   const [collections, setCollections] = useState<Collection[]>([])
   const [collectionsLoading, setCollectionsLoading] = useState(true)
-  // Ensure the line below is removed
-  // const { collections, addCollection, deleteCollection, loading: collectionsLoading, updateCollection, generateCollectionVector } = useCollections() 
-  
+  const { selectedTeam } = useTeamStore()
+
   // Ensure these hooks are present and correctly destructured
   const supabase = useSupabase()
 
@@ -69,7 +389,10 @@ export function CollectionsManagement() {
   const refreshSources = useCallback(async () => {
     setSourcesLoading(true)
     try {
-      const { data, error } = await fetchSources()
+      const { data, error } = await supabase.from('sources')
+        .select('*')
+        .eq('team_id', selectedTeam.id)
+        .order('created_at', { ascending: false })
       if (error) {
         console.error("Error fetching sources:", error)
         setSources([])
@@ -102,7 +425,10 @@ export function CollectionsManagement() {
   const fetchCollectionsData = useCallback(async () => {
     setCollectionsLoading(true)
     try {
-      const { data, error } = await fetchCollections()
+      const { data, error } = await useSupabase().from('collections')
+        .select('*')
+        .eq('team_id', selectedTeam.id)
+        .order('created_at', { ascending: false })
       if (error) {
         console.error('Error fetching collections:', error)
         setCollections([])
@@ -134,13 +460,13 @@ export function CollectionsManagement() {
         console.log(`[loadCollectionSources] Loading sources for collection: ${collectionId}`);
         const { data: sourcesData, error: sourcesError } = await getSourcesForCollection(collectionId);
         if (sourcesError) {
-           console.error(`[loadCollectionSources] Error fetching sources for ${collectionId}:`, sourcesError);
-           // Potentially set an error state or return
-           setCollectionSources(prev => ({ ...prev, [collectionId]: [] })); // Set empty on error
+          console.error(`[loadCollectionSources] Error fetching sources for ${collectionId}:`, sourcesError);
+          // Potentially set an error state or return
+          setCollectionSources(prev => ({ ...prev, [collectionId]: [] })); // Set empty on error
         } else {
-           const sources = sourcesData || [];
-           console.log(`[loadCollectionSources] Found ${sources.length} sources for collection ${collectionId}`);
-           setCollectionSources(prev => ({ ...prev, [collectionId]: sources }));
+          const sources = sourcesData || [];
+          console.log(`[loadCollectionSources] Found ${sources.length} sources for collection ${collectionId}`);
+          setCollectionSources(prev => ({ ...prev, [collectionId]: sources }));
         }
       } else if (collections.length > 0) {
         // Initial load of collections that haven't been loaded yet
@@ -320,7 +646,7 @@ export function CollectionsManagement() {
   const handleSelectAll = () => {
     // Use filteredSources for select all logic
     const allFilteredIds = filteredSources.map(source => source.id);
-    
+
     // If all *filtered* sources are already selected, deselect all.
     // Otherwise, select all *filtered* sources.
     const allFilteredSelected = allFilteredIds.every(id => selectedSources.includes(id)) && selectedSources.length === allFilteredIds.length;
@@ -348,36 +674,28 @@ export function CollectionsManagement() {
       try {
         // Add collection to database using imported function
         console.log(`[Save Collection] Adding collection to database: ${newCollectionName}`)
-        const { data: newCollectionData, error: addError } = await addCollection(newCollectionName)
+        const { data: newCollectionData, error: addError } = await supabase.from('collections')
+          .insert([{ name: newCollectionName, team_id: selectedTeam.id }])
+          .select()
         if (addError) throw addError;
-        console.log(`[Save Collection] Collection created with ID: ${newCollectionData?.id}`)
+        console.log(`[Save Collection] Collection created with ID: ${newCollectionData?.[0]?.id}`)
 
         if (newCollectionData) {
-          // Use Promise.all to add sources in parallel rather than sequentially
-          console.log(`[Save Collection] Adding ${selectedSources.length} sources to collection ${newCollectionData.id}`)
-
-          // Track individual source additions
-          const addPromises = selectedSources.map(sourceId => {
-            console.log(`[Save Collection] Starting to add source ${sourceId} to collection ${newCollectionData.id}`)
-            // Use imported addSourceToCollection
-            return addSourceToCollection(newCollectionData.id, sourceId)
-              .then(({ success, error }) => { // Assuming the func returns { success, error }
-                console.log(`[Save Collection] Source ${sourceId} added to collection ${newCollectionData.id}: ${success ? 'SUCCESS' : 'FAILED'}`)
-                if (error) console.error(`Error adding source ${sourceId}:`, error);
-                return success;
-              })
-              .catch(err => {
-                console.error(`[Save Collection] Failed to add source ${sourceId} to collection:`, err);
-                return false;
-              })
+          console.log(`[Save Collection] Adding ${selectedSources.length} sources to collection ${newCollectionData?.[0]?.id}`)
+          const addPromises = selectedSources.map(async (sourceId) => {
+            const { data: sourceData, error: sourceError } = await supabase.from('collection_sources')
+              .insert([{ collection_id: newCollectionData?.[0]?.id, sourceId }])
+              .select()
+            if (sourceError) throw sourceError;
+            return sourceData;
           });
 
           const results = await Promise.all(addPromises);
           console.log(`[Save Collection] All source additions completed. Results:`, results);
 
           // Load sources for this specific collection
-          console.log(`[Save Collection] Loading sources for new collection ${newCollectionData.id}`)
-          await loadCollectionSources(newCollectionData.id);
+          console.log(`[Save Collection] Loading sources for new collection ${newCollectionData?.[0]?.id}`)
+          await loadCollectionSources(newCollectionData?.[0]?.id);
           console.log(`[Save Collection] Collection sources loaded`)
           // Fetch collections again to update the list (or rely on subscription)
           // fetchCollectionsData(); 
@@ -434,9 +752,12 @@ export function CollectionsManagement() {
 
       // Update collection name if it has changed
       if (newCollectionName !== editingCollection.name) {
-        console.log(`[Update Collection] Updating collection name from "${editingCollection.name}" to "${newCollectionName}"`) 
-        const { success: nameUpdateSuccess, error: updateNameError } = await updateCollection(editingCollection.id, newCollectionName)
-        if (updateNameError || !nameUpdateSuccess) {
+        console.log(`[Update Collection] Updating collection name from "${editingCollection.name}" to "${newCollectionName}"`)
+        const { error: updateNameError } = await supabase.from('collections')
+          .update({ name: newCollectionName, team_id: selectedTeam.id })
+          .eq('id', editingCollection.id)
+          .select()
+        if (updateNameError) {
           console.error('[Update Collection] Failed to update collection name:', updateNameError)
           return
         }
@@ -459,19 +780,13 @@ export function CollectionsManagement() {
 
       // Add new sources in parallel
       if (sourcesToAdd.length > 0) {
-        console.log(`[Update Collection] Adding ${sourcesToAdd.length} sources`) 
-        const addPromises = sourcesToAdd.map(sourceId => {
-          console.log(`[Update Collection] Starting to add source ${sourceId}`)
-          return addSourceToCollection(editingCollection.id, sourceId)
-            .then(({ success, error }) => {
-              console.log(`[Update Collection] Source ${sourceId} added: ${success ? 'SUCCESS' : 'FAILED'}`)
-              if (error) console.error(`Error adding source ${sourceId}:`, error)
-              return success
-            })
-            .catch(err => {
-              console.error(`[Update Collection] Failed to add source ${sourceId}:`, err)
-              return false
-            })
+        console.log(`[Update Collection] Adding ${sourcesToAdd.length} sources`)
+        const addPromises = sourcesToAdd.map(async (sourceId) => {
+          const { data: sourceData, error: sourceError } = await supabase.from('collection_sources')
+            .insert([{ collection_id: editingCollection.id, sourceId }])
+            .select()
+          if (sourceError) throw sourceError;
+          return sourceData;
         })
         await Promise.all(addPromises)
       }
@@ -479,18 +794,13 @@ export function CollectionsManagement() {
       // Remove unselected sources in parallel
       if (sourcesToRemove.length > 0) {
         console.log(`[Update Collection] Removing ${sourcesToRemove.length} sources`)
-        const removePromises = sourcesToRemove.map(sourceId => {
-          console.log(`[Update Collection] Starting to remove source ${sourceId}`)
-          return removeSourceFromCollection(editingCollection.id, sourceId)
-            .then(({ success, error }) => {
-              console.log(`[Update Collection] Source ${sourceId} removed: ${success ? 'SUCCESS' : 'FAILED'}`)
-              if (error) console.error(`Error removing source ${sourceId}:`, error)
-              return success
-            })
-            .catch(err => {
-              console.error(`[Update Collection] Failed to remove source ${sourceId}:`, err)
-              return false
-            })
+        const removePromises = sourcesToRemove.map(async (sourceId) => {
+          const { data: sourceData, error: sourceError } = await supabase.from('collection_sources')
+            .delete()
+            .match({ collection_id: editingCollection.id, source_id: sourceId })
+            .select()
+          if (sourceError) throw sourceError;
+          return sourceData;
         })
         await Promise.all(removePromises)
       }
@@ -503,7 +813,7 @@ export function CollectionsManagement() {
     } finally {
       setLoading(false)
     }
-  }, [editingCollection, newCollectionName, selectedSources, updateCollection, addSourceToCollection, removeSourceFromCollection])
+  }, [editingCollection, newCollectionName, selectedSources])
 
   const resetEditState = () => {
     setNewCollectionName("")
@@ -516,14 +826,14 @@ export function CollectionsManagement() {
   const handleDeleteCollection = async (id: string) => {
     // Add confirmation dialog
     if (!window.confirm("Are you sure you want to delete this collection? This also unlinks any associated bots.")) return;
-    
+
     setLoading(true)
 
     try {
       // Use imported deleteCollection function
       const { success, error } = await deleteCollection(id)
       if (error || !success) throw error || new Error('Deletion failed');
-      
+
       // Update local state (collectionSources)
       setCollectionSources(prev => {
         const newState = { ...prev }
@@ -673,7 +983,7 @@ export function CollectionsManagement() {
       return sourcesDisplay
     }
     const lowerCaseQuery = sourceSearchQuery.toLowerCase()
-    return sourcesDisplay.filter(source => 
+    return sourcesDisplay.filter(source =>
       source.name.toLowerCase().includes(lowerCaseQuery) ||
       (source.content && source.content.toLowerCase().includes(lowerCaseQuery))
     )
@@ -685,7 +995,7 @@ export function CollectionsManagement() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
-            <p className="text-sm text-muted-foreground mt-1"> 
+            <p className="text-sm text-muted-foreground mt-1">
               Manage your collections and their sources.
             </p>
           </div>
@@ -834,17 +1144,17 @@ export function CollectionsManagement() {
                   onChange={(e) => setSourceSearchQuery(e.target.value)}
                 />
               </div>
-              {loading ? ( 
+              {loading ? (
                 <div className="flex justify-center items-center p-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <CustomTable 
-                  tableId="knowledge-table" 
+                <CustomTable
+                  tableId="knowledge-table"
                   columns={sourceColumns as any}
-                  data={filteredSources} 
-                  filters={filters} 
-                  placeholder="No sources found" 
+                  data={filteredSources}
+                  filters={filters}
+                  placeholder="No sources found"
                 />
               )}
             </div>

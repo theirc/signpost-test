@@ -10,17 +10,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/data/supabaseFunctions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { DeleteSourceDialog } from "./delete-source-dialog"
-
-interface SourceDisplay {
-  id: string
-  name: string
-  type: string
-  lastUpdated: string
-  tags: string[]
-}
+import { SourceDisplay } from "./types"
+import { useSupabase } from "@/hooks/use-supabase"
 
 interface SourcesTableProps {
   onRowClick: (row: SourceDisplay) => void
@@ -34,17 +27,17 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
   const [sortBy, setSortBy] = useState<"name" | "lastUpdated">("lastUpdated")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [sourceToDelete, setSourceToDelete] = useState<SourceDisplay | null>(null)
+  const { selectedTeam } = useTeamStore()
   const itemsPerPage = 10
 
   const fetchSources = async () => {
     try {
       setLoading(true)
-      const selectedTeam = useTeamStore.getState().selectedTeam
       if (!selectedTeam) {
         throw new Error('No team selected')
       }
 
-      const { data: sources, error } = await supabase
+      const { data: sources, error } = await useSupabase()
         .from('sources')
         .select('id, name, type, created_at, last_updated, tags')
         .eq('team_id', selectedTeam.id)
@@ -54,6 +47,7 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
 
       const transformedData = sources.map(source => ({
         id: source.id,
+        content: undefined,
         name: source.name,
         type: source.type,
         lastUpdated: source.last_updated || source.created_at,

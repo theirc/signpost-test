@@ -6,9 +6,127 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MultiSelect } from "@/components/ui/multi-select"
-import { fetchUserById, updateUser, fetchRoles, fetchTeams, addUserToTeam, removeUserFromTeam, getUserTeams, createNewUser } from "@/lib/data/supabaseFunctions"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
+import { useSupabase } from "@/hooks/use-supabase"
+
+const createNewUser = async (userData: {
+    email: string
+    password: string
+    first_name?: string
+    last_name?: string
+    role?: string
+    team?: string
+    location?: string
+    title?: string
+    description?: string
+    language?: {
+        code: string
+        name: string
+    }
+}) => {
+    try {
+        const { data: authData, error: authError } = await useSupabase().auth.signUp({
+            email: userData.email,
+            password: userData.password,
+        })
+
+        if (authError) {
+            console.error('Error creating auth user:', authError)
+            return { data: null, error: authError }
+        }
+
+        if (!authData.user) {
+            return { data: null, error: new Error('No user data returned from auth creation') }
+        }
+
+        const { data: existingUser, error: checkError } = await useSupabase()
+            .from('users')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single()
+
+        if (checkError && checkError.code !== 'PGRST116') {
+            console.error('Error checking existing user:', checkError)
+            return { data: null, error: checkError }
+        }
+
+        let publicUserData
+        let publicUserError
+
+        if (existingUser) {
+            const { data, error } = await useSupabase()
+                .from('users')
+                .update({
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                    role: userData.role,
+                    team: userData.team,
+                    location: userData.location,
+                    title: userData.title,
+                    description: userData.description,
+                    language: userData.language,
+                    status: 'active'
+                })
+                .eq('id', authData.user.id)
+                .select(`
+            *,
+            roles:role (*),
+            teams:team (*)
+          `)
+                .single()
+
+            publicUserData = data
+            publicUserError = error
+        } else {
+            const { data, error } = await useSupabase()
+                .from('users')
+                .insert([{
+                    id: authData.user.id,
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                    role: userData.role,
+                    team: userData.team,
+                    location: userData.location,
+                    title: userData.title,
+                    description: userData.description,
+                    language: userData.language,
+                    status: 'active'
+                }])
+                .select(`
+            *,
+            roles:role (*),
+            teams:team (*)
+          `)
+                .single()
+
+            publicUserData = data
+            publicUserError = error
+        }
+
+        if (publicUserError) {
+            console.error('Error creating/updating public user:', publicUserError)
+            await useSupabase().auth.signOut()
+            return { data: null, error: publicUserError }
+        }
+
+        return {
+            data: {
+                ...authData.user,
+                ...publicUserData,
+                role_name: publicUserData.roles?.name,
+                team_name: publicUserData.teams?.name
+            },
+            error: null
+        }
+    } catch (error) {
+        console.error('Error in createNewUser:', error)
+        return {
+            data: null,
+            error: error instanceof Error ? error : new Error(String(error))
+        }
+    }
+}
 
 export function UserForm() {
     const { toast } = useToast()
@@ -36,19 +154,23 @@ export function UserForm() {
             setIsFetching(true)
             try {
                 const [{ data: rolesData }, { data: teamsData }] = await Promise.all([
-                    fetchRoles(),
-                    fetchTeams()
+                    useSupabase().from("roles").select("*"),
+                    useSupabase().from("teams").select("*")
                 ])
                 setRoles(rolesData)
                 setTeams(teamsData)
 
                 if (id && !isNewUser) {
-                    const { data: user, error: userError } = await fetchUserById(id)
+                    const { data: user, error: userError } = await useSupabase().from("users").select("*").eq("id", id).single()
                     if (userError) {
                         throw new Error("Failed to load user data")
                     }
 
-                    const { data: userTeamsData } = await getUserTeams(id)
+                    const { data: userTeamsData } = await useSupabase().from("user_teams").select(`
+                        *,
+                        user_teams!inner(user_id)
+                      `)
+                        .eq('user_teams.user_id', id)
                     setUserTeams(userTeamsData || [])
 
                     if (user) {
@@ -92,7 +214,7 @@ export function UserForm() {
                     role: formData.role,
                     status: formData.status
                 }
-                result = await updateUser(id!, userData)
+                result = await useSupabase().from("users").update(userData).eq("id", id!)
             }
 
             if (result.error) {
@@ -105,11 +227,11 @@ export function UserForm() {
                 const newTeamIds = formData.teams
                 const teamsToRemove = currentTeamIds.filter(id => !newTeamIds.includes(id))
                 await Promise.all(
-                    teamsToRemove.map(teamId => removeUserFromTeam(id, teamId))
+                    teamsToRemove.map(teamId => useSupabase().from("user_teams").delete().match({ user_id: id, team_id: teamId }))
                 )
                 const teamsToAdd = newTeamIds.filter(id => !currentTeamIds.includes(id))
                 await Promise.all(
-                    teamsToAdd.map(teamId => addUserToTeam(id, teamId))
+                    teamsToAdd.map(teamId => useSupabase().from("user_teams").insert({ user_id: id, team_id: teamId }))
                 )
             }
 

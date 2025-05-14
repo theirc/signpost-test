@@ -1,11 +1,11 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { loginUser } from "@/lib/data/supabaseFunctions"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useSupabase } from "@/hooks/use-supabase"
 
 export function Login() {
   const [email, setEmail] = useState("")
@@ -19,7 +19,10 @@ export function Login() {
     setLoading(true)
 
     try {
-      const { data, error } = await loginUser(email, password)
+      const { data, error } = await useSupabase().auth.signInWithPassword({
+        email,
+        password
+      })
       if (error) {
         throw error
       }

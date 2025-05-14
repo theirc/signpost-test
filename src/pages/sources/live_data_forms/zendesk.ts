@@ -1,6 +1,6 @@
-import { supabase } from "@/lib/data/supabaseFunctions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { zendeskApi } from "@/api/getZendeskContent"
+import { useSupabase } from "@/hooks/use-supabase"
 
 interface ZendeskConfig {
   subdomain: string
@@ -21,7 +21,7 @@ export async function handleZendeskImport(
 
   try {
     // Save Zendesk config
-    const { data: savedConfig, error: configError } = await supabase
+    const { data: savedConfig, error: configError } = await useSupabase()
       .from('source_configs')
       .insert([{
         source: sourceId,
@@ -80,7 +80,7 @@ export async function handleZendeskImport(
           bodyLength: article.body.length
         })
 
-        const { error: elementError } = await supabase
+        const { error: elementError } = await useSupabase()
           .from('live_data_elements')
           .insert([{
             source_config_id: savedConfig.source,
@@ -112,7 +112,7 @@ export async function handleZendeskImport(
     }
 
     // Update source content with summary
-    const { error: updateError } = await supabase
+    const { error: updateError } = await useSupabase()
       .from('sources')
       .update({
         content: `Imported ${successCount} Zendesk articles (${errorCount} failed)`
@@ -129,7 +129,7 @@ export async function handleZendeskImport(
   } catch (error) {
     console.error('Error in Zendesk import:', error)
     // Update source content with error message
-    await supabase
+    await useSupabase()
       .from('sources')
       .update({
         content: `Error importing Zendesk articles: ${error instanceof Error ? error.message : 'Unknown error'}`

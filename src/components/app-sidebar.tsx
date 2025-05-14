@@ -4,11 +4,13 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, Sid
 import { Bot, MessagesSquare, Book, Settings2, Logs, Plus, Network, Search } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useEffect, useState, useRef } from "react"
-import { getUserTeams, getCurrentUser, Team, User } from "@/lib/data/supabaseFunctions"
 import { useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { Team, User } from "@/pages/settings/teams"
+import { useSupabase } from "@/hooks/use-supabase"
+import { getCurrentUser } from "@/lib/hooks/useUser"
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -32,13 +34,18 @@ export function AppSidebar() {
         }
         setUser(userData)
 
-        const { data, error } = await getUserTeams(userData.id)
+        const { data, error } = await useSupabase().from('teams')
+        .select(`
+          *,
+          user_teams!inner(user_id)
+        `)
+        .eq('user_teams.user_id', userData.id)
         if (error) {
           console.error('Error fetching user teams:', error)
           return
         }
         setTeams(data)
-        
+
         // Only set initial team if no team is selected and we have teams
         if (data.length > 0 && !selectedTeam) {
           setSelectedTeam(data[0])
@@ -59,7 +66,7 @@ export function AppSidebar() {
     }
   }, [])
 
-  const filteredTeams = teams.filter(team => 
+  const filteredTeams = teams.filter(team =>
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     team.description?.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -154,8 +161,8 @@ export function AppSidebar() {
                     </div>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="start" 
+                <DropdownMenuContent
+                  align="start"
                   className="min-w-[var(--sidebar-width)] w-auto"
                   style={{ minWidth: dropdownWidth }}
                 >

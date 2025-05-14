@@ -6,7 +6,16 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Loader2, Edit, Library, X, Check } from "lucide-react"
-import { fetchSystemPrompts, SystemPrompt, addSystemPrompt } from "@/lib/data/supabaseFunctions"
+import { useTeamStore } from "@/lib/hooks/useTeam"
+import { useSupabase } from "@/hooks/use-supabase"
+
+export interface SystemPrompt {
+  id: string
+  name: string
+  content: string
+  created_at: string
+  updated_at: string
+}
 
 interface SystemPromptSelectorProps {
   initialCombinedPrompt: string | undefined
@@ -25,6 +34,7 @@ function SystemPromptSelector({
   const [newPromptName, setNewPromptName] = useState("")
   const [newPromptContent, setNewPromptContent] = useState("")
   const [creatingPrompt, setCreatingPrompt] = useState(false)
+  const { selectedTeam } = useTeamStore()
 
   // State for managing selected predefined prompts and custom text
   const [addedPrompts, setAddedPrompts] = useState<SystemPrompt[]>([])
@@ -84,7 +94,7 @@ function SystemPromptSelector({
   const loadSystemPrompts = async () => {
     setLoading(true)
     try {
-      const { data, error } = await fetchSystemPrompts()
+      const { data, error } = await useSupabase().from('system_prompts').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
       if (error) throw error
       setSystemPrompts(data || [])
     } catch (err) {
@@ -135,7 +145,7 @@ function SystemPromptSelector({
     
     setCreatingPrompt(true)
     try {
-      const { data, error } = await addSystemPrompt(newPromptName, newPromptContent)
+      const { data, error } = await useSupabase().from('system_prompts').insert([{ name: newPromptName, content: newPromptContent, team_id: selectedTeam.id }]).select().single()
       if (error) throw error
       
       if (data) {

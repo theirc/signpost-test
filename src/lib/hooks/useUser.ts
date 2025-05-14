@@ -1,6 +1,37 @@
+import { useSupabase } from '@/hooks/use-supabase'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getCurrentUser } from '@/lib/data/supabaseFunctions'
 
+export const getCurrentUser = async () => {
+  const { data: authData, error: authError } = await useSupabase().auth.getUser()
+
+  if (authError || !authData?.user) {
+    return { data: null, error: authError }
+  }
+
+  const { data: publicUserData, error: publicUserError } = await useSupabase()
+    .from('users')
+    .select(`
+      *,
+      roles:role (*),
+      teams:team (*)
+    `)
+    .eq('id', authData.user.id)
+    .single()
+
+  if (publicUserError) {
+    return { data: authData.user, error: publicUserError }
+  }
+
+  return {
+    data: {
+      ...authData.user,
+      ...publicUserData,
+      role_name: publicUserData.roles?.name,
+      team_name: publicUserData.teams?.name
+    },
+    error: null
+  }
+}
 export function useUser() {
   const queryClient = useQueryClient()
 

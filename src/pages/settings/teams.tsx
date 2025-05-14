@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import CustomTable from "@/components/ui/custom-table"
-import { fetchTeams, Team, User, getTeamUsers } from "@/lib/data/supabaseFunctions"
+import { useSupabase } from "@/hooks/use-supabase"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { ChevronDown, Loader2, UserPlus } from "lucide-react"
@@ -12,6 +12,37 @@ interface TeamWithUsers extends Team {
   users: User[]
 }
 
+export interface Team {
+  id: string
+  name: string
+  description?: string
+  status?: string
+  created_at?: string
+  users?: User[]
+}
+
+export interface User {
+  id: string
+  email: string
+  first_name?: string
+  last_name?: string
+  password?: string
+  location?: string
+  title?: string
+  description?: string
+  language?: {
+    code: string
+    name: string
+  }
+  role?: string
+  role_name?: string
+  status?: string
+  team?: string
+  team_name?: string
+  created_at?: string
+  teams?: Team[]
+}
+
 export function TeamSettings() {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([])
   const [teams, setTeams] = useState<TeamWithUsers[]>([])
@@ -20,7 +51,7 @@ export function TeamSettings() {
 
   const fetchTeam = async () => {
     setIsLoading(true)
-    const { data: teamsData, error: teamsError } = await fetchTeams()
+    const { data: teamsData, error: teamsError } = await useSupabase().from("teams").select("*")
     if (teamsError) {
       console.error('Error fetching teams:', teamsError)
       return
@@ -28,10 +59,20 @@ export function TeamSettings() {
 
     const teamsWithUsers = await Promise.all(
       teamsData.map(async (team) => {
-        const { data: usersData } = await getTeamUsers(team.id)
+        const { data } = await useSupabase().from("users").select(`
+          *,
+          user_teams!inner(team_id),
+          roles:role (*)
+        `).eq("user_teams.team_id", team.id)
+
+        const transformedData = data?.map(user => ({
+          ...user,
+          role_name: user.roles?.name
+        })) || []
+
         return {
           ...team,
-          users: usersData || []
+          users: transformedData || []
         }
       })
     )
