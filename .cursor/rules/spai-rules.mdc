@@ -1,9 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: false
----
-Supabase functions will soon be deprecated... never use the functions in there... always call supabase directly instead when possible
-
-
-Files should never have 300+ lines of code... once they get long enough warn the user and tell them to start thinking about refactoring
