@@ -1,6 +1,7 @@
 import { useFormContext } from "react-hook-form"
 import { ZodType } from "zod"
 import { Col } from "./grid"
+import { cn } from "@/lib/utils"
 
 declare global {
   interface DefaultInputProps {
@@ -11,6 +12,7 @@ declare global {
     validate?: ZodType
     hideLabel?: boolean
     options?: FieldList
+    className?: string
   }
 }
 
@@ -32,7 +34,7 @@ export function validateValue(v: any, required: boolean, field: Field, validate?
 
 }
 
-export function Control({ field, span, required, hideLabel, ...props }: DefaultInputProps) {
+export function Control({ field, span, required, hideLabel, className, ...props }: DefaultInputProps) {
 
   const { formState: { errors } } = useFormContext()
   const { title, name } = field
@@ -47,7 +49,7 @@ export function Control({ field, span, required, hideLabel, ...props }: DefaultI
 
 
 
-  return <Col span={span || 4} className="flex flex-col w-full" >
+  return <Col span={span || 4} className={cn("flex flex-col w-full", className)}>
     {!hideLabel && <div className="flex items-center gap-1 pb-1">
       {title && <div className="text-sm ml-[2px]">{title}</div>}
       {required && <div className="text-red-500 text-sm">●</div>}
