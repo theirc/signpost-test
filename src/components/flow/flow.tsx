@@ -12,7 +12,8 @@ import { ResponseNode } from './nodes/response'
 // import { ConditionNode } from './nodes/condition'
 import { TextNode } from './nodes/text'
 import { AINode } from './nodes/ai'
-// import { SpeechToText } from './nodes/stt'
+import { STTNode } from './nodes/stt'
+import { TTSNode } from './nodes/tts'
 // import { BackgroundNode } from './nodes/backgroundstart'
 import { Skeleton } from '../ui/skeleton'
 import { agentsModel } from '@/lib/data'
@@ -42,6 +43,8 @@ const nodeTypes = {
   api: ApiNode,
   documentSelector: DocumentSelectorNode,
   state: StateNode,
+  stt: STTNode,
+  tts: TTSNode,
 }
 
 function Flow() {
