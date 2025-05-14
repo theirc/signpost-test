@@ -11,9 +11,9 @@ import { BotEntry, useAllBots } from '@/hooks/use-all-bots'
 import { Comm } from '../bot/comm'
 import { ChatHistory, ChatSession } from '@/bot/history'
 import type { ChatMessage } from '@/types/types.ai'
-import { SearchInput } from '@/bot/search'
+import { SearchInput } from "@/bot/search"
 import { agents } from "@/lib/agents"
-import { availableSources } from "@/components/source_input/files-modal"
+import { availableSources } from "@/pages/sources/files-modal"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup,

@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database, LayoutGrid, Map } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useSupabase } from "@/hooks/use-supabase"
-import { formatDate } from "@/components/source_input/utils"
 import { format } from "date-fns"
 import SearchFilter from "@/components/ui/search-filter"
 import SelectFilter from "@/components/ui/select-filter"
@@ -34,6 +33,11 @@ import { Switch } from "@/components/ui/switch"
 import { CollectionGraph } from "@/components/CollectionGraph"
 import { Checkbox } from "@/components/ui/checkbox"
 import { CheckedState } from "@radix-ui/react-checkbox"
+
+// Simple date formatting utility
+const formatDate = (date: string) => {
+  return format(new Date(date), "MMM dd, yyyy")
+}
 
 export function CollectionsManagement() {
   // Replace useCollections hook with useState
