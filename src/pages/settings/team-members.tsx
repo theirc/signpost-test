@@ -7,7 +7,7 @@ import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export function AddTeamMembers() {
     const navigate = useNavigate()
@@ -20,7 +20,7 @@ export function AddTeamMembers() {
     const fetchAvailableUsers = async () => {
         setIsLoading(true)
         try {
-            const { data, error } = await useSupabase().from("users").select(`
+            const { data, error } = await supabase.from("users").select(`
                 *,
                 roles(name)
               `)
@@ -37,7 +37,7 @@ export function AddTeamMembers() {
 
             const usersWithTeams = await Promise.all(
                 transformedData.map(async (user) => {
-                    const { data: teamsData } = await useSupabase().from("teams").select(`
+                    const { data: teamsData } = await supabase.from("teams").select(`
                         *,
                         user_teams!inner(user_id)
                     `).eq('user_teams.user_id', user.id)
@@ -62,7 +62,7 @@ export function AddTeamMembers() {
 
         setIsLoading(true)
         try {
-            const addPromises = selectedUsers.map(userId => useSupabase().from("user_teams").insert({ user_id: userId, team_id: id }))
+            const addPromises = selectedUsers.map(userId => supabase.from("user_teams").insert({ user_id: userId, team_id: id }))
             await Promise.all(addPromises)
             navigate(`/settings/teams`)
         } catch (error) {

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export function Login() {
   const [email, setEmail] = useState("")
@@ -19,7 +19,7 @@ export function Login() {
     setLoading(true)
 
     try {
-      const { data, error } = await useSupabase().auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })

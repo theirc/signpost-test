@@ -1,14 +1,14 @@
-import { useSupabase } from '@/hooks/use-supabase'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../agents/db'
 
 export const getCurrentUser = async () => {
-  const { data: authData, error: authError } = await useSupabase().auth.getUser()
+  const { data: authData, error: authError } = await supabase.auth.getUser()
 
   if (authError || !authData?.user) {
     return { data: null, error: authError }
   }
 
-  const { data: publicUserData, error: publicUserError } = await useSupabase()
+  const { data: publicUserData, error: publicUserError } = await supabase
     .from('users')
     .select(`
       *,

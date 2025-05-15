@@ -4,9 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
-import { useSupabase } from "@/hooks/use-supabase"
 import { Bot } from "@/pages/bots/bots"
 import { SystemPrompt } from "./system-prompt-selector"
+import { supabase } from "@/lib/agents/db"
 
 interface TestBotDialogProps {
     open: boolean
@@ -45,7 +45,7 @@ export default function TestBotDialog({
     const fetchSystemPrompt = async (id: string) => {
         setLoadingPrompt(true)
         try {
-            const { data, error } = await useSupabase().from('system_prompts').select('*').eq('id', id).single()
+            const { data, error } = await supabase.from('system_prompts').select('*').eq('id', id).single()
             if (error) throw error
             setSystemPrompt(data)
         } catch (err) {

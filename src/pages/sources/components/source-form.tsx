@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { EntityForm } from "@/components/ui/entity-form"
 import { useEntityForm } from "@/hooks/use-entity-form"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
 import { Source } from "@/pages/knowledge"
+import { supabase } from "@/lib/agents/db"
 
 const initialFormData = {
     name: "",
@@ -20,20 +20,20 @@ const initialFormData = {
     }
 }
 
-const updateSource = async (id: string, updates: Partial<Source>) => {
-    const { error } = await useSupabase().from('sources').update(updates).eq('id', id).select().single()
+const updateSource = async (id: string, updates: any) => {
+    const { error } = await supabase.from('sources').update(updates).eq('id', id).select().single()
     if (error) throw error
     return { data: null, error: null }
 }
 
-export const addSource = async (sourceData: Partial<Source>) => {
+export const addSource = async (sourceData: any) => {
     if (!sourceData.name || !sourceData.type || !sourceData.content) {
         throw new Error('Name, type, and content are required')
     }
     if (!sourceData.tags) {
         sourceData.tags = `{${sourceData.type}}`;
     }
-    const { error } = await useSupabase().from('sources').insert(sourceData).select().single()
+    const { error } = await supabase.from('sources').insert(sourceData).select().single()
     if (error) throw error
     return { data: null, error: null }
 }
@@ -52,7 +52,7 @@ export function SourceForm() {
     } = useEntityForm({
         id,
         fetchEntityById: async (id) => {
-            const response = await useSupabase().from('sources')
+            const response = await supabase.from('sources')
             .select('*')
             .eq('team_id', selectedTeam.id)
             .order('created_at', { ascending: false })

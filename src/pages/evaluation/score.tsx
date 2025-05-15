@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EntityForm } from "@/components/ui/entity-form"
 import { useEntityForm } from "@/hooks/use-entity-form"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export interface BotScore {
     id: string
@@ -34,7 +34,7 @@ const initialFormData = {
 }
 
 const updateBotScore = async (id: string, scoreData: Partial<BotScore>, teamId: string) => {
-    const { data, error } = await useSupabase().from('bot_scores')
+    const { data, error } = await supabase.from('bot_scores')
         .update({ ...scoreData, team_id: teamId })
         .eq('id', id)
         .eq('team_id', teamId)
@@ -44,7 +44,7 @@ const updateBotScore = async (id: string, scoreData: Partial<BotScore>, teamId: 
 }
 
 const addBotScore = async (scoreData: Partial<BotScore>, teamId: string) => {
-    const { data, error } = await useSupabase().from('bot_scores')
+    const { data, error } = await supabase.from('bot_scores')
         .insert([{ ...scoreData, team_id: teamId }])
         .select()
         .single()
@@ -52,7 +52,7 @@ const addBotScore = async (scoreData: Partial<BotScore>, teamId: string) => {
 }
 
 const fetchBotScoreById = async (id: string, teamId: string) => {
-    const { data, error } = await useSupabase().from('bot_scores')
+    const { data, error } = await supabase.from('bot_scores')
         .select(`
       *,
       bots (

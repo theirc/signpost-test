@@ -9,9 +9,9 @@ import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
 import { ConditionHandler } from '../condition'
 import { useEffect, useState } from 'react'
-import { useSupabase } from '@/hooks/use-supabase'
 import { useTeamStore } from '@/lib/hooks/useTeam'
 import { Collection } from '@/pages/knowledge'
+import { supabase } from '@/lib/agents/db'
 
 const { search } = workerRegistry
 
@@ -75,7 +75,7 @@ export function SearchNode(props: NodeProps) {
 
   useEffect(() => {
     async function loadCollections() {
-      const { data, error } = await useSupabase().from('collections')
+      const { data, error } = await supabase.from('collections')
         .select('*')
         .eq('team_id', selectedTeam.id)
         .order('created_at', { ascending: false })

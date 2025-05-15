@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MoreHorizontal, Pencil, Trash, Book, Loader2, RefreshCcw, Database, LayoutGrid, Map } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useSupabase } from "@/hooks/use-supabase"
 import { format } from "date-fns"
 import SearchFilter from "@/components/ui/search-filter"
 import SelectFilter from "@/components/ui/select-filter"
@@ -19,6 +18,7 @@ import { CheckedState } from "@radix-ui/react-checkbox"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { SourceDisplay } from "./sources/types"
 import { useSimilaritySearch } from "@/lib/fileUtilities/use-similarity-search"
+import { supabase } from "@/lib/agents/db"
 
 export interface Collection {
   id: string
@@ -64,13 +64,13 @@ const generateCollectionVector = async (
     console.log(`[supabaseFunctions] Starting vector generation for collection ${id}`)
 
     // First get total count of sources for reporting
-    const { count: totalSources } = await useSupabase()
+    const { count: totalSources } = await supabase
       .from('collection_sources')
       .select('*', { count: 'exact', head: true })
       .eq('collection_id', id)
 
     // Get only sources that need vectors
-    const { data: collectionSources, error: sourcesError } = await useSupabase()
+    const { data: collectionSources, error: sourcesError } = await supabase
       .from('collection_sources')
       .select(`
         source_id,
@@ -121,7 +121,7 @@ const generateCollectionVector = async (
         continue
       }
 
-      const { error: updateError } = await useSupabase()
+      const { error: updateError } = await supabase
         .from('sources')
         .update({ vector: embedding })
         .eq('id', cs.source_id)
@@ -133,7 +133,7 @@ const generateCollectionVector = async (
     }
 
     // Get source configs separately - only get enabled configs
-    const { data: sourceConfigs, error: configsError } = await useSupabase()
+    const { data: sourceConfigs, error: configsError } = await supabase
       .from('source_configs')
       .select('source')
       .eq('enabled', 1)
@@ -148,7 +148,7 @@ const generateCollectionVector = async (
     if (sourceConfigs && sourceConfigs.length > 0) {
       try {
         // Get live data elements only for sources that have enabled configs
-        const { data: elements, error: liveDataError } = await useSupabase()
+        const { data: elements, error: liveDataError } = await supabase
           .from('live_data_elements')
           .select('id, content, vector')
           .in('source_config_id', sourceConfigs.map(config => config.source)) as {
@@ -190,7 +190,7 @@ const generateCollectionVector = async (
                 continue
               }
 
-              const { error: updateError } = await useSupabase()
+              const { error: updateError } = await supabase
                 .from('live_data_elements')
                 .update({ vector: embedding })
                 .eq('id', element.id)
@@ -244,7 +244,7 @@ const deleteCollection = async (id: string): Promise<{
     }
 
     // 1. Get any bots using this collection
-    const { data: linkedBots, error: botsError } = await useSupabase()
+    const { data: linkedBots, error: botsError } = await supabase
       .from('bots')
       .select('id')
       .eq('collection', id)
@@ -257,7 +257,7 @@ const deleteCollection = async (id: string): Promise<{
     if (linkedBots && linkedBots.length > 0) {
       console.log(`[supabaseFunctions] Found ${linkedBots.length} bots linked to collection ${id}`)
       // 1a. Unlink the bots by setting their collection to null
-      const { error: unlinkError } = await useSupabase()
+      const { error: unlinkError } = await supabase
         .from('bots')
         .update({ collection: null })
         .eq('collection', id)
@@ -270,7 +270,7 @@ const deleteCollection = async (id: string): Promise<{
     }
 
     // 2. Delete collection_sources relationships
-    const { error: deleteRelationshipsError } = await useSupabase()
+    const { error: deleteRelationshipsError } = await supabase
       .from('collection_sources')
       .delete()
       .eq('collection_id', id)
@@ -281,7 +281,7 @@ const deleteCollection = async (id: string): Promise<{
     }
 
     // 3. Delete the collection itself
-    const { error: deleteCollectionError } = await useSupabase()
+    const { error: deleteCollectionError } = await supabase
       .from('collections')
       .delete()
       .eq('id', id)
@@ -307,7 +307,7 @@ const getSourcesForCollection = async (collectionId: string) => {
     source_id: string;
     sources: Source;
   }
-  const { data, error } = await useSupabase().from('collection_sources')
+  const { data, error } = await supabase.from('collection_sources')
     .select(`
     source_id,
     sources:source_id(*)
@@ -366,9 +366,6 @@ export function CollectionsManagement() {
   const [collectionsLoading, setCollectionsLoading] = useState(true)
   const { selectedTeam } = useTeamStore()
 
-  // Ensure these hooks are present and correctly destructured
-  const supabase = useSupabase()
-
   // Local state
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [newCollectionName, setNewCollectionName] = useState("")
@@ -397,7 +394,7 @@ export function CollectionsManagement() {
         console.error("Error fetching sources:", error)
         setSources([])
       } else {
-        setSources(data || [])
+        setSources(data as unknown as Source[] || [])
       }
     } catch (err) {
       console.error("Error fetching sources:", err)
@@ -425,7 +422,7 @@ export function CollectionsManagement() {
   const fetchCollectionsData = useCallback(async () => {
     setCollectionsLoading(true)
     try {
-      const { data, error } = await useSupabase().from('collections')
+      const { data, error } = await supabase.from('collections')
         .select('*')
         .eq('team_id', selectedTeam.id)
         .order('created_at', { ascending: false })
@@ -684,7 +681,7 @@ export function CollectionsManagement() {
           console.log(`[Save Collection] Adding ${selectedSources.length} sources to collection ${newCollectionData?.[0]?.id}`)
           const addPromises = selectedSources.map(async (sourceId) => {
             const { data: sourceData, error: sourceError } = await supabase.from('collection_sources')
-              .insert([{ collection_id: newCollectionData?.[0]?.id, sourceId }])
+              .insert([{ collection_id: newCollectionData?.[0]?.id, source_id: sourceId }])
               .select()
             if (sourceError) throw sourceError;
             return sourceData;
@@ -783,7 +780,7 @@ export function CollectionsManagement() {
         console.log(`[Update Collection] Adding ${sourcesToAdd.length} sources`)
         const addPromises = sourcesToAdd.map(async (sourceId) => {
           const { data: sourceData, error: sourceError } = await supabase.from('collection_sources')
-            .insert([{ collection_id: editingCollection.id, sourceId }])
+            .insert([{ collection_id: editingCollection.id, source_id: sourceId }])
             .select()
           if (sourceError) throw sourceError;
           return sourceData;

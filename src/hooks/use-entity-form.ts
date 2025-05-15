@@ -1,19 +1,16 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "./use-supabase"
 import { Bot } from "@/pages/bots/bots"
+import { supabase } from "@/lib/agents/db"
+import { Json } from "@/lib/agents/supabase"
 
 interface ServiceCategory {
+    created_at: string
+    description: string | null
     id: string
-    name?: string
-    created_at?: string
-    description?: string
-    translations?: {
-        language: string
-        name: string
-        description: string
-    }[]
+    name: string | null
+    translations: Json[] | null
 }
 
 interface UseEntityFormProps {
@@ -46,8 +43,8 @@ export function useEntityForm({
         const loadData = async () => {
             setIsFetching(true)
             const [botsResponse, categoriesResponse] = await Promise.all([
-                useSupabase().from('bots').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false }),
-                useSupabase().from('service_categories')
+                supabase.from('bots').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false }),
+                supabase.from('service_categories')
                     .select('*')
                     .order('created_at', { ascending: false })
             ])

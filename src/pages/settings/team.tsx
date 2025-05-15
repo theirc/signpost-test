@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { usePermissions } from "@/lib/hooks/usePermissions"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export function TeamForm() {
     const navigate = useNavigate()
@@ -23,7 +23,7 @@ export function TeamForm() {
         const loadData = async () => {
             setIsFetching(true)
             if (id && id !== "new") {
-                const { data: team, error } = await useSupabase().from("teams").select("*").eq("id", id).single()
+                const { data: team, error } = await supabase.from("teams").select("*").eq("id", id).single()
                 if (error) {
                     console.error("Error loading team:", error)
                 } else if (team) {
@@ -50,10 +50,10 @@ export function TeamForm() {
         setIsLoading(true)
         try {
             if (id && id !== "new") {
-                const { error } = await useSupabase().from("teams").update(formData).eq("id", id).select().single()
+                const { error } = await supabase.from("teams").update(formData).eq("id", id).select().single()
                 if (error) throw error
             } else {
-                const { error } = await useSupabase().from("teams").insert(formData).select().single()
+                const { error } = await supabase.from("teams").insert(formData).select().single()
                 if (error) throw error
             }
             navigate("/settings/teams")

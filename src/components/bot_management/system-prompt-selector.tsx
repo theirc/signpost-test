@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Loader2, Edit, Library, X, Check } from "lucide-react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export interface SystemPrompt {
   id: string
@@ -94,7 +94,7 @@ function SystemPromptSelector({
   const loadSystemPrompts = async () => {
     setLoading(true)
     try {
-      const { data, error } = await useSupabase().from('system_prompts').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('system_prompts').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
       if (error) throw error
       setSystemPrompts(data || [])
     } catch (err) {
@@ -145,7 +145,7 @@ function SystemPromptSelector({
     
     setCreatingPrompt(true)
     try {
-      const { data, error } = await useSupabase().from('system_prompts').insert([{ name: newPromptName, content: newPromptContent, team_id: selectedTeam.id }]).select().single()
+      const { data, error } = await supabase.from('system_prompts').insert([{ name: newPromptName, content: newPromptContent, team_id: selectedTeam.id }]).select().single()
       if (error) throw error
       
       if (data) {

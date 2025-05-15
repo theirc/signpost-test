@@ -3,8 +3,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
-import { useSupabase } from "@/hooks/use-supabase"
-import { zendeskApi } from "@/api/getZendeskContent"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { 
   FormState, 
@@ -16,6 +14,7 @@ import {
   BotLogsForm
 } from "./live_data_forms"
 import { handleZendeskImport } from "./live_data_forms/zendesk"
+import { supabase } from "@/lib/agents/db"
 
 interface LiveDataModalProps {
   open: boolean
@@ -24,8 +23,6 @@ interface LiveDataModalProps {
 }
 
 export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveDataModalProps) {
-  const supabase = useSupabase()
-  
   const [form, setForm] = useState<FormState>(DEFAULT_FORM_STATE)
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState<string>('')
