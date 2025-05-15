@@ -28,6 +28,8 @@ import { AgentNode } from './nodes/agent'
 import { ApiNode } from './nodes/api'
 import { DocumentSelectorNode } from './nodes/documentselector'
 import { StateNode } from './nodes/state'
+import { translate } from '@/lib/agents/workers/translate'
+import { TranslateNode } from './nodes/translate'
 
 const nodeTypes = {
   request: RequestNode,
@@ -45,6 +47,7 @@ const nodeTypes = {
   state: StateNode,
   stt: STTNode,
   tts: TTSNode,
+  translate: TranslateNode,
 }
 
 function Flow() {
@@ -261,10 +264,10 @@ export function FlowDesigner({ id }: { id?: string }) {
 
   return <>
     <Toolbar />
-      <ReactFlowProvider>
-        <Flow />
-        <Toaster />
-      </ReactFlowProvider>
+    <ReactFlowProvider>
+      <Flow />
+      <Toaster />
+    </ReactFlowProvider>
   </>
 }
 

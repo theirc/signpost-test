@@ -13,6 +13,7 @@ import { documentSelector } from "./workers/documentselector"
 import { state } from "./workers/state"
 import { stt } from "./workers/stt"
 import { tts } from "./workers/tts"
+import { translate } from "./workers/translate"
 
 
 type WorkerCategories = "io" | "generator" | "debug" | "tool"
@@ -54,5 +55,6 @@ export const workerRegistry = {
   state,
   stt,
   tts,
+  translate,
 
 } satisfies { [index: string]: WorkerRegistryItem }
