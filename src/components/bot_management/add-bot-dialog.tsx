@@ -4,9 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Loader2 } from "lucide-react"
-import { Bot, Model, Collection } from "@/lib/data/supabaseFunctions"
 import SystemPromptSelector from "./system-prompt-selector"
-
+import {Model, Bot} from '../../pages/bots/bots'
+import { Collection } from "@/pages/knowledge";
 interface AddBotDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void

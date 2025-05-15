@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { fetchApiKeyById, addApiKey, updateApiKey, deleteApiKey } from '@/lib/data/supabaseFunctions'
-import { ApiKey } from '@/lib/data/supabaseFunctions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,9 +7,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { useTeamStore } from '@/lib/hooks/useTeam'
+import { useSupabase } from '@/hooks/use-supabase'
+import { ApiKey } from './api-keys'
 
 export default function ApiKeyView() {
   const { id } = useParams()
+  const { selectedTeam } = useTeamStore()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -30,7 +32,7 @@ export default function ApiKeyView() {
   const loadApiKey = async () => {
     try {
       setLoading(true)
-      const { data, error } = await fetchApiKeyById(id!)
+      const { data, error } = await useSupabase().from("api_keys").select("*").eq("id", id!).single()
       if (error) throw error
       if (data) setApiKey(data)
     } catch (error) {
@@ -49,14 +51,14 @@ export default function ApiKeyView() {
     try {
       setLoading(true)
       if (id !== 'new') {
-        const { error } = await updateApiKey(id, apiKey)
+        const { error } = await useSupabase().from("api_keys").update(apiKey).eq("id", id!).select().single()
         if (error) throw error
         toast({
           title: 'Success',
           description: 'API key updated successfully'
         })
       } else {
-        const { error } = await addApiKey(apiKey)
+        const { error } = await useSupabase().from("api_keys").insert([{ ...apiKey, team_id: selectedTeam.id }]).select().single()
         if (error) throw error
         toast({
           title: 'Success',
@@ -78,13 +80,13 @@ export default function ApiKeyView() {
   const handleDelete = async () => {
     try {
       setLoading(true)
-      const { error } = await deleteApiKey(id!)
+      const { error } = await useSupabase().from("api_keys").delete().eq("id", id!).select().single()
       if (error) throw error
       toast({
         title: 'Success',
         description: 'API key deleted successfully'
       })
-      navigate('/settings/api-keys')
+      navigate('/settings/apikeys')
     } catch (error) {
       toast({
         title: 'Error',

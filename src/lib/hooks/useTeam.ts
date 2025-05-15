@@ -1,5 +1,5 @@
+import { Team } from '@/pages/settings/teams'
 import { create } from 'zustand'
-import { Team } from '@/lib/data/supabaseFunctions'
 
 interface TeamStore {
   selectedTeam: Team | null

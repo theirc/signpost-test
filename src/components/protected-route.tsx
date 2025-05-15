@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react"
 import { Navigate, useLocation } from "react-router-dom"
-import { getCurrentUser } from "@/lib/data/supabaseFunctions"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import React from 'react'
+import { getCurrentUser } from "@/lib/hooks/useUser"
 
 type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
 

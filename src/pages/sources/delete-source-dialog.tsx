@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { supabase } from "@/lib/data/supabaseFunctions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -12,14 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-interface SourceDisplay {
-  id: string
-  name: string
-  type: string
-  lastUpdated: string
-  tags: string[]
-}
+import { SourceDisplay } from "./types"
+import { useSupabase } from "@/hooks/use-supabase"
 
 interface DeleteSourceDialogProps {
   source: SourceDisplay | null
@@ -42,7 +35,7 @@ export function DeleteSourceDialog({ source, onClose, onSourceDeleted }: DeleteS
       }
 
       // First, delete any live data elements
-      const { error: elementsError } = await supabase
+      const { error: elementsError } = await useSupabase()
         .from('live_data_elements')
         .delete()
         .eq('source_config_id', source.id)
@@ -54,7 +47,7 @@ export function DeleteSourceDialog({ source, onClose, onSourceDeleted }: DeleteS
       }
 
       // Then, delete any source configs
-      const { error: configError } = await supabase
+      const { error: configError } = await useSupabase()
         .from('source_configs')
         .delete()
         .eq('source', source.id)
@@ -66,7 +59,7 @@ export function DeleteSourceDialog({ source, onClose, onSourceDeleted }: DeleteS
       }
 
       // Finally, delete the source itself
-      const { error: sourceError } = await supabase
+      const { error: sourceError } = await useSupabase()
         .from('sources')
         .delete()
         .eq('id', source.id)

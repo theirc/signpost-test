@@ -2,9 +2,8 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { supabase } from "@/lib/data/supabaseFunctions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { addTag, updateSource } from "@/lib/data/supabaseFunctions"
+import { useSupabase } from "@/hooks/use-supabase"
 
 interface SourcePreviewProps {
   sourceId: string | null
@@ -29,6 +28,38 @@ interface LiveDataElement {
   status: string
   fetch_timestamp: string
   metadata?: any
+}
+
+const addTag = async (name: string): Promise<{
+  data: any,
+  error: Error | null
+}> => {
+  try {
+    // Check if tag already exists
+    const { data: existingTags } = await useSupabase()
+      .from('tags')
+      .select('*')
+      .eq('name', name)
+
+    if (existingTags && existingTags.length > 0) {
+      return { data: existingTags[0], error: null }
+    }
+
+    // Tag doesn't exist, create it
+    const { data, error } = await useSupabase()
+      .from('tags')
+      .insert([{ name }])
+      .select()
+
+    if (error) throw error
+    return { data: data?.[0], error: null }
+  } catch (error) {
+    console.error('Error adding tag:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error))
+    }
+  }
 }
 
 export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePreviewProps) {
@@ -56,7 +87,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       }
 
       // Fetch basic source data
-      const { data: sourceData, error: sourceError } = await supabase
+      const { data: sourceData, error: sourceError } = await useSupabase()
         .from('sources')
         .select('id, name, type, content, tags, created_at, last_updated')
         .eq('id', sourceId)
@@ -77,7 +108,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
 
       // If it's a live data source, fetch the elements
       if (sourceData.type === 'web-scraping' || sourceData.type === 'zendesk' || sourceData.type === 'directus' || sourceData.type === 'bot-logs') {
-        const { data: elements, error: elementsError } = await supabase
+        const { data: elements, error: elementsError } = await useSupabase()
           .from('live_data_elements')
           .select('id, content, version, status, fetch_timestamp, metadata')
           .eq('source_config_id', sourceId)
@@ -102,7 +133,11 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       if (tagError) throw tagError
 
       const updatedTags = [...source.tags, newTag.trim()]
-      const { error: updateError } = await updateSource(source.id, { tags: updatedTags })
+      const { error: updateError } = await useSupabase().from('sources')
+      .update({ tags: updatedTags })
+      .eq('id', source.id)
+      .select()
+      .single()
       if (updateError) throw updateError
 
       setSource(prev => prev ? { ...prev, tags: updatedTags } : null)
@@ -121,7 +156,11 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
     try {
       setSaving(true)
       const updatedTags = source.tags.filter(tag => tag !== tagToRemove)
-      const { error } = await updateSource(source.id, { tags: updatedTags })
+      const { error } = await useSupabase().from('sources')
+      .update({ tags: updatedTags })
+      .eq('id', source.id)
+      .select()
+      .single()
       if (error) throw error
 
       setSource(prev => prev ? { ...prev, tags: updatedTags } : null)

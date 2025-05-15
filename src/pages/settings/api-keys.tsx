@@ -2,12 +2,20 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import CustomTable from "@/components/ui/custom-table"
-import { ApiKey, fetchApiKeys } from "@/lib/data/supabaseFunctions"
 import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { useSupabase } from "@/hooks/use-supabase"
+export interface ApiKey {
+    id: string
+    key?: string
+    type?: string
+    team_id?: string
+    created_at?: string
+    description?: string
+  }
 
 export function ApiKeysSettings() {
     const navigate = useNavigate()
@@ -18,7 +26,7 @@ export function ApiKeysSettings() {
 
     const fetchApiKey = async () => {
         setIsLoading(true)
-        const { data, error } = await fetchApiKeys()
+        const { data, error } = await useSupabase().from("api_keys").select("*").eq("team_id", selectedTeam?.id)
         if (error) {
             console.error('Error fetching api keys:', error)
         }

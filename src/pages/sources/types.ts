@@ -1,4 +1,4 @@
-import { LiveDataElement, Source, SourceDisplay } from '@/lib/data/supabaseFunctions'
+import { LiveDataElement, Source } from '../knowledge'
 
 export type Tag = { 
   id: string
@@ -21,4 +21,13 @@ export interface SelectedElementContent {
   content: string
 }
 
-export type { Source, SourceDisplay, LiveDataElement } 
+export type SourceDisplay = {
+  id: string
+  name: string
+  type: string
+  lastUpdated: string
+  content: string
+  tags: string[]
+}
+
+export type { Source, LiveDataElement } 

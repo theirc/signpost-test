@@ -1,8 +1,9 @@
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { getUserTeams, getCurrentUser } from "@/lib/data/supabaseFunctions"
 import { Loader2 } from "lucide-react"
+import { useSupabase } from "@/hooks/use-supabase"
+import { getCurrentUser } from "@/lib/hooks/useUser"
 
 export function TeamLoading() {
   const { selectedTeam, setSelectedTeam } = useTeamStore()
@@ -18,7 +19,10 @@ export function TeamLoading() {
           return
         }
 
-        const { data, error } = await getUserTeams(userData.id)
+        const { data, error } = await useSupabase().from("user_teams").select(`
+          *,
+          user_teams!inner(user_id)
+        `).eq('user_teams.user_id', userData.id)
         if (error) {
           console.error('Error fetching user teams:', error)
           return

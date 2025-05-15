@@ -4,15 +4,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { fetchModels, fetchCollections, fetchSystemPrompts, addBot } from "@/lib/data/supabaseFunctions"
 import { EntityForm } from "@/components/ui/entity-form"
+import { useTeamStore } from "@/lib/hooks/useTeam"
+import { useSupabase } from "@/hooks/use-supabase"
 
 const initialFormData = {
   name: "",
   collection: undefined,
-  model: "",                       
+  model: "",
   system_prompt: "",
-  system_prompt_id: undefined, 
+  system_prompt_id: undefined,
   temperature: 0.7,
   active: true,
   translate_to_user_language: false,
@@ -23,102 +24,71 @@ export function BotForm() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState(initialFormData)
   const [isLoading, setIsLoading] = useState(false)
+  const { selectedTeam } = useTeamStore()
 
   const [collections, setCollections] = useState([])
   const [models, setModels] = useState([])
   const [systemPrompts, setSystemPrompts] = useState([])
-  const [collectionsLoading, setCollectionsLoading] = useState(true)
-  const [modelsLoading, setModelsLoading] = useState(true)
-  const [systemPromptsLoading, setSystemPromptsLoading] = useState(true)
 
-  useEffect(() => {
-    setCollectionsLoading(true)
-    fetchCollections()
-      .then(res => {
-        if (res.error) {
-          console.error('Error fetching collections:', res.error)
-        } else {
-          setCollections(res.data || [])
-        }
-        setCollectionsLoading(false)
-      })
-      .catch(err => {
-        console.error('Error fetching collections:', err)
-        setCollectionsLoading(false)
-      })
-  }, [])
-
-  useEffect(() => {
-    setModelsLoading(true)
-    fetchModels()
-      .then(res => {
-        if (res.error) {
-          console.error('Error fetching models:', res.error)
-        } else {
-          setModels(res.data || [])
-        }
-        setModelsLoading(false)
-      })
-      .catch(err => {
-        console.error('Error fetching models:', err)
-        setModelsLoading(false)
-      })
-  }, [])
-
-  useEffect(() => {
-    setSystemPromptsLoading(true)
-    if (typeof fetchSystemPrompts === 'function') {
-      fetchSystemPrompts()
-        .then(res => {
-          if (res.error) {
-            console.error('Error fetching system prompts:', res.error)
-          } else {
-            setSystemPrompts(res.data || [])
-          }
-          setSystemPromptsLoading(false)
-        })
-        .catch(err => {
-          console.error('Error fetching system prompts:', err)
-          setSystemPromptsLoading(false)
-        })
+  const fetchData = async () => {
+    setIsLoading(true)
+    const { data: collections, error: collectionsError } = await useSupabase().from('collections').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
+    if (collectionsError) {
+      console.error('Error fetching collections:', collectionsError)
     } else {
-      setSystemPrompts([])
-      setSystemPromptsLoading(false)
+      setCollections(collections || [])
     }
+    const { data: models, error: modelsError } = await useSupabase().from('models').select('*').order('created_at', { ascending: false })
+    if (modelsError) {
+      console.error('Error fetching models:', modelsError)
+    } else {
+      setModels(models || [])
+    }
+    const { data: systemPrompts, error: systemPromptsError } = await useSupabase().from('system_prompts').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
+    if (systemPromptsError) {
+      console.error('Error fetching system prompts:', systemPromptsError)
+    } else {
+      setSystemPrompts(systemPrompts || [])
+    }
+    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    
+
     try {
       const cleanedData = { ...formData }
-      
+
       if ('bot' in cleanedData) {
         delete cleanedData.bot
       }
-      
+
       if (cleanedData.collection === "") {
         cleanedData.collection = undefined
       }
-      
+
       if (cleanedData.system_prompt_id === "") {
         cleanedData.system_prompt_id = undefined
       }
-      
+
       console.log('Submitting bot data (cleaned):', cleanedData)
-      
-      const result = await addBot(cleanedData)
-      
+
+      const result = await useSupabase().from('bots').insert([{ ...cleanedData, team_id: selectedTeam.id }]).select().single()
+
       console.log('Result:', result)
-      
+
       if (result.error) {
         console.error('Error adding bot:', result.error)
         alert(`Error adding bot: ${result.error.message || JSON.stringify(result.error)}`)
         setIsLoading(false)
         return
       }
-      
+
       navigate("/bots")
     } catch (error) {
       console.error('Error submitting form:', error)
@@ -154,21 +124,17 @@ export function BotForm() {
             id="collection"
             className="w-full p-2 border rounded-md"
             value={formData.collection || ''}
-            onChange={e => setFormData(prev => ({ 
-              ...prev, 
-              collection: e.target.value || undefined 
+            onChange={e => setFormData(prev => ({
+              ...prev,
+              collection: e.target.value || undefined
             }))}
           >
             <option value="">None</option>
-            {collectionsLoading ? (
-              <option value="" disabled>Loading collections...</option>
-            ) : (
-              collections.map(collection => (
-                <option key={collection.id} value={collection.id}>
-                  {collection.name}
-                </option>
-              ))
-            )}
+            {collections.map(collection => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -183,15 +149,11 @@ export function BotForm() {
             required
           >
             <option value="">Select LLM model</option>
-            {modelsLoading ? (
-              <option value="" disabled>Loading models...</option>
-            ) : (
-              models.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.name} {m.provider ? `(${m.provider})` : ''}
-                </option>
-              ))
-            )}
+            {models.map(m => (
+              <option key={m.id} value={m.id}>
+                {m.name} {m.provider ? `(${m.provider})` : ''}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -212,21 +174,17 @@ export function BotForm() {
             id="system_prompt_id"
             className="w-full p-2 border rounded-md"
             value={formData.system_prompt_id || ''}
-            onChange={e => setFormData(prev => ({ 
-              ...prev, 
-              system_prompt_id: e.target.value || undefined 
+            onChange={e => setFormData(prev => ({
+              ...prev,
+              system_prompt_id: e.target.value || undefined
             }))}
           >
             <option value="">None</option>
-            {systemPromptsLoading ? (
-              <option value="" disabled>Loading system prompts...</option>
-            ) : (
-              systemPrompts.map(prompt => (
-                <option key={prompt.id} value={prompt.id}>
-                  {prompt.name}
-                </option>
-              ))
-            )}
+            {systemPrompts.map(prompt => (
+              <option key={prompt.id} value={prompt.id}>
+                {prompt.name}
+              </option>
+            ))}ƒ
           </select>
         </div>
 

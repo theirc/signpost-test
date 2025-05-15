@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button"
-import { fetchBotScores } from "@/lib/data/supabaseFunctions"
 import { Loader2, Plus } from "lucide-react"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -15,6 +14,7 @@ import { utils, writeFile } from "xlsx"
 import CustomTable from "@/components/ui/custom-table"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { useSupabase } from "@/hooks/use-supabase"
 
 
 export function BotScoresTable() {
@@ -31,12 +31,25 @@ export function BotScoresTable() {
 
     const fetchScores = async () => {
         setIsLoading(true)
-        const { data, error } = await fetchBotScores()
+        const { data, error } = await useSupabase().from('bot_scores').select(`
+            *,
+            bots (
+              name
+            ),
+            service_categories (
+              name
+            )
+          `)
+            .eq('team_id', selectedTeam.id)
+            .order('created_at', { ascending: false })
         if (error) {
             console.error('Error fetching bot scores:', error)
         }
+
         const formattedScores = data.map(score => ({
             ...score,
+            bot_name: score.bots?.name,
+            category_name: score.service_categories?.name,
             created_at: score.created_at || new Date().toISOString()
         }))
         setScores(formattedScores)

@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import CustomTable from "@/components/ui/custom-table"
-import { fetchUsers, getUserTeams, User } from "@/lib/data/supabaseFunctions"
 import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
+import { User } from "./teams"
+import { useSupabase } from "@/hooks/use-supabase"
 
 export function UsersSettings() {
     const navigate = useNavigate()
@@ -16,14 +17,27 @@ export function UsersSettings() {
 
     const fetchUser = async () => {
         setIsLoading(true)
-        const { data, error } = await fetchUsers()
+        const { data, error } = await useSupabase().from("users").select(`
+            *,
+            roles(name)
+          `)
+          .order('first_name', { ascending: true })
         if (error) {
             console.error('Error fetching users:', error)
         }
 
+        const transformedData = data?.map(user => ({
+            ...user,
+            role_name: user.roles?.name,
+          })) || []
+
         const usersWithTeams = await Promise.all(
-            data.map(async (user) => {
-                const { data: teamsData } = await getUserTeams(user.id)
+            transformedData.map(async (user) => {
+                const { data: teamsData } = await useSupabase().from("user_teams").select(`
+                    *,
+                    user_teams!inner(user_id)
+                  `)
+                    .eq('user_teams.user_id', user.id)
                 return {
                     ...user,
                     teams: teamsData || []

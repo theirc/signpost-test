@@ -7,10 +7,11 @@ import { InlineHandles, WorkerLabeledHandle } from '../handles'
 import { useWorker } from '../hooks'
 import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
-import { AllAIModels, OpenAIModels } from '@/lib/agents/modellist'
 import { ConditionHandler } from '../condition'
 import { useEffect, useState } from 'react'
-import { fetchCollections, Collection } from '@/lib/data/supabaseFunctions'
+import { useSupabase } from '@/hooks/use-supabase'
+import { useTeamStore } from '@/lib/hooks/useTeam'
+import { Collection } from '@/pages/knowledge'
 
 const { search } = workerRegistry
 
@@ -68,12 +69,16 @@ const model = createModel({
 // }
 
 export function SearchNode(props: NodeProps) {
+  const { selectedTeam } = useTeamStore()
   const worker = useWorker<SearchWorker>(props.id)
   const [collectionOptions, setCollectionOptions] = useState<{ label: string, value: string }[]>([])
 
   useEffect(() => {
     async function loadCollections() {
-      const { data, error } = await fetchCollections()
+      const { data, error } = await useSupabase().from('collections')
+        .select('*')
+        .eq('team_id', selectedTeam.id)
+        .order('created_at', { ascending: false })
       if (error) {
         console.error("Error fetching collections:", error)
       } else {

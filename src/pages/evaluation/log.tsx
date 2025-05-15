@@ -2,9 +2,21 @@ import { useParams, useNavigate } from "react-router-dom"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { fetchBotLogById, updateBotLog, addBotLog } from "@/lib/data/supabaseFunctions"
 import { EntityForm } from "@/components/ui/entity-form"
 import { useEntityForm } from "@/hooks/use-entity-form"
+import { useSupabase } from "@/hooks/use-supabase"
+
+export interface BotLog {
+    id: string
+    bot?: string
+    created_at?: string
+    detected_language?: string
+    detected_location?: string
+    search_term?: string
+    user_message?: string
+    answer?: string
+    category?: string
+}
 
 const initialFormData = {
     user_message: "",
@@ -15,10 +27,25 @@ const initialFormData = {
     search_term: ""
 }
 
+const updateBotLog = async (id: string, logData: Partial<BotLog>) => {
+    const { data, error } = await useSupabase().from('bot_logs').update(logData).eq('id', id).select().single()
+    return { data, error }
+}
+
+const addBotLog = async (logData: Partial<BotLog>, teamId: string) => {
+    const { data, error } = await useSupabase().from('bot_logs').insert([{ ...logData, team_id: teamId }]).select().single()
+    return { data, error }
+}
+
+const fetchBotLogById = async (id: string, teamId: string) => {
+    const { data, error } = await useSupabase().from('bot_logs').select('*').eq('id', id).eq('team_id', teamId).single()
+    return { data, error }
+}
+
 export function LogForm() {
     const { id } = useParams()
     const navigate = useNavigate()
-    
+
     const {
         isLoading,
         isFetching,

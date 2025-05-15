@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { fetchTeams, Team, fetchProjectById, updateProject, addProject } from "@/lib/data/supabaseFunctions"
 import { Loader2 } from "lucide-react"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { Team } from "./teams"
+import { useSupabase } from "@/hooks/use-supabase"
 
 export function ProjectForm() {
     const navigate = useNavigate()
@@ -26,16 +27,16 @@ export function ProjectForm() {
     useEffect(() => {
         const loadData = async () => {
             setIsFetching(true)
-            const teamsResponse = await fetchTeams()
-
-            if (teamsResponse.error) {
-                console.error("Error loading teams:", teamsResponse.error)
-            } else {
-                setTeams(teamsResponse.data)
+            const { data: teamsData, error: teamsError } = await useSupabase().from("teams").select("*")
+            if (teamsError) {
+                console.error('Error fetching teams:', teamsError)
+                return
             }
 
+            setTeams(teamsData)
+
             if (id && id !== "new") {
-                const { data: project, error } = await fetchProjectById(id)
+                const { data: project, error } = await useSupabase().from("projects").select("*").eq("id", id).single()
                 if (error) {
                     console.error("Error loading project:", error)
                 } else if (project) {
@@ -64,16 +65,16 @@ export function ProjectForm() {
         setIsLoading(true)
         try {
             if (id && id !== "new") {
-                const { error } = await updateProject(id, {
+                const { error } = await useSupabase().from("projects").update({
                     ...formData,
                     team: selectedTeam
-                })
+                }).eq("id", id).select().single()
                 if (error) throw error
             } else {
-                const { error } = await addProject({
+                const { error } = await useSupabase().from("projects").insert({
                     ...formData,
                     team: selectedTeam
-                })
+                }).select().single()
                 if (error) throw error
             }
             navigate("/settings/projects")

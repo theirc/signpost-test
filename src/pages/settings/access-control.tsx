@@ -3,13 +3,28 @@ import "jspdf-autotable"
 import { useNavigate } from "react-router-dom"
 import { ColumnDef } from "@tanstack/react-table"
 import CustomTable from "@/components/ui/custom-table"
-import { fetchRoles, Role } from "@/lib/data/supabaseFunctions"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
+import { useSupabase } from "@/hooks/use-supabase"
 
 const defaultPageSize = 10
+
+interface Role {
+    id: string
+    name: string
+    description?: string
+    permissions?: {
+      resource: string
+      create: boolean
+      read: boolean
+      update: boolean
+      delete: boolean
+    }[]
+    created_at: string
+    updated_at: string
+  }
 
 export function AccessControlSettings() {
     const navigate = useNavigate()
@@ -19,7 +34,7 @@ export function AccessControlSettings() {
 
     const fetchRole = async () => {
         setIsLoading(true)
-        const { data, error } = await fetchRoles()
+        const { data, error } = await useSupabase().from("roles").select("*")
         if (error) {
             console.error('Error fetching roles:', error)
         }
