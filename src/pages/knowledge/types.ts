@@ -1,4 +1,4 @@
-import { LiveDataElement } from '@/pages/sources/types'
+import { LiveDataElement } from '@/types/common'
 
 export interface Collection {
   id: string
