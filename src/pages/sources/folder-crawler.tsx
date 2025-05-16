@@ -1,12 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { useState, useRef } from "react"
-import { useSupabase } from "@/hooks/use-supabase"
-import { useFileParser, ParsedFile } from "@/lib/fileUtilities/use-file-parser"
-import { Input } from "@/components/ui/input"
+import { useRef } from "react"
+import { useFileParser } from "@/lib/fileUtilities/use-file-parser"
 import { X, Loader2 } from "lucide-react"
-import { useTeamStore } from "@/lib/hooks/useTeam"
 import { SourceNameEditor } from "./components/source-name-editor"
 import { TagManager } from "./components/tag-manager"
 import { useFolderCrawler } from "./folder-crawler-logic"
@@ -18,7 +15,6 @@ interface FolderCrawlerProps {
 }
 
 export function FolderCrawler({ open, onOpenChange, onSourcesUpdated }: FolderCrawlerProps) {
-  const supabase = useSupabase()
   const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser()
   const [state, actions] = useFolderCrawler(onSourcesUpdated, onOpenChange, parseFiles)
   const { isLoading, progress, files, sourceNames, currentTags } = state

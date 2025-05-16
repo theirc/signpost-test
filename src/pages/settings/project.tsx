@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Team } from "./teams"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export function ProjectForm() {
     const navigate = useNavigate()
@@ -27,7 +27,7 @@ export function ProjectForm() {
     useEffect(() => {
         const loadData = async () => {
             setIsFetching(true)
-            const { data: teamsData, error: teamsError } = await useSupabase().from("teams").select("*")
+            const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*")
             if (teamsError) {
                 console.error('Error fetching teams:', teamsError)
                 return
@@ -36,7 +36,7 @@ export function ProjectForm() {
             setTeams(teamsData)
 
             if (id && id !== "new") {
-                const { data: project, error } = await useSupabase().from("projects").select("*").eq("id", id).single()
+                const { data: project, error } = await supabase.from("projects").select("*").eq("id", id).single()
                 if (error) {
                     console.error("Error loading project:", error)
                 } else if (project) {
@@ -65,13 +65,13 @@ export function ProjectForm() {
         setIsLoading(true)
         try {
             if (id && id !== "new") {
-                const { error } = await useSupabase().from("projects").update({
+                const { error } = await supabase.from("projects").update({
                     ...formData,
                     team: selectedTeam
                 }).eq("id", id).select().single()
                 if (error) throw error
             } else {
-                const { error } = await useSupabase().from("projects").insert({
+                const { error } = await supabase.from("projects").insert({
                     ...formData,
                     team: selectedTeam
                 }).select().single()

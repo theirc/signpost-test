@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 interface SourcePreviewProps {
   sourceId: string | null
@@ -36,7 +36,7 @@ const addTag = async (name: string): Promise<{
 }> => {
   try {
     // Check if tag already exists
-    const { data: existingTags } = await useSupabase()
+    const { data: existingTags } = await supabase
       .from('tags')
       .select('*')
       .eq('name', name)
@@ -46,7 +46,7 @@ const addTag = async (name: string): Promise<{
     }
 
     // Tag doesn't exist, create it
-    const { data, error } = await useSupabase()
+    const { data, error } = await supabase
       .from('tags')
       .insert([{ name }])
       .select()
@@ -87,7 +87,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       }
 
       // Fetch basic source data
-      const { data: sourceData, error: sourceError } = await useSupabase()
+      const { data: sourceData, error: sourceError } = await supabase
         .from('sources')
         .select('id, name, type, content, tags, created_at, last_updated')
         .eq('id', sourceId)
@@ -98,7 +98,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
 
       // Transform tags
       const tags = typeof sourceData.tags === 'string'
-        ? sourceData.tags.replace('{', '').replace('}', '').split(',').filter(tag => tag.length > 0)
+        ? (sourceData.tags as string).replace('{', '').replace('}', '').split(',').filter(tag => tag.length > 0)
         : sourceData.tags || []
 
       setSource({
@@ -108,7 +108,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
 
       // If it's a live data source, fetch the elements
       if (sourceData.type === 'web-scraping' || sourceData.type === 'zendesk' || sourceData.type === 'directus' || sourceData.type === 'bot-logs') {
-        const { data: elements, error: elementsError } = await useSupabase()
+        const { data: elements, error: elementsError } = await supabase
           .from('live_data_elements')
           .select('id, content, version, status, fetch_timestamp, metadata')
           .eq('source_config_id', sourceId)
@@ -133,7 +133,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       if (tagError) throw tagError
 
       const updatedTags = [...source.tags, newTag.trim()]
-      const { error: updateError } = await useSupabase().from('sources')
+      const { error: updateError } = await supabase.from('sources')
       .update({ tags: updatedTags })
       .eq('id', source.id)
       .select()
@@ -156,7 +156,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
     try {
       setSaving(true)
       const updatedTags = source.tags.filter(tag => tag !== tagToRemove)
-      const { error } = await useSupabase().from('sources')
+      const { error } = await supabase.from('sources')
       .update({ tags: updatedTags })
       .eq('id', source.id)
       .select()

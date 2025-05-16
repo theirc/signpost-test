@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Play, RefreshCcw, Loader2, Plus } from "lucide-react"
-import { useSupabase } from "@/hooks/use-supabase"
 import EditBotDialog from "@/components/bot_management/edit-bot-dialog"
 import TestBotDialog from "@/components/bot_management/test-bot-dialog"
 import TestResultDialog from "@/components/bot_management/test-result-dialog"
@@ -10,6 +9,7 @@ import CustomTable from "@/components/ui/custom-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Collection } from "../knowledge"
+import { supabase } from "@/lib/agents/db"
 
 export interface Model {
     id: string
@@ -38,7 +38,6 @@ export function BotManagement() {
     const [modelsLoading, setModelsLoading] = useState(true)
     const [collections, setCollections] = useState<Collection[]>([])
     const [collectionsLoading, setCollectionsLoading] = useState(true)
-    const supabase = useSupabase()
 
     const [bots, setBots] = useState<Bot[]>([])
     const [loading, setLoading] = useState(true)
@@ -58,7 +57,7 @@ export function BotManagement() {
     const fetchBotsData = async () => {
         try {
             setLoading(true)
-            const { data, error } = await useSupabase().from('bots').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
+            const { data, error } = await supabase.from('bots').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
             if (error) throw error
             setBots(data)
         } catch (error) {
@@ -73,7 +72,7 @@ export function BotManagement() {
     const fetchCollectionsData = useCallback(async () => {
         setCollectionsLoading(true)
         try {
-            const { data, error } = await useSupabase().from('collections')
+            const { data, error } = await supabase.from('collections')
                 .select('*')
                 .eq('team_id', selectedTeam.id)
                 .order('created_at', { ascending: false })
@@ -95,7 +94,7 @@ export function BotManagement() {
     const fetchModelsData = useCallback(async () => {
         setModelsLoading(true)
         try {
-            const { data, error } = await useSupabase().from('models').select('*').order('created_at', { ascending: false })
+            const { data, error } = await supabase.from('models').select('*').order('created_at', { ascending: false })
             if (error) {
                 console.error('Error fetching models:', error)
                 setModels([])
@@ -178,7 +177,7 @@ export function BotManagement() {
 
     const handleDelete = async (id: string) => {
         try {
-            const { data, error } = await useSupabase().from('bots').delete().eq('id', id)
+            const { data, error } = await supabase.from('bots').delete().eq('id', id)
             if (error) throw error
             if (data) {
                 setBots(prev => prev.filter(bot => bot.id !== id))
@@ -204,7 +203,7 @@ export function BotManagement() {
 
                 console.log('Submitting clean bot data:', cleanedBot)
 
-                const { data, error } = await useSupabase().from('bots').insert([{
+                const { data, error } = await supabase.from('bots').insert([{
                     name: cleanedBot.name,
                     model: cleanedBot.model,
                     collection: cleanedBot.collection,
@@ -234,7 +233,7 @@ export function BotManagement() {
     const handleEditBot = async () => {
         if (editingBot && editingBot.name && editingBot.model) {
             try {
-                const { data, error } = await useSupabase().from('bots').update({
+                const { data, error } = await supabase.from('bots').update({
                     name: editingBot.name,
                     model: editingBot.model,
                     collection: editingBot.collection,

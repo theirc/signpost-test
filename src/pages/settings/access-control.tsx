@@ -7,7 +7,7 @@ import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 const defaultPageSize = 10
 
@@ -34,7 +34,7 @@ export function AccessControlSettings() {
 
     const fetchRole = async () => {
         setIsLoading(true)
-        const { data, error } = await useSupabase().from("roles").select("*")
+        const { data, error } = await supabase.from("roles").select("*")
         if (error) {
             console.error('Error fetching roles:', error)
         }
@@ -42,7 +42,7 @@ export function AccessControlSettings() {
             ...role,
             created_at: role.created_at || new Date().toISOString()
         }))
-        setRoles(formattedRoles || [])
+        setRoles(formattedRoles as unknown as Role[] || [])
         setIsLoading(false)
     }
 

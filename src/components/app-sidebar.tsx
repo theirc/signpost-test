@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Team, User } from "@/pages/settings/teams"
-import { useSupabase } from "@/hooks/use-supabase"
 import { getCurrentUser } from "@/lib/hooks/useUser"
+import { supabase } from "@/lib/agents/db"
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -34,7 +34,7 @@ export function AppSidebar() {
         }
         setUser(userData)
 
-        const { data, error } = await useSupabase().from('teams')
+        const { data, error } = await supabase.from('teams')
         .select(`
           *,
           user_teams!inner(user_id)

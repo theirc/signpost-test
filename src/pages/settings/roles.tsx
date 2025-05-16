@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Plus, Eye, Pencil, Trash2, Share2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
+import { Json } from "@/lib/agents/supabase"
 
 interface Permission {
     resource: string
@@ -78,7 +79,7 @@ export function RoleForm() {
         const loadData = async () => {
             setIsFetching(true)
             if (id && !isNewRole) {
-                const { data: role, error } = await useSupabase().from("roles").select("*").eq("id", id).single()
+                const { data: role, error } = await supabase.from("roles").select("*").eq("id", id).single()
                 if (error) {
                     console.error("Error loading role:", error)
                     toast({
@@ -90,14 +91,14 @@ export function RoleForm() {
                     setFormData({
                         name: role.name,
                         description: role.description,
-                        permissions: role.permissions || APP_RESOURCES.map(resource => ({
+                        permissions: role.permissions as unknown as Permission[] || APP_RESOURCES.map(resource => ({
                             resource: resource.id,
                             create: false,
                             read: false,
                             update: false,
                             delete: false,
                             share: false
-                        }))
+                        })) as Permission[]
                     })
                 }
             }
@@ -141,10 +142,10 @@ export function RoleForm() {
 
         try {
             if (isNewRole) {
-                const { error } = await useSupabase().from("roles").insert({
+                const { error } = await supabase.from("roles").insert({
                     name: formData.name,
                     description: formData.description,
-                    permissions: formData.permissions
+                    permissions: formData.permissions as unknown as Json[]
                 }).select().single()
 
                 if (error) {
@@ -161,10 +162,10 @@ export function RoleForm() {
                     description: "The new role has been created."
                 })
             } else if (id) {
-                const { error } = await useSupabase().from("roles").update({
+                const { error } = await supabase.from("roles").update({
                     name: formData.name,
                     description: formData.description,
-                    permissions: formData.permissions
+                    permissions: formData.permissions as unknown as Json[]
                 }).eq("id", id).select().single()
 
                 if (error) {

@@ -15,7 +15,7 @@ import jsPDF from "jspdf"
 import { utils, writeFile } from "xlsx"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 type Log = {
     id: string
@@ -46,7 +46,7 @@ export function BotLogsTable() {
     const fetchLogs = async () => {
         setIsLoading(true)
         try {
-            const { data, error } = await useSupabase().from('bot_logs')
+            const { data, error } = await supabase.from('bot_logs')
                 .select(`
               *,
               bots (

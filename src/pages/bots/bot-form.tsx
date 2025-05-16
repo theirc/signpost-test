@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { EntityForm } from "@/components/ui/entity-form"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 const initialFormData = {
   name: "",
@@ -32,19 +32,19 @@ export function BotForm() {
 
   const fetchData = async () => {
     setIsLoading(true)
-    const { data: collections, error: collectionsError } = await useSupabase().from('collections').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
+    const { data: collections, error: collectionsError } = await supabase.from('collections').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
     if (collectionsError) {
       console.error('Error fetching collections:', collectionsError)
     } else {
       setCollections(collections || [])
     }
-    const { data: models, error: modelsError } = await useSupabase().from('models').select('*').order('created_at', { ascending: false })
+    const { data: models, error: modelsError } = await supabase.from('models').select('*').order('created_at', { ascending: false })
     if (modelsError) {
       console.error('Error fetching models:', modelsError)
     } else {
       setModels(models || [])
     }
-    const { data: systemPrompts, error: systemPromptsError } = await useSupabase().from('system_prompts').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
+    const { data: systemPrompts, error: systemPromptsError } = await supabase.from('system_prompts').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false })
     if (systemPromptsError) {
       console.error('Error fetching system prompts:', systemPromptsError)
     } else {
@@ -78,7 +78,7 @@ export function BotForm() {
 
       console.log('Submitting bot data (cleaned):', cleanedData)
 
-      const result = await useSupabase().from('bots').insert([{ ...cleanedData, team_id: selectedTeam.id }]).select().single()
+      const result = await supabase.from('bots').insert([{ ...cleanedData, team_id: selectedTeam.id }]).select().single()
 
       console.log('Result:', result)
 

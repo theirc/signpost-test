@@ -14,7 +14,7 @@ import { utils, writeFile } from "xlsx"
 import CustomTable from "@/components/ui/custom-table"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 
 export function BotScoresTable() {
@@ -31,7 +31,7 @@ export function BotScoresTable() {
 
     const fetchScores = async () => {
         setIsLoading(true)
-        const { data, error } = await useSupabase().from('bot_scores').select(`
+        const { data, error } = await supabase.from('bot_scores').select(`
             *,
             bots (
               name

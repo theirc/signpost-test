@@ -13,7 +13,7 @@ import { useState, useEffect } from "react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { DeleteSourceDialog } from "./delete-source-dialog"
 import { SourceDisplay } from "./types"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 interface SourcesTableProps {
   onRowClick: (row: SourceDisplay) => void
@@ -37,7 +37,7 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
         throw new Error('No team selected')
       }
 
-      const { data: sources, error } = await useSupabase()
+      const { data: sources, error } = await supabase
         .from('sources')
         .select('id, name, type, created_at, last_updated, tags')
         .eq('team_id', selectedTeam.id)
@@ -52,7 +52,7 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
         type: source.type,
         lastUpdated: source.last_updated || source.created_at,
         tags: typeof source.tags === 'string' 
-          ? source.tags.replace('{', '').replace('}', '').split(',').filter(tag => tag.length > 0)
+          ? (source.tags as string).replace('{', '').replace('}', '').split(',').filter(tag => tag.length > 0)
           : source.tags || []
       }))
 

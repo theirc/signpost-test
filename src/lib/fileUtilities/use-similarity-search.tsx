@@ -1,5 +1,5 @@
-import { pipeline, env } from '@xenova/transformers';
-import { useSupabase } from '@/hooks/use-supabase';
+import { env } from '@xenova/transformers';
+import { supabase } from '../agents/db';
 
 // Configure transformers.js environment for browser
 env.useBrowserCache = false;
@@ -14,7 +14,6 @@ export interface SimilaritySearchResult {
 }
 
 export function useSimilaritySearch() {
-  const supabase = useSupabase();
 
   const generateEmbedding = async (text: string) => {
     try {
@@ -66,7 +65,10 @@ export function useSimilaritySearch() {
       
       // Call the Supabase RPC function for similarity search
       const { data, error } = await supabase.rpc('similarity_search', {
-        query_vector: queryVector
+        query_vector: queryVector as string,
+        target_collection_id: '',
+        match_threshold: 5,
+        match_count: 0.3
       }) as { data: SimilaritySearchResult[] | null, error: any };
 
       if (error) {

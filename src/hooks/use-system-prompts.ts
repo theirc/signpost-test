@@ -1,5 +1,5 @@
+import { supabase } from "@/lib/agents/db"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "./use-supabase"
 import { useState, useCallback } from "react"
 
 export interface SystemPrompt {
@@ -15,7 +15,6 @@ export interface SystemPrompt {
 }
 
 export function useSystemPrompts() {
-    const supabase = useSupabase()
     const [loading, setLoading] = useState(false)
 
     const fetchPrompts = useCallback(async () => {
@@ -89,7 +88,7 @@ export function useSystemPrompts() {
                 throw error
             }
             console.log("Supabase returned new prompt:", data)
-            return data
+            return {error: false, data: data}
         } catch (error) {
             console.error('Error adding system prompt:', error)
             alert('Error creating prompt: ' + (error instanceof Error ? error.message : 'Unknown error'))
@@ -110,7 +109,7 @@ export function useSystemPrompts() {
                 .single()
 
             if (error) throw error
-            return data
+            return {error: false, data: data}
         } catch (error) {
             console.error('Error updating system prompt:', error)
             return null

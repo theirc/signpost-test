@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EntityForm } from "@/components/ui/entity-form"
 import { useEntityForm } from "@/hooks/use-entity-form"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export interface BotLog {
     id: string
@@ -28,17 +28,17 @@ const initialFormData = {
 }
 
 const updateBotLog = async (id: string, logData: Partial<BotLog>) => {
-    const { data, error } = await useSupabase().from('bot_logs').update(logData).eq('id', id).select().single()
+    const { data, error } = await supabase.from('bot_logs').update(logData).eq('id', id).select().single()
     return { data, error }
 }
 
 const addBotLog = async (logData: Partial<BotLog>, teamId: string) => {
-    const { data, error } = await useSupabase().from('bot_logs').insert([{ ...logData, team_id: teamId }]).select().single()
+    const { data, error } = await supabase.from('bot_logs').insert([{ ...logData, team_id: teamId }]).select().single()
     return { data, error }
 }
 
 const fetchBotLogById = async (id: string, teamId: string) => {
-    const { data, error } = await useSupabase().from('bot_logs').select('*').eq('id', id).eq('team_id', teamId).single()
+    const { data, error } = await supabase.from('bot_logs').select('*').eq('id', id).eq('team_id', teamId).single()
     return { data, error }
 }
 

@@ -100,7 +100,7 @@ export function SystemPrompts() {
 
             if (prompt) {
                 // Add to state and close dialog
-                setPrompts(prev => [prompt, ...prev]);
+                setPrompts(prev => [prompt, ...prev] as unknown as SystemPrompt[]);
                 handleDialogClose();
             }
         } catch (error) {
@@ -124,7 +124,7 @@ export function SystemPrompts() {
             if (updatedPrompt) {
                 // Update in state and close dialog
                 setPrompts(prev => 
-                    prev.map(p => p.id === currentPromptId ? updatedPrompt : p)
+                    prev.map(p => p.id === currentPromptId ? updatedPrompt : p) as unknown as SystemPrompt[]
                 );
                 handleDialogClose();
             }
