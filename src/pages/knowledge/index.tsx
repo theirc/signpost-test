@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, RefreshCcw, Database, LayoutGrid, Map } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { CollectionGraph } from "@/components/CollectionGraph"
+import { Loader2, RefreshCcw, Database } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Collection, CollectionWithSourceCount } from "./types"
 import { CollectionsTable } from "./components/collections-table"
@@ -12,7 +10,6 @@ import { useCollections, useCollectionSources } from "./collections-logic"
 
 export default function Knowledge() {
   // State
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
   const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null)
   const [collectionToEdit, setCollectionToEdit] = useState<Collection | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -125,14 +122,6 @@ export default function Knowledge() {
                 Create Collection
               </Button>
             </div>
-            <div className="flex items-center space-x-2">
-              <LayoutGrid className={`h-4 w-4 ${viewMode === 'grid' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <Switch
-                checked={viewMode === 'map'}
-                onCheckedChange={(checked) => setViewMode(checked ? 'map' : 'grid')}
-              />
-              <Map className={`h-4 w-4 ${viewMode === 'map' ? 'text-primary' : 'text-muted-foreground'}`} />
-            </div>
           </div>
         </div>
 
@@ -141,8 +130,6 @@ export default function Knowledge() {
             <div className="w-full h-64 flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : viewMode === 'map' ? (
-            <CollectionGraph collections={collections} collectionSources={collectionSources} />
           ) : (
             <CollectionsTable
               collections={collections}
