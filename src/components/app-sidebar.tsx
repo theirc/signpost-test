@@ -77,16 +77,6 @@ export function AppSidebar() {
 
   const navItems = [
     {
-      title: "Bots",
-      url: "#",
-      icon: Bot,
-      items: [
-        { title: "All Bots", url: "/bots", permission: "bots" },
-        { title: "System Prompts", url: "/bots/prompts", permission: "prompts" },
-      ],
-      show: !permissionsLoading && (canRead("bots") || canRead("prompts"))
-    },
-    {
       title: "Playground",
       url: "/playground",
       icon: MessagesSquare,
