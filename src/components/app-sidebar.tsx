@@ -1,7 +1,7 @@
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot, MessagesSquare, Book, Settings2, Logs, Plus, Network, Search } from "lucide-react"
+import { MessagesSquare, Book, Settings2, Logs, Plus, Network, Search } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
@@ -76,16 +76,6 @@ export function AppSidebar() {
   }
 
   const navItems = [
-    {
-      title: "Bots",
-      url: "#",
-      icon: Bot,
-      items: [
-        { title: "All Bots", url: "/bots", permission: "bots" },
-        { title: "System Prompts", url: "/bots/prompts", permission: "prompts" },
-      ],
-      show: !permissionsLoading && (canRead("bots") || canRead("prompts"))
-    },
     {
       title: "Playground",
       url: "/playground",

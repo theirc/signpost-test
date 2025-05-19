@@ -7,7 +7,6 @@ import { NodeProps, useNodeConnections } from '@xyflow/react'
 import { Brain, Eye, Type } from "lucide-react"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
-import { Markdown } from "@/components/bot_management/markdown"
 import { MemoizedWorker } from "../memoizedworkers"
 import { SwirlingEffectSpinner } from "../progress"
 import { useEffect, useRef, useState } from "react"

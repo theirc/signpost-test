@@ -7,7 +7,7 @@ import { NodeProps, useNodeConnections } from '@xyflow/react'
 import { Eye, Type } from "lucide-react"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
-import { Markdown } from "@/components/bot_management/markdown"
+import Markdown from "react-markdown"
 import { app } from "@/lib/app"
 
 const { display } = workerRegistry
@@ -51,7 +51,7 @@ ${doc.body}
 
     {type == "string" && <div className="mx-2 mt-2 border border-solid border-gray-200 overflow-y-auto nodrag h-full min-h-10 p-2" >
       <div className="max-w-[500px] min-h-10 h-full flex-grow ">
-        <Markdown content={worker.fields.input.value} />
+        <Markdown>{worker.fields.input.value}</Markdown>
       </div>
     </div>}
 
@@ -60,7 +60,7 @@ ${doc.body}
 
     {type == "doc" && <div className="mx-2 mt-2 border border-solid border-gray-200 overflow-y-auto nodrag h-full min-h-10" >
       <div className="max-w-[700px] min-h-10 h-full flex-grow m-2">
-        <Markdown content={md} />
+        <Markdown>{md}</Markdown>
       </div>
     </div>
     }
