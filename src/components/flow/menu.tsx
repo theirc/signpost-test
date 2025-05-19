@@ -10,6 +10,7 @@ import { Separator } from "../ui/separator"
 import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { useForceUpdate } from "@/lib/utils"
 
 interface Props {
   update?: () => void
@@ -63,6 +64,7 @@ export function Toolbar(props: Props) {
 
 
   const { selectedTeam } = useTeamStore()
+  const update = useForceUpdate()
   const { form, m, watch } = useForm(model, {
     values: {
       title: app.agent.title,
@@ -144,6 +146,12 @@ export function Toolbar(props: Props) {
     console.log("Result: ", p.output)
   }
 
+  function onChangeDisplayData() {
+    app.agent.displayData = !app.agent.displayData
+    app.agent.update()
+    update()
+  }
+
   function onSetAPIKey() {
     form.modal.show()
   }
@@ -204,6 +212,9 @@ export function Toolbar(props: Props) {
           <MenubarContent>
             <MenubarItem className="text-xs" onClick={onSetAPIKey}>
               Set API Keys
+            </MenubarItem>
+            <MenubarItem className="text-xs" onClick={onChangeDisplayData}>
+              {app.agent.displayData ? "Hide Debug Data" : "Show Debug Data"}
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>

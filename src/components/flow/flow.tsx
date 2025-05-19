@@ -73,7 +73,7 @@ function Flow() {
     const initialEdges: Edge[] = []
     for (const key in agent.edges) {
       const e = agent.edges[key]
-      initialEdges.push({ id: key, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle })
+      initialEdges.push({ id: key, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle, type: "customEdge" })
     }
     setEdges(initialEdges)
 
@@ -136,7 +136,7 @@ function Flow() {
 
 
     // if (handle.type === "execute") {
-    //   c = { ...c, type: 'executeEdge', animated: true } as any
+    c = { ...c, type: 'customEdge' } as any
     // }
 
     setEdges((eds) => {
@@ -219,7 +219,7 @@ function Flow() {
       onDelete={onDelete}
       className='!bg-sky-50'
       nodeTypes={nodeTypes}
-      edgeTypes={{ executeEdge: ButtonEdge }}
+      edgeTypes={{ customEdge: ButtonEdge }}
       fitView
       minZoom={0.2}
     >
