@@ -4,6 +4,11 @@ import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from "@/lib/agents/db"
 import { Json } from "@/lib/agents/supabase"
 
+interface Bot {
+    id: string
+    name: string
+}
+
 interface ServiceCategory {
     created_at: string
     description: string | null
@@ -34,6 +39,8 @@ export function useEntityForm({
     const [isLoading, setIsLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
     const [categories, setCategories] = useState<ServiceCategory[]>([])
+    const [bots, setBots] = useState<Bot[]>([])
+    const [selectedBot, setSelectedBot] = useState<string>("")
     const [formData, setFormData] = useState(initialFormData)
 
     useEffect(() => {
@@ -50,6 +57,9 @@ export function useEntityForm({
             } else {
                 setCategories(categoriesResponse.data)
             }
+            
+            // Load bots (empty array since bots are deprecated)
+            setBots([])
 
             if (id && id !== "new") {
                 const { data: entity, error } = await fetchEntityById(id, selectedTeam.id)
@@ -91,6 +101,9 @@ export function useEntityForm({
         isLoading,
         isFetching,
         categories,
+        bots,
+        selectedBot,
+        setSelectedBot,
         formData,
         setFormData,
         handleSubmit
