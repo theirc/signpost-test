@@ -195,41 +195,42 @@ export default function Chat() {
   }
   async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
     if (!userText && !audio) return;
-    setState({ isSending: true });
-
+    setState({ isSending: true })
     const humanMsg: ChatMessage = {
       type: "human",
       message: userText || "",
     };
-
-    setMessages(prev => [...prev, humanMsg]);
-
-    const selected = state.selectedBots.map(id => state.bots[id]);
-
-    let reply: ChatMessage;
-
+  
+    const updatedMessages = [...messages, humanMsg]
+  
+    setMessages(updatedMessages)
+  
+    const selected = state.selectedBots.map(id => state.bots[id])
+    let reply: ChatMessage
+  
     const agentEntry = selected.find(b => b.type === "agent");
     if (agentEntry) {
-      const worker = await agents.loadAgent(Number(agentEntry.id));
-
-      const historyText = messages
-        .map(m =>
-          m.type === "human"
-            ? `User: ${m.message}`
-            : `Assistant: ${m.messages?.find(x => x.id === Number(agentEntry.id))?.message
-            || m.message
-            }`
-        )
-        .join("\n\n");
-
+      const worker = await agents.loadAgent(Number(agentEntry.id))
+  
+      const historyText = updatedMessages
+      .map(m => {
+        if (m.type === "human") {
+          return `User: ${m.message}`
+        }
+        return ""
+      })
+      .join("\n\n")
+  
       const parameters: AgentParameters = {
         input: { question: historyText },
         apikeys: app.getAPIkeys(),
       };
+  
       await worker.execute(parameters);
       const outputText = parameters.output as string;
-      agentEntry.history.push({ isHuman: false, message: outputText });
-
+  
+      agentEntry.history.push({ isHuman: false, message: outputText })
+  
       reply = {
         type: "bot",
         message: outputText,
@@ -250,9 +251,9 @@ export default function Chat() {
       const res = await api.askbot({ message: userText, audio }, tts, config);
       res.messages.forEach(m => {
         const bot = state.bots[m.id];
-        bot.history.push({ isHuman: false, message: m.message });
-      });
-
+        bot.history.push({ isHuman: false, message: m.message })
+      })
+  
       reply = {
         type: "bot",
         message: res.message || "",
@@ -261,9 +262,10 @@ export default function Chat() {
         rebuild: res.rebuild,
       };
     }
-
-    setMessages(prev => [...prev, reply])
-
+  
+    const finalMessages = [...updatedMessages, reply]
+    setMessages(finalMessages)
+  
     if (!activeChat) {
       const newChatSession: ChatSession = {
         id: new Date().toISOString(),
@@ -280,15 +282,15 @@ export default function Chat() {
         messages: [...activeChat.messages, humanMsg, reply],
         selectedBots: [...state.selectedBots],
       };
-      setActiveChat(updatedChatWithResponse);
+      setActiveChat(updatedChatWithResponse)
       setChatHistory(prev =>
         prev.map(chat => chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat)
       );
     }
-
+  
     setState({ isSending: false })
   }
-
+  
   const handleAttachFiles = () => {
     const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
       .filter(Boolean)

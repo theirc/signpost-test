@@ -13,6 +13,7 @@ import { api } from "../api/getBots"
 import Markdown from "react-markdown"
 import { useReactMediaRecorder } from "react-media-recorder"
 import { ChatMessage, AI_SCORES } from "@/types/types.ai"
+import AgentJsonView from "./agentview"
 
 const ensureString = (value: any): string => {
   if (value === null || value === undefined) {
@@ -239,17 +240,8 @@ export function BotChatMessage(props: { m: ChatMessage; isWaiting: boolean; rebu
     <div className="flex">
       {!m.isContacts && !m.tts && (
         <div className="bot-message-content">
-          <Markdown
-            components={{
-              a: ({ node, ...props }) => (
-                <a {...props} target="_blank" rel="noopener noreferrer">
-                  {props.children}
-                </a>
-              ),
-            }}
-          >
-       {ensureString(m.message)}
-          </Markdown>
+          <AgentJsonView  data={m.message}
+          />
         </div>
       )}
     </div>
