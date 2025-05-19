@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { Bot } from "@/pages/bots/bots"
 import { supabase } from "@/lib/agents/db"
 import { Json } from "@/lib/agents/supabase"
 
@@ -34,26 +33,15 @@ export function useEntityForm({
     const { selectedTeam } = useTeamStore()
     const [isLoading, setIsLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
-    const [bots, setBots] = useState<Bot[]>([])
     const [categories, setCategories] = useState<ServiceCategory[]>([])
-    const [selectedBot, setSelectedBot] = useState<string>("")
     const [formData, setFormData] = useState(initialFormData)
 
     useEffect(() => {
         const loadData = async () => {
             setIsFetching(true)
-            const [botsResponse, categoriesResponse] = await Promise.all([
-                supabase.from('bots').select('*').eq('team_id', selectedTeam.id).order('created_at', { ascending: false }),
-                supabase.from('service_categories')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-            ])
-
-            if (botsResponse.error) {
-                console.error("Error loading bots:", botsResponse.error)
-            } else {
-                setBots(botsResponse.data)
-            }
+            const categoriesResponse = await supabase.from('service_categories')
+                .select('*')
+                .order('created_at', { ascending: false })
 
             if (categoriesResponse.error) {
                 console.error("Error loading categories:", categoriesResponse.error)
@@ -66,7 +54,6 @@ export function useEntityForm({
                 if (error) {
                     console.error("Error loading entity:", error)
                 } else if (entity) {
-                    setSelectedBot(entity.bot || "")
                     setFormData(entity)
                 }
             }
@@ -78,24 +65,16 @@ export function useEntityForm({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsLoading(true)
-        formData.bots = undefined
         formData.service_categories = undefined
-        formData.bot_name = undefined
         formData.category_name = undefined
         console.log(formData)
 
         try {
             if (id && id !== "new") {
-                const { error } = await updateEntity(id, {
-                    ...formData,
-                    bot: selectedBot
-                }, selectedTeam.id)
+                const { error } = await updateEntity(id, formData, selectedTeam.id)
                 if (error) throw error
             } else {
-                const { error } = await createEntity({
-                    ...formData,
-                    bot: selectedBot
-                }, selectedTeam.id)
+                const { error } = await createEntity(formData, selectedTeam.id)
                 if (error) throw error
             }
             navigate(redirectPath)
@@ -109,10 +88,7 @@ export function useEntityForm({
     return {
         isLoading,
         isFetching,
-        bots,
         categories,
-        selectedBot,
-        setSelectedBot,
         formData,
         setFormData,
         handleSubmit
