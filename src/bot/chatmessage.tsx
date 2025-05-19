@@ -142,10 +142,10 @@ export default function ChatMessageComponent(props: MessageProps) {
           answerContent = ensureString(agentMessage.message);
         }
         
-        const messageForDisplay = answerContent ? {
+        const messageForDisplay = {
           ...agentMessage,
-          message: answerContent,
-        } : null;
+          isAnswer: true,
+        } 
   
 
         return (
