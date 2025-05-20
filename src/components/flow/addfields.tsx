@@ -7,6 +7,7 @@ import { useWorkerContext } from "./hooks"
 import { MultiSelect } from "../ui/multi-select"
 import { Tag, TagInput } from 'emblor'
 import { useRef, useState } from "react"
+import { toast } from "sonner"
 
 export function AddFields(props: React.HtmlHTMLAttributes<HTMLDivElement>) {
   return <div className="w-full px-1 pt-2 -mb-2 flex justify-center" onClick={props.onClick}>
@@ -43,6 +44,10 @@ export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) 
   }
 
   form.onSubmit = data => {
+    if (worker.handlersArray.find(h => h.name === data.name)) {
+      toast("There's already a handler with this name, choose a different name")
+      throw new Error("Handler already exists: " + data.name)
+    }
     const h: NodeIO = {
       name: data.name,
       type: data.type as any,
