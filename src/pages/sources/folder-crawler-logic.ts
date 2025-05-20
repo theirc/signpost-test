@@ -1,5 +1,5 @@
+import { supabase } from "@/lib/agents/db"
 import { ParsedFile } from "@/lib/fileUtilities/use-file-parser"
-import { useSupabase } from "@/hooks/use-supabase"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { useState } from "react"
 
@@ -24,7 +24,6 @@ export function useFolderCrawler(
   onOpenChange: (open: boolean) => void,
   parseFiles: (files: File[]) => Promise<ParsedFile[]>
 ): [FolderCrawlerState, FolderCrawlerActions] {
-  const supabase = useSupabase()
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [files, setFiles] = useState<ParsedFile[]>([])
@@ -103,19 +102,13 @@ export function useFolderCrawler(
       const sourcePromises = files.map(async (source, index) => {
         const name = sourceNames[source.id]?.trim() || source.name
 
-        // Format tags properly for PostgreSQL array
-        const formattedTags = JSON.stringify(['File Upload', ...currentTags, source.name.split('.').pop() || ''])
-          .replace(/"/g, '')
-          .replace('[', '{')
-          .replace(']', '}')
-
         await supabase
           .from('sources')
           .insert([{
             name,
             type: 'File',
             content: source.content,
-            tags: formattedTags,
+            tags: ['File Upload', ...currentTags, source.name.split('.').pop() || ''],
             team_id: selectedTeam.id
           }])
 

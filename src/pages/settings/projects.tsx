@@ -7,14 +7,15 @@ import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Loader2 } from "lucide-react"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 interface Project {
+  created_at: string
+  description: string | null
   id: string
-  name: string
-  createdAt: string
-  teamId: string
-  status: "active" | "archived"
+  name: string | null
+  status: string | null
+  team: string | null
 }
 
 interface Team {
@@ -32,7 +33,7 @@ export function ProjectsSettings() {
 
   const fetchProject = async () => {
     setIsLoading(true)
-    const { data, error } = await useSupabase().from("projects").select("*").eq("team", selectedTeam?.id)
+    const { data, error } = await supabase.from("projects").select("*").eq("team", selectedTeam?.id)
     if (error) {
       console.error('Error fetching projects:', error)
     }

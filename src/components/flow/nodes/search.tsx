@@ -1,4 +1,4 @@
-import { Input, InputTextArea, Row, Select, Slider, useForm } from '@/components/forms'
+import { Input, InputTextArea, Row, Select, Slider, Tags, useForm } from '@/components/forms'
 import { workerRegistry } from '@/lib/agents/registry'
 import { createModel } from '@/lib/data/model'
 import { NodeProps } from '@xyflow/react'
@@ -9,9 +9,9 @@ import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
 import { ConditionHandler } from '../condition'
 import { useEffect, useState } from 'react'
-import { useSupabase } from '@/hooks/use-supabase'
 import { useTeamStore } from '@/lib/hooks/useTeam'
 import { Collection } from '@/pages/knowledge'
+import { supabase } from '@/lib/agents/db'
 
 const { search } = workerRegistry
 
@@ -28,7 +28,7 @@ const model = createModel({
     engine: { title: "Engine", type: "string", list: engineList },
     maxResults: { title: "Max Results", type: "number" },
     distance: { title: "Distance/Similarity Threshold", type: "number" },
-    domain: { title: "Domain (for External Engines)", type: "string" },
+    domain: { title: "Domain (for External Engines)", type: "string[]" },
     collections: { title: "Collections (for Supabase Engine - Multi Needed)", type: "string" }
   }
 })
@@ -75,7 +75,7 @@ export function SearchNode(props: NodeProps) {
 
   useEffect(() => {
     async function loadCollections() {
-      const { data, error } = await useSupabase().from('collections')
+      const { data, error } = await supabase.from('collections')
         .select('*')
         .eq('team_id', selectedTeam.id)
         .order('created_at', { ascending: false })
@@ -94,7 +94,7 @@ export function SearchNode(props: NodeProps) {
       engine: worker.parameters.engine || worker.fields.engine.default || "weaviate",
       maxResults: worker.parameters.maxResults || worker.fields.maxResults.default || 5,
       distance: worker.parameters.distance ?? worker.fields.distance.default ?? 0.3,
-      domain: worker.parameters.domain || worker.fields.domain.default || "",
+      domain: Array.isArray(worker.parameters.domain) ? worker.parameters.domain : worker.parameters.domain ? [worker.parameters.domain] : worker.fields.domain.default || [],
       collections: worker.parameters.collections?.[0] || worker.fields.collections?.default || undefined
     }
   })
@@ -105,7 +105,7 @@ export function SearchNode(props: NodeProps) {
       if (selectedEngine === 'supabase') {
           if (worker.parameters.domain) {
              console.log("[Engine Change] Clearing domain parameter");
-             setValue('domain', ''); 
+             setValue('domain', ['']); 
              worker.parameters.domain = undefined; 
              worker.fields.domain.default = ''; 
           }
@@ -136,7 +136,7 @@ export function SearchNode(props: NodeProps) {
     if (name === "domain" && selectedEngine !== 'supabase') {
       worker.parameters.domain = value.domain
       worker.fields.domain.default = value.domain
-    }
+    } 
     if (name === "collections" && selectedEngine === 'supabase') {
       const selectedCollections = value.collections ? [value.collections] : undefined;
       console.log("[Watch Collections] Setting worker parameters:", selectedCollections);
@@ -179,7 +179,7 @@ export function SearchNode(props: NodeProps) {
           <WorkerLabeledHandle handler={worker.fields.domain} />
           <MemoizedWorker worker={worker}>
             <Row className='pb-2 px-2'>
-              <Input field={m.domain} span={12} hideLabel />
+            <Tags span={12} field={m.domain} required />
             </Row>
           </MemoizedWorker>
         </>

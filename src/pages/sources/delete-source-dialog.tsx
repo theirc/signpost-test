@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { SourceDisplay } from "./types"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 interface DeleteSourceDialogProps {
   source: SourceDisplay | null
@@ -35,7 +35,7 @@ export function DeleteSourceDialog({ source, onClose, onSourceDeleted }: DeleteS
       }
 
       // First, delete any live data elements
-      const { error: elementsError } = await useSupabase()
+      const { error: elementsError } = await supabase
         .from('live_data_elements')
         .delete()
         .eq('source_config_id', source.id)
@@ -47,7 +47,7 @@ export function DeleteSourceDialog({ source, onClose, onSourceDeleted }: DeleteS
       }
 
       // Then, delete any source configs
-      const { error: configError } = await useSupabase()
+      const { error: configError } = await supabase
         .from('source_configs')
         .delete()
         .eq('source', source.id)
@@ -59,7 +59,7 @@ export function DeleteSourceDialog({ source, onClose, onSourceDeleted }: DeleteS
       }
 
       // Finally, delete the source itself
-      const { error: sourceError } = await useSupabase()
+      const { error: sourceError } = await supabase
         .from('sources')
         .delete()
         .eq('id', source.id)

@@ -1,11 +1,10 @@
 import { workerRegistry } from '@/lib/agents/registry'
 import { NodeProps } from '@xyflow/react'
-import { Combine, CreditCard, GitFork, Keyboard, MousePointerClick, Settings, User } from "lucide-react"
+import { Combine } from "lucide-react"
+import { useState, useEffect } from 'react'
 import { NodeHandlers, WorkerLabeledHandle } from '../handles'
 import { useWorker } from '../hooks'
 import { NodeLayout } from './node'
-import { DropdownMenu, DropdownMenuItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger, DropdownMenuGroup } from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
 import { createModel } from '@/lib/data/model'
 import { Row, Select, useForm } from '@/components/forms'
 import { MemoizedWorker } from '../memoizedworkers'
@@ -17,76 +16,195 @@ const list = [
   { label: "Concatenate", value: "concat" },
 ]
 
+// Generate input count options from 1 to 10
+const inputCountOptions = Array.from({ length: 10 }, (_, i) => {
+  const count = i + 1
+  return { label: `${count} Input${count === 1 ? '' : 's'}`, value: count }
+})
+
 const model = createModel({
   fields: {
     mode: { title: "Action", type: "string", list },
+    inputCount: { title: "Number of Inputs", type: "number", list: inputCountOptions },
   }
 })
 
-function Parameters({ worker }: { worker: CombineWorker }) {
-
+function Parameters({ worker, forceUpdate }: { worker: CombineWorker, forceUpdate: () => void }) {
   const { form, m, watch } = useForm(model, {
     values: {
       mode: worker.parameters.mode,
+      inputCount: worker.parameters.inputCount || 2,
     }
   })
 
   watch((value, { name }) => {
     if (name === "mode") worker.parameters.mode = value.mode as any
+    if (name === "inputCount") {
+      const newCount = value.inputCount as number
+      const currentCount = worker.parameters.inputCount || 2
+      
+      // Only update if the count has changed
+      if (newCount !== currentCount) {
+        worker.parameters.inputCount = newCount
+        
+        // Get all existing numbered input handlers (input1, input2, etc.)
+        const existingInputs = Object.entries(worker.fields)
+          .filter(([key]) => /^input\d+$/.test(key))
+          .map(([key]) => key);
+        
+        // Remove input handlers that are no longer needed
+        existingInputs.forEach(inputName => {
+          const inputNum = parseInt(inputName.replace('input', ''));
+          if (inputNum > newCount) {
+            worker.deleteHandler(worker.fields[inputName].id);
+            delete worker.fields[inputName];
+          }
+        });
+        
+        // Add new input handlers if needed
+        for (let i = 1; i <= newCount; i++) {
+          const inputName = `input${i}`
+          if (!worker.fields[inputName]) {
+            worker.addHandler({
+              type: "unknown",
+              direction: "input",
+              title: `Input ${i}`,
+              name: inputName
+            })
+          }
+        }
+        
+        // Force a re-render of the node
+        worker.updateWorker();
+        
+        // Force a re-render of the agent to propagate changes
+        if (app.agent) {
+          app.agent.update();
+        }
+        
+        // Force an immediate React rerender
+        forceUpdate();
+      }
+    }
   })
 
   return <form.context>
     <div className='px-2 nodrag w-full flex-grow flex flex-col'>
-      <Row className='py-4'>
+      <Row className='py-2'>
         <Select field={m.mode} span={12} />
+      </Row>
+      <Row className='py-2'>
+        <Select field={m.inputCount} span={12} />
       </Row>
     </div>
   </form.context>
-
 }
 
 
 export function CombineNode(props: NodeProps) {
   const worker = useWorker(props.id) as CombineWorker
-
-  const type1 = worker.inferType(worker.fields.input1, app.agent)
-  const type2 = worker.inferType(worker.fields.input2, app.agent)
-  const type = type1 == "unknown" ? type2 : type1
-  worker.fields.input1.type = type
-  worker.fields.input2.type = type
-  worker.fields.output.type = type
-
-
-  const { form, m, watch } = useForm(model, {
-    values: {
-      mode: worker.parameters.mode
+  // Add state to force rerenders
+  const [forceUpdate, setForceUpdate] = useState(0)
+  
+  // Initialize inputCount if not set
+  if (!worker.parameters.inputCount) {
+    worker.parameters.inputCount = 2
+  }
+  
+  // Listen for worker updates
+  useEffect(() => {
+    const originalUpdateWorker = worker.updateWorker;
+    
+    // Override the updateWorker method to also trigger our state update
+    worker.updateWorker = function() {
+      originalUpdateWorker.call(worker);
+      setForceUpdate(prev => prev + 1); // Force a rerender
+    };
+    
+    return () => {
+      // Restore original method on cleanup
+      worker.updateWorker = originalUpdateWorker;
+    };
+  }, [worker]);
+  
+  // Get all existing numbered input handlers (input1, input2, etc.)
+  const existingInputs = Object.entries(worker.fields)
+    .filter(([key]) => /^input\d+$/.test(key))
+    .map(([key]) => key);
+  
+  // Remove input handlers that are no longer needed
+  existingInputs.forEach(inputName => {
+    const inputNum = parseInt(inputName.replace('input', ''));
+    if (inputNum > worker.parameters.inputCount) {
+      worker.deleteHandler(worker.fields[inputName].id);
+      delete worker.fields[inputName];
     }
-  })
+  });
+  
+  // Ensure we have all the required input handlers
+  const inputCount = worker.parameters.inputCount
+  for (let i = 1; i <= inputCount; i++) {
+    const inputName = `input${i}`
+    if (!worker.fields[inputName]) {
+      worker.addHandler({
+        type: "unknown",
+        direction: "input",
+        title: `Input ${i}`,
+        name: inputName
+      })
+    }
+  }
 
-  watch((value, { name }) => {
-    if (name === "mode") worker.parameters.mode = value.mode as any
-  })
+  // Infer types from connected inputs
+  let inferredType: IOTypes = "unknown"
+  
+  // Find the first non-unknown type from inputs
+  for (let i = 1; i <= inputCount; i++) {
+    const inputField = worker.fields[`input${i}`]
+    if (inputField) {
+      const fieldType = worker.inferType(inputField, app.agent)
+      if (fieldType !== "unknown") {
+        inferredType = fieldType
+        break
+      }
+    }
+  }
+  
+  // Apply the inferred type to all inputs and output
+  for (let i = 1; i <= inputCount; i++) {
+    const inputField = worker.fields[`input${i}`]
+    if (inputField) {
+      inputField.type = inferredType
+    }
+  }
+  worker.fields.output.type = inferredType
 
-
-  function onSelected(e) {
-    worker.parameters.mode = e
+  // Render all input handles
+  const inputHandles = []
+  for (let i = 1; i <= inputCount; i++) {
+    const inputField = worker.fields[`input${i}`]
+    if (inputField) {
+      inputHandles.push(
+        <WorkerLabeledHandle key={`input-${i}`} handler={inputField} />
+      )
+    }
   }
 
   return <NodeLayout worker={worker}>
-    <WorkerLabeledHandle handler={worker.fields.input1} />
-    <WorkerLabeledHandle handler={worker.fields.input2} />
-
-    <NodeHandlers worker={worker} />
+    {inputHandles}
+    
+    {/* Don't render additional NodeHandlers since we're explicitly rendering our input handles */}
     <WorkerLabeledHandle handler={worker.fields.output} />
 
     <div className='w-full flex'>
       <MemoizedWorker worker={worker}>
-        <Parameters worker={worker} />
+        <Parameters 
+          worker={worker} 
+          forceUpdate={() => setForceUpdate(prev => prev + 1)} 
+        />
       </MemoizedWorker>
     </div>
-
-  </NodeLayout >
+  </NodeLayout>
 }
 
 combine.icon = Combine
-

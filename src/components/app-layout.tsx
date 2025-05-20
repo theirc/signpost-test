@@ -1,8 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { BotManagement } from "@/pages/bots/bots"
-import SystemPrompts from "@/pages/bots/prompts"
 import Chat from "@/pages/chat"
 import { CustomView } from "@/pages/evaluation/custom-view"
 import { LogForm } from "@/pages/evaluation/log"
@@ -25,7 +23,6 @@ import { UserForm } from "@/pages/settings/user"
 import Sources from "@/pages/sources"
 import { Routes, Route, useLocation, useNavigate, useMatch } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
-import { BotForm } from "@/pages/bots/bot-form"
 import React from 'react';
 import { app } from "@/lib/app"
 import { UsersSettings } from "@/pages/settings/users"
@@ -41,8 +38,6 @@ const routeNames: Record<string, string> = {
   '/logs': 'Evaluation / Logs',
   '/scores': 'Evaluation / Scores',
   '/customview': 'Evaluation / Custom View',
-  '/bots': 'Bots',
-  '/bots/prompts': 'System Prompts',
   '/agent/:id': 'Agent Details',
   '/settings/projects': 'Settings / Projects',
   '/settings/teams': 'Settings / Teams',
@@ -119,28 +114,6 @@ export function AppLayout() {
                 <Route path="/customview" element={
                   <ProtectedRoute resource="scores" action="read">
                     <CustomView />
-                  </ProtectedRoute>
-                } />
-                <Route path="/bots" element={
-                  <ProtectedRoute resource="bots" action="read">
-                    <BotManagement />
-                  </ProtectedRoute>
-                } />
-                <Route path="/bots/new" element={
-                  <ProtectedRoute resource="bots" action="create">
-                    <BotForm/>
-                  </ProtectedRoute>
-                }
-                />
-                <Route path="/bots/:id" element={
-                  <ProtectedRoute resource="bots" action="update">
-                    <BotForm/>
-                  </ProtectedRoute>
-                }
-                />
-                <Route path="/bots/prompts" element={
-                  <ProtectedRoute resource="prompts" action="update">
-                    <SystemPrompts />
                   </ProtectedRoute>
                 } />
                 <Route path="/agent/:id" element={

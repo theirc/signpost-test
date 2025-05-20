@@ -1,7 +1,7 @@
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar"
-import { Bot, MessagesSquare, Book, Settings2, Logs, Plus, Network, Search } from "lucide-react"
+import { MessagesSquare, Book, Settings2, Logs, Plus, Network, Search } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useEffect, useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Team, User } from "@/pages/settings/teams"
-import { useSupabase } from "@/hooks/use-supabase"
 import { getCurrentUser } from "@/lib/hooks/useUser"
+import { supabase } from "@/lib/agents/db"
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -34,7 +34,7 @@ export function AppSidebar() {
         }
         setUser(userData)
 
-        const { data, error } = await useSupabase().from('teams')
+        const { data, error } = await supabase.from('teams')
         .select(`
           *,
           user_teams!inner(user_id)
@@ -76,16 +76,6 @@ export function AppSidebar() {
   }
 
   const navItems = [
-    {
-      title: "Bots",
-      url: "#",
-      icon: Bot,
-      items: [
-        { title: "All Bots", url: "/bots", permission: "bots" },
-        { title: "System Prompts", url: "/bots/prompts", permission: "prompts" },
-      ],
-      show: !permissionsLoading && (canRead("bots") || canRead("prompts"))
-    },
     {
       title: "Playground",
       url: "/playground",

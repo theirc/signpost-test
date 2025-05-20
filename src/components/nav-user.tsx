@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage, } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, } from "@/components/ui/sidebar"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 import { User } from "@/pages/settings/teams"
 import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles, } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -56,7 +56,7 @@ export function NavUser({ user }: { user: User }) {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => {
-            useSupabase().auth.signOut()
+            supabase.auth.signOut()
             navigate('/login', { replace: true })
           }}>
             <LogOut />

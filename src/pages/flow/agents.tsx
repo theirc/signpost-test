@@ -17,7 +17,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction
 } from "@/components/ui/alert-dialog"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export function AgentList() {
   const navigate = useNavigate()
@@ -32,7 +32,7 @@ export function AgentList() {
       return
     }
     try {
-      const { data, error } = await useSupabase()
+      const { data, error } = await supabase
         .from('agents')
         .select("*")
         .eq('team_id', selectedTeam.id)
@@ -63,7 +63,7 @@ export function AgentList() {
         title: `${agentData.title} (Copy)`,
         team_id: selectedTeam.id,
       }
-      const { data: newAgent, error } = await useSupabase()
+      const { data: newAgent, error } = await supabase
         .from('agents')
         .insert([newAgentPayload])
         .select()
@@ -101,7 +101,7 @@ export function AgentList() {
   const confirmDelete = async () => {
     if (!agentToDelete) return
     try {
-      const { error } = await useSupabase()
+      const { error } = await supabase
         .from('agents')
         .delete()
         .eq('id', agentToDelete.id)

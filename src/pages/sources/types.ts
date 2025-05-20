@@ -1,4 +1,5 @@
-import { LiveDataElement, Source } from '../knowledge'
+import { Source } from '../knowledge'
+import { LiveDataElement } from '@/types/common'
 
 export type Tag = { 
   id: string
@@ -30,4 +31,4 @@ export type SourceDisplay = {
   tags: string[]
 }
 
-export type { Source, LiveDataElement } 
+export type { Source, LiveDataElement }

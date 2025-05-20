@@ -7,7 +7,7 @@ import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
 import { User } from "./teams"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 export function UsersSettings() {
     const navigate = useNavigate()
@@ -17,7 +17,7 @@ export function UsersSettings() {
 
     const fetchUser = async () => {
         setIsLoading(true)
-        const { data, error } = await useSupabase().from("users").select(`
+        const { data, error } = await supabase.from("users").select(`
             *,
             roles(name)
           `)
@@ -33,14 +33,13 @@ export function UsersSettings() {
 
         const usersWithTeams = await Promise.all(
             transformedData.map(async (user) => {
-                const { data: teamsData } = await useSupabase().from("user_teams").select(`
-                    *,
-                    user_teams!inner(user_id)
-                  `)
-                    .eq('user_teams.user_id', user.id)
+                const { data: teamsData } = await supabase.from("user_teams").select(`
+                    teams!inner(*)
+                `)
+                    .eq('user_id', user.id)
                 return {
                     ...user,
-                    teams: teamsData || []
+                    teams: teamsData?.map(team => team.teams) || []
                 }
             })
         )
@@ -49,7 +48,7 @@ export function UsersSettings() {
             ...user,
             created_at: user.created_at || new Date().toISOString()
         }))
-        setUsers(formattedUsers)
+        setUsers(formattedUsers as unknown as User[] || [])
         setIsLoading(false)
     }
 

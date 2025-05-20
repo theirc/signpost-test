@@ -33,6 +33,7 @@ export function createAgent(config: AgentConfig) {
     set title(v: string) { config.title = v },
     edges,
     workers,
+    displayData: false,
 
     type: "data" as AgentTypes,
     description: "",

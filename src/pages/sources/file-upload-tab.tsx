@@ -7,7 +7,7 @@ import { useFileParser, ParsedFile } from "@/lib/fileUtilities/use-file-parser"
 import { SourceNameEditor } from "./components/source-name-editor"
 import { TagManager } from "./components/tag-manager"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 
 interface FileUploadTabProps {
   onSourcesUpdated: () => void
@@ -16,7 +16,6 @@ interface FileUploadTabProps {
 
 export function FileUploadTab({ onSourcesUpdated, onOpenChange }: FileUploadTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const supabase = useSupabase()
   const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser()
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -97,19 +96,13 @@ export function FileUploadTab({ onSourcesUpdated, onOpenChange }: FileUploadTabP
       const sourcePromises = files.map(async (source, index) => {
         const name = sourceNames[source.id]?.trim() || source.name
 
-        // Format tags properly for PostgreSQL array
-        const formattedTags = JSON.stringify(['File Upload', ...currentTags, source.name.split('.').pop() || ''])
-          .replace(/"/g, '')
-          .replace('[', '{')
-          .replace(']', '}')
-
         await supabase
           .from('sources')
           .insert([{
             name,
             type: 'File',
             content: source.content,
-            tags: formattedTags,
+            tags: ['File Upload', ...currentTags, source.name.split('.').pop() || ''],
             team_id: selectedTeam.id
           }])
 

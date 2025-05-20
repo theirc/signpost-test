@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import CustomTable from "@/components/ui/custom-table"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { ChevronDown, Loader2, UserPlus } from "lucide-react"
@@ -51,7 +51,7 @@ export function TeamSettings() {
 
   const fetchTeam = async () => {
     setIsLoading(true)
-    const { data: teamsData, error: teamsError } = await useSupabase().from("teams").select("*")
+    const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*")
     if (teamsError) {
       console.error('Error fetching teams:', teamsError)
       return
@@ -59,7 +59,7 @@ export function TeamSettings() {
 
     const teamsWithUsers = await Promise.all(
       teamsData.map(async (team) => {
-        const { data } = await useSupabase().from("users").select(`
+        const { data } = await supabase.from("users").select(`
           *,
           user_teams!inner(team_id),
           roles:role (*)
@@ -77,7 +77,7 @@ export function TeamSettings() {
       })
     )
 
-    setTeams(teamsWithUsers)
+    setTeams(teamsWithUsers as unknown as TeamWithUsers[])
     setIsLoading(false)
   }
 

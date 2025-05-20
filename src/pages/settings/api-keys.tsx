@@ -7,7 +7,7 @@ import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useSupabase } from "@/hooks/use-supabase"
+import { supabase } from "@/lib/agents/db"
 export interface ApiKey {
     id: string
     key?: string
@@ -26,7 +26,7 @@ export function ApiKeysSettings() {
 
     const fetchApiKey = async () => {
         setIsLoading(true)
-        const { data, error } = await useSupabase().from("api_keys").select("*").eq("team_id", selectedTeam?.id)
+        const { data, error } = await supabase.from("api_keys").select("*").eq("team_id", selectedTeam?.id)
         if (error) {
             console.error('Error fetching api keys:', error)
         }
