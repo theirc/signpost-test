@@ -121,34 +121,35 @@ export default function Chat() {
   const handleLoadChatHistory = (chatSession: ChatSession) => {
     setIsLoadingFromHistory(true)
     setActiveChat(chatSession)
-
+  
     setTimeout(() => {
-      if (chatSession.messages && chatSession.messages.length > 0) {
-        setMessages([...chatSession.messages])
-      } else {
-        setMessages([])
-      }
+      const messages = chatSession.messages || []
+      setMessages(messages)
+  
+      const selectedBots = chatSession.selectedBots || []
+  
+      const updatedBots = { ...state.bots }
 
-      if (chatSession.selectedBots && chatSession.selectedBots.length > 0) {
-        setState({ selectedBots: [...chatSession.selectedBots] })
-      } else if (chatSession.botName) {
+selectedBots.forEach(botId => {
+  const bot = updatedBots[botId]
+  if (bot?.type === "agent") {
+    bot.history = messages.map(m => ({
+      isHuman: m.type === "human",
+      message: m.message
+    }))
+  }
+})
 
-        const botEntry = Object.entries(state.bots).find(
-          ([_, bot]) => bot.name === chatSession.botName
-        )
-
-        if (botEntry) {
-          const botId = Number(botEntry[0])
-          setState({ selectedBots: [botId] })
-        }
-      }
-
+setState({
+  selectedBots,
+  bots: updatedBots
+})
+  
       setMessage(prev => prev + "")
       setIsLoadingFromHistory(false)
     }, 50)
   }
-
-
+  
   function toggleBot(id: number) {
     const next = state.selectedBots.includes(id)
       ? state.selectedBots.filter(x => x !== id)
@@ -208,29 +209,48 @@ export default function Chat() {
     const selected = state.selectedBots.map(id => state.bots[id])
     let reply: ChatMessage
   
-    const agentEntry = selected.find(b => b.type === "agent");
+    const agentEntry = selected.find(b => b.type === "agent")
     if (agentEntry) {
       const worker = await agents.loadAgent(Number(agentEntry.id))
-  
-      const historyText = updatedMessages
-      .map(m => {
-        if (m.type === "human") {
-          return `User: ${m.message}`
-        }
-        return ""
-      })
-      .join("\n\n")
-  
-      const parameters: AgentParameters = {
-        input: { question: historyText },
-        apikeys: app.getAPIkeys(),
-      };
-  
+    
+      const newHumanMessage = {
+        isHuman: true,
+        message: userText || "",
+      }
+      agentEntry.history.push(newHumanMessage)
+
+
+    
+  const ensureString = (value: any): string => {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+const historyText = agentEntry.history.map(m =>
+  `${m.isHuman ? "User" : "Assistant"}: ${ensureString(m.message)}`
+).join("\n\n")
+    
+  const parameters: AgentParameters = {
+  input: { question: historyText },
+  apikeys: app.getAPIkeys(),
+    }
+    
+      console.log("AGENT INPUT", parameters.input.question)
+    
       await worker.execute(parameters);
+    
       const outputText = parameters.output as string;
-  
-      agentEntry.history.push({ isHuman: false, message: outputText })
-  
+    
+      agentEntry.history.push({
+        isHuman: false,
+        message: outputText,
+      });
+    
       reply = {
         type: "bot",
         message: outputText,
@@ -241,8 +261,9 @@ export default function Chat() {
           needsRebuild: false,
         }],
         needsRebuild: false,
-      };
-    } else {
+      }
+    }
+     else {
       const config = selected.map(b => ({
         label: b.name,
         value: Number(b.id),
