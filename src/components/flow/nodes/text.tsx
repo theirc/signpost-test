@@ -57,12 +57,17 @@ function Parameters({ worker }: { worker: TextWorker }) {
     }
   })
 
-  watch((value, { name, type }) => {
-    if (name === "output") worker.parameters.text = value.output
-    if (name === "numberValue") worker.parameters.numberValue = value.numberValue
-    if (name === "contentType") worker.parameters.contentType = value.contentType as any
-    update()
-  })
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "output") worker.parameters.text = value.output
+      if (name === "numberValue") worker.parameters.numberValue = value.numberValue
+      if (name === "contentType") {
+        worker.parameters.contentType = value.contentType as any
+        update() // Force re-render when content type changes
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [watch, worker.parameters, update])
 
   const contentType = worker.parameters.contentType
 
