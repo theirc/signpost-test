@@ -2,30 +2,31 @@
 const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
-import { api } from '@/api/getBots'
 import { app } from '@/lib/app'
 import { MessageSquarePlus, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
-import { BotEntry, useAllBots } from '@/hooks/use-all-bots'
-import { Comm } from '../bot/comm'
-import { ChatHistory, ChatSession } from '@/bot/history'
+import { ChatHistory, ChatSession } from '@/pages/playground/history'
 import type { ChatMessage } from '@/types/types.ai'
-import { SearchInput } from "@/bot/search"
+import { SearchInput } from "@/pages/playground/search"
 import { agents } from "@/lib/agents"
-import { availableSources } from "@/pages/sources/files-modal"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup,
-  DropdownMenuSeparator, DropdownMenuCheckboxItem,
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup, DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu"
-import ChatMessageComponent from "@/bot/chatmessage"
+import ChatMessageComponent from "@/pages/playground/chatmessage"
 import "../index.css"
+import { agentsModel } from "@/lib/data"
 
+interface BotEntry {
+  id: string
+  name: string
+  history: any[]
+  type: "agent"
+}
 
 export const isImageUrl = (url: string | undefined | null): boolean => {
   if (!url) return false;
-  return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+  return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)
 };
 
 export const parseMarkdownImage = (text: string | undefined | null): { imageUrl: string | null; remainingText: string | null } => {
@@ -46,17 +47,41 @@ export const parseMarkdownImage = (text: string | undefined | null): { imageUrl:
 }
 
 export default function Chat() {
-  const { bots, loading, error } = useAllBots()
+  const [bots, setBots] = useState<Record<number, BotEntry>>({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(false)
-  const [showFileDialog, setShowFileDialog] = useState(false)
-  const [selectedSources, setSelectedSources] = useState<string[]>([])
-  const [sources, setSources] = useState(availableSources)
   const [message, setMessage] = useState("")
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadAgents() {
+      try {
+        const { data: adata, error: aerr } = await agentsModel.data.select("id, title")
+        if (aerr) throw aerr
+
+        const agentBots = (adata || []).reduce<Record<number, BotEntry>>((acc, a) => {
+          acc[a.id] = { id: String(a.id), name: a.title, history: [], type: "agent" }
+          return acc
+        }, {})
+
+        if (mounted) setBots(agentBots)
+      } catch (err: any) {
+        if (mounted) setError(err)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    loadAgents()
+    return () => { mounted = false }
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -65,7 +90,6 @@ export default function Chat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
-
 
   const [state, setState] = useMultiState({
     isSending: false,
@@ -93,11 +117,6 @@ export default function Chat() {
     }
   }, [loading, error, bots, setState])
 
-
-  useEffect(() => {
-    setSources(availableSources)
-  }, [availableSources])
-
   const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -117,39 +136,38 @@ export default function Chat() {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
   }, [chatHistory])
 
-
   const handleLoadChatHistory = (chatSession: ChatSession) => {
     setIsLoadingFromHistory(true)
     setActiveChat(chatSession)
-  
+
     setTimeout(() => {
       const messages = chatSession.messages || []
       setMessages(messages)
-  
+
       const selectedBots = chatSession.selectedBots || []
-  
+
       const updatedBots = { ...state.bots }
 
-selectedBots.forEach(botId => {
-  const bot = updatedBots[botId]
-  if (bot?.type === "agent") {
-    bot.history = messages.map(m => ({
-      isHuman: m.type === "human",
-      message: m.message
-    }))
-  }
-})
+      selectedBots.forEach(botId => {
+        const bot = updatedBots[botId]
+        if (bot) {
+          bot.history = messages.map(m => ({
+            isHuman: m.type === "human",
+            message: m.message
+          }))
+        }
+      })
 
-setState({
-  selectedBots,
-  bots: updatedBots
-})
-  
+      setState({
+        selectedBots,
+        bots: updatedBots
+      })
+
       setMessage(prev => prev + "")
       setIsLoadingFromHistory(false)
     }, 50)
   }
-  
+
   function toggleBot(id: number) {
     const next = state.selectedBots.includes(id)
       ? state.selectedBots.filter(x => x !== id)
@@ -162,7 +180,7 @@ setState({
   const label =
     state.selectedBots.length > 0
       ? state.selectedBots.map(id => state.bots[id].name).join(", ")
-      : "Select Bots & Agents…"
+      : "Select Agent"
 
   const onSelectBot = (e: string[] | string) => {
     console.log("Selecting bot:", e)
@@ -194,6 +212,7 @@ setState({
       setActiveChat(null)
     }
   }
+
   async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
     if (!userText && !audio) return;
     setState({ isSending: true })
@@ -201,56 +220,54 @@ setState({
       type: "human",
       message: userText || "",
     };
-  
+
     const updatedMessages = [...messages, humanMsg]
-  
+
     setMessages(updatedMessages)
-  
+
     const selected = state.selectedBots.map(id => state.bots[id])
     let reply: ChatMessage
-  
+
     const agentEntry = selected.find(b => b.type === "agent")
     if (agentEntry) {
       const worker = await agents.loadAgent(Number(agentEntry.id))
-    
+
       const newHumanMessage = {
         isHuman: true,
         message: userText || "",
       }
       agentEntry.history.push(newHumanMessage)
 
+      const ensureString = (value: any): string => {
+        if (value == null) return "";
+        if (typeof value === "string") return value;
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return String(value);
+        }
+      }
 
-    
-  const ensureString = (value: any): string => {
-  if (value == null) return "";
-  if (typeof value === "string") return value;
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
+      const historyText = agentEntry.history.map(m =>
+        `${m.isHuman ? "User" : "Assistant"}: ${ensureString(m.message)}`
+      ).join("\n\n")
 
-const historyText = agentEntry.history.map(m =>
-  `${m.isHuman ? "User" : "Assistant"}: ${ensureString(m.message)}`
-).join("\n\n")
-    
-  const parameters: AgentParameters = {
-  input: { question: historyText },
-  apikeys: app.getAPIkeys(),
-    }
-    
+      const parameters: AgentParameters = {
+        input: { question: historyText },
+        apikeys: app.getAPIkeys(),
+      }
+
       console.log("AGENT INPUT", parameters.input.question)
-    
+
       await worker.execute(parameters);
-    
+
       const outputText = parameters.output as string;
-    
+
       agentEntry.history.push({
         isHuman: false,
         message: outputText,
       });
-    
+
       reply = {
         type: "bot",
         message: outputText,
@@ -262,31 +279,18 @@ const historyText = agentEntry.history.map(m =>
         }],
         needsRebuild: false,
       }
-    }
-     else {
-      const config = selected.map(b => ({
-        label: b.name,
-        value: Number(b.id),
-        history: b.history,
-      }));
-      const res = await api.askbot({ message: userText, audio }, tts, config);
-      res.messages.forEach(m => {
-        const bot = state.bots[m.id];
-        bot.history.push({ isHuman: false, message: m.message })
-      })
-  
+    } else {
       reply = {
         type: "bot",
-        message: res.message || "",
-        messages: res.messages || [],
-        needsRebuild: res.needsRebuild || false,
-        rebuild: res.rebuild,
+        message: "No agent selected",
+        messages: [],
+        needsRebuild: false,
       };
     }
-  
+
     const finalMessages = [...updatedMessages, reply]
     setMessages(finalMessages)
-  
+
     if (!activeChat) {
       const newChatSession: ChatSession = {
         id: new Date().toISOString(),
@@ -308,30 +312,8 @@ const historyText = agentEntry.history.map(m =>
         prev.map(chat => chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat)
       );
     }
-  
+
     setState({ isSending: false })
-  }
-  
-  const handleAttachFiles = () => {
-    const selectedContent = selectedSources.map(id => sources.find(source => source.id === id))
-      .filter(Boolean)
-      .map(source => `<h2>${source?.name}</h2>\n${source?.content}`)
-      .join('\n\n')
-
-    if (selectedContent) {
-      setMessage(prevMessage => prevMessage + '\n\n' + selectedContent)
-    }
-    setShowFileDialog(false)
-    setSelectedSources([])
-  }
-
-  function onModeChanged() {
-    setState({ audioMode: !state.audioMode })
-  }
-
-  function onExitAudioMode() {
-    setState({ audioMode: false })
-    console.log("Exiting audio mode")
   }
 
   const hasSelectedBots = state.selectedBots.length > 0
@@ -352,24 +334,8 @@ const historyText = agentEntry.history.map(m =>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-60 max-h-60 overflow-y-auto p-1">
                     <DropdownMenuGroup>
-                      <DropdownMenuLabel>Bots</DropdownMenuLabel>
-                      {Object.entries(state.bots)
-                        .filter(([, b]) => b.type === "api")
-                        .map(([key, b]) => (
-                          <DropdownMenuCheckboxItem
-                            key={key}
-                            checked={state.selectedBots.includes(Number(key))}
-                            onCheckedChange={() => toggleBot(Number(key))}
-                          >
-                            {b.name}
-                          </DropdownMenuCheckboxItem>
-                        ))}
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
                       <DropdownMenuLabel>Agents</DropdownMenuLabel>
                       {Object.entries(state.bots)
-                        .filter(([, b]) => b.type === "agent")
                         .map(([key, b]) => (
                           <DropdownMenuCheckboxItem
                             key={key}
@@ -398,74 +364,59 @@ const historyText = agentEntry.history.map(m =>
             className="flex-1 overflow-y-auto min-h-0"
           >
             <div className="p-4 space-y-4">
-              {!state.audioMode && (
-                <div className="flex flex-col space-y-6 w-full">
-                  {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full min-h-[65vh]">
-                      <h1
-                        className="text-4xl font-bold text-center text-transparent bg-clip-text gradient-text-animation slide-reveal-greeting"
-                        style={{
-                          backgroundImage: 'linear-gradient(to right, #6286F7, #EA5850)',
-                        }}
-                      >
-                        Hello, how can I help you?
-                      </h1>
+              <div className="flex flex-col space-y-6 w-full">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full min-h-[65vh]">
+                    <h1
+                      className="text-4xl font-bold text-center text-transparent bg-clip-text gradient-text-animation slide-reveal-greeting"
+                      style={{
+                        backgroundImage: 'linear-gradient(to right, #6286F7, #EA5850)',
+                      }}
+                    >
+                      Hello, how can I help you?
+                    </h1>
+                  </div>
+                ) : (
+                  messages.map((m, i) => (
+                    <ChatMessageComponent
+                      key={m.id || i}
+                      message={m}
+                      isWaiting={state.isSending && i === messages.length - 1}
+                      isLoadingFromHistory={isLoadingFromHistory}
+                    />
+                  ))
+                )}
+                {state.isSending && (
+                  <div className="flex justify-start w-fit">
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
+                      <div className="w-1.5 h-1.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
+                      <div className="w-1.5 h-1.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
                     </div>
-                  ) : (
-                    messages.map((m, i) => (
-                      <ChatMessageComponent
-                        key={m.id || i}
-                        message={m}
-                        isWaiting={state.isSending && i === messages.length - 1}
-                        isLoadingFromHistory={isLoadingFromHistory}
-                      />
-                    ))
-                  )}
-                  {state.isSending && (
-                    <div className="flex justify-start w-fit">
-                      <div className="flex gap-1">
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-1 bg-gradient-to-r from-pink-500 to-violet-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-2 bg-gradient-to-r from-violet-500 to-cyan-500"></div>
-                        <div className="w-1.5 h-1.5 rounded-full animate-typing-3 bg-gradient-to-r from-cyan-500 to-pink-500"></div>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-              {state.audioMode && hasSelectedBots && (
-                <Comm
-                  bot={state.selectedBots[0]}
-                  onExit={onExitAudioMode}
-                />
-              )}
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
           </div>
-          {!state.audioMode && (
-            <div className="bg-white pb-4 pt-2 px-4 flex-shrink-0 border-t">
-              {hasSelectedBots ? (
-                <>
-                  <SearchInput
-                    onSearch={onSend}
-                    disabled={state.isSending}
-                    openFileDialog={() => setShowFileDialog(true)}
-                    audioMode={state.audioMode}
-                    onModeChanged={onModeChanged}
-                  />
-                  <p className="text-xs text-gray-500 text-center mt-2">
-                    Signpost AI is experimental. Please validate results.
-                  </p>
-                </>
-              ) : (
-                <div className="flex justify-center items-center py-4 text-gray-500">
-                  Select a bot to start chatting
-                </div>
-              )}
-            </div>
-          )}
+          <div className="bg-white pb-4 pt-2 px-4 flex-shrink-0 border-t">
+            {hasSelectedBots ? (
+              <>
+                <SearchInput
+                  onSearch={onSend}
+                  disabled={state.isSending}
+                />
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Signpost AI is experimental. Please validate results.
+                </p>
+              </>
+            ) : (
+              <div className="flex justify-center items-center py-4 text-gray-500">
+                Select an agent to start chatting
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Sidebar */}
         <div className={`flex-shrink-0 flex flex-col transition-all duration-300 border-l ${sidebarVisible ? 'w-1/4' : 'w-0 overflow-hidden border-none'
           }`}>
           <div className="py-4 flex justify-between items-center bg-white px-4 flex-shrink-0">
@@ -494,31 +445,6 @@ const historyText = agentEntry.history.map(m =>
           </div>
         </div>
       </div>
-
-      {/* File Dialog */}
-      <Dialog open={showFileDialog} onOpenChange={setShowFileDialog}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Attach Files</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4">
-            <div className="flex justify-end mt-4 gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowFileDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAttachFiles}
-                disabled={selectedSources.length === 0}
-              >
-                Attach Selected
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
