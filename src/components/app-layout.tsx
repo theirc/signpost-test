@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import Chat from "@/pages/chat"
+import Chat from "@/pages/playground"
 import { CustomView } from "@/pages/evaluation/custom-view"
 import { LogForm } from "@/pages/evaluation/log"
 import { BotLogsTable } from "@/pages/evaluation/logs"
@@ -64,135 +64,135 @@ export function AppLayout() {
   const isAgentRoute = useMatch("/agent/:id");
 
   return (
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <HeaderControls isAgentRoute={!!isAgentRoute} />
-          <div className="flex flex-1 flex-col rounded-xl bg-background border border-border overflo">
-            <div className={`flex-1 ${isAgentRoute ? '' : ''} `}>
-              <Routes>
-                <Route path="/" element={
-                  <ProtectedRoute resource="agents" action="read">
-                    <AgentList />
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <HeaderControls isAgentRoute={!!isAgentRoute} />
+        <div className="flex flex-1 flex-col rounded-xl bg-background border border-border overflo">
+          <div className={`flex-1 ${isAgentRoute ? '' : ''} `}>
+            <Routes>
+              <Route path="/" element={
+                <ProtectedRoute resource="agents" action="read">
+                  <AgentList />
+                </ProtectedRoute>
+              } />
+              <Route path="/playground" element={
+                <ProtectedRoute resource="playground" action="read">
+                  <Chat />
+                </ProtectedRoute>
+              } />
+              <Route path="/collections" element={
+                <ProtectedRoute resource="collections" action="read">
+                  <CollectionsManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/sources" element={
+                <ProtectedRoute resource="sources" action="read">
+                  <Sources />
+                </ProtectedRoute>
+              } />
+              <Route path="/logs" element={
+                <ProtectedRoute resource="logs" action="read">
+                  <BotLogsTable />
+                </ProtectedRoute>
+              } />
+              <Route path="/logs/:id" element={
+                <ProtectedRoute resource="logs" action="update">
+                  <LogForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/scores" element={
+                <ProtectedRoute resource="scores" action="read">
+                  <BotScoresTable />
+                </ProtectedRoute>
+              } />
+              <Route path="/scores/:id" element={
+                <ProtectedRoute resource="scores" action="update">
+                  <ScoreForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/customview" element={
+                <ProtectedRoute resource="scores" action="read">
+                  <CustomView />
+                </ProtectedRoute>
+              } />
+              <Route path="/agent/:id" element={
+                <ProtectedRoute resource="agents" action="update">
+                  <Agent />
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={<SettingsLayout />}>
+                <Route path="projects" element={
+                  <ProtectedRoute resource="projects" action="read">
+                    <ProjectsSettings />
                   </ProtectedRoute>
                 } />
-                <Route path="/playground" element={
-                  <ProtectedRoute resource="playground" action="read">
-                    <Chat />
+                <Route path="teams" element={
+                  <ProtectedRoute resource="teams" action="read">
+                    <TeamSettings />
                   </ProtectedRoute>
                 } />
-                <Route path="/collections" element={
-                  <ProtectedRoute resource="collections" action="read">
-                    <CollectionsManagement />
+                <Route path="billing" element={
+                  <ProtectedRoute resource="billing" action="read">
+                    <BillingSettings />
                   </ProtectedRoute>
                 } />
-                <Route path="/sources" element={
-                  <ProtectedRoute resource="sources" action="read">
-                    <Sources />
+                <Route path="usage" element={
+                  <ProtectedRoute resource="usage" action="read">
+                    <UsageSettings />
                   </ProtectedRoute>
                 } />
-                <Route path="/logs" element={
-                  <ProtectedRoute resource="logs" action="read">
-                    <BotLogsTable />
+                <Route path="roles" element={
+                  <ProtectedRoute resource="roles" action="read">
+                    <AccessControlSettings />
                   </ProtectedRoute>
                 } />
-                <Route path="/logs/:id" element={
-                  <ProtectedRoute resource="logs" action="update">
-                    <LogForm />
+                <Route path="roles/:id" element={
+                  <ProtectedRoute resource="roles" action="update">
+                    <RoleForm />
                   </ProtectedRoute>
                 } />
-                <Route path="/scores" element={
-                  <ProtectedRoute resource="scores" action="read">
-                    <BotScoresTable />
+                <Route path="teams/:id" element={
+                  <ProtectedRoute resource="teams" action="update">
+                    <TeamForm />
                   </ProtectedRoute>
                 } />
-                <Route path="/scores/:id" element={
-                  <ProtectedRoute resource="scores" action="update">
-                    <ScoreForm />
+                <Route path="teams/members/:id" element={
+                  <ProtectedRoute resource="teams" action="update">
+                    <AddTeamMembers />
                   </ProtectedRoute>
                 } />
-                <Route path="/customview" element={
-                  <ProtectedRoute resource="scores" action="read">
-                    <CustomView />
+                <Route path="users" element={
+                  <ProtectedRoute resource="users" action="read">
+                    <UsersSettings />
                   </ProtectedRoute>
                 } />
-                <Route path="/agent/:id" element={
-                  <ProtectedRoute resource="agents" action="update">
-                    <Agent />
+                <Route path="users/:id" element={
+                  <ProtectedRoute resource="users" action="update">
+                    <UserForm />
                   </ProtectedRoute>
                 } />
-                <Route path="/settings" element={<SettingsLayout />}>
-                  <Route path="projects" element={
-                    <ProtectedRoute resource="projects" action="read">
-                      <ProjectsSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="teams" element={
-                    <ProtectedRoute resource="teams" action="read">
-                      <TeamSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="billing" element={
-                    <ProtectedRoute resource="billing" action="read">
-                      <BillingSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="usage" element={
-                    <ProtectedRoute resource="usage" action="read">
-                      <UsageSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="roles" element={
-                    <ProtectedRoute resource="roles" action="read">
-                      <AccessControlSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="roles/:id" element={
-                    <ProtectedRoute resource="roles" action="update">
-                      <RoleForm />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="teams/:id" element={
-                    <ProtectedRoute resource="teams" action="update">
-                      <TeamForm />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="teams/members/:id" element={
-                    <ProtectedRoute resource="teams" action="update">
-                      <AddTeamMembers />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="users" element={
-                    <ProtectedRoute resource="users" action="read">
-                      <UsersSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="users/:id" element={
-                    <ProtectedRoute resource="users" action="update">
-                      <UserForm />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="projects/:id" element={
-                    <ProtectedRoute resource="projects" action="update">
-                      <ProjectForm />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="apikeys" element={
-                    <ProtectedRoute resource="apikeys" action="read">
-                      <ApiKeysSettings />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="apikeys/:id" element={
-                    <ProtectedRoute resource="apikeys" action="update">
-                      <ApiKeyView />
-                    </ProtectedRoute>
-                  } />
-                </Route>
-              </Routes>
-            </div>
+                <Route path="projects/:id" element={
+                  <ProtectedRoute resource="projects" action="update">
+                    <ProjectForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="apikeys" element={
+                  <ProtectedRoute resource="apikeys" action="read">
+                    <ApiKeysSettings />
+                  </ProtectedRoute>
+                } />
+                <Route path="apikeys/:id" element={
+                  <ProtectedRoute resource="apikeys" action="update">
+                    <ApiKeyView />
+                  </ProtectedRoute>
+                } />
+              </Route>
+            </Routes>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 

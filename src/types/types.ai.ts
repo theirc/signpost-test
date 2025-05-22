@@ -47,21 +47,3 @@ export interface ChatMessage {
   tts?: boolean
 }
 
-export type AI_SCORES = "pass" | "fail" | "redflag"
-
-export interface BotQualification {
-  id: number
-  score?: AI_SCORES
-  reporter?: string
-  result?: string
-  question?: string
-  answer?: string
-  failtype?: string[]
-  qualitymetrics?: string[]
-  prompttype?: string
-  moderatorresponse?: string
-  traumametrics?: number
-  clientmetrics?: number
-  safetymetric?: string
-  logid?: string
-}

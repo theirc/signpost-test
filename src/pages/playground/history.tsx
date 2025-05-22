@@ -22,7 +22,6 @@ interface ChatHistoryProps {
 export function ChatHistory({ setActiveChat, onSelectBot, bots, chatHistory }: ChatHistoryProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredHistory, setFilteredHistory] = useState(chatHistory)
-  const [isSearching, setIsSearching] = useState(false)
 
   useEffect(() => {
     if (!searchQuery.trim()) {
