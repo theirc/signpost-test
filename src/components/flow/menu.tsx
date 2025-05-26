@@ -127,6 +127,7 @@ export function Toolbar(props: Props) {
 
     const p: AgentParameters = {
       debug: true,
+      uid: "ab8d4317-3276-420b-8e4b-f7d88f4f4e6f",
       input: {},
       apikeys: app.getAPIkeys(),
     }

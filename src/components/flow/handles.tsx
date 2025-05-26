@@ -89,6 +89,9 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
     if (handlet.type === "unknown") return true
     if (handles.type === "unknown") return true
 
+    if (handles.type == "enum" && handlet.type == "string") return true
+    if (handles.type == "enum" && handlet.type == "number") return true
+
     return handles.type === handlet.type
 
   }
