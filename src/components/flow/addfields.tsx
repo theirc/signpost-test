@@ -44,10 +44,14 @@ export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) 
   }
 
   form.onSubmit = data => {
-    if (worker.handlersArray.find(h => h.name === data.name)) {
-      toast("There's already a handler with this name, choose a different name")
-      throw new Error("Handler already exists: " + data.name)
+
+    if (!form.editing) {
+      if (worker.handlersArray.find(h => h.name === data.name)) {
+        toast("There's already a handler with this name, choose a different name")
+        throw new Error("Handler already exists: " + data.name)
+      }
     }
+
     const h: NodeIO = {
       name: data.name,
       type: data.type as any,
