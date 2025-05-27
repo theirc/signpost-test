@@ -109,6 +109,10 @@ export function buildWorker(w: WorkerConfig) {
       await worker.getValues(p)
 
       console.log("Worker - Executing: ", w.type)
+      p.logWriter({
+        worker,
+        state: p.state,
+      })
 
       const cond = Object.values(worker.handles).filter(h => h.condition)[0]
       if (cond) {
