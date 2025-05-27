@@ -32,9 +32,9 @@ export function ButtonEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosit
     }
   }
 
-  if (v == null) type = "unknown"
+  // if (v == null) type = "unknown"
 
-  if (type != "boolean" && type != "string" && type != "number") {
+  if (type != "boolean" && type != "string" && type != "number" && type != "enum") {
     type = "unknown"
   }
 
@@ -50,11 +50,17 @@ export function ButtonEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosit
           <X size={16} />
         </Button>}
 
-        {type != "unknown" && <>
+        {app.agent.displayData && <>
           {type === "boolean" && <DisplayBoolean value={v as boolean} />}
           {type === "number" && <DisplayNumber value={v as number} />}
           {type === "string" && <DisplayString value={v as string} />}
+          {type === "enum" && <DisplayString value={v as string} />}
         </>}
+        {/* {type != "unknown" && <>
+          {type === "boolean" && <DisplayBoolean value={v as boolean} />}
+          {type === "number" && <DisplayNumber value={v as number} />}
+          {type === "string" && <DisplayString value={v as string} />}
+        </>} */}
       </div>
     </EdgeLabelRenderer>
   </>
@@ -75,7 +81,7 @@ function DisplayNumber({ value = 0 }: { value: number }) {
 
 function DisplayString({ value = "" }: { value: string }) {
   return <div className="bg-neutral-50 p-1 text-sm border border-solid border-gray-400 shadow-md rounded-sm  max-w-60 max-h-60  overflow-auto">
-    {value}
+    {value || "Empty"}
   </div>
 }
 

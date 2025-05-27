@@ -61,17 +61,21 @@ export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) 
     }
 
     if (direction === "input") {
+
       if (data.id) {
         worker.updateHandler(data.id, { ...h, direction: "input" })
       } else {
         worker.addHandler({ ...h, direction: "input" })
       }
+
     } else if (direction === "output") {
+
       if (data.id) {
         worker.updateHandler(data.id, { ...h, direction: "output" })
       } else {
         worker.addHandler({ ...h, direction: "output" })
       }
+
     } else if (direction === "both") {
       console.log("both")
 
@@ -79,11 +83,11 @@ export function AddFieldsForm({ direction, includePrompt, ignoreTypes }: Props) 
       if (id) {
         if (id.endsWith("_out")) id = id.replace("_out", "")
         worker.updateHandler(id, { ...h, direction: "input" })
-        worker.updateHandler(id + "_out", { ...h, direction: "output" })
+        worker.updateHandler(id + "_out", { ...h, name: h.name + "_out", direction: "output" })
       } else {
         id = worker.createHandlerId()
         worker.addHandler({ ...h, id, direction: "input" })
-        worker.addHandler({ ...h, id: id + "_out", direction: "output" })
+        worker.addHandler({ ...h, name: h.name + "_out", id: id + "_out", direction: "output" })
       }
     }
 
