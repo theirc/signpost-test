@@ -619,6 +619,7 @@ export type Database = {
           name: string | null
           permissions: Json[] | null
           team_id: string | null
+          teams_id: string[] | null
         }
         Insert: {
           created_at?: string
@@ -627,6 +628,7 @@ export type Database = {
           name?: string | null
           permissions?: Json[] | null
           team_id?: string | null
+          teams_id?: string[] | null
         }
         Update: {
           created_at?: string
@@ -635,6 +637,7 @@ export type Database = {
           name?: string | null
           permissions?: Json[] | null
           team_id?: string | null
+          teams_id?: string[] | null
         }
         Relationships: [
           {
