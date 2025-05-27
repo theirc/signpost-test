@@ -1,25 +1,25 @@
-import { BotHistory, ChatMessage } from "@/types/types.ai"
+import { AgentChatMessage} from "@/types/types.ai"
 import { useState, useEffect } from "react"
 import { Search, X } from "lucide-react"
 
 const LOCAL_STORAGE_KEY = "chatHistory"
 
 export interface ChatSession {
-  id: string
-  botName?: string
-  selectedBots: number[]
-  messages: ChatMessage[]
+  uid: string          
+  agentName?: string
+  selectedAgents: number[]
+  messages: AgentChatMessage[]
   timestamp: string
 }
 
 interface ChatHistoryProps {
   setActiveChat: (chat: ChatSession | null) => void
-  onSelectBot?: (botId: string[]) => void
-  bots: Record<number, { name: string; history: BotHistory[] }>
+  onSelectAgent?: (agentId: string[]) => void
+  agents: Record<number, { name: string }>  
   chatHistory: ChatSession[]
 }
 
-export function ChatHistory({ setActiveChat, onSelectBot, bots, chatHistory }: ChatHistoryProps) {
+export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory }: ChatHistoryProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredHistory, setFilteredHistory] = useState(chatHistory)
 
@@ -67,16 +67,17 @@ export function ChatHistory({ setActiveChat, onSelectBot, bots, chatHistory }: C
     }
   }
 
-  const getBotNames = (selectedBotIds: number[]) => {
-    if (!selectedBotIds || selectedBotIds.length === 0) {
+  const getAgentNames = (selectedAgentIds: number[]) => {
+    if (!selectedAgentIds || selectedAgentIds.length === 0) {
       return "Chat"
     }
     
-    return selectedBotIds
-      .map(id => bots[id]?.name || "")
+    return selectedAgentIds
+      .map(id => agents[id]?.name || "")
       .filter(name => name)
       .join(", ")
   }
+  
   const highlightText = (text: string, query: string) => {
     if (!query.trim() || !text) return text
     
@@ -91,6 +92,14 @@ export function ChatHistory({ setActiveChat, onSelectBot, bots, chatHistory }: C
         )}
       </>
     )
+  }
+
+  const handleChatSelect = (chat: ChatSession) => {
+    setActiveChat(chat)
+    
+    if (chat.selectedAgents && chat.selectedAgents.length > 0 && onSelectAgent) {
+      onSelectAgent(chat.selectedAgents.map(id => id.toString()))
+    }
   }
 
   return (
@@ -131,21 +140,15 @@ export function ChatHistory({ setActiveChat, onSelectBot, bots, chatHistory }: C
               ? chat.messages[0].message
               : "New Conversation"
 
-            const botNames = chat.selectedBots && chat.selectedBots.length > 0
-              ? getBotNames(chat.selectedBots)
-              : chat.botName || "Chat"
+            const agentNames = chat.selectedAgents && chat.selectedAgents.length > 0
+              ? getAgentNames(chat.selectedAgents)
+              : chat.agentName || "Chat"
 
             return (
               <button
-                key={chat.id}
+                key={chat.uid}
                 className="w-full text-left p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                onClick={() => {
-                  setActiveChat(chat)
-                  if (chat.selectedBots && chat.selectedBots.length > 0 && onSelectBot) {
-                
-                    onSelectBot(chat.selectedBots.map(id => id.toString()))
-                  }
-                }}
+                onClick={() => handleChatSelect(chat)}
               >
                 <div className="flex justify-between items-center">
                   <p className="text-md text-left pl-2 truncate flex-1">
@@ -157,7 +160,7 @@ export function ChatHistory({ setActiveChat, onSelectBot, bots, chatHistory }: C
                 </div>
                 <div className="flex items-center mt-1">
                   <span className="text-xs text-gray-500 pl-2">
-                    {botNames}
+                    {agentNames}
                   </span>
                 </div>
               </button>
