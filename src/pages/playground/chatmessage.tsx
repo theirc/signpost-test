@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Copy, Check } from 'lucide-react';
 import AgentJsonView from '@/pages/playground/agentview'
-import type { ChatMessage } from '@/types/types.ai'
+import type { AgentChatMessage } from '@/types/types.ai'
 
 export interface MessageProps {
-  message: ChatMessage
+  message: AgentChatMessage
   isWaiting?: boolean
   isLoadingFromHistory?: boolean
 }
@@ -55,9 +55,9 @@ export default function ChatMessageComponent({
     })
   }
 
-if (msg.type === 'bot') {
+if (msg.type === 'agent') {
   const agentInfo = msg.messages && msg.messages[0];
-    const agentName = agentInfo?.botName || `ID ${agentInfo?.id}` || 'Agent'
+    const agentName = agentInfo?.agentName || `ID ${agentInfo?.id}` || 'Agent'
 
     return (
     <div className="mt-4 w-full">

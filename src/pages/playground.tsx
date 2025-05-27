@@ -7,7 +7,7 @@ import { MessageSquarePlus, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
 import { ChatHistory, ChatSession } from '@/pages/playground/history'
-import type { ChatMessage } from '@/types/types.ai'
+import type { AgentChatMessage } from '@/types/types.ai'
 import { SearchInput } from "@/pages/playground/search"
 import { agents } from "@/lib/agents"
 import {
@@ -17,10 +17,9 @@ import ChatMessageComponent from "@/pages/playground/chatmessage"
 import "../index.css"
 import { agentsModel } from "@/lib/data"
 
-interface BotEntry {
+interface AgentEntry {
   id: string
   name: string
-  history: any[]
   type: "agent"
 }
 
@@ -47,13 +46,13 @@ export const parseMarkdownImage = (text: string | undefined | null): { imageUrl:
 }
 
 export default function Chat() {
-  const [bots, setBots] = useState<Record<number, BotEntry>>({})
+  const [loadedAgents, setLoadedAgents] = useState<Record<number, AgentEntry>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(false)
   const [message, setMessage] = useState("")
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<AgentChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
@@ -66,12 +65,12 @@ export default function Chat() {
         const { data: adata, error: aerr } = await agentsModel.data.select("id, title")
         if (aerr) throw aerr
 
-        const agentBots = (adata || []).reduce<Record<number, BotEntry>>((acc, a) => {
-          acc[a.id] = { id: String(a.id), name: a.title, history: [], type: "agent" }
+        const agentEntries = (adata || []).reduce<Record<number, AgentEntry>>((acc, a) => {
+          acc[a.id] = { id: String(a.id), name: a.title, type: "agent" }
           return acc
         }, {})
 
-        if (mounted) setBots(agentBots)
+        if (mounted) setLoadedAgents(agentEntries)
       } catch (err: any) {
         if (mounted) setError(err)
       } finally {
@@ -94,10 +93,9 @@ export default function Chat() {
   const [state, setState] = useMultiState({
     isSending: false,
     rebuilding: false,
-    loadingBotList: false,
-    bots: {} as Record<number, BotEntry>,
-    selectedBots: [] as number[],
-    audioMode: false,
+    loadingAgentList: false,
+    agents: {} as Record<number, AgentEntry>,
+    selectedAgents: [] as number[],
   })
 
   const toggleSidebar = () => {
@@ -107,15 +105,15 @@ export default function Chat() {
   const handleResetChat = () => {
     setMessages([])
     setActiveChat(null)
-    setState({ selectedBots: [] })
+    setState({ selectedAgents: [] })
     setSidebarVisible(false)
   }
 
   useEffect(() => {
     if (!loading && !error) {
-      setState({ bots })
+      setState({ agents: loadedAgents })
     }
-  }, [loading, error, bots, setState])
+  }, [loading, error, loadedAgents, setState])
 
   const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
     if (typeof window !== 'undefined') {
@@ -144,23 +142,10 @@ export default function Chat() {
       const messages = chatSession.messages || []
       setMessages(messages)
 
-      const selectedBots = chatSession.selectedBots || []
-
-      const updatedBots = { ...state.bots }
-
-      selectedBots.forEach(botId => {
-        const bot = updatedBots[botId]
-        if (bot) {
-          bot.history = messages.map(m => ({
-            isHuman: m.type === "human",
-            message: m.message
-          }))
-        }
-      })
+      const selectedAgents = chatSession.selectedAgents || []
 
       setState({
-        selectedBots,
-        bots: updatedBots
+        selectedAgents,
       })
 
       setMessage(prev => prev + "")
@@ -168,44 +153,44 @@ export default function Chat() {
     }, 50)
   }
 
-  function toggleBot(id: number) {
-    const next = state.selectedBots.includes(id)
-      ? state.selectedBots.filter(x => x !== id)
-      : [...state.selectedBots, id]
-    setState({ selectedBots: next })
+  function toggleAgent(id: number) {
+    const next = state.selectedAgents.includes(id)
+      ? state.selectedAgents.filter(x => x !== id)
+      : [...state.selectedAgents, id]
+    setState({ selectedAgents: next })
     setMessages([])
     setActiveChat(null)
   }
 
   const label =
-    state.selectedBots.length > 0
-      ? state.selectedBots.map(id => state.bots[id].name).join(", ")
+    state.selectedAgents.length > 0
+      ? state.selectedAgents.map(id => state.agents[id]?.name).filter(Boolean).join(", ")
       : "Select Agent"
 
-  const onSelectBot = (e: string[] | string) => {
-    console.log("Selecting bot:", e)
+  const onSelectAgent = (e: string[] | string) => {
+    console.log("Selecting agent:", e)
 
-    const previousSelectedBot = state.selectedBots.length > 0 ? state.selectedBots[0] : null
+    const previousSelectedAgent = state.selectedAgents.length > 0 ? state.selectedAgents[0] : null
 
     if (!e || (Array.isArray(e) && e.length === 0)) {
-      setState({ selectedBots: [] })
+      setState({ selectedAgents: [] })
       return
     }
 
-    let newSelectedBots: number[] = []
+    let newSelectedAgents: number[] = []
 
     if (Array.isArray(e)) {
-      newSelectedBots = e.map(Number)
-      setState({ selectedBots: newSelectedBots })
+      newSelectedAgents = e.map(Number)
+      setState({ selectedAgents: newSelectedAgents })
     } else if (typeof e === "string") {
-      newSelectedBots = [Number(e)]
-      setState({ selectedBots: newSelectedBots })
+      newSelectedAgents = [Number(e)]
+      setState({ selectedAgents: newSelectedAgents })
     }
 
     const selectionChanged =
-      previousSelectedBot !== newSelectedBots[0] ||
-      state.selectedBots.length !== newSelectedBots.length ||
-      !state.selectedBots.every(id => newSelectedBots.includes(id))
+      previousSelectedAgent !== newSelectedAgents[0] ||
+      state.selectedAgents.length !== newSelectedAgents.length ||
+      !state.selectedAgents.every(id => newSelectedAgents.includes(id))
 
     if (selectionChanged) {
       setMessages([])
@@ -214,109 +199,75 @@ export default function Chat() {
   }
 
   async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
-    if (!userText && !audio) return;
+    if (!userText && !audio) return
     setState({ isSending: true })
-    const humanMsg: ChatMessage = {
-      type: "human",
-      message: userText || "",
-    };
 
+    const currentUid = activeChat?.uid ?? crypto.randomUUID()
+
+    const humanMsg: AgentChatMessage = { type: "human",  message: userText || "" }
     const updatedMessages = [...messages, humanMsg]
-
     setMessages(updatedMessages)
 
-    const selected = state.selectedBots.map(id => state.bots[id])
-    let reply: ChatMessage
-
-    const agentEntry = selected.find(b => b.type === "agent")
-    if (agentEntry) {
-      const worker = await agents.loadAgent(Number(agentEntry.id))
-
-      const newHumanMessage = {
-        isHuman: true,
-        message: userText || "",
-      }
-      agentEntry.history.push(newHumanMessage)
-
-      const ensureString = (value: any): string => {
-        if (value == null) return "";
-        if (typeof value === "string") return value;
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return String(value);
+    const selected = state.selectedAgents.map(id => state.agents[id]).filter(Boolean)
+    let reply: AgentChatMessage
+    if (selected.length) {
+      try {
+        const entry = selected[0] as AgentEntry;
+        const worker = await agents.loadAgent(Number(entry.id));
+        const parameters: {
+          input: { question: string };
+          apikeys: any;
+          uid: string;
+          output?: string;
+        } = {
+          input: { question: userText || "" },
+          apikeys: app.getAPIkeys(),
+          uid: currentUid,       
         }
-      }
-
-      const historyText = agentEntry.history.map(m =>
-        `${m.isHuman ? "User" : "Assistant"}: ${ensureString(m.message)}`
-      ).join("\n\n")
-
-      const parameters: AgentParameters = {
-        input: { question: historyText },
-        apikeys: app.getAPIkeys(),
-      }
-
-      console.log("AGENT INPUT", parameters.input.question)
-
-      await worker.execute(parameters);
-
-      const outputText = parameters.output as string;
-
-      agentEntry.history.push({
-        isHuman: false,
-        message: outputText,
-      });
-
-      reply = {
-        type: "bot",
-        message: outputText,
-        messages: [{
-          id: Number(agentEntry.id),
-          botName: agentEntry.name,
-          message: outputText,
+        await worker.execute(parameters);
+        reply = {
+          type: "agent",
+          message: parameters.output,
+          messages: [{
+            id: Number(entry.id),
+            agentName: entry.name,
+            message: parameters.output,
+            needsRebuild: false
+          }],
           needsRebuild: false,
-        }],
-        needsRebuild: false,
+        }
+      } catch {
+        reply = { type: "agent", message: "Error processing request.", messages: [], needsRebuild: false };
       }
     } else {
-      reply = {
-        type: "bot",
-        message: "No agent selected",
-        messages: [],
-        needsRebuild: false,
-      };
+      reply = { type: "agent", message: "No agent selected", messages: [], needsRebuild: false };
     }
-
-    const finalMessages = [...updatedMessages, reply]
-    setMessages(finalMessages)
-
-    if (!activeChat) {
-      const newChatSession: ChatSession = {
-        id: new Date().toISOString(),
-        botName: state.bots[state.selectedBots[0]]?.name ?? "Chat",
-        selectedBots: [...state.selectedBots],
-        messages: [humanMsg, reply],
-        timestamp: new Date().toISOString(),
-      };
-      setActiveChat(newChatSession);
-      setChatHistory(prev => [newChatSession, ...prev])
-    } else {
-      const updatedChatWithResponse: ChatSession = {
-        ...activeChat,
-        messages: [...activeChat.messages, humanMsg, reply],
-        selectedBots: [...state.selectedBots],
-      };
-      setActiveChat(updatedChatWithResponse)
-      setChatHistory(prev =>
-        prev.map(chat => chat.id === updatedChatWithResponse.id ? updatedChatWithResponse : chat)
-      );
+  
+    const finalMessages = [...updatedMessages, reply];
+    setMessages(finalMessages);
+  
+    const newSession: ChatSession = {
+      uid: currentUid,
+      agentName: state.agents[state.selectedAgents[0]]?.name ?? "Chat",
+      selectedAgents: [...state.selectedAgents],
+      messages: finalMessages,
+      timestamp: new Date().toISOString(),
     }
-
-    setState({ isSending: false })
+  
+    setActiveChat(newSession);
+    setChatHistory(prev => {
+      const exists = prev.find(c => c.uid === currentUid);
+      if (exists) {
+        return prev.map(c => c.uid === currentUid ? newSession : c);
+      } else {
+        return [newSession, ...prev];
+      }
+    })
+  
+    setState({ isSending: false });
   }
 
-  const hasSelectedBots = state.selectedBots.length > 0
+  const hasSelectedAgents = state.selectedAgents.length > 0
 
   return (
     <div className="h-screen flex flex-col">
@@ -335,14 +286,14 @@ export default function Chat() {
                   <DropdownMenuContent className="w-60 max-h-60 overflow-y-auto p-1">
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Agents</DropdownMenuLabel>
-                      {Object.entries(state.bots)
-                        .map(([key, b]) => (
+                      {Object.entries(state.agents)
+                        .map(([key, a]) => (
                           <DropdownMenuCheckboxItem
                             key={key}
-                            checked={state.selectedBots.includes(Number(key))}
-                            onCheckedChange={() => toggleBot(Number(key))}
+                            checked={state.selectedAgents.includes(Number(key))}
+                            onCheckedChange={() => toggleAgent(Number(key))}
                           >
-                            {b.name}
+                            {a.name}
                           </DropdownMenuCheckboxItem>
                         ))}
                     </DropdownMenuGroup>
@@ -400,7 +351,7 @@ export default function Chat() {
             </div>
           </div>
           <div className="bg-white pb-4 pt-2 px-4 flex-shrink-0 border-t">
-            {hasSelectedBots ? (
+            {hasSelectedAgents ? (
               <>
                 <SearchInput
                   onSearch={onSend}
@@ -435,10 +386,10 @@ export default function Chat() {
             <div className="p-4">
               <ChatHistory
                 setActiveChat={handleLoadChatHistory}
-                onSelectBot={(botIds) => {
-                  onSelectBot(botIds)
+                onSelectAgent={(agentIds) => {
+                  onSelectAgent(agentIds)
                 }}
-                bots={state.bots}
+                agents={state.agents}
                 chatHistory={chatHistory}
               />
             </div>

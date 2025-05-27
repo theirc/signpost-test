@@ -27,14 +27,14 @@ export interface SourceReference {
   endIndex: number;
 }
 
-export interface ChatMessage {
-  type?: "human" | "bot"
+export interface AgentChatMessage {
+  type?: "human" | "agent"
   id?: number
   message?: string
-  botName?: string
+  agentName?: string
   isAnswer?: boolean
   isContacts?: boolean
-  messages?: ChatMessage[]
+  messages?: AgentChatMessage[]
   docs?: DocumentReference[]
   references?: SourceReference[]
   error?: string
@@ -46,4 +46,3 @@ export interface ChatMessage {
   audio?: any
   tts?: boolean
 }
-
