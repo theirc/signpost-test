@@ -10,6 +10,7 @@ import { Loader2, Plus, Eye, Pencil, Trash2, Share2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { supabase } from "@/lib/agents/db"
 import { Json } from "@/lib/agents/supabase"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 interface Permission {
     resource: string
@@ -59,7 +60,7 @@ export function RoleForm() {
     const navigate = useNavigate()
     const { id } = useParams()
     const isNewRole = id === 'new'
-
+    const { selectedTeam } = useTeamStore()
     const [loading, setLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
     const [formData, setFormData] = useState<RoleFormData>({
@@ -145,7 +146,8 @@ export function RoleForm() {
                 const { error } = await supabase.from("roles").insert({
                     name: formData.name,
                     description: formData.description,
-                    permissions: formData.permissions as unknown as Json[]
+                    permissions: formData.permissions as unknown as Json[],
+                    teams_id: [selectedTeam?.id]
                 }).select().single()
 
                 if (error) {
@@ -321,6 +323,9 @@ export function RoleForm() {
                                                             p.create && p.read && p.update && p.delete && p.share
                                                         )}
                                                         onCheckedChange={(checked) => {
+                                                            if (id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14") {
+                                                                return
+                                                            }
                                                             setFormData(prev => ({
                                                                 ...prev,
                                                                 permissions: prev.permissions.map(permission => ({
@@ -356,6 +361,7 @@ export function RoleForm() {
                                                                     id={`${resource.id}-${action}`}
                                                                     checked={isChecked}
                                                                     onCheckedChange={(checked) => handlePermissionChange(resource.id, permissionAction, checked as boolean)}
+                                                                    disabled={id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}
                                                                 />
                                                             </td>
                                                         )
@@ -366,6 +372,7 @@ export function RoleForm() {
                                                                 id={`select-all-${resource.id}`}
                                                                 checked={permission?.create && permission?.read && permission?.update && permission?.delete && permission?.share}
                                                                 onCheckedChange={(checked) => handleSelectAll(resource.id, checked as boolean)}
+                                                                disabled={id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}
                                                             />
                                                             <Label htmlFor={`select-all-${resource.id}`}>Select All</Label>
                                                         </div>
@@ -387,7 +394,7 @@ export function RoleForm() {
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={loading}>
+                            <Button type="submit" disabled={loading || id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}>
                                 {loading ? (isNewRole ? "Creating..." : "Updating...") : (isNewRole ? "Create Role" : "Update Role")}
                             </Button>
                         </div>
