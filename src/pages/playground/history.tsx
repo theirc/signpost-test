@@ -95,7 +95,6 @@ export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory 
   const handleChatSelect = (chat: ChatSession) => {
     setActiveChat(chat)
     if (chat.selectedAgents && chat.selectedAgents.length > 0 && onSelectAgent) {
-      console.log("Setting selected agents:", chat.selectedAgents.map(id => id.toString()));
       onSelectAgent(chat.selectedAgents.map(id => id.toString()))
     }
   }

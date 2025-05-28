@@ -56,12 +56,12 @@ const agentModel = createModel({
     title: { type: 'string', title: 'Title' },
     description: { type: 'string', title: 'Description' },
     type: { type: 'string', title: 'Type', list: [{ value: "conversational", label: "Conversational" }, { value: "data", label: "Data" }] },
+    debuguid: { type: 'string', title: 'Debug UID' },
   }
 })
 
 
 export function Toolbar(props: Props) {
-
 
   const { selectedTeam } = useTeamStore()
   const update = useForceUpdate()
@@ -93,6 +93,7 @@ export function Toolbar(props: Props) {
     app.agent.title = data.title
     app.agent.description = data.description
     app.agent.type = data.type as any
+    app.agent.debuguuid = data.debuguid || ""
   }
 
   async function onSave() {
@@ -119,11 +120,6 @@ export function Toolbar(props: Props) {
       toast("Add a Response Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
       return
     }
-
-    // if (!agent.hasInput()) {
-    //   toast("Add an Input Worker to execute", { action: { label: "Ok", onClick: () => console.log("Ok"), }, })
-    //   return
-    // }
 
     const p: AgentParameters = {
       debug: true,
@@ -160,7 +156,8 @@ export function Toolbar(props: Props) {
     agentForm.edit({
       title: app.agent.title,
       description: app.agent.description,
-      type: app.agent.type
+      type: app.agent.type,
+      debuguid: app.agent.debuguuid || "",
     })
   }
 
@@ -230,6 +227,9 @@ export function Toolbar(props: Props) {
       </Row>
       <Row>
         <Select span={12} field={f.type} required />
+      </Row>
+      <Row>
+        <Input span={12} field={f.debuguid} />
       </Row>
     </Modal>
 

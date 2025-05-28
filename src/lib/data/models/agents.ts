@@ -18,6 +18,7 @@ const model: SupabaseModel<"agents"> = {
     description: { title: "Description", type: "string" },
     type: { title: "Type", type: "string", list: [{ value: "conversational", label: "Conversational" }, { value: "data", label: "Data" }] },
     team_id: { title: "Team ID", type: "string" },
+    debuguuid: { title: "Debug Uuid", type: "string" },
   },
 }
 

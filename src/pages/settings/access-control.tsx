@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/agents/db"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 const defaultPageSize = 10
 
@@ -24,6 +25,7 @@ interface Role {
     }[]
     created_at: string
     updated_at: string
+    teams_id: string[]
   }
 
 export function AccessControlSettings() {
@@ -31,16 +33,21 @@ export function AccessControlSettings() {
     const { canCreate, canUpdate } = usePermissions()
     const [roles, setRoles] = useState<Role[]>([])
     const [isLoading, setIsLoading] = useState(false)
+    const { selectedTeam } = useTeamStore()
 
     const fetchRole = async () => {
         setIsLoading(true)
-        const { data, error } = await supabase.from("roles").select("*")
+        const { data, error } = await supabase
+            .from("roles")
+            .select("*")
+            .contains("teams_id", [selectedTeam?.id])
         if (error) {
             console.error('Error fetching roles:', error)
         }
         const formattedRoles = data?.map(role => ({
             ...role,
-            created_at: role.created_at || new Date().toISOString()
+            created_at: role.created_at || new Date().toISOString(),
+            teams: role.teams_id
         }))
         setRoles(formattedRoles as unknown as Role[] || [])
         setIsLoading(false)
@@ -52,7 +59,7 @@ export function AccessControlSettings() {
 
     useEffect(() => {
         fetchRole()
-    }, [])
+    }, [selectedTeam])
 
     const columns = useMemo<ColumnDef<Role>[]>(() => [
         {

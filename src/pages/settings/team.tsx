@@ -53,8 +53,20 @@ export function TeamForm() {
                 const { error } = await supabase.from("teams").update(formData).eq("id", id).select().single()
                 if (error) throw error
             } else {
-                const { error } = await supabase.from("teams").insert(formData).select().single()
-                if (error) throw error
+                const { data, error } = await supabase.from("teams").insert(formData).select().single()
+                const { data: roleData } = await supabase
+                    .from("roles")
+                    .select("teams_id")
+                    .eq("id", "12219f26-0293-4954-8dbd-c5ba3ecc2b14")
+                    .single()
+                
+                const { error: roleError } = await supabase
+                    .from("roles")
+                    .update({
+                        teams_id: [...(roleData?.teams_id || []), data.id]
+                    })
+                    .eq("id", "12219f26-0293-4954-8dbd-c5ba3ecc2b14")
+                if (error || roleError) throw error
             }
             navigate("/settings/teams")
         } catch (error) {
