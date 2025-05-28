@@ -214,17 +214,51 @@ export default function Chat() {
       try {
         const entry = selected[0] as AgentEntry;
         const worker = await agents.loadAgent(Number(entry.id));
+        
+        // Build formatted conversation history string
+        const conversationHistory = updatedMessages.map(msg => {
+          const sender = (msg.type === "human") ? "User" : "Bot";
+          let messageContent = "";
+          
+          if (msg.type === "human") {
+            messageContent = msg.message || "";
+          } else if (msg.type === "agent") {
+            messageContent = msg.message || "";
+            if (typeof messageContent === "object") {
+              messageContent = JSON.stringify(messageContent);
+            }
+          }
+          
+          return sender + ": " + messageContent;
+        }).join("\n");
+        
         const parameters: {
-          input: { question: string };
+          input: { 
+            question: string;
+            conversation_history?: string;
+            uid: string;
+          };
           apikeys: any;
-          uid: string;
           output?: string;
+          state?: any;
+          uid?: string;
         } = {
-          input: { question: userText || "" },
+          input: { 
+            question: userText || "",
+            conversation_history: conversationHistory,
+            uid: currentUid
+          },
           apikeys: app.getAPIkeys(),
-          uid: currentUid,       
+          state: {},
+          uid: currentUid
         }
+        
+        console.log("Parameters being sent to agent:", JSON.stringify(parameters, null, 2));
+        
         await worker.execute(parameters);
+        
+        console.log("Agent execution completed. Output:", parameters.output);
+        console.log("Final state:", parameters.state);
         reply = {
           type: "agent",
           message: parameters.output,
