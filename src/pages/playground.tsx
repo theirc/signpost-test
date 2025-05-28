@@ -1,5 +1,4 @@
 "use client"
-const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { app } from '@/lib/app'
@@ -10,9 +9,7 @@ import { ChatHistory, ChatSession } from '@/pages/playground/history'
 import type { AgentChatMessage } from '@/types/types.ai'
 import { SearchInput } from "@/pages/playground/search"
 import { agents } from "@/lib/agents"
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup, DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu"
 import ChatMessageComponent from "@/pages/playground/chatmessage"
 import "../index.css"
 import { agentsModel } from "@/lib/data"
@@ -28,21 +25,21 @@ export const isImageUrl = (url: string | undefined | null): boolean => {
   return /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url)
 };
 
-export const parseMarkdownImage = (text: string | undefined | null): { imageUrl: string | null; remainingText: string | null } => {
-  if (!text) return { imageUrl: null, remainingText: null };
+export const parseMarkdownImage = (text: string | undefined | null): { imageUrl: string | null;remainingText: string | null } => {
+  if (!text) return { imageUrl: null, remainingText: null }
 
-  const markdownRegex = /^!?\[.*?\]\((.+?)\)\s*(.*)$/s;
-  const match = text.match(markdownRegex);
+  const markdownRegex = /^!?\[.*?\]\((.+?)\)\s*(.*)$/s
+  const match = text.match(markdownRegex)
 
   if (match && match[1]) {
     const imageUrl = match[1];
-    const remainingText = match[2] ? match[2].trim() : null;
+    const remainingText = match[2] ? match[2].trim() : null
     if (isImageUrl(imageUrl)) {
-      return { imageUrl, remainingText };
+      return { imageUrl, remainingText }
     }
   }
 
-  return { imageUrl: null, remainingText: null };
+  return { imageUrl: null, remainingText: null }
 }
 
 export default function Chat() {
@@ -54,6 +51,7 @@ export default function Chat() {
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<AgentChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([])
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
 
@@ -114,25 +112,6 @@ export default function Chat() {
       setState({ agents: loadedAgents })
     }
   }, [loading, error, loadedAgents, setState])
-
-  const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedChats = localStorage.getItem(LOCAL_STORAGE_KEY)
-        if (savedChats) {
-          const parsedChats = JSON.parse(savedChats)
-          return Array.isArray(parsedChats) ? parsedChats : []
-        }
-      } catch (error) {
-        console.error("Error loading initial chat history:", error)
-      }
-    }
-    return []
-  })
-
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
-  }, [chatHistory])
 
   const handleLoadChatHistory = (chatSession: ChatSession) => {
     setIsLoadingFromHistory(true)
@@ -198,54 +177,80 @@ export default function Chat() {
     }
   }
 
+  const formatConversationHistory = (messages: AgentChatMessage[]) => {
+    return messages.map(msg => ({
+      type: msg.type,
+      message: msg.message,
+      timestamp: new Date().toISOString()
+    }))
+  }
+
   async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
     if (!userText && !audio) return
     setState({ isSending: true })
 
     const currentUid = activeChat?.uid ?? crypto.randomUUID()
 
-    const humanMsg: AgentChatMessage = { type: "human",  message: userText || "" }
+    const humanMsg: AgentChatMessage = { type: "human", message: userText || "" }
     const updatedMessages = [...messages, humanMsg]
     setMessages(updatedMessages)
 
     const selected = state.selectedAgents.map(id => state.agents[id]).filter(Boolean)
     let reply: AgentChatMessage
+
     if (selected.length) {
       try {
         const entry = selected[0] as AgentEntry;
         const worker = await agents.loadAgent(Number(entry.id));
-        const parameters: {
-          input: { question: string };
-          apikeys: any;
-          uid: string;
-          output?: string;
-        } = {
-          input: { question: userText || "" },
-          apikeys: app.getAPIkeys(),
-          uid: currentUid,       
+        
+        const payload = {
+          id: Number(entry.id),
+          question: userText || "",
+          conversation_history: formatConversationHistory(updatedMessages),
+          uid: currentUid
         }
-        await worker.execute(parameters);
+  
+        const parameters = {
+          input: payload,
+          apikeys: app.getAPIkeys(),
+          uid: currentUid,
+          output: undefined
+        }
+
+        await worker.execute(parameters)
+        
         reply = {
           type: "agent",
-          message: parameters.output,
+          message: parameters.output || "No response received",
           messages: [{
             id: Number(entry.id),
             agentName: entry.name,
-            message: parameters.output,
+            message: parameters.output || "No response received",
             needsRebuild: false
           }],
           needsRebuild: false,
         }
-      } catch {
-        reply = { type: "agent", message: "Error processing request.", messages: [], needsRebuild: false };
+      } catch (error) {
+        console.error("Error processing request:", error)
+        reply = { 
+          type: "agent", 
+          message: "Error processing request.", 
+          messages: [], 
+          needsRebuild: false 
+        };
       }
     } else {
-      reply = { type: "agent", message: "No agent selected", messages: [], needsRebuild: false };
+      reply = { 
+        type: "agent", 
+        message: "No agent selected", 
+        messages: [], 
+        needsRebuild: false 
+      };
     }
-  
-    const finalMessages = [...updatedMessages, reply];
+
+    const finalMessages = [...updatedMessages, reply]
     setMessages(finalMessages);
-  
+
     const newSession: ChatSession = {
       uid: currentUid,
       agentName: state.agents[state.selectedAgents[0]]?.name ?? "Chat",
@@ -253,18 +258,18 @@ export default function Chat() {
       messages: finalMessages,
       timestamp: new Date().toISOString(),
     }
-  
+
     setActiveChat(newSession);
     setChatHistory(prev => {
-      const exists = prev.find(c => c.uid === currentUid);
+      const exists = prev.find(c => c.uid === currentUid)
       if (exists) {
-        return prev.map(c => c.uid === currentUid ? newSession : c);
+        return prev.map(c => c.uid === currentUid ? newSession : c)
       } else {
-        return [newSession, ...prev];
+        return [newSession, ...prev]
       }
     })
-  
-    setState({ isSending: false });
+
+    setState({ isSending: false })
   }
 
   const hasSelectedAgents = state.selectedAgents.length > 0

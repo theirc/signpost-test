@@ -2,8 +2,6 @@ import { AgentChatMessage} from "@/types/types.ai"
 import { useState, useEffect } from "react"
 import { Search, X } from "lucide-react"
 
-const LOCAL_STORAGE_KEY = "chatHistory"
-
 export interface ChatSession {
   uid: string          
   agentName?: string
@@ -96,8 +94,8 @@ export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory 
 
   const handleChatSelect = (chat: ChatSession) => {
     setActiveChat(chat)
-    
     if (chat.selectedAgents && chat.selectedAgents.length > 0 && onSelectAgent) {
+      console.log("Setting selected agents:", chat.selectedAgents.map(id => id.toString()));
       onSelectAgent(chat.selectedAgents.map(id => id.toString()))
     }
   }
@@ -148,8 +146,7 @@ export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory 
               <button
                 key={chat.uid}
                 className="w-full text-left p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                onClick={() => handleChatSelect(chat)}
-              >
+                onClick={() => handleChatSelect(chat)}>
                 <div className="flex justify-between items-center">
                   <p className="text-md text-left pl-2 truncate flex-1">
                     {searchQuery ? highlightText(firstMessage, searchQuery) : firstMessage}
