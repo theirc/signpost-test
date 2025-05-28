@@ -252,13 +252,9 @@ export default function Chat() {
           state: {},
           uid: currentUid
         }
-        
-        console.log("Parameters being sent to agent:", JSON.stringify(parameters, null, 2));
-        
+                
         await worker.execute(parameters);
-        
-        console.log("Agent execution completed. Output:", parameters.output);
-        console.log("Final state:", parameters.state);
+
         reply = {
           type: "agent",
           message: parameters.output,
