@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useTeamStore } from '@/lib/hooks/useTeam'
 import { ApiKey } from './api-keys'
 import { supabase } from '@/lib/agents/db'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function ApiKeyView() {
   const { id } = useParams()
@@ -116,13 +117,23 @@ export default function ApiKeyView() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="type">Type</Label>
-              <Input
-                id="type"
-                value={apiKey.type}
-                onChange={(e) => setApiKey({ ...apiKey, type: e.target.value })}
-                placeholder="Enter API key type"
-                required
-              />
+              <Select
+                defaultValue={apiKey.type}
+                onValueChange={(value) => setApiKey({ ...apiKey, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select API key type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="anthropic">Anthropic</SelectItem>
+                  <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="deepseek">DeepSeek</SelectItem>
+                  <SelectItem value="groq">Groq</SelectItem>
+                  <SelectItem value="xai">XAI</SelectItem>
+                  <SelectItem value="zendesk">Zendesk</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>

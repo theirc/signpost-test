@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { workerRegistry } from '@/lib/agents/registry'
 import { ConditionHandler } from '../condition'
 import { app } from '@/lib/app'
+import { useTeamStore } from '@/lib/hooks/useTeam'
 
 const { api } = workerRegistry
 api.icon = Globe
@@ -145,10 +146,20 @@ const model = createModel({
 })
 
 function Parameters({ worker }: { worker: ApiWorker }) {
+  const { selectedTeam } = useTeamStore()
   const [authType, setAuthType] = useState(worker.parameters.authType || "none");
+  const [apiKeys, setApiKeys] = useState<APIKeys>({})
 
-  // Get global API key names using the correct method
-  const globalApiKeyNames = useMemo(() => Object.keys(app.getAPIkeys() || {}), []);
+  async function fetchApiKey() {
+    const apiKeys = await app.fetchAPIkeys(selectedTeam?.id)
+    setApiKeys(apiKeys || {})
+  }
+
+  useEffect(() => {
+    fetchApiKey()
+  }, [selectedTeam?.id])
+
+  const globalApiKeyNames = useMemo(() => Object.keys(apiKeys), [apiKeys]);
   const globalApiKeyOptions = useMemo(() => 
      globalApiKeyNames.map(name => ({ value: name, label: name })), 
      [globalApiKeyNames]

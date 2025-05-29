@@ -16,6 +16,7 @@ import {
 import ChatMessageComponent from "@/pages/playground/chatmessage"
 import "../index.css"
 import { agentsModel } from "@/lib/data"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 interface AgentEntry {
   id: string
@@ -54,8 +55,10 @@ export default function Chat() {
   const [activeChat, setActiveChat] = useState<ChatSession | null>(null)
   const [messages, setMessages] = useState<AgentChatMessage[]>([])
   const [isLoadingFromHistory, setIsLoadingFromHistory] = useState(false)
+  const [apiKeys, setApiKeys] = useState<APIKeys>({})
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
+  const { selectedTeam } = useTeamStore()
 
   useEffect(() => {
     let mounted = true
@@ -78,9 +81,15 @@ export default function Chat() {
       }
     }
 
+    async function fetchApiKey() {
+      const apiKeys = await app.fetchAPIkeys(selectedTeam?.id)
+      setApiKeys(apiKeys || {})
+    }
+
     loadAgents()
+    fetchApiKey()
     return () => { mounted = false }
-  }, [])
+  }, [selectedTeam?.id])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -238,7 +247,7 @@ export default function Chat() {
             conversation_history?: string;
             uid: string;
           };
-          apikeys: any;
+          apikeys: APIKeys;
           output?: string;
           state?: any;
           uid?: string;
@@ -248,7 +257,7 @@ export default function Chat() {
             conversation_history: conversationHistory,
             uid: currentUid
           },
-          apikeys: app.getAPIkeys(),
+          apikeys: apiKeys,
           state: {},
           uid: currentUid
         }
