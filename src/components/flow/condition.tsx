@@ -45,19 +45,19 @@ export function ConditionHandler() {
 
   const { worker } = useWorkerContext<AIWorker>()
   const ch = worker.getConnectedHandler(worker.fields.condition, app.agent)
+
   useNodeConnections({ id: worker.id })
+
   let type: IOTypes = "unknown"
   if (ch) type = ch.type
   worker.fields.condition.type = type
 
-  // console.log("Render Condition")
+  console.log("Render Condition", type)
   return <div className="">
     <WorkerLabeledHandle handler={worker.fields.condition} />
-    <MemoizedWorker worker={worker} name="condition">
-      {type === "boolean" && <ConditionBoolean worker={worker} />}
-      {type === "string" && <ConditionString worker={worker} />}
-      {type === "number" && <ConditionNumber worker={worker} />}
-    </MemoizedWorker>
+    {type === "boolean" && <MemoizedWorker worker={worker} name="condition"> <ConditionBoolean worker={worker} /> </MemoizedWorker>}
+    {type === "string" || type === "enum" && <MemoizedWorker worker={worker} name="condition">  <ConditionString worker={worker} /> </MemoizedWorker>}
+    {type === "number" && <MemoizedWorker worker={worker} name="condition"> <ConditionNumber worker={worker} /> </MemoizedWorker>}
   </div>
 }
 

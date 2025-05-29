@@ -15,7 +15,6 @@ const { schema } = workerRegistry
 schema.icon = ListTree
 
 const list = OpenAIModels.map((m) => ({ value: m.value.replace("openai/", ""), label: m.label }))
-console.log(list)
 
 
 const model = createModel({
