@@ -235,6 +235,7 @@ export function FlowDesigner({ id }: { id?: string }) {
   const isLoading = useRef(false)
   const [agent, setAgent] = useState<Agent>(null)
 
+
   useEffect(() => {
     console.log("Loading agent:", id)
     if (isLoading.current) return
