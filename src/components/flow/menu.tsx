@@ -130,47 +130,47 @@ export function Toolbar(props: Props) {
       return
     }
 
-    // const p: AgentParameters = {
-    //   debug: true,
-    //   input: {},
-    //   apikeys: app.getAPIkeys(),
-    // }
-
     const p: AgentParameters = {
       debug: true,
-      input: {
-        textList: [
-          "Hello, how are you?",
-          "What is the weather like today?",
-          "Tell me a joke.",
-          "What is the capital of France?",
-          "What is the capital of Italy?",
-          "What is the capital of Germany?",
-          "What is the capital of Spain?",
-          "What is the capital of Portugal?",
-          "What is the capital of Switzerland?",
-          "What is the capital of Austria?",
-          "What is the capital of Belgium?",],
-        numberList: [1, 2, 3, 4, 5, 3.4454, 32423.44],
-        bool: true,
-        chat: [
-          { role: "user", content: "Hello, how are you?" },
-          { role: "assistant", content: "I'm fine, thank you!" },
-          { role: "user", content: "What is the weather like today?" },
-          { role: "assistant", content: "The weather is sunny and warm today." },
-        ],
-        json: {
-          name: "John Doe",
-          age: 30,
-          address: {
-            street: "123 Main St",
-            city: "Anytown",
-            state: "CA",
-          }
-        }
-      },
+      input: {},
       apikeys: app.getAPIkeys(),
     }
+
+    // const p: AgentParameters = {
+    //   debug: true,
+    //   input: {
+    //     textList: [
+    //       "Hello, how are you?",
+    //       "What is the weather like today?",
+    //       "Tell me a joke.",
+    //       "What is the capital of France?",
+    //       "What is the capital of Italy?",
+    //       "What is the capital of Germany?",
+    //       "What is the capital of Spain?",
+    //       "What is the capital of Portugal?",
+    //       "What is the capital of Switzerland?",
+    //       "What is the capital of Austria?",
+    //       "What is the capital of Belgium?",],
+    //     numberList: [1, 2, 3, 4, 5, 3.4454, 32423.44],
+    //     bool: true,
+    //     chat: [
+    //       { role: "user", content: "Hello, how are you?" },
+    //       { role: "assistant", content: "I'm fine, thank you!" },
+    //       { role: "user", content: "What is the weather like today?" },
+    //       { role: "assistant", content: "The weather is sunny and warm today." },
+    //     ],
+    //     json: {
+    //       name: "John Doe",
+    //       age: 30,
+    //       address: {
+    //         street: "123 Main St",
+    //         city: "Anytown",
+    //         state: "CA",
+    //       }
+    //     }
+    //   },
+    //   apikeys: app.getAPIkeys(),
+    // }
 
     await agent.execute(p)
 
