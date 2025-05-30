@@ -1,5 +1,7 @@
 import axios from "axios"
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { app } from "@/lib/app"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 // =============================================
 // ISOMORPHIC SUPABASE/EMBEDDING FUNCTIONS
@@ -9,7 +11,6 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 // IMPORTANT: Ensure SUPABASE_URL, SUPABASE_ANON_KEY, and OPENAI_API_KEY are set in the worker's environment
 const supabaseUrl = process.env.VITE_SUPABASE_URL
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
-const openaiApiKey = process.env.OPENAI_API_KEY
 
 let supabase: SupabaseClient
 
@@ -46,15 +47,16 @@ async function generateEmbedding(text: string): Promise<{
   data: number[] | null,
   error: Error | null
 }> {
-  if (!openaiApiKey) {
-      const errorMsg = 'Missing OpenAI API key. Please set OPENAI_API_KEY environment variable.';
-      console.error(`[Worker Embedding] ${errorMsg}`);
-      return { data: null, error: new Error(errorMsg) };
-  }
-
+  const { selectedTeam } = useTeamStore()
   try {
     console.log('[Worker Embedding] Starting OpenAI embedding generation...')
     
+    const openaiApiKey = await app.fetchAPIkey("openai", selectedTeam?.id)
+    if (!openaiApiKey) {
+      const errorMsg = 'Missing OpenAI API key. Please set OPENAI_API_KEY environment variable.';
+      console.error(`[Worker Embedding] ${errorMsg}`);
+      return { data: null, error: new Error(errorMsg) };
+    }
     const input = text.replace(/\n/g, ' ') // OpenAI recommendation
     
     const response = await fetch('https://api.openai.com/v1/embeddings', {
