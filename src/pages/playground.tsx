@@ -61,7 +61,7 @@ const ExecutionLogDisplay = ({ executions, isVisible, onToggle }: {
         variant="ghost"
         onClick={onToggle}
         className="w-full flex items-center justify-between p-3 h-auto">
-        <span className="font-medium text-sm">Execution Log ({executions.length} steps)</span>
+        <span className="font-light">Execution Log ({executions.length} steps)</span>
         {isVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </Button>
       {isVisible && (
