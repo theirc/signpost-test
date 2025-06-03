@@ -3,7 +3,7 @@ const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { app } from '@/lib/app'
-import { MessageSquarePlus, History } from 'lucide-react'
+import { MessageSquarePlus, History, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
 import { ChatHistory, ChatSession } from '@/pages/playground/history'
@@ -22,6 +22,12 @@ interface AgentEntry {
   id: string
   name: string
   type: "agent"
+}
+
+interface WorkerExecution {
+  timestamp: number
+  worker: any
+  state: any
 }
 
 export const isImageUrl = (url: string | undefined | null): boolean => {
@@ -45,6 +51,57 @@ export const parseMarkdownImage = (text: string | undefined | null): { imageUrl:
 
   return { imageUrl: null, remainingText: null };
 }
+const ExecutionLogDisplay = ({ executions, isVisible, onToggle }: { 
+  executions: WorkerExecution[], 
+  isVisible: boolean, 
+  onToggle: () => void 
+}) => {
+  return (
+    <div className="border rounded-lg bg-gray-20 mb-4">
+      <Button
+        variant="ghost"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-3 h-auto">
+        <span className="font-light">Execution Log ({executions.length} steps)</span>
+        {isVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </Button>
+      {isVisible && (
+        <div className="px-3 pb-3 max-h-60 overflow-y-auto">
+          <div className="space-y-2">
+            {executions.map((execution, index) => (
+              <div key={`${execution.timestamp}-${index}`} className="flex items-start gap-2 text-xs">
+                <div className="flex-shrink-0 mt-0.5">
+                  <CheckCircle className="h-3 w-3 text-green-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-700">
+                      {execution.worker?.config?.type || 'Unknown Worker'}
+                    </span>
+                    <span className="text-gray-400">
+                      {new Date(execution.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                  {execution.worker?.error && (
+                    <div className="text-red-600 mt-1">
+                      Error: {execution.worker.error}
+                    </div>
+                  )}
+                  {execution.state && Object.keys(execution.state).length > 0 && (
+                    <div className="text-gray-600 mt-1 font-mono bg-gray-100 p-1 rounded text-xs">
+                      {JSON.stringify(execution.state, null, 2).slice(0, 100)}
+                      {JSON.stringify(execution.state).length > 100 && '...'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Chat() {
   const [loadedAgents, setLoadedAgents] = useState<Record<number, AgentEntry>>({})
@@ -59,6 +116,9 @@ export default function Chat() {
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const { selectedTeam } = useTeamStore()
+
+const [workerExecutions, setWorkerExecutions] = useState<WorkerExecution[]>([])
+const [showExecutionLogs, setShowExecutionLogs] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -207,13 +267,30 @@ export default function Chat() {
     }
   }
 
+  function onWorkerExecuted(p: { worker: any; state: any }) {
+    console.log(
+      `[Worker Executed] type="${p.worker.config.type}", state=`,
+      p.state
+    )
+    const execution: WorkerExecution = {
+      timestamp: Date.now(),
+      worker: p.worker,
+      state: p.state
+    }
+
+    setWorkerExecutions(prev => [...prev, execution])
+    
+    setShowExecutionLogs(true)
+  }
+
   async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
     if (!userText && !audio) return
     setState({ isSending: true })
 
     const currentUid = activeChat?.uid ?? crypto.randomUUID()
+    setWorkerExecutions([])
 
-    const humanMsg: AgentChatMessage = { type: "human",  message: userText || "" }
+    const humanMsg: AgentChatMessage = { type: "human", message: userText || "" }
     const updatedMessages = [...messages, humanMsg]
     setMessages(updatedMessages)
 
@@ -223,12 +300,11 @@ export default function Chat() {
       try {
         const entry = selected[0] as AgentEntry;
         const worker = await agents.loadAgent(Number(entry.id));
-        
-        // Build formatted conversation history string
+
         const conversationHistory = updatedMessages.map(msg => {
           const sender = (msg.type === "human") ? "User" : "Bot";
           let messageContent = "";
-          
+
           if (msg.type === "human") {
             messageContent = msg.message || "";
           } else if (msg.type === "agent") {
@@ -237,12 +313,12 @@ export default function Chat() {
               messageContent = JSON.stringify(messageContent);
             }
           }
-          
+
           return sender + ": " + messageContent;
         }).join("\n");
-        
+
         const parameters: {
-          input: { 
+          input: {
             question: string;
             conversation_history?: string;
             uid: string;
@@ -251,17 +327,19 @@ export default function Chat() {
           output?: string;
           state?: any;
           uid?: string;
+          logWriter?: (p: { worker: AIWorker; state: any }) => void;
         } = {
-          input: { 
+          input: {
             question: userText || "",
             conversation_history: conversationHistory,
             uid: currentUid
           },
           apikeys: apiKeys,
           state: {},
-          uid: currentUid
+          uid: currentUid,
+          logWriter: onWorkerExecuted,
         }
-                
+
         await worker.execute(parameters);
 
         reply = {
@@ -281,10 +359,10 @@ export default function Chat() {
     } else {
       reply = { type: "agent", message: "No agent selected", messages: [], needsRebuild: false };
     }
-  
+
     const finalMessages = [...updatedMessages, reply];
     setMessages(finalMessages);
-  
+
     const newSession: ChatSession = {
       uid: currentUid,
       agentName: state.agents[state.selectedAgents[0]]?.name ?? "Chat",
@@ -292,7 +370,7 @@ export default function Chat() {
       messages: finalMessages,
       timestamp: new Date().toISOString(),
     }
-  
+
     setActiveChat(newSession);
     setChatHistory(prev => {
       const exists = prev.find(c => c.uid === currentUid);
@@ -302,7 +380,7 @@ export default function Chat() {
         return [newSession, ...prev];
       }
     })
-  
+
     setState({ isSending: false });
   }
 
@@ -375,6 +453,13 @@ export default function Chat() {
                       isLoadingFromHistory={isLoadingFromHistory}
                     />
                   ))
+                )}
+                {workerExecutions.length > 0 && (
+                  <ExecutionLogDisplay 
+                  executions={workerExecutions}
+                  isVisible={showExecutionLogs}
+                  onToggle={() => setShowExecutionLogs(!showExecutionLogs)}
+                />
                 )}
                 {state.isSending && (
                   <div className="flex justify-start w-fit">
