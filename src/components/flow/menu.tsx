@@ -67,12 +67,6 @@ export function Toolbar(props: Props) {
   const { selectedTeam } = useTeamStore()
   let navigate = useNavigate()
   const update = useForceUpdate()
-  const { form, m, watch } = useForm(model, {
-    values: {
-      title: app.agent.title,
-      ...app.getAPIkeys(),
-    }
-  })
 
   const { form: agentForm, m: f } = useForm(agentModel, {
     values: {
@@ -81,15 +75,6 @@ export function Toolbar(props: Props) {
   })
 
   const [saving, setSaving] = useState(false)
-
-
-  form.onSubmit = async (data) => {
-    const ak = app.getAPIkeys()
-    ak.openai = data.openai
-    ak.anthropic = data.anthropic
-    ak.zendesk = data.zendesk
-    app.saveAPIkeys(ak)
-  }
 
   agentForm.onSubmit = async (data) => {
     app.agent.title = data.title
@@ -130,10 +115,12 @@ export function Toolbar(props: Props) {
       return
     }
 
+    const apiKeys = await app.fetchAPIkeys(selectedTeam?.id)
+
     const p: AgentParameters = {
       debug: true,
       input: {},
-      apikeys: app.getAPIkeys(),
+      apikeys: apiKeys,
     }
 
     // const p: AgentParameters = {
@@ -193,10 +180,6 @@ export function Toolbar(props: Props) {
     update()
   }
 
-  function onSetAPIKey() {
-    form.modal.show()
-  }
-
   function onSetAgent() {
     agentForm.edit({
       title: app.agent.title,
@@ -252,9 +235,6 @@ export function Toolbar(props: Props) {
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs"><EllipsisVertical size={18} className="cursor-pointer" /></MenubarTrigger>
           <MenubarContent>
-            <MenubarItem className="text-xs" onClick={onSetAPIKey}>
-              Set API Keys
-            </MenubarItem>
             <MenubarItem className="text-xs" onClick={onChangeDisplayData}>
               {app.agent.displayData ? "Hide Debug Data" : "Show Debug Data"}
             </MenubarItem>
@@ -277,19 +257,6 @@ export function Toolbar(props: Props) {
         <Input span={12} field={f.debuguid} />
       </Row>
     </Modal>
-
-    <Modal form={form} title="API Keys">
-      <Row>
-        <Input span={12} field={m.openai} required />
-      </Row>
-      <Row>
-        <Input span={12} field={m.anthropic} required />
-      </Row>
-      <Row>
-        <Input span={12} field={m.zendesk} required />
-      </Row>
-    </Modal>
-
   </>
 
 

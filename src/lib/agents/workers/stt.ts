@@ -15,7 +15,7 @@ declare global {
   }
   
   async function execute(worker: STTWorker, p: AgentParameters) {
-    const ak = app.getAPIkeys()
+    const ak = await app.fetchAPIkeys()
     const audio = worker.fields.input.value as { audio: string, ext: string }
     const engine = worker.parameters.engine || "whisper-1"
     const openai = new OpenAI({apiKey: ak.openai, dangerouslyAllowBrowser: true})
