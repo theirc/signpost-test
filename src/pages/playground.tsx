@@ -125,7 +125,11 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
 
     async function loadAgents() {
       try {
-        const { data: adata, error: aerr } = await agentsModel.data.select("id, title")
+        // Filter agents by the current team_id
+        const { data: adata, error: aerr } = await agentsModel.data
+          .select("id, title")
+          .eq('team_id', selectedTeam?.id)
+        
         if (aerr) throw aerr
 
         const agentEntries = (adata || []).reduce<Record<number, AgentEntry>>((acc, a) => {
