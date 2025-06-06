@@ -1,7 +1,5 @@
 import axios from "axios"
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import { app } from "@/lib/app"
-import { useTeamStore } from "@/lib/hooks/useTeam"
 
 // =============================================
 // ISOMORPHIC SUPABASE/EMBEDDING FUNCTIONS
@@ -43,15 +41,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * @param {string} text - The text to generate an embedding for
  * @returns {Promise<{ data: number[] | null, error: Error | null }>} The embedding vector or null/error
  */
-async function generateEmbedding(text: string): Promise<{
+async function generateEmbedding(text: string, apiKeys: APIKeys): Promise<{
   data: number[] | null,
   error: Error | null
 }> {
-  const { selectedTeam } = useTeamStore()
   try {
     console.log('[Worker Embedding] Starting OpenAI embedding generation...')
     
-    const openaiApiKey = await app.fetchAPIkey("openai", selectedTeam?.id)
+    const openaiApiKey = apiKeys.openai
     if (!openaiApiKey) {
       const errorMsg = 'Missing OpenAI API key. Please set OPENAI_API_KEY environment variable.';
       console.error(`[Worker Embedding] ${errorMsg}`);
@@ -171,7 +168,7 @@ function deduplicateDocuments(array: VectorDocument[]): VectorDocument[] {
   return deduped
 }
 
-async function execute(worker: SearchWorker) {
+async function execute(worker: SearchWorker, {apikeys}: AgentParameters) {
   console.log("Executing search worker with parameters:", worker.parameters);
 
   worker.fields.output.value = [];
@@ -203,7 +200,7 @@ async function execute(worker: SearchWorker) {
     if (collectionIds && collectionIds.length > 0) {
       console.log(`[Supabase Path] Searching ${collectionIds.length} collections:`, collectionIds);
       try {
-        const { data: queryEmbedding, error: embeddingError } = await generateEmbedding(query);
+        const { data: queryEmbedding, error: embeddingError } = await generateEmbedding(query, apikeys);
         if (embeddingError || !queryEmbedding) {
             throw embeddingError || new Error("Failed to generate query embedding.");
         }
