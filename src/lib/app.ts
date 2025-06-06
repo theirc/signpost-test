@@ -1,7 +1,37 @@
 import { supabase } from "./data/db"
+import { create } from 'zustand'
+
+interface AppState {
+  agentLoading: boolean
+  setAgentLoading: (loading: boolean) => void
+  agent: Agent | null
+  setAgent: (agent: Agent | null) => void
+}
+
+export const useAppStore = create<AppState>((set) => ({
+  agentLoading: false,
+  setAgentLoading: (loading) => set({ agentLoading: loading }),
+  agent: null,
+  setAgent: (agent) => set({ agent }),
+}))
 
 export const app = {
-  agent: null as Agent,
+  get agent() {
+    return useAppStore.getState().agent
+  },
+  set agent(value: Agent | null) {
+    useAppStore.getState().setAgent(value)
+  },
+  get state() {
+    return {
+      get agentLoading() {
+        return useAppStore.getState().agentLoading
+      },
+      set agentLoading(loading: boolean) {
+        useAppStore.getState().setAgentLoading(loading)
+      }
+    }
+  },
 
   async fetchAPIkeys(teamId?: string) {
     if (!teamId) {
