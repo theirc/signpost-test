@@ -246,10 +246,12 @@ export function FlowDesigner({ id }: { id?: string }) {
       })
       setAgent(app.agent)
     } else {
+      app.state.agentLoading = true
       agents.loadAgent(id as any).then((a) => {
         console.log("Agent loaded:", a)
         app.agent = a
         setAgent(a)
+        app.state.agentLoading = false
       })
     }
   }, [])

@@ -24,7 +24,7 @@ import Sources from "@/pages/sources"
 import { Routes, Route, useLocation, useNavigate, useMatch } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
 import React from 'react';
-import { app } from "@/lib/app"
+import { app, useAppStore } from "@/lib/app"
 import { UsersSettings } from "@/pages/settings/users"
 import { AddTeamMembers } from "@/pages/settings/team-members"
 import { ApiKeysSettings } from "@/pages/settings/api-keys"
@@ -200,6 +200,7 @@ function HeaderControls({ isAgentRoute }: { isAgentRoute: boolean }) {
   const location = useLocation()
   const currentPath = location.pathname
   const currentName = routeNames[currentPath] || 'Unknown'
+  const agentLoading = useAppStore(state => state.agentLoading)
 
   return (
     <>
@@ -217,7 +218,7 @@ function HeaderControls({ isAgentRoute }: { isAgentRoute: boolean }) {
                 <>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
-                    {isAgentRoute && app.agent ? (
+                    {isAgentRoute && app.agent && !agentLoading ? (
                       <div className="text-sm flex items-center">
                         <span className="font-medium text-foreground">
                           {app.agent.title}
