@@ -1,5 +1,5 @@
 import { useReactFlow } from '@xyflow/react'
-import { EllipsisVertical, LoaderCircle, Settings, Trash2, CircleXIcon } from "lucide-react"
+import { EllipsisVertical, LoaderCircle, Settings, Trash2, CircleXIcon, HelpCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { memo } from 'react'
 import { useWorkerContext } from './hooks'
@@ -21,6 +21,11 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
   let Icon: any = worker.registry.icon ? <worker.registry.icon size={16} className='mr-1 mt-[2px] text-gray-600' /> : <Settings size={16} className='mr-1 mt-[2px] text-gray-600' />
   const handleDelete = () => deleteElements({ nodes: [{ id: worker?.config.id }] })
   const { currentWorker } = agent
+
+  function onAddCondition() {
+    worker.addHandler({ name: `condition_${worker.createHandlerId()}`, type: "unknown", title: "Condition", direction: "input", system: true, condition: true })
+    agent.update()
+  }
 
   if (currentWorker && currentWorker.id === worker.id) {
     Icon = <LoaderCircle size={16} className="animate-spin mr-1 mt-[2px] text-gray-600" />
@@ -50,6 +55,10 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
           <Trash2 />
           Delete
         </DropdownMenuItem>
+        {worker.conditionable && <DropdownMenuItem onClick={onAddCondition}>
+          <HelpCircle />
+          Add Condition
+        </DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   </div>

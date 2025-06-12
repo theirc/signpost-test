@@ -130,6 +130,10 @@ function Flow() {
   const onConnect = (c: Connection) => {
     console.log("Connect:", c)
 
+    console.log("Agent: ", app.agent)
+
+
+
     const worker = app.agent.workers[c.source]
     const handle = worker.handles[c.sourceHandle]
     worker.updateWorker()

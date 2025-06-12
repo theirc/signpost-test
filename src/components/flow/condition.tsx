@@ -14,6 +14,8 @@ const stringOperators = [
   { label: "Not Equals", value: "notEquals" },
   { label: "Contains", value: "contains" },
   { label: "Not Contains", value: "notContains" },
+  { label: "Is Empty", value: "isEmpty" },
+  { label: "Is Not Empty", value: "isNotEmpty" },
 ]
 
 const numberOperators = [
@@ -44,34 +46,42 @@ const numberModel = createModel({
 export function ConditionHandler() {
 
   const { worker } = useWorkerContext<AIWorker>()
-  const ch = worker.getConnectedHandler(worker.fields.condition, app.agent)
+  // useNodeConnections({ id: worker.id })
+  const conditionHandlers = worker.getHandlersArray().filter((h) => h.condition && h.direction === "input")
 
-  useNodeConnections({ id: worker.id })
+  function onRemoveConditionalHandle(handle: NodeIO) {
+    worker.deleteHandler(handle.id)
+    app.agent.update()
+  }
 
-  let type: IOTypes = "unknown"
-  if (ch) type = ch.type
-  worker.fields.condition.type = type
+  return <div>
+    {conditionHandlers.map((h) => {
+      const ch = worker.getConnectedHandler(h, app.agent)
+      let type = ch?.type ?? "unknown"
+      h.type = type
 
-  console.log("Render Condition", type)
-  return <div className="">
-    <WorkerLabeledHandle handler={worker.fields.condition} />
-    {type === "boolean" && <MemoizedWorker worker={worker} name="condition"> <ConditionBoolean worker={worker} /> </MemoizedWorker>}
-    {type === "string" || type === "enum" && <MemoizedWorker worker={worker} name="condition">  <ConditionString worker={worker} /> </MemoizedWorker>}
-    {type === "number" && <MemoizedWorker worker={worker} name="condition"> <ConditionNumber worker={worker} /> </MemoizedWorker>}
+      return <div key={h.id}>
+        <WorkerLabeledHandle handler={h} onRemoveConditionalHandle={onRemoveConditionalHandle} />
+        {type === "boolean" && <MemoizedWorker worker={worker}> <ConditionBoolean handle={h} /> </MemoizedWorker>}
+        {(type === "string" || type === "enum") && <MemoizedWorker worker={worker}> <ConditionString handle={h} /></MemoizedWorker>}
+        {type === "number" && <MemoizedWorker worker={worker}> <ConditionNumber handle={h} /> </MemoizedWorker>}
+      </div>
+    })}
   </div>
+
+
 }
 
 
-function ConditionBoolean({ worker }: { worker: AIWorker }) {
+function ConditionBoolean({ handle }: { handle: NodeIO }) {
 
-  const [on, setOn] = useState(!!worker.condition.value)
+  const [on, setOn] = useState(!!handle.conditionValue1)
 
   function onChange(v: boolean) {
-    worker.condition.operator = "equals"
-    worker.condition.value = !!v
+    handle.operator = "equals"
+    handle.conditionValue1 = !!v
     setOn(v)
   }
-
 
   return <div className='px-2 py-2 nodrag w-full flex-grow flex flex-col'>
     <div className="flex items-center space-x-2">
@@ -82,21 +92,23 @@ function ConditionBoolean({ worker }: { worker: AIWorker }) {
 
 }
 
-function ConditionString({ worker }: { worker: AIWorker }) {
+function ConditionString({ handle }: { handle: NodeIO }) {
+
+  const [operator, setOperator] = useState<WorkerOperators>(handle.operator)
+
   const { form, m, watch } = useForm(stringModel, {
     values: {
-      condition: worker.condition?.operator || "equals",
-      value: worker.condition?.value || "",
+      condition: handle.operator || "equals",
+      value: handle.conditionValue1 || "",
     }
   })
 
   watch((value, { name }) => {
     if (name === "condition") {
-      worker.condition.operator = value.condition as "equals" | "notEquals" | "contains" | "notContains"
+      handle.operator = value.condition as WorkerOperators
+      setOperator(value.condition as WorkerOperators)
     }
-    if (name === "value") {
-      worker.condition.value = value.value
-    }
+    if (name === "value") handle.conditionValue1 = value.value
   })
 
   return <form.context>
@@ -104,33 +116,33 @@ function ConditionString({ worker }: { worker: AIWorker }) {
       <Row className='mb-2'>
         <Select field={m.condition} span={12} options={stringOperators} hideLabel />
       </Row>
-      <Input field={m.value} type="text" span={12} hideLabel placeholder="Enter text value" />
+      {operator != "isEmpty" && operator != "isNotEmpty" && <Input field={m.value} type="text" span={12} hideLabel placeholder="Enter text value" />}
     </div>
   </form.context>
 }
 
-function ConditionNumber({ worker }: { worker: AIWorker }) {
+function ConditionNumber({ handle }: { handle: NodeIO }) {
   const { form, m, watch } = useForm(numberModel, {
     values: {
-      condition: worker.condition?.operator || "equals",
-      value: worker.condition?.value || 0,
-      value2: worker.condition?.value2 || 0,
+      condition: handle.operator || "equals",
+      value: handle.conditionValue1 || 0,
+      value2: handle.conditionValue1 || 0,
     }
   })
 
-  const [operator, setOperator] = useState(worker.condition?.operator || "equals")
+  const [operator, setOperator] = useState(handle.operator || "equals")
 
   watch((value, { name }) => {
     if (name === "condition") {
-      const op = value.condition as "equals" | "notEquals" | "gt" | "lt" | "gte" | "lte" | "between"
-      worker.condition.operator = op
+      const op = value.condition as WorkerOperators
+      handle.operator = op
       setOperator(op)
     }
     if (name === "value") {
-      worker.condition.value = Number(value.value)
+      handle.conditionValue1 = Number(value.value)
     }
     if (name === "value2") {
-      worker.condition.value2 = Number(value.value2)
+      handle.conditionValue2 = Number(value.value2)
     }
   })
 
@@ -148,3 +160,4 @@ function ConditionNumber({ worker }: { worker: AIWorker }) {
     </div>
   </form.context>
 }
+

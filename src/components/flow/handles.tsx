@@ -1,19 +1,19 @@
 import { app } from "@/lib/app"
-import { Connection, Handle, HandleProps, Position, useNodeConnections } from "@xyflow/react"
-import { Binary, CircleHelp, Hash, Headphones, Image, MessageCircleMore, Type, Video } from "lucide-react"
-import React, { useContext } from "react"
-import { MemoizedWorker } from "./memoizedworkers"
-import { cn } from "@/lib/utils"
-import { useWorkerContext } from "./hooks"
-import { HanlderIcon } from "./handlericon"
 import { createModel } from "@/lib/data/model"
-import { boolean, number } from "zod"
+import { cn } from "@/lib/utils"
+import { Connection, Handle, HandleProps, Position, useNodeConnections } from "@xyflow/react"
+import { CircleX } from "lucide-react"
+import React from "react"
+import { Input, InputTextArea, Row } from "../forms"
 import { useForm } from "../forms/hooks"
-import { Input, InputTextArea, Row, Select } from "../forms"
+import { HanlderIcon } from "./handlericon"
+import { useWorkerContext } from "./hooks"
+import { MemoizedWorker } from "./memoizedworkers"
 
 type WorkerHandleProps = Partial<HandleProps> & React.HTMLAttributes<HTMLDivElement> & {
   handler?: NodeIO
   mockable?: boolean
+  onRemoveConditionalHandle?: (h: NodeIO) => void
 }
 
 const model = createModel({
@@ -90,6 +90,7 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
     if (handles.type === "unknown") return true
 
     if (handles.type == "enum" && handlet.type == "string") return true
+    if (handles.type == "string" && handlet.type == "enum") return true
     if (handles.type == "enum" && handlet.type == "number") return true
 
     return handles.type === handlet.type
@@ -108,7 +109,7 @@ export function WorkerHandle({ handler, className, ...props }: WorkerHandleProps
 
 }
 
-export function WorkerLabeledHandle({ handler, mockable, ...props }: WorkerHandleProps) {
+export function WorkerLabeledHandle({ handler, mockable, onRemoveConditionalHandle, ...props }: WorkerHandleProps) {
   const ct = useWorkerContext()
   if (!handler) return null
 
@@ -117,9 +118,14 @@ export function WorkerLabeledHandle({ handler, mockable, ...props }: WorkerHandl
     ct?.onEdit?.(handler)
   }
 
+  function onDeleteConditionalHandle() {
+    if (!handler.condition || !onRemoveConditionalHandle) return
+    onRemoveConditionalHandle(handler)
+  }
+
   if (handler.type != "string" && handler.type != "number") mockable = false
 
-  return <div>
+  return <div className="group">
     <div className="relative flex">
       <WorkerHandle handler={handler} />
 
@@ -133,6 +139,11 @@ export function WorkerLabeledHandle({ handler, mockable, ...props }: WorkerHandl
       >
         {handler.title || handler.name}
       </h3>
+
+      {handler.condition && <div className="group-hover:block hidden mt-[6px] ">
+        <CircleX size={15} className="hover:text-red-600 text-gray-500 cursor-pointer" onClick={onDeleteConditionalHandle} />
+      </div>}
+
 
       {handler.direction == "input" && <div className="flex-grow" />}
       {handler.direction == "output" && <div className="mr-[6px]">
