@@ -23,6 +23,12 @@ export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory 
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredHistory, setFilteredHistory] = useState(chatHistory)
 
+  const getMessageAsString = (message: string | object | undefined): string => {
+    if (!message) return ""
+    if (typeof message === "string") return message
+    return JSON.stringify(message, null, 2)
+  }
+
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredHistory(chatHistory)
@@ -32,17 +38,17 @@ export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory 
     const lowerQuery = searchQuery.toLowerCase()
     const filtered = chatHistory.filter(chat => {
       const firstMessage = chat.messages && chat.messages.length > 0
-        ? chat.messages[0].message?.toLowerCase() || ""
+        ? getMessageAsString(chat.messages[0].message).toLowerCase()
         : ""
       
       if (firstMessage.includes(lowerQuery)) {
         return true
       }
       
-      return chat.messages.some(msg => 
-        msg.message && typeof msg.message === 'string' && 
-        msg.message.toLowerCase().includes(lowerQuery)
-      )
+      return chat.messages.some(msg => {
+        const messageStr = getMessageAsString(msg.message).toLowerCase()
+        return messageStr.includes(lowerQuery)
+      })
     })
     
     setFilteredHistory(filtered)
@@ -137,7 +143,7 @@ export function ChatHistory({ setActiveChat, onSelectAgent, agents, chatHistory 
         <div className="space-y-4">
           {filteredHistory.map((chat) => {
             const firstMessage = chat.messages && chat.messages.length > 0
-              ? chat.messages[0].message
+              ? getMessageAsString(chat.messages[0].message)
               : "New Conversation"
 
             const agentNames = chat.selectedAgents && chat.selectedAgents.length > 0
