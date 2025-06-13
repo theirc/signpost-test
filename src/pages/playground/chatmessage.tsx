@@ -11,18 +11,18 @@ export interface MessageProps {
   isLoadingFromHistory?: boolean
 }
 
-const ensureString = (value: any): string => {
-  if (value == null) return ''
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    try {
-      return JSON.stringify(value)
-    } catch {
-      return String(value)
-    }
-  }
-  return String(value)
-};
+function ensureString(value: any): string {
+  if (value === null || value === undefined) return ""
+  if (typeof value === "string") return value
+  return JSON.stringify(value, null, 2)
+}
+
+function isJsonString(value: any): boolean {
+  if (typeof value !== "string") return false
+  const trimmed = value.trim()
+  return (trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+         (trimmed.startsWith('[') && trimmed.endsWith(']'))
+}
 
 export default function ChatMessageComponent({ 
   message: msg, 
@@ -72,21 +72,34 @@ if (msg.type === 'agent') {
   }
 
 if (msg.type === 'human') {
+  const messageContent = ensureString(msg.message)
+  const isJsonMessage = isJsonString(messageContent)
+  
   return (
     <div className="w-full mt-4 message-fade-in" dir="auto">
       <div className="flex flex-col items-end">
         <div
           className={`bg-blue-500 message-bubble shadow-sm ${
-            isSingleLine ? 'single-line' : ''
+            isSingleLine && !isJsonMessage ? 'single-line' : ''
           }`}
           dir="auto"
         >
+          {isJsonMessage && (
+            <div className="bg-blue-600 px-2 py-1 text-xs text-blue-100 rounded-t-lg -m-3 mb-2 flex items-center justify-between">
+              <span>JSON Input</span>
+              <span className="bg-blue-700 px-1.5 py-0.5 rounded text-xs">JSON</span>
+            </div>
+          )}
           <div
             ref={messageTextRef}
             className="break-words whitespace-pre-wrap"
-            style={{ fontFamily: 'Inter, sans-serif', lineHeight: 1.5, fontSize: '0.925rem' }}
+            style={{ 
+              fontFamily: isJsonMessage ? 'Monaco, Consolas, monospace' : 'Inter, sans-serif', 
+              lineHeight: 1.5, 
+              fontSize: '0.925rem' 
+            }}
           >
-            {ensureString(msg.message)}
+            {messageContent}
           </div>
         </div>
         <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">

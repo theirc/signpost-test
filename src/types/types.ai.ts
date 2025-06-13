@@ -30,7 +30,7 @@ export interface SourceReference {
 export interface AgentChatMessage {
   type?: "human" | "agent"
   id?: number
-  message?: string
+  message?: string | object
   agentName?: string
   isAnswer?: boolean
   isContacts?: boolean
