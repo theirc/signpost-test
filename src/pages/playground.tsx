@@ -17,6 +17,7 @@ import ChatMessageComponent from "@/pages/playground/chatmessage"
 import "../index.css"
 import { agentsModel } from "@/lib/data"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { supabase } from '@/lib/data/db'
 
 interface AgentEntry {
   id: string
@@ -271,11 +272,26 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     }
   }
 
-  function onWorkerExecuted(p: { worker: any; state: any }) {
+  async function addLog(p: { worker: any; state: any }, id: string) {
+    const handles = p.worker?.handlersArray?.map((h: any) => ({ [h.name]: h.value })) || []
+    const logData = {
+      team_id: selectedTeam?.id,
+      agent: state.selectedAgents.map(id => state.agents[id]).filter(Boolean)[0].id,
+      worker: p.worker.config.type,
+      state: p.state,
+      handles,
+      execution: id
+    }
+    const { data, error } = await supabase.from('logs').insert(logData).select().single()
+    return { data, error }
+  }
+
+  function onWorkerExecuted(p: { worker: any; state: any }, id: string) {
     console.log(
       `[Worker Executed] type="${p.worker.config.type}", state=`,
       p.state
     )
+    addLog(p, id)
     const execution: WorkerExecution = {
       timestamp: Date.now(),
       worker: p.worker,
@@ -320,6 +336,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
 
           return sender + ": " + messageContent;
         }).join("\n");
+        const logId = crypto.randomUUID()
 
         const parameters: {
           input: {
@@ -341,7 +358,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
           apikeys: apiKeys,
           state: {},
           uid: currentUid,
-          logWriter: onWorkerExecuted,
+          logWriter: (p) => onWorkerExecuted(p, logId),
         }
 
         await worker.execute(parameters);
