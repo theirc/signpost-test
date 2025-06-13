@@ -310,7 +310,27 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     const currentUid = activeChat?.uid ?? crypto.randomUUID()
     setWorkerExecutions([])
 
-    const humanMsg: AgentChatMessage = { type: "human", message: userText || "" }
+    let inputData: any
+    let isJsonInput = false
+    
+    try {
+      if (userText && userText.trim().startsWith('{') && userText.trim().endsWith('}')) {
+        inputData = JSON.parse(userText)
+        isJsonInput = true
+      } else if (userText && userText.trim().startsWith('[') && userText.trim().endsWith(']')) {
+        inputData = JSON.parse(userText)
+        isJsonInput = true
+      } else {
+        inputData = userText || ""
+      }
+    } catch (e) {
+      inputData = userText || ""
+    }
+
+    const humanMsg: AgentChatMessage = { 
+      type: "human", 
+      message: isJsonInput ? JSON.stringify(inputData, null, 2) : (userText || "")
+    }
     const updatedMessages = [...messages, humanMsg]
     setMessages(updatedMessages)
 
@@ -326,12 +346,9 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
           let messageContent = "";
 
           if (msg.type === "human") {
-            messageContent = msg.message || "";
+            messageContent = typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message);
           } else if (msg.type === "agent") {
-            messageContent = msg.message || "";
-            if (typeof messageContent === "object") {
-              messageContent = JSON.stringify(messageContent);
-            }
+            messageContent = typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message);
           }
 
           return sender + ": " + messageContent;
@@ -340,9 +357,10 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
 
         const parameters: {
           input: {
-            question: string;
+            question?: string;
             conversation_history?: string;
             uid: string;
+            [key: string]: any;
           };
           apikeys: APIKeys;
           output?: string;
@@ -351,7 +369,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
           logWriter?: (p: { worker: AIWorker; state: any }) => void;
         } = {
           input: {
-            question: userText || "",
+            ...(isJsonInput ? inputData : { question: userText || "" }),
             conversation_history: conversationHistory,
             uid: currentUid
           },
@@ -503,7 +521,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
                   disabled={state.isSending}
                 />
                 <p className="text-xs text-gray-500 text-center mt-2">
-                  Signpost AI is experimental. Please validate results.
+                  Signpost AI is experimental. Please validate results. Supports both text and JSON input.
                 </p>
               </>
             ) : (
