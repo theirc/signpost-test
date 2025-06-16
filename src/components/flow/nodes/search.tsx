@@ -8,7 +8,7 @@ import { useWorker } from '../hooks'
 import { MemoizedWorker } from '../memoizedworkers'
 import { NodeLayout } from './node'
 import { ConditionHandler } from '../condition'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useTeamStore } from '@/lib/hooks/useTeam'
 import { Collection } from '@/pages/knowledge'
 import { supabase } from '@/lib/agents/db'
@@ -87,42 +87,45 @@ export function SearchNode(props: NodeProps) {
       }
     }
     loadCollections()
-  }, [])
+  }, [selectedTeam.id])
 
-  const { form, m, watch, setValue } = useForm(model, {
+  const initialCollectionsValue = useMemo(() => {
+    const stored = worker.parameters.collections?.[0]
+    if (stored && collectionOptions.find(opt => opt.value === stored)) {
+      return stored
+    }
+    return undefined
+  }, [worker.parameters.collections, collectionOptions])
+
+  const { form, m, watch, setValue, getValues } = useForm(model, {
     values: {
       engine: worker.parameters.engine || worker.fields.engine.default || "weaviate",
       maxResults: worker.parameters.maxResults || worker.fields.maxResults.default || 5,
       distance: worker.parameters.distance ?? worker.fields.distance.default ?? 0.3,
       domain: Array.isArray(worker.parameters.domain) ? worker.parameters.domain : worker.parameters.domain ? [worker.parameters.domain] : worker.fields.domain.default || [],
-      collections: worker.parameters.collections?.[0] || worker.fields.collections?.default || undefined
+      collections: initialCollectionsValue
     }
   })
 
-  const selectedEngine = watch('engine');
-
-  useEffect(() => {
-      if (selectedEngine === 'supabase') {
-          if (worker.parameters.domain) {
-             console.log("[Engine Change] Clearing domain parameter");
-             setValue('domain', ['']); 
-             worker.parameters.domain = undefined; 
-             worker.fields.domain.default = ''; 
-          }
-      } else {
-          if (worker.parameters.collections && worker.parameters.collections.length > 0) {
-              console.log("[Engine Change] Clearing collections parameter");
-              setValue('collections', undefined); 
-              worker.parameters.collections = undefined; 
-              worker.fields.collections.default = undefined; 
-          }
-      }
-  }, [selectedEngine, setValue, worker.parameters, worker.fields, form]);
+  const selectedEngine = watch('engine')
 
   watch((value, { name }) => {
+    if (name === "collections" && selectedEngine === 'supabase') {
+      const selectedCollections = value.collections ? [value.collections] : undefined
+      if (JSON.stringify(worker.parameters.collections) !== JSON.stringify(selectedCollections)) {
+        worker.parameters.collections = selectedCollections
+        worker.fields.collections.default = value.collections
+        console.log("[Watch Collections] Setting worker parameters:", selectedCollections)
+      }
+    }
     if (name === "engine") {
       worker.parameters.engine = value.engine as any
       worker.fields.engine.default = value.engine
+      if (value.engine !== 'supabase') {
+        worker.parameters.collections = undefined
+        worker.fields.collections.default = undefined
+        setValue('collections', undefined)
+      }
     }
     if (name === "maxResults") {
       worker.parameters.maxResults = value.maxResults
@@ -136,12 +139,6 @@ export function SearchNode(props: NodeProps) {
     if (name === "domain" && selectedEngine !== 'supabase') {
       worker.parameters.domain = value.domain
       worker.fields.domain.default = value.domain
-    } 
-    if (name === "collections" && selectedEngine === 'supabase') {
-      const selectedCollections = value.collections ? [value.collections] : undefined;
-      console.log("[Watch Collections] Setting worker parameters:", selectedCollections);
-      worker.parameters.collections = selectedCollections
-      worker.fields.collections.default = value.collections
     }
   })
 
