@@ -287,8 +287,6 @@ export const search: WorkerRegistryItem = {
         { type: "number", direction: "input", title: "Distance", name: "distance" },
         { type: "number", direction: "input", title: "Max Results", name: "maxResults" },
         { type: "string", direction: "input", title: "Collections", name: "collections" },
-
-        { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
       ],
       search
     )
