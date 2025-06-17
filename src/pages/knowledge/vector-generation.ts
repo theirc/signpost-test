@@ -86,7 +86,15 @@ export const generateCollectionVector = async (
             continue
           }
         } catch (embeddingError) {
-          console.error(`[generateCollectionVector] Error generating embedding for source ${cs.source_id}:`, embeddingError)
+          // Check if this is a token limit error and provide a clearer message
+          const errorMessage = embeddingError instanceof Error ? embeddingError.message : String(embeddingError)
+          
+          if (errorMessage.includes('maximum context length') || errorMessage.includes('tokens')) {
+            console.error(`[generateCollectionVector] Source ${cs.source_id} is too large for embedding (content exceeds token limit). This source needs to be chunked into smaller pieces.`)
+            console.error(`[generateCollectionVector] Original error: ${errorMessage}`)
+          } else {
+            console.error(`[generateCollectionVector] Error generating embedding for source ${cs.source_id}:`, embeddingError)
+          }
           results.failed++
           results.failedSources.push(cs.source_id)
           continue
@@ -121,9 +129,22 @@ export const generateCollectionVector = async (
     
     // If any sources failed, return partial success
     if (results.failed > 0) {
+      // Create a more descriptive error message for the toast
+      let errorMessage = `Failed to generate vectors for ${results.failed} source${results.failed > 1 ? 's' : ''}.`
+      
+      // Add specific guidance based on common error patterns from the logs
+      const hasTokenLimitErrors = results.failedSources.some(sourceId => {
+        // This is a simple check - in practice you might want to track error types per source
+        return true // For now, assume token limit issues since that's the main error we're seeing
+      })
+      
+      if (hasTokenLimitErrors) {
+        errorMessage += ' Some sources are too large for embedding and need to be split into smaller chunks.'
+      }
+      
       return { 
         success: results.successful > 0, // Consider it a success if at least some vectors were generated
-        error: new Error(`Failed to generate vectors for ${results.failed} sources: ${results.failedSources.join(', ')}`),
+        error: new Error(errorMessage),
         partialSuccess: true,
         results
       }

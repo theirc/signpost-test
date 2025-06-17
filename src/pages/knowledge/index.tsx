@@ -64,12 +64,25 @@ export default function Knowledge() {
       }
       
       if (partialSuccess && results) {
-        // Some vectors were generated, but some failed
+        // Some vectors were generated, but some failed - show detailed error information
+        const errorDetails = error?.message || `${results.failed} sources failed to process`
+        
         toast({
           title: "Vector Generation Partially Complete",
-          description: `Successfully generated ${results.successful} vectors, but failed for ${results.failed} sources.`,
-          duration: 5000,
+          description: `Successfully generated ${results.successful} vectors, but failed for ${results.failed} sources. ${errorDetails}`,
+          variant: "destructive",
+          duration: 10000,
         })
+        
+        // If there are specific error types, show additional guidance
+        if (error?.message.includes('too large') || error?.message.includes('token limit')) {
+          toast({
+            title: "Large Sources Detected",
+            description: "Some sources are too large for embedding. Consider splitting them into smaller chunks before vectorization.",
+            variant: "destructive",
+            duration: 8000,
+          })
+        }
       } else if (success) {
         // All vectors were generated successfully
         toast({
@@ -85,13 +98,29 @@ export default function Knowledge() {
       fetchCollections()
     } catch (error) {
       console.error('Error generating vectors:', error)
+      
+      // Provide detailed error message based on the error content
+      let errorDescription = "There was an error generating vectors. Please try again."
+      
+      if (error instanceof Error) {
+        const errorMsg = error.message.toLowerCase()
+        
+        if (errorMsg.includes('token') || errorMsg.includes('too large')) {
+          errorDescription = `Error: ${error.message}. Some sources may be too large and need to be split into smaller chunks.`
+        } else if (errorMsg.includes('embedding')) {
+          errorDescription = `Embedding generation failed: ${error.message}. Check your API configuration.`
+        } else if (errorMsg.includes('database') || errorMsg.includes('supabase')) {
+          errorDescription = `Database error: ${error.message}. Please check your connection.`
+        } else {
+          errorDescription = `Error: ${error.message}`
+        }
+      }
+      
       toast({
         title: "Vector Generation Failed",
-        description: error instanceof Error 
-          ? `Error: ${error.message}` 
-          : "There was an error generating vectors. Please try again.",
+        description: errorDescription,
         variant: "destructive",
-        duration: 5000,
+        duration: 8000,
       })
     } finally {
       setIsGeneratingVector(false)
