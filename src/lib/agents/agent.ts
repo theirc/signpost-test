@@ -1,6 +1,7 @@
 import { createAgent, configureAgent, loadAgent, saveAgent } from "./agentfactory"
 
 declare global {
+
   type LiteralUnion<KnownValues extends string> = (string & {}) | KnownValues
   type Agent = ReturnType<typeof createAgent>
   type EdgeConnections = { [index: string]: { source: string, target: string, sourceHandle: string, targetHandle: string } }
@@ -22,8 +23,12 @@ declare global {
     output?: any
     agent?: Agent
     error?: string
-    apikeys?: APIKeys
-    state?: any
+    apiKeys?: APIKeys
+    // state?: any
+    state?: {
+      agent: {}
+      workers: { [key: string]: any }
+    }
     logWriter?: (p: { worker: AIWorker, state: any }) => void
   }
 }

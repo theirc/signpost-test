@@ -6,7 +6,7 @@ import { CircleX } from "lucide-react"
 import React from "react"
 import { Input, InputTextArea, Row } from "../forms"
 import { useForm } from "../forms/hooks"
-import { HanlderIcon } from "./handlericon"
+import { HandlerIcon } from "./handlericon"
 import { useWorkerContext } from "./hooks"
 import { MemoizedWorker } from "./memoizedworkers"
 
@@ -130,10 +130,10 @@ export function WorkerLabeledHandle({ handler, mockable, onRemoveConditionalHand
       <WorkerHandle handler={handler} />
 
       {handler.direction == "output" && <div className="flex-grow" />}
-      {handler.direction == "input" && <div className="ml-[6px]"><HanlderIcon handler={handler} worker={ct?.worker} /></div>}
+      {handler.direction == "input" && <div className="ml-[6px]"><HandlerIcon handler={handler} worker={ct?.worker} /></div>}
 
       <h3 className={cn(
-        `px-[4px] max-w-32 overflow-x-hidden text-wrap text-ellipsis border-transparent border rounded font-semibold`,
+        `px-[4px] max-w-48 overflow-x-hidden text-wrap text-ellipsis border-transparent border rounded font-semibold`,
         { "hover:bg-gray-200 hover:border-gray-400 cursor-pointer": !handler.system })}
         onClick={onClick}
       >
@@ -147,7 +147,7 @@ export function WorkerLabeledHandle({ handler, mockable, onRemoveConditionalHand
 
       {handler.direction == "input" && <div className="flex-grow" />}
       {handler.direction == "output" && <div className="mr-[6px]">
-        <HanlderIcon handler={handler} worker={ct?.worker} />
+        <HandlerIcon handler={handler} worker={ct?.worker} />
       </div>}
     </div>
     {mockable && <Mockable handle={handler} />}

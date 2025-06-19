@@ -30,6 +30,9 @@ import { DocumentSelectorNode } from './nodes/documentselector'
 import { StateNode } from './nodes/state'
 import { translate } from '@/lib/agents/workers/translate'
 import { TranslateNode } from './nodes/translate'
+import { PromptAgentNode } from './nodes/promptAgent'
+import { HandoffAgentNode } from './nodes/handoffAgent'
+import { ChatFlow } from './chat'
 
 const nodeTypes = {
   request: RequestNode,
@@ -48,26 +51,35 @@ const nodeTypes = {
   stt: STTNode,
   tts: TTSNode,
   translate: TranslateNode,
+  promptAgent: PromptAgentNode,
+  handoffAgent: HandoffAgentNode,
 }
 
-function Flow() {
+function Flow(props: { onAgentUpdate?: () => void }) {
 
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
   const counter = useRef(0)
-  const { screenToFlowPosition, updateNode } = useReactFlow()
+  const { screenToFlowPosition } = useReactFlow()
   const { agent } = app
 
   useEffect(() => {
     const initialNodes: Node[] = []
     for (const key in agent.workers) {
       const w = agent.workers[key]
-      initialNodes.push({
+      const newNode: Node = {
         id: w.config.id,
         data: {},
         type: w.config.type,
         position: { x: w.config.x, y: w.config.y },
-      })
+      }
+
+      if (w.config.width && w.config.height) {
+        newNode.width = w.config.width
+        newNode.height = w.config.height
+      }
+
+      initialNodes.push(newNode)
     }
     setNodes(initialNodes)
     const initialEdges: Edge[] = []
@@ -94,12 +106,8 @@ function Flow() {
         }
       }),
     )
-    if (agent.currentWorker) {
-      // console.log(`Executing Worker: '${agent.currentWorker.config.type}' `, agent.currentWorker)
-    }
-    // update()
+    if (props.onAgentUpdate) props.onAgentUpdate()
   }
-
 
   const onNodesChange = (changes: NodeChange[]) => {
     for (const change of changes) {
@@ -108,6 +116,16 @@ function Flow() {
         if (!w) continue
         w.config.x = change.position.x
         w.config.y = change.position.y
+
+      }
+      if (change.type == "dimensions") {
+        const w = app.agent.workers[change.id]
+        if (!w) continue
+        if (!change.resizing) {
+          console.log("Node resized:", change.id, change.dimensions)
+          w.config.width = change.dimensions.width
+          w.config.height = change.dimensions.height
+        }
       }
     }
     setNodes((nds) => applyNodeChanges(changes, nds))
@@ -128,21 +146,11 @@ function Flow() {
   }
 
   const onConnect = (c: Connection) => {
-    console.log("Connect:", c)
-
-    console.log("Agent: ", app.agent)
-
-
-
+    // console.log("Connect:", c)
     const worker = app.agent.workers[c.source]
-    const handle = worker.handles[c.sourceHandle]
+    // const handle = worker.handles[c.sourceHandle]
     worker.updateWorker()
-
-
-    // if (handle.type === "execute") {
     c = { ...c, type: 'customEdge' } as any
-    // }
-
     setEdges((eds) => {
       const added = addEdge(c, eds)
       for (const edge of added) {
@@ -150,22 +158,20 @@ function Flow() {
       }
       return added
     })
-
     agent.updateWorkers()
     agent.update()
-
   }
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
-    console.log("DragOver:", event.dataTransfer.getData("nodeType"))
+    // console.log("DragOver:", event.dataTransfer.getData("nodeType"))
 
   }, [])
 
   const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
-    console.log("Drop:", event.dataTransfer.getData("nodeType"))
+    // console.log("Drop:", event.dataTransfer.getData("nodeType"))
 
     const type = event.dataTransfer.getData("nodeType") as WorkerTypes
     if (!type) return
@@ -211,7 +217,9 @@ function Flow() {
     }
   }, [])
 
-  return <div className='w-full h-full pb-10'>
+
+
+  return <div className='flex-1'>
     <ReactFlow
       nodes={nodes}
       edges={edges}
@@ -231,6 +239,8 @@ function Flow() {
       <Controls />
     </ReactFlow>
   </div>
+
+
 }
 
 
@@ -238,10 +248,12 @@ export function FlowDesigner({ id }: { id?: string }) {
 
   const isLoading = useRef(false)
   const [agent, setAgent] = useState<Agent>(null)
-
+  const [conversational, setConversational] = useState(false)
+  const [showChat, setShowChat] = useState(false)
+  const update = useForceUpdate()
 
   useEffect(() => {
-    console.log("Loading agent:", id)
+    // console.log("Loading agent:", id)
     if (isLoading.current) return
     isLoading.current = true
     if (id == "new") {
@@ -252,15 +264,13 @@ export function FlowDesigner({ id }: { id?: string }) {
     } else {
       app.state.agentLoading = true
       agents.loadAgent(id as any).then((a) => {
-        console.log("Agent loaded:", a)
+        // console.log("Agent loaded:", a)
         app.agent = a
         setAgent(a)
         app.state.agentLoading = false
       })
     }
   }, [])
-
-
 
   if (!agent) return <div className='size-full p-4'>
     <div className="space-y-2">
@@ -269,12 +279,26 @@ export function FlowDesigner({ id }: { id?: string }) {
     </div>
   </div>
 
+  function onAgentUpdate() {
+    // console.log("Agent updated, isConversational: ", app.agent.isConversational)
+    setConversational(app.agent.isConversational)
+    update()
+  }
+
+  function onShowChat() {
+    console.log("show chat", conversational)
+    setShowChat(s => !s)
+  }
+
   return <>
-    <Toolbar />
+    <Toolbar onShowChat={onShowChat} />
     <ReactFlowProvider>
-      <Flow />
+      <div className='w-full flex-grow flex'>
+        {showChat && <ChatFlow />}
+        <Flow onAgentUpdate={onAgentUpdate} />
+      </div>
       <Toaster />
     </ReactFlowProvider>
   </>
-}
 
+}

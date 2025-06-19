@@ -60,7 +60,7 @@
     nanoid "^3.3.8"
     secure-json-parse "^2.7.0"
 
-"@ai-sdk/provider@1.1.3":
+"@ai-sdk/provider@1.1.3", "@ai-sdk/provider@^1.1.3":
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-1.1.3.tgz#ebdda8077b8d2b3f290dcba32c45ad19b2704681"
   integrity sha512-qZMxYJ0qqX/RfnuIaab+zp8UAeJn/ygXXAffR5I4N0n1IrvA6qBsjc8hXLmBiMV2zoXlifkacF7sEFnYnjBcqg==
@@ -825,6 +825,23 @@
   resolved "https://registry.yarnpkg.com/@mixmark-io/domino/-/domino-2.2.0.tgz#4e8ec69bf1afeb7a14f0628b7e2c0f35bdb336c3"
   integrity sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw==
 
+"@modelcontextprotocol/sdk@^1.12.0":
+  version "1.12.3"
+  resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.12.3.tgz#c1cba6434b2344d1626b5c12a5b15807e152bf6e"
+  integrity sha512-DyVYSOafBvk3/j1Oka4z5BWT8o4AFmoNyZY9pALOm7Lh3GZglR71Co4r4dEUoqDWdDazIZQHBe7J2Nwkg6gHgQ==
+  dependencies:
+    ajv "^6.12.6"
+    content-type "^1.0.5"
+    cors "^2.8.5"
+    cross-spawn "^7.0.5"
+    eventsource "^3.0.2"
+    express "^5.0.1"
+    express-rate-limit "^7.5.0"
+    pkce-challenge "^5.0.0"
+    raw-body "^3.0.0"
+    zod "^3.23.8"
+    zod-to-json-schema "^3.24.1"
+
 "@modelcontextprotocol/sdk@^1.8.0":
   version "1.11.2"
   resolved "https://registry.yarnpkg.com/@modelcontextprotocol/sdk/-/sdk-1.11.2.tgz#d81784c140d1a9cc937f61af9f071d8b78befe30"
@@ -861,6 +878,64 @@
   dependencies:
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
+
+"@openai/agents-core@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@openai/agents-core/-/agents-core-0.0.7.tgz#73ca32ece17e92d866e3f7006ce86a254897bb0c"
+  integrity sha512-qbJ0w20hTMUJM97q9aGWchr7kyNo35emvjKiVjCW/grR4sMJo1fLia4bE52tjCQGo8EZJBJ9bkjXFSqETjdJYw==
+  dependencies:
+    "@openai/zod" "npm:zod@^3.25.40"
+    debug "^4.4.0"
+    openai "^5.0.1"
+  optionalDependencies:
+    "@modelcontextprotocol/sdk" "^1.12.0"
+
+"@openai/agents-extensions@^0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@openai/agents-extensions/-/agents-extensions-0.0.8.tgz#249d28502ddb98f6c22ea8cfe0bf00d8369d0ee7"
+  integrity sha512-zhjKzQ33T2udAidW/UL+TXdpj5Huso3YgIV2ZkYHDyVZlYArGdxn5zuDAYbpvmEVuE2ExP3D5XzWnMhr4K3I8A==
+  dependencies:
+    "@ai-sdk/provider" "^1.1.3"
+    "@openai/zod" "npm:zod@^3.25.40"
+    "@types/ws" "^8.18.1"
+    debug "^4.4.0"
+
+"@openai/agents-openai@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@openai/agents-openai/-/agents-openai-0.0.7.tgz#f719befe0a2cc19f0d7fef963840bd9b02283cc1"
+  integrity sha512-bWlJUZ6VutBnuESd74i9ttpIsfbw9kuH6mhHhN5bNgUjmbQfxM+2aUBfyxXGzr4mEvBkAuKiyAs3DX1shqOBdQ==
+  dependencies:
+    "@openai/agents-core" "0.0.7"
+    "@openai/zod" "npm:zod@^3.25.40"
+    debug "^4.4.0"
+    openai "^5.0.1"
+
+"@openai/agents-realtime@0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@openai/agents-realtime/-/agents-realtime-0.0.7.tgz#d9527359d127a6997205fed1c2c0d7cb574510e5"
+  integrity sha512-ndPVQpOIX0J+C5wYo+YUb68q4zrXTIbQH/VS24qSIo9fxJokSxwS5P5hNSxDrdQ3+UlYyx/s1Xu6zRCE11H63Q==
+  dependencies:
+    "@openai/agents-core" "0.0.7"
+    "@openai/zod" "npm:zod@^3.25.40"
+    "@types/ws" "^8.18.1"
+    debug "^4.4.0"
+    ws "^8.18.1"
+
+"@openai/agents@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@openai/agents/-/agents-0.0.7.tgz#70d9e9c8113ddde6f5b4a40641ed47696c5b3cd6"
+  integrity sha512-qDQn7f33fCySEuEVP+PIpBASmD5bjxhzSglzJ3Z21JcRbLq+hxyBz6hpJy6sa0XOSgHh50u2nlsz+rogTizdew==
+  dependencies:
+    "@openai/agents-core" "0.0.7"
+    "@openai/agents-openai" "0.0.7"
+    "@openai/agents-realtime" "0.0.7"
+    debug "^4.4.0"
+    openai "^5.0.1"
+
+"@openai/zod@npm:zod@^3.25.40":
+  version "3.25.64"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-3.25.64.tgz#57b5c7e76dd64e447f7e710285fcdb396b32f803"
+  integrity sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g==
 
 "@opentelemetry/api@1.9.0":
   version "1.9.0"
@@ -2401,7 +2476,7 @@
   resolved "https://registry.yarnpkg.com/@types/unist/-/unist-2.0.11.tgz#11af57b127e32487774841f7a4e54eab166d03c4"
   integrity sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==
 
-"@types/ws@^8.5.10":
+"@types/ws@^8.18.1", "@types/ws@^8.5.10":
   version "8.18.1"
   resolved "https://registry.yarnpkg.com/@types/ws/-/ws-8.18.1.tgz#48464e4bf2ddfd17db13d845467f6070ffea4aa9"
   integrity sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==
@@ -2826,7 +2901,7 @@ ajv@8.6.3:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-ajv@^6.0.0, ajv@^6.12.4:
+ajv@^6.0.0, ajv@^6.12.4, ajv@^6.12.6:
   version "6.12.6"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-6.12.6.tgz#baf5a62e802b07d977034586f8c3baf5adf26df4"
   integrity sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==
@@ -3519,7 +3594,7 @@ cross-fetch@~4.1.0:
   dependencies:
     node-fetch "^2.7.0"
 
-cross-spawn@^7.0.3, cross-spawn@^7.0.6:
+cross-spawn@^7.0.3, cross-spawn@^7.0.5, cross-spawn@^7.0.6:
   version "7.0.6"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-7.0.6.tgz#8a58fe78f00dcd70c370451759dfbfaf03e8ee9f"
   integrity sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==
@@ -6386,6 +6461,11 @@ openai@^4.98.0:
     formdata-node "^4.3.2"
     node-fetch "^2.6.7"
 
+openai@^5.0.1:
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-5.3.0.tgz#7d4d48f1f0beb011f66fd0c291749e35465c4b52"
+  integrity sha512-VIKmoF7y4oJCDOwP/oHXGzM69+x0dpGFmN9QmYO+uPbLFOmmnwO+x1GbsgUtI+6oraxomGZ566Y421oYVu191w==
+
 opencollective-postinstall@^2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/opencollective-postinstall/-/opencollective-postinstall-2.0.3.tgz#7a0fff978f6dbfa4d006238fbac98ed4198c3259"
@@ -8268,7 +8348,7 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
-ws@^8.18.0:
+ws@^8.18.0, ws@^8.18.1:
   version "8.18.2"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.2.tgz#42738b2be57ced85f46154320aabb51ab003705a"
   integrity sha512-DMricUmwGZUVr++AEAe2uiVM7UoO9MAVZMDu05UQOaUII0lp+zOzLLU4Xqh/JvTqklB1T4uELaaPBKyjE1r4fQ==
