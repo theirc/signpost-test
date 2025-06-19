@@ -60,7 +60,7 @@ export function SchemaNode(props: NodeProps) {
       <Parameters worker={worker} />
     </MemoizedWorker>
     <ConditionHandler />
-    <AddFieldsForm direction="output" includePrompt ignoreTypes={["references", "doc", "chat", "json"]} />
+    <AddFieldsForm direction="output" includePrompt ignoreTypes={["references", "doc", "chat", "json", "handoff"]} />
   </NodeLayout >
 }
 

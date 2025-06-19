@@ -17,7 +17,7 @@ export function ResponseNode(props: NodeProps) {
 
   return <NodeLayout worker={worker} >
     <NodeHandlers worker={worker} />
-    <AddFieldsForm direction="input" ignoreTypes={["enum"]} />
+    <AddFieldsForm direction="input" ignoreTypes={["enum", "handoff"]} />
   </NodeLayout >
 
 }

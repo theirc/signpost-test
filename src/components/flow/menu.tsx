@@ -2,7 +2,7 @@ import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } fro
 import { workerRegistry } from "@/lib/agents/registry"
 import { createModel } from "@/lib/data/model"
 import { cloneDeep } from "lodash"
-import { Cog, EllipsisVertical, LoaderCircle, Play, Save, Settings } from "lucide-react"
+import { Bug, Cog, EllipsisVertical, LoaderCircle, MessageCircle, Play, Save, Settings } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
@@ -12,9 +12,13 @@ import { app } from "@/lib/app"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { useForceUpdate } from "@/lib/utils"
 import { redirect, useNavigate } from "react-router-dom"
+import { Button } from "../ui/button"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
+import { supabase } from "@/lib/agents/db"
 
 interface Props {
   update?: () => void
+  onShowChat?: () => void
 }
 
 
@@ -23,7 +27,7 @@ function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: 
   const onDragStart = (event: React.DragEvent<HTMLAnchorElement>, nodeType) => {
     event.dataTransfer.setData('nodeType', nodeType)
     event.dataTransfer.effectAllowed = 'move'
-    console.log("drag")
+    // console.log("drag")
   }
 
   const onClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
@@ -32,7 +36,7 @@ function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: 
 
   return <a href={"#"} onDragStart={(event) => onDragStart(event, type)} onClick={onClick} draggable>
     <MenubarItem className="size-full flex cursor-move">
-      <div className="hover:bg-gray-100 cursor-move flex gap-1 items-center select-none w-28 h-10 mr-1 px-2">
+      <div className="hover:bg-gray-100 cursor-move flex gap-1 items-center select-none w-32 h-10 mr-1 px-2">
         {Icon && <Icon size={16} />}
         {title}
       </div>
@@ -108,6 +112,7 @@ export function Toolbar(props: Props) {
 
   async function onPlay() {
     console.log("Play")
+
     const { agent } = app
 
     if (!agent.hasResponse()) {
@@ -120,44 +125,8 @@ export function Toolbar(props: Props) {
     const p: AgentParameters = {
       debug: true,
       input: {},
-      apikeys: apiKeys,
+      apiKeys: apiKeys,
     }
-
-    // const p: AgentParameters = {
-    //   debug: true,
-    //   input: {
-    //     textList: [
-    //       "Hello, how are you?",
-    //       "What is the weather like today?",
-    //       "Tell me a joke.",
-    //       "What is the capital of France?",
-    //       "What is the capital of Italy?",
-    //       "What is the capital of Germany?",
-    //       "What is the capital of Spain?",
-    //       "What is the capital of Portugal?",
-    //       "What is the capital of Switzerland?",
-    //       "What is the capital of Austria?",
-    //       "What is the capital of Belgium?",],
-    //     numberList: [1, 2, 3, 4, 5, 3.4454, 32423.44],
-    //     bool: true,
-    //     chat: [
-    //       { role: "user", content: "Hello, how are you?" },
-    //       { role: "assistant", content: "I'm fine, thank you!" },
-    //       { role: "user", content: "What is the weather like today?" },
-    //       { role: "assistant", content: "The weather is sunny and warm today." },
-    //     ],
-    //     json: {
-    //       name: "John Doe",
-    //       age: 30,
-    //       address: {
-    //         street: "123 Main St",
-    //         city: "Anytown",
-    //         state: "CA",
-    //       }
-    //     }
-    //   },
-    //   apikeys: app.getAPIkeys(),
-    // }
 
     await agent.execute(p)
 
@@ -189,24 +158,33 @@ export function Toolbar(props: Props) {
     })
   }
 
+  async function onResetState() {
+    if (!app.agent.debuguuid) return
+    agentForm.modal.hide()
+    await supabase.from("states").delete().eq("id", app.agent.debuguuid)
+  }
+
+  function onShowChat() {
+    if (props.onShowChat) props.onShowChat()
+  }
+
   return <>
-    <div className="flex gap-3 mb-2 text-xs items-center" id="menuroot">
+    <div className="flex gap-3 border-b text-xs items-center" id="menuroot">
       <div className="flex flex-grow items-center p-2">
-        <div className="text-sm" >
-          <Settings size={18} className="inline mr-2 cursor-pointer" onClick={onSetAgent} />
-          {app.agent.title}
+        <div className="text-sm flex" >
+          {app.agent.title} {(app.agent.isConversational) && <MessageCircle size={16} className="ml-2 mt-[2px] cursor-pointer" onClick={onShowChat} />}
         </div>
       </div>
-      <Separator orientation="vertical" />
+      {/* <Separator orientation="vertical" /> */}
       <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => onSave()}>
         {saving && <LoaderCircle size={18} className="animate-spin" />}
         {!saving && <Save size={18} />}
       </div>
-      <Separator orientation="vertical" />
+      {/* <Separator orientation="vertical" /> */}
       <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play" onClick={() => onPlay()}>
         <Play size={18} />
       </div>
-      <Separator orientation="vertical" />
+      {/* <Separator orientation="vertical" /> */}
       <Menubar className="h-4 border-0">
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">I/O</MenubarTrigger>
@@ -235,7 +213,12 @@ export function Toolbar(props: Props) {
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs"><EllipsisVertical size={18} className="cursor-pointer" /></MenubarTrigger>
           <MenubarContent>
+            <MenubarItem className="text-xs" onClick={onSetAgent}>
+              <Settings size={14} className="inline mr-1" onClick={onSetAgent} />
+              Settings
+            </MenubarItem>
             <MenubarItem className="text-xs" onClick={onChangeDisplayData}>
+              <Bug size={14} className="inline mr-1" />
               {app.agent.displayData ? "Hide Debug Data" : "Show Debug Data"}
             </MenubarItem>
           </MenubarContent>
@@ -256,6 +239,23 @@ export function Toolbar(props: Props) {
       <Row>
         <Input span={12} field={f.debuguid} />
       </Row>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" className="rounded-sm">Reset State</Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the Agent state.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onResetState} >Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Modal>
   </>
 

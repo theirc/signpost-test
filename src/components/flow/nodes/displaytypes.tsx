@@ -29,7 +29,7 @@ function cleanMarkdownUrls(content: string): string {
 // Memoized component to prevent unnecessary re-renders
 export const DisplayContent = React.memo<DisplayProps>(({ type, value, className }) => {
 
-  if (value == null) return <div className={className}>Empty</div>
+  if (value == null || value == "") return <div className={className}>Empty</div>
   if (type == "enum") type = "string"
 
   if (type == "doc") {

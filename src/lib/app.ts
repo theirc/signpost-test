@@ -16,6 +16,7 @@ export const useAppStore = create<AppState>((set) => ({
 }))
 
 export const app = {
+
   get agent() {
     return useAppStore.getState().agent
   },

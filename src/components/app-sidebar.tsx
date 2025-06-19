@@ -35,11 +35,11 @@ export function AppSidebar() {
         setUser(userData)
 
         const { data, error } = await supabase.from('teams')
-        .select(`
+          .select(`
           *,
           user_teams!inner(user_id)
         `)
-        .eq('user_teams.user_id', userData.id)
+          .eq('user_teams.user_id', userData.id)
         if (error) {
           console.error('Error fetching user teams:', error)
           return
