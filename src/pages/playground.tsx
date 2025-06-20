@@ -299,8 +299,6 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     }
 
     setWorkerExecutions(prev => [...prev, execution])
-    
-    setShowExecutionLogs(true)
   }
 
   async function onSend(userText?: string, audio?: Blob, tts?: boolean) {
@@ -362,7 +360,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
             uid: string;
             [key: string]: any;
           };
-          apikeys: APIKeys;
+          apiKeys: APIKeys;
           output?: string;
           state?: any;
           uid?: string;
@@ -373,7 +371,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
             conversation_history: conversationHistory,
             uid: currentUid
           },
-          apikeys: apiKeys,
+          apiKeys: apiKeys,
           state: {},
           uid: currentUid,
           logWriter: (p) => onWorkerExecuted(p, logId),
