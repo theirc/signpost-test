@@ -132,6 +132,7 @@ export default function ApiKeyView() {
                   <SelectItem value="groq">Groq</SelectItem>
                   <SelectItem value="xai">XAI</SelectItem>
                   <SelectItem value="zendesk">Zendesk</SelectItem>
+                  <SelectItem value="googleTranslate">Google Translate</SelectItem>
                 </SelectContent>
               </Select>
             </div>

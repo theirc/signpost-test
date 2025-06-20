@@ -14,6 +14,7 @@ declare global {
     groq?: string
     xai?: string
     zendesk?: string
+    googleTranslate?: string
   }
 
   interface AgentParameters {
