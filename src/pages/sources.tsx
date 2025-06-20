@@ -10,6 +10,7 @@ export default function Sources() {
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [showLiveDataModal, setShowLiveDataModal] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handlePreview = (source: { id: string }) => {
     setSelectedSourceId(source.id)
@@ -17,6 +18,8 @@ export default function Sources() {
 
   const handleSourceUpdate = () => {
     setSelectedSourceId(null)
+    // Trigger table refresh
+    setRefreshTrigger(prev => prev + 1)
   }
 
   return (
@@ -35,7 +38,7 @@ export default function Sources() {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <SourcesTable onRowClick={handlePreview} />
+        <SourcesTable onRowClick={handlePreview} refreshTrigger={refreshTrigger} />
       </div>
 
       <SourcePreview

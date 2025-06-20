@@ -8,7 +8,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, Edit2, Save, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { DeleteSourceDialog } from "./delete-source-dialog"
@@ -17,9 +18,10 @@ import { supabase } from "@/lib/agents/db"
 
 interface SourcesTableProps {
   onRowClick: (row: SourceDisplay) => void
+  refreshTrigger?: number
 }
 
-export function SourcesTable({ onRowClick }: SourcesTableProps) {
+export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) {
   const [allData, setAllData] = useState<SourceDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
@@ -29,6 +31,11 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
   const [sourceToDelete, setSourceToDelete] = useState<SourceDisplay | null>(null)
   const { selectedTeam } = useTeamStore()
   const itemsPerPage = 10
+
+  // Editing states
+  const [editingSourceId, setEditingSourceId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState("")
+  const [saving, setSaving] = useState(false)
 
   const fetchSources = async () => {
     try {
@@ -66,7 +73,14 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
 
   useEffect(() => {
     fetchSources()
-  }, [])
+  }, [selectedTeam])
+
+  // Refresh when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger) {
+      fetchSources()
+    }
+  }, [refreshTrigger])
 
   // Filtering
   const filteredData = allData.filter(row =>
@@ -94,6 +108,54 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
+
+  const handleSaveName = async () => {
+    if (!editingSourceId || !editingName.trim()) return
+
+    try {
+      setSaving(true)
+      const { error } = await supabase
+        .from('sources')
+        .update({ name: editingName.trim() })
+        .eq('id', editingSourceId)
+
+      if (error) throw error
+
+      // Update local state
+      setAllData(prev => prev.map(source => 
+        source.id === editingSourceId 
+          ? { ...source, name: editingName.trim() }
+          : source
+      ))
+
+      setEditingSourceId(null)
+      setEditingName("")
+    } catch (error) {
+      console.error('Error updating source name:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingSourceId(null)
+    setEditingName("")
+  }
+
+  const startEditing = (source: SourceDisplay) => {
+    setEditingSourceId(source.id)
+    setEditingName(source.name)
+  }
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSaveName()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      handleCancelEdit()
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -164,12 +226,62 @@ export function SourcesTable({ onRowClick }: SourcesTableProps) {
             </TableRow>
           ) : (
             paginatedData.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} className="group">
                 <TableCell 
                   className="cursor-pointer"
                   onClick={() => onRowClick(row)}
                 >
-                  {row.name}
+                  {editingSourceId === row.id ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        className="flex-1"
+                        disabled={saving}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={handleNameKeyDown}
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSaveName()
+                        }}
+                        disabled={saving}
+                        className="h-6 w-6 p-0"
+                      >
+                        {saving ? "..." : <Save className="h-3 w-3" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleCancelEdit()
+                        }}
+                        disabled={saving}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1">{row.name}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          startEditing(row)
+                        }}
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell 
                   className="cursor-pointer"
