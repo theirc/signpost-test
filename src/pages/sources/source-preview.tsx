@@ -2,8 +2,10 @@ import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from "@/lib/agents/db"
+import { Edit2, Save, X } from "lucide-react"
 
 interface SourcePreviewProps {
   sourceId: string | null
@@ -69,6 +71,12 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
   const [saving, setSaving] = useState(false)
   const [selectedElement, setSelectedElement] = useState<LiveDataElement | null>(null)
   const [liveDataElements, setLiveDataElements] = useState<LiveDataElement[]>([])
+  
+  // Editing states
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isEditingContent, setIsEditingContent] = useState(false)
+  const [editingTitle, setEditingTitle] = useState("")
+  const [editingContent, setEditingContent] = useState("")
 
   useEffect(() => {
     if (sourceId) {
@@ -172,6 +180,87 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
     }
   }
 
+  const handleSaveTitle = async () => {
+    if (!source || !editingTitle.trim()) return
+
+    try {
+      setSaving(true)
+      const { error } = await supabase
+        .from('sources')
+        .update({ name: editingTitle.trim() })
+        .eq('id', source.id)
+
+      if (error) throw error
+
+      setSource(prev => prev ? { ...prev, name: editingTitle.trim() } : null)
+      setIsEditingTitle(false)
+      onSourceUpdate()
+    } catch (error) {
+      console.error('Error updating title:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSaveContent = async () => {
+    if (!source) return
+
+    try {
+      setSaving(true)
+      const { error } = await supabase
+        .from('sources')
+        .update({ content: editingContent })
+        .eq('id', source.id)
+
+      if (error) throw error
+
+      setSource(prev => prev ? { ...prev, content: editingContent } : null)
+      setIsEditingContent(false)
+      onSourceUpdate()
+    } catch (error) {
+      console.error('Error updating content:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCancelTitleEdit = () => {
+    setEditingTitle(source?.name || "")
+    setIsEditingTitle(false)
+  }
+
+  const handleCancelContentEdit = () => {
+    setEditingContent(source?.content || "")
+    setIsEditingContent(false)
+  }
+
+  const startEditingTitle = () => {
+    setEditingTitle(source?.name || "")
+    setIsEditingTitle(true)
+  }
+
+  const startEditingContent = () => {
+    setEditingContent(source?.content || "")
+    setIsEditingContent(true)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSaveTitle()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      handleCancelTitleEdit()
+    }
+  }
+
+  const handleContentKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      handleCancelContentEdit()
+    }
+  }
+
   if (!sourceId) return null
 
   return (
@@ -188,8 +277,51 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
         ) : source ? (
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold">{source.name}</h3>
+              {isEditingTitle ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    className="flex-1"
+                    disabled={saving}
+                    onKeyDown={handleTitleKeyDown}
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveTitle}
+                    disabled={saving}
+                    className="h-8"
+                  >
+                    {saving ? "Saving..." : <Save className="h-3 w-3" />}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancelTitleEdit}
+                    disabled={saving}
+                    className="h-8"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold flex-1">{source.name}</h3>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={startEditingTitle}
+                    className="h-8 w-8 p-0"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
               <p className="text-sm text-muted-foreground">{source.type}</p>
+              {isEditingTitle && (
+                <p className="text-xs text-muted-foreground">Editing title...</p>
+              )}
             </div>
 
             <div>
@@ -254,10 +386,60 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
               </div>
             ) : (
               <div>
-                <h4 className="font-medium mb-2">Content</h4>
-                <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
-                  {source.content}
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">Content</h4>
+                  {!isEditingContent && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={startEditingContent}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {isEditingContent && (
+                    <span className="text-sm text-muted-foreground">Editing...</span>
+                  )}
                 </div>
+                {isEditingContent ? (
+                  <div className="space-y-2">
+                    <Textarea
+                      value={editingContent}
+                      onChange={(e) => setEditingContent(e.target.value)}
+                      className="min-h-[200px]"
+                      disabled={saving}
+                      onKeyDown={handleContentKeyDown}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleSaveContent}
+                        disabled={saving}
+                      >
+                        {saving ? "Saving..." : (
+                          <>
+                            <Save className="h-3 w-3 mr-1" />
+                            Save
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelContentEdit}
+                        disabled={saving}
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
+                    {source.content}
+                  </div>
+                )}
               </div>
             )}
           </div>
