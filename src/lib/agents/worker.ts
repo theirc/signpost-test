@@ -116,6 +116,10 @@ export function buildWorker(w: WorkerConfig) {
       if (worker.executed) return
       worker.executed = true
 
+      if (!p.state.workers) {
+        p.state.workers = {}
+      }
+      
       worker.state = p.state.workers[worker.id] || {}
 
       await worker.getValues(p)
