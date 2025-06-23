@@ -1,12 +1,11 @@
 "use client"
-const LOCAL_STORAGE_KEY = "chatHistory"
 
 import { useEffect, useRef, useState } from 'react'
 import { app } from '@/lib/app'
 import { MessageSquarePlus, History, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMultiState } from '@/hooks/use-multistate'
-import { ChatHistory, ChatSession } from '@/pages/playground/history'
+import { ChatHistory, ChatSession, getChatSessions, saveChatMessage } from '@/pages/playground/history'
 import type { AgentChatMessage } from '@/types/types.ai'
 import { SearchInput } from "@/pages/playground/search"
 import { agents } from "@/lib/agents"
@@ -18,6 +17,7 @@ import "../index.css"
 import { agentsModel } from "@/lib/data"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from '@/lib/data/db'
+import { useUser } from '@/lib/hooks/useUser'
 
 interface AgentEntry {
   id: string
@@ -117,6 +117,7 @@ export default function Chat() {
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const { selectedTeam } = useTeamStore()
+  const { data: user } = useUser()
 
 const [workerExecutions, setWorkerExecutions] = useState<WorkerExecution[]>([])
 const [showExecutionLogs, setShowExecutionLogs] = useState(false)
@@ -189,24 +190,26 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     }
   }, [loading, error, loadedAgents, setState])
 
-  const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
-    if (typeof window !== 'undefined') {
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([])
+
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (!user?.id || !selectedTeam?.id) return
+      
       try {
-        const savedChats = localStorage.getItem(LOCAL_STORAGE_KEY)
-        if (savedChats) {
-          const parsedChats = JSON.parse(savedChats)
-          return Array.isArray(parsedChats) ? parsedChats : []
+        const { data: sessions, error } = await getChatSessions(user.id, selectedTeam.id)
+        if (error) {
+          console.error("Error loading chat history:", error)
+          return
         }
+        setChatHistory(sessions || [])
       } catch (error) {
         console.error("Error loading initial chat history:", error)
       }
     }
-    return []
-  })
 
-  useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory))
-  }, [chatHistory])
+    loadChatHistory()
+  }, [user?.id, selectedTeam?.id])
 
   const handleLoadChatHistory = (chatSession: ChatSession) => {
     setIsLoadingFromHistory(true)
@@ -409,14 +412,34 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     }
 
     setActiveChat(newSession);
-    setChatHistory(prev => {
-      const exists = prev.find(c => c.uid === currentUid);
-      if (exists) {
-        return prev.map(c => c.uid === currentUid ? newSession : c);
-      } else {
-        return [newSession, ...prev];
+    
+    if (user?.id && selectedTeam?.id) {
+      const agentId = state.selectedAgents[0]?.toString() || 'unknown'
+      
+      try {
+        const userMessage = finalMessages[finalMessages.length - 2]
+        const assistantMessage = finalMessages[finalMessages.length - 1]
+        
+        if (userMessage) {
+          const userContent = typeof userMessage.message === 'string' 
+            ? userMessage.message 
+            : JSON.stringify(userMessage.message)
+          await saveChatMessage(user.id, agentId, selectedTeam.id, 'user', userContent)
+        }
+        
+        if (assistantMessage) {
+          const assistantContent = typeof assistantMessage.message === 'string' 
+            ? assistantMessage.message 
+            : JSON.stringify(assistantMessage.message)
+          await saveChatMessage(user.id, agentId, selectedTeam.id, 'assistant', assistantContent)
+        }
+        
+        const { data: updatedSessions } = await getChatSessions(user.id, selectedTeam.id)
+        setChatHistory(updatedSessions || [])
+      } catch (error) {
+        console.error('Error saving chat history:', error)
       }
-    })
+    }
 
     setState({ isSending: false });
   }

@@ -1,8 +1,7 @@
 import { AgentChatMessage} from "@/types/types.ai"
 import { useState, useEffect } from "react"
 import { Search, X } from "lucide-react"
-
-const LOCAL_STORAGE_KEY = "chatHistory"
+import { supabase } from '@/lib/data/db'
 
 export interface ChatSession {
   uid: string          
@@ -10,6 +9,74 @@ export interface ChatSession {
   selectedAgents: number[]
   messages: AgentChatMessage[]
   timestamp: string
+}
+
+export async function saveChatMessage(
+  userId: string,
+  agentId: string,
+  teamId: string,
+  role: 'user' | 'assistant',
+  content: string
+): Promise<{ data: any; error: any }> {
+  const { data, error } = await supabase
+    .from('chat_history')
+    .insert({
+      user_id: userId,
+      agent_id: agentId,
+      team_id: teamId,
+      role,
+      content
+    })
+    .select()
+    .single()
+
+  return { data, error }
+}
+
+export async function getChatSessions(userId: string, teamId: string): Promise<{ data: ChatSession[] | null; error: any }> {
+  const { data: chatRecords, error } = await supabase
+    .from('chat_history')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('team_id', teamId)
+    .order('created_at', { ascending: true })
+  
+  if (error || !chatRecords) {
+    return { data: null, error }
+  }
+
+  const sessionsMap = new Map<string, ChatSession>()
+
+  chatRecords.forEach(record => {
+    const sessionKey = `${record.user_id}-${record.agent_id}-${record.team_id}`
+    
+    if (!sessionsMap.has(sessionKey)) {
+      sessionsMap.set(sessionKey, {
+        uid: sessionKey,
+        agentName: record.agent_id,
+        selectedAgents: [parseInt(record.agent_id)],
+        messages: [],
+        timestamp: record.created_at
+      })
+    }
+
+    const session = sessionsMap.get(sessionKey)!
+    const message: AgentChatMessage = {
+      type: record.role === 'user' ? 'human' : 'agent',
+      message: record.content
+    }
+
+    session.messages.push(message)
+    
+    if (record.created_at > session.timestamp) {
+      session.timestamp = record.created_at
+    }
+  })
+
+  const sessions = Array.from(sessionsMap.values())
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+
+  return { data: sessions, error: null }
 }
 
 interface ChatHistoryProps {
