@@ -18,6 +18,7 @@ import { supabase } from "@/lib/agents/db"
 import { ulid } from "ulid"
 import { useForceUpdate } from "@/lib/utils"
 import { MemoizedWorker } from "../memoizedworkers"
+import { app } from "@/lib/app"
 
 const { text } = workerRegistry
 
@@ -30,6 +31,7 @@ const contentTypes = [
   { value: "audio", label: "Audio" },
   { value: "image", label: "Image" },
   { value: "file", label: "File" },
+  { value: "Timestamp", label: "Timestamp" },
 ]
 
 const model = createModel({
@@ -63,7 +65,23 @@ function Parameters({ worker }: { worker: TextWorker }) {
       if (name === "numberValue") worker.parameters.numberValue = value.numberValue
       if (name === "contentType") {
         worker.parameters.contentType = value.contentType as any
-        update() // Force re-render when content type changes
+
+        if (value.contentType === "text") {
+          worker.fields.output.type = "string"
+        } else if (value.contentType === "number") {
+          worker.fields.output.type = "number"
+        } else if (value.contentType === "audio") {
+          worker.fields.output.type = "audio"
+        } else if (value.contentType === "image" || value.contentType === "file") {
+          worker.fields.output.type = "date"
+        } else if (value.contentType === "Timestamp") {
+          worker.fields.output.type = "date"
+        } else {
+          worker.fields.output.type = "string"
+        }
+        update()
+        worker.updateWorker()
+        app.agent.update()
       }
     })
     return () => subscription.unsubscribe()
@@ -153,7 +171,11 @@ function Parameters({ worker }: { worker: TextWorker }) {
     }
   }, [worker])
 
-  const type: "text" | "number" | "other" = worker.parameters.contentType === "text" ? "text" : worker.parameters.contentType === "number" ? "number" : "other"
+  const type: "text" | "number" | "timestamp" | "other" =
+    worker.parameters.contentType === "text" ? "text" :
+      worker.parameters.contentType === "number" ? "number" :
+        worker.parameters.contentType === "Timestamp" ? "timestamp" :
+          "other"
 
   return <form.context>
     <div className="p-2 flex flex-col gap-2 w-full flex-grow">
@@ -167,6 +189,11 @@ function Parameters({ worker }: { worker: TextWorker }) {
       </Row>}
 
       {type === "number" && <Input span={12} field={m.output} type="number" hideLabel className='' />}
+
+      {type === "timestamp" && <div className="p-4 text-center text-gray-500">
+        <div className="text-sm">This will generate a current timestamp when executed</div>
+        <div className="text-xs mt-1 text-gray-400">No configuration needed</div>
+      </div>}
 
       {type === "other" && <>
         <div className="w-full h-full flex flex-col relative">

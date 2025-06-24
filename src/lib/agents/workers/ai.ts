@@ -11,6 +11,7 @@ declare global {
   type ChatHistory = {
     role: "user" | "assistant"
     content: string
+    //ToDo: add timestamp
   }[]
 
   interface BotWorker extends AIWorker {

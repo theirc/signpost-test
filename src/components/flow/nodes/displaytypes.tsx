@@ -81,6 +81,11 @@ ${doc.body}
     value = "```json" + "\n" + JSON.stringify(value, null, 2) + "\n" + "```"
   }
 
+  if (type == "date") {
+    type = "string"
+    value = value?.toLocaleString() || "Empty"
+  }
+
 
   if (type == "string" && typeof value === "string") {
     const cleanedValue = cleanMarkdownUrls(value || "")
