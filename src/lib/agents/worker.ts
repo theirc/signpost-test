@@ -15,6 +15,7 @@ export const inputOutputTypes = {
   json: "JSON",
   audio: "Audio",
   handoff: "Handoff",
+  date: "Date",
 }
 
 interface WorkerCondition {
@@ -119,7 +120,7 @@ export function buildWorker(w: WorkerConfig) {
       if (!p.state.workers) {
         p.state.workers = {}
       }
-      
+
       worker.state = p.state.workers[worker.id] || {}
 
       await worker.getValues(p)
