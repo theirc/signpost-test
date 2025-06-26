@@ -5,6 +5,7 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createGroq } from '@ai-sdk/groq'
 import { createXai } from '@ai-sdk/xai'
 import { CoreMessage, generateText } from 'ai'
+import { convertDocumentsToMarkdown } from '../utils'
 
 declare global {
 
@@ -95,7 +96,7 @@ async function execute(worker: BotWorker, { apiKeys }: AgentParameters) {
     const docs = worker.fields.documents.value as VectorDocument[]
     let context = `Based on the following context 
     <Context>
-    ${docs.map((doc: VectorDocument) => `Title: ${doc.title}\nContent: ${doc.body}\nLink: ${doc.source}`).join("\n\n")}
+    ${convertDocumentsToMarkdown(docs)}
     </Context>
     Answer the question
     `

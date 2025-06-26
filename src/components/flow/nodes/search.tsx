@@ -28,45 +28,12 @@ const model = createModel({
     engine: { title: "Engine", type: "string", list: engineList },
     maxResults: { title: "Max Results", type: "number" },
     distance: { title: "Distance/Similarity Threshold", type: "number" },
+    tooldescription: { title: "Tool Description", type: "string" },
     domain: { title: "Domain (for External Engines)", type: "string[]" },
     collections: { title: "Collections (for Supabase Engine - Multi Needed)", type: "string" }
   }
 })
 
-// function Parameters({ worker }: { worker: SearchWorker }) {
-//   const { form, m, watch } = useForm(model, {
-//     values: {
-//       maxResults: worker.parameters.maxResults || 5,
-//       engine: worker.parameters.engine || "weaviate",
-//       domain: worker.parameters.domain || "",
-//       distance: worker.parameters.distance || 0.2,
-//     }
-//   })
-
-//   watch((value, { name }) => {
-//     if (name === "engine") worker.parameters.engine = value.engine as any
-//     if (name === "maxResults") worker.parameters.maxResults = value.maxResults
-//     if (name === "domain") worker.parameters.domain = value.domain
-//     if (name === "distance") worker.parameters.distance = value.distance || 0.2
-//   })
-
-//   return <form.context>
-//     <div className='p-2 mt-2 nodrag w-full flex-grow'>
-//       <Row className='pb-2'>
-//         <Select field={m.engine} span={12} />
-//       </Row>
-//       <Row className='pb-2'>
-//         <Input field={m.maxResults} type="number" span={12} />
-//       </Row>
-//       <Row className='pb-2'>
-//         <Input field={m.distance} type='number' span={12} />
-//       </Row>
-//       <Row className='pb-2'>
-//         <Input field={m.domain} span={12} />
-//       </Row>
-//     </div>
-//   </form.context>
-// }
 
 export function SearchNode(props: NodeProps) {
   const { selectedTeam } = useTeamStore()
@@ -103,7 +70,8 @@ export function SearchNode(props: NodeProps) {
       maxResults: worker.parameters.maxResults || worker.fields.maxResults.default || 5,
       distance: worker.parameters.distance ?? worker.fields.distance.default ?? 0.3,
       domain: Array.isArray(worker.parameters.domain) ? worker.parameters.domain : worker.parameters.domain ? [worker.parameters.domain] : worker.fields.domain.default || [],
-      collections: initialCollectionsValue
+      collections: initialCollectionsValue,
+      tooldescription: worker.parameters.toolDescription
     }
   })
 
@@ -128,17 +96,17 @@ export function SearchNode(props: NodeProps) {
       }
     }
     if (name === "maxResults") {
-      worker.parameters.maxResults = value.maxResults
       worker.fields.maxResults.default = value.maxResults
     }
     if (name === "distance") {
       const dist = value.distance ?? 0.3
-      worker.parameters.distance = dist
       worker.fields.distance.default = dist
     }
     if (name === "domain" && selectedEngine !== 'supabase') {
-      worker.parameters.domain = value.domain
       worker.fields.domain.default = value.domain
+    }
+    if (name === "tooldescription") {
+      worker.parameters.toolDescription = value.tooldescription
     }
   })
 
@@ -148,9 +116,16 @@ export function SearchNode(props: NodeProps) {
       <WorkerLabeledHandle handler={worker.fields.input} />
       <WorkerLabeledHandle handler={worker.fields.output} />
     </InlineHandles>
-    <WorkerLabeledHandle handler={worker.fields.references} />
+
+    <InlineHandles>
+      <WorkerLabeledHandle handler={worker.fields.tool} />
+      <WorkerLabeledHandle handler={worker.fields.references} />
+    </InlineHandles>
 
     <form.context>
+      <Row className='py-2 px-2'>
+        <Input field={m.tooldescription} span={12} />
+      </Row>
 
       <WorkerLabeledHandle handler={worker.fields.engine} />
       <MemoizedWorker worker={worker}>
@@ -176,7 +151,7 @@ export function SearchNode(props: NodeProps) {
           <WorkerLabeledHandle handler={worker.fields.domain} />
           <MemoizedWorker worker={worker}>
             <Row className='pb-2 px-2'>
-            <Tags span={12} field={m.domain} required />
+              <Tags span={12} field={m.domain} required />
             </Row>
           </MemoizedWorker>
         </>
@@ -187,11 +162,11 @@ export function SearchNode(props: NodeProps) {
           <WorkerLabeledHandle handler={worker.fields.collections} />
           <MemoizedWorker worker={worker}>
             <Row className='pb-2 px-2'>
-              <Select 
+              <Select
                 field={m.collections}
-                options={collectionOptions} 
-                span={12} 
-                hideLabel 
+                options={collectionOptions}
+                span={12}
+                hideLabel
                 placeholder="Select Collection(s) (Optional)"
               />
             </Row>

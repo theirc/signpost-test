@@ -125,6 +125,7 @@ export function WorkerLabeledHandle({ handler, mockable, onRemoveConditionalHand
 
   if (handler.type != "string" && handler.type != "number") mockable = false
 
+
   return <div className="group">
     <div className="relative flex">
       <WorkerHandle handler={handler} />

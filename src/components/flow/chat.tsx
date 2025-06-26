@@ -4,6 +4,7 @@ import { app } from "@/lib/app"
 import { toast } from "sonner"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { LoaderCircle, Sparkles } from "lucide-react"
+import { ToMarkdown } from "../ui/tomarkdown"
 
 export function ChatFlow() {
 
@@ -13,6 +14,7 @@ export function ChatFlow() {
   const { selectedTeam } = useTeamStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const stateRef = useRef({})
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -24,7 +26,12 @@ export function ChatFlow() {
     const message = input.trim()
     const { agent } = app
 
+
     const apikeys = await app.fetchAPIkeys(selectedTeam?.id)
+    const state: any = stateRef.current
+
+    // console.log(`Executing agent with state:`, state)
+
 
     const p: AgentParameters = {
       debug: true,
@@ -33,9 +40,14 @@ export function ChatFlow() {
         history,
       },
       apiKeys: apikeys,
+      state
     }
 
     await agent.execute(p)
+
+    // console.log(`Agent return state:`, p.state)
+
+    stateRef.current = p.state
 
     if (p.error) {
       toast("Error", {
@@ -77,8 +89,15 @@ export function ChatFlow() {
             {message.content}
           </div>
           return <div key={index} className="p-2">
-            <Sparkles className="inline mr-1 text-blue-500" size={16} />
-            {message.content}
+            <div className="flex">
+              <div>
+                <Sparkles className="inline mr-1 mt-3 text-blue-500" size={16} />
+              </div>
+              <div>
+                <ToMarkdown>{message.content}</ToMarkdown>
+              </div>
+            </div>
+            {/* {message.content} */}
           </div>
         })}
       </div>

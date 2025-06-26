@@ -1,4 +1,4 @@
-import { NodeHandlers, WorkerLabeledHandle } from "@/components/flow/handles"
+import { InlineHandles, NodeHandlers, WorkerLabeledHandle } from "@/components/flow/handles"
 import { Input, InputTextArea, Row, Select, useForm } from "@/components/forms"
 import { workerRegistry } from "@/lib/agents/registry"
 import { createModel } from "@/lib/data/model"
@@ -74,7 +74,10 @@ export function HandoffAgentNode(props: NodeProps) {
   const worker = useWorker<HandoffAgentWorker>(props.id)
 
   return <NodeLayout worker={worker} resizable className="flex flex-col h-full" minHeight={300} minWidth={350}>
-    <WorkerLabeledHandle handler={worker.fields.handoff} />
+    <InlineHandles>
+      <WorkerLabeledHandle handler={worker.fields.handoff} />
+      <WorkerLabeledHandle handler={worker.fields.tool} />
+    </InlineHandles>
     <WorkerLabeledHandle handler={worker.fields.instructions} />
     <MemoizedWorker worker={worker}><Parameters worker={worker} /></MemoizedWorker>
     <MemoizedWorker worker={worker}><HandOffParameters worker={worker} /></MemoizedWorker>

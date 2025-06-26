@@ -62,6 +62,7 @@ export function PromptAgentNode(props: NodeProps) {
       <WorkerLabeledHandle handler={worker.fields.instructions} />
       <WorkerLabeledHandle handler={worker.fields.handoff} />
     </InlineHandles>
+    <WorkerLabeledHandle handler={worker.fields.tool} />
     <MemoizedWorker worker={worker}><Parameters worker={worker} /></MemoizedWorker>
     <NodeHandlers worker={worker} />
     <ConditionHandler />
