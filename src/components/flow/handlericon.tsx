@@ -1,5 +1,5 @@
 import { app } from "@/lib/app"
-import { Binary, Braces, CircleHelp, Clock, File, Handshake, Hash, Headphones, Link, List, MessageCircleMore, Type } from "lucide-react"
+import { Binary, Braces, CircleHelp, Clock, File, Hammer, Handshake, Hash, Headphones, Link, List, MessageCircleMore, Type } from "lucide-react"
 
 const iconSize = 12
 
@@ -29,6 +29,7 @@ export function HandlerIcon({ handler, worker }: { handler: NodeIO, worker: AIWo
     {type == "handoff" && <Handshake size={iconSize} className="mt-[8px]" />}
     {type == "date" && <Clock size={iconSize} className="mt-[8px]" />}
     {type == "audio" && <Headphones size={iconSize} className="mt-[8px]" />}
+    {type == "tool" && <Hammer size={iconSize} className="mt-[8px]" />}
 
     {/* {type == "audio" && <Headphones size={iconSize} className="mt-[8px]" />} */}
     {/* {type == "image" && <Image size={iconSize} className="mt-[8px]" />} */}

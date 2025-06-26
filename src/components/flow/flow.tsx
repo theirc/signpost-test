@@ -122,7 +122,7 @@ function Flow(props: { onAgentUpdate?: () => void }) {
         const w = app.agent.workers[change.id]
         if (!w) continue
         if (!change.resizing) {
-          console.log("Node resized:", change.id, change.dimensions)
+          // console.log("Node resized:", change.id, change.dimensions)
           w.config.width = change.dimensions.width
           w.config.height = change.dimensions.height
         }
@@ -286,7 +286,7 @@ export function FlowDesigner({ id }: { id?: string }) {
   }
 
   function onShowChat() {
-    console.log("show chat", conversational)
+    // console.log("show chat", conversational)
     setShowChat(s => !s)
   }
 
