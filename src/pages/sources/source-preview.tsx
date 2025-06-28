@@ -209,7 +209,10 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
       setSaving(true)
       const { error } = await supabase
         .from('sources')
-        .update({ content: editingContent })
+        .update({ 
+          content: editingContent,
+          vector: null
+        })
         .eq('id', source.id)
 
       if (error) throw error
