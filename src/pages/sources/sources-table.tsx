@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, Edit2, Save, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, Edit2, Save, X, Check } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { DeleteSourceDialog } from "./delete-source-dialog"
@@ -46,7 +46,7 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
 
       const { data: sources, error } = await supabase
         .from('sources')
-        .select('id, name, type, created_at, last_updated, tags')
+        .select('id, name, type, created_at, last_updated, tags, vector')
         .eq('team_id', selectedTeam.id)
         .order('created_at', { ascending: false })
 
@@ -60,7 +60,8 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
         lastUpdated: source.last_updated || source.created_at,
         tags: typeof source.tags === 'string' 
           ? (source.tags as string).replace('{', '').replace('}', '').split(',').filter(tag => tag.length > 0)
-          : source.tags || []
+          : source.tags || [],
+        vector: source.vector !== null && source.vector !== undefined
       }))
 
       setAllData(transformedData)
@@ -208,19 +209,20 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
               )}
             </TableHead>
             <TableHead>Tags</TableHead>
+            <TableHead>Vector</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
+              <TableCell colSpan={6} className="h-24 text-center">
                 Loading...
               </TableCell>
             </TableRow>
           ) : paginatedData.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
+              <TableCell colSpan={6} className="h-24 text-center">
                 No sources found
               </TableCell>
             </TableRow>
@@ -317,6 +319,16 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
                       )
                     })}
                   </div>
+                </TableCell>
+                <TableCell 
+                  className="cursor-pointer"
+                  onClick={() => onRowClick(row)}
+                >
+                  {row.vector ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <X className="h-4 w-4 text-red-500" />
+                  )}
                 </TableCell>
                 <TableCell>
                   <span

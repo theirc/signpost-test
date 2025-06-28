@@ -115,7 +115,8 @@ export async function handleZendeskImport(
     const { error: updateError } = await supabase
       .from('sources')
       .update({
-        content: `Imported ${successCount} Zendesk articles (${errorCount} failed)`
+        content: `Imported ${successCount} Zendesk articles (${errorCount} failed)`,
+        vector: null
       })
       .eq('id', sourceId)
 
@@ -132,7 +133,8 @@ export async function handleZendeskImport(
     await supabase
       .from('sources')
       .update({
-        content: `Error importing Zendesk articles: ${error instanceof Error ? error.message : 'Unknown error'}`
+        content: `Error importing Zendesk articles: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        vector: null
       })
       .eq('id', sourceId)
     

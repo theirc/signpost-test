@@ -72,7 +72,8 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
           await supabase
             .from('sources')
             .update({
-              content: `Failed to configure web scraping for ${form.url}`
+              content: `Failed to configure web scraping for ${form.url}`,
+              vector: null
             })
             .eq('id', savedSource.id)
           
@@ -136,7 +137,8 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
               const { error: updateError } = await supabase
                 .from('sources')
                 .update({
-                  content: `Content fetched from ${form.url} (${new Date().toLocaleString()})`
+                  content: `Content fetched from ${form.url} (${new Date().toLocaleString()})`,
+                  vector: null
                 })
                 .eq('id', savedSource.id)
               
@@ -152,7 +154,8 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
               await supabase
                 .from('sources')
                 .update({
-                  content: `Error fetching content from ${form.url}: ${error instanceof Error ? error.message : 'Unknown error'}`
+                  content: `Error fetching content from ${form.url}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                  vector: null
                 })
                 .eq('id', savedSource.id)
               
@@ -169,7 +172,8 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
             await supabase
               .from('sources')
               .update({
-                content: `Failed to configure web scraping: ${error instanceof Error ? error.message : 'Database error'}`
+                content: `Failed to configure web scraping: ${error instanceof Error ? error.message : 'Database error'}`,
+                vector: null
               })
               .eq('id', savedSource.id)
             
