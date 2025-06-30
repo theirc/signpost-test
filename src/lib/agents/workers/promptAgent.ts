@@ -59,7 +59,7 @@ async function contextExtractor(instructions: string, context: any, model: any, 
     parameters,
     async execute(ctx) {
       if (ctx) context = ctx
-      console.log("🔨 context_change_tool", ctx)
+      // console.log("🔨 context_change_tool", ctx)
       return ``
     },
   })
@@ -138,7 +138,7 @@ async function execute(worker: PromptAgentWorker, p: AgentParameters) {
     })
   })
 
-  console.log("Prompt Agent Tools:", agentTools)
+  // console.log("Prompt Agent Tools:", agentTools)
 
   const agent = new OpenAIAgent({
     name: 'Agent',
@@ -147,6 +147,18 @@ async function execute(worker: PromptAgentWorker, p: AgentParameters) {
     handoffs,
     tools,
   })
+
+
+  agent.on("agent_handoff", (ctx, agent) => {
+    console.log(`👉 LLM Agent handoff to Agent with description '${agent.handoffDescription}'`)
+  })
+  agent.on("agent_tool_start", (ctx, b) => {
+    console.log(`🔨 LLM Agent Tool '${b.name}' Start`, b, ctx)
+  })
+  agent.on("agent_tool_end", (ctx, b) => {
+    console.log(`🔨 LLM Agent Tool '${b.name}' End`, b, ctx)
+  })
+
 
   const result = await run(agent, history)
 

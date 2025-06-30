@@ -279,7 +279,7 @@ function getTool(w: SearchWorker, p: AgentParameters): ToolConfig {
     }),
 
     async execute({ query }) {
-      console.log(`🛠 Executing search with query: ${query}`)
+      console.log(`🔎  Executing search Tool with query: ${query}`)
       w.fields.input.value = query
       await w.execute(p)
       const results = w.fields.output.value as VectorDocument[] || []

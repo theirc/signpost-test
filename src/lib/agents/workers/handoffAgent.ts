@@ -72,6 +72,16 @@ async function getHandoffAgent(worker: HandoffAgentWorker, p: AgentParameters): 
     tools,
   })
 
+  hoa.on("agent_handoff", (ctx, agent) => {
+    console.log(`👉 LLM Agent handoff to Agent with description '${agent.handoffDescription}'`)
+  })
+  hoa.on("agent_tool_start", (ctx, b) => {
+    console.log(`🔨 LLM Agent Tool '${b.name}' Start`, b, ctx)
+  })
+  hoa.on("agent_tool_end", (ctx, b) => {
+    console.log(`🔨 LLM Agent Tool '${b.name}' End`, b, ctx)
+  })
+
   return hoa
 }
 

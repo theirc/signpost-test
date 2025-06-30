@@ -148,7 +148,7 @@ export function buildWorker(w: WorkerConfig) {
         let someConditionsMet = false
 
         for (const cond of conditions) {
-          console.log(`Worker '${w.type}' condition:`, cond)
+          // console.log(`Worker '${w.type}' condition:`, cond)
           const conditionMet = worker.evaluateCondition(cond)
           if (conditionMet) {
             someConditionsMet = true
@@ -156,7 +156,7 @@ export function buildWorker(w: WorkerConfig) {
           }
         }
         if (!someConditionsMet) {
-          console.log(`Worker '${w.type}' - Conditions not met`)
+          // console.log(`Worker '${w.type}' - Conditions not met`)
           worker.updateWorker()
           p.agent.currentWorker = prevWorker
           p.agent.update()

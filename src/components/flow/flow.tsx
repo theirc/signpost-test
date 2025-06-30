@@ -74,10 +74,11 @@ function Flow(props: { onAgentUpdate?: () => void }) {
         position: { x: w.config.x, y: w.config.y },
       }
 
-      if (w.config.width && w.config.height) {
-        newNode.width = w.config.width
-        newNode.height = w.config.height
-      }
+      //ToDo: Fix me
+      // if (w.config.width && w.config.height) {
+      //   newNode.width = w.config.width
+      //   newNode.height = w.config.height
+      // }
 
       initialNodes.push(newNode)
     }
