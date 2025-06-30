@@ -21,6 +21,10 @@ const initialFormData = {
 }
 
 const updateSource = async (id: string, updates: any) => {
+    if (updates.content !== undefined) {
+        updates.vector = null
+    }
+    
     const { error } = await supabase.from('sources').update(updates).eq('id', id).select().single()
     if (error) throw error
     return { data: null, error: null }

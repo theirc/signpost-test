@@ -29,6 +29,7 @@ export type SourceDisplay = {
   lastUpdated: string
   content: string
   tags: string[]
+  vector: boolean
 }
 
 export type { Source, LiveDataElement }
