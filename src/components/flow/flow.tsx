@@ -32,6 +32,7 @@ import { translate } from '@/lib/agents/workers/translate'
 import { TranslateNode } from './nodes/translate'
 import { PromptAgentNode } from './nodes/promptAgent'
 import { HandoffAgentNode } from './nodes/handoffAgent'
+import { TemplateNode } from './nodes/template'
 import { ChatFlow } from './chat'
 
 const nodeTypes = {
@@ -53,6 +54,7 @@ const nodeTypes = {
   translate: TranslateNode,
   promptAgent: PromptAgentNode,
   handoffAgent: HandoffAgentNode,
+  template: TemplateNode,
 }
 
 function Flow(props: { onAgentUpdate?: () => void }) {
