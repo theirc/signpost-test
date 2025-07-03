@@ -16,7 +16,8 @@ import {
   MoreHorizontal, 
   Pencil, 
   Trash, 
-  Database 
+  Database,
+  Download
 } from "lucide-react"
 import { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
@@ -34,6 +35,7 @@ interface CollectionsTableProps {
   onEdit: (collection: CollectionWithSourceCount) => void
   onDelete: (collection: CollectionWithSourceCount) => void
   onGenerateVector: (collection: CollectionWithSourceCount) => void
+  onExport?: (collection: CollectionWithSourceCount) => void
   loading?: boolean
 }
 
@@ -42,6 +44,7 @@ export function CollectionsTable({
   onEdit,
   onDelete,
   onGenerateVector,
+  onExport,
   loading = false
 }: CollectionsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
@@ -215,6 +218,15 @@ export function CollectionsTable({
                           <Database className="h-4 w-4 mr-2" />
                           Generate Vectors
                         </DropdownMenuItem>
+                        {onExport && (
+                          <DropdownMenuItem 
+                            onClick={() => onExport(collection)}
+                            disabled={collection.sourceCount === 0}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export Sources
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
