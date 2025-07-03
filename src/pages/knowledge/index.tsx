@@ -7,6 +7,7 @@ import { CollectionsTable } from "./components/collections-table"
 import { DeleteCollectionDialog } from "./components/delete-collection-dialog"
 import { EditCollectionDialog } from "./components/edit-collection-dialog"
 import { useCollections, useCollectionSources } from "./collections-logic"
+import { exportCollectionSources } from "./collection-export"
 
 export default function Knowledge() {
   // State
@@ -127,6 +128,39 @@ export default function Knowledge() {
     }
   }
 
+  const handleExportCollection = async (collection: CollectionWithSourceCount) => {
+    try {
+      toast({
+        title: "Export Started",
+        description: "Preparing your collection sources for download...",
+        duration: 3000,
+      })
+      
+      await exportCollectionSources(collection.id, collection.name)
+      
+      toast({
+        title: "Export Complete",
+        description: `Successfully exported ${collection.sourceCount} sources from "${collection.name}".`,
+        duration: 5000,
+      })
+    } catch (error) {
+      console.error('Error exporting collection:', error)
+      
+      let errorDescription = "There was an error exporting the collection. Please try again."
+      
+      if (error instanceof Error) {
+        errorDescription = `Export failed: ${error.message}`
+      }
+      
+      toast({
+        title: "Export Failed",
+        description: errorDescription,
+        variant: "destructive",
+        duration: 8000,
+      })
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 p-8 pt-6">
@@ -165,6 +199,7 @@ export default function Knowledge() {
               onEdit={handleEditCollection}
               onDelete={handleDeleteCollection}
               onGenerateVector={handleGenerateVector}
+              onExport={handleExportCollection}
               loading={collectionsLoading || isGeneratingVector}
             />
           )}
