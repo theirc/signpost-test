@@ -41,7 +41,7 @@ export function NavUser({ user }: { user: User }) {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings/profile')}>
               <BadgeCheck />
               Account
             </DropdownMenuItem>

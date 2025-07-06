@@ -32,6 +32,9 @@ export function SettingsLayout() {
                 Users
               </TabsTrigger>
             )}
+            <TabsTrigger value="profile" onClick={() => navigate("/settings/profile")}>
+              Profile
+            </TabsTrigger>
             {canRead("billing") && (
               <TabsTrigger value="billing" onClick={() => navigate("/settings/billing")}>
                 Billing
