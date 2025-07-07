@@ -10,7 +10,7 @@ import type { AgentChatMessage } from '@/types/types.ai'
 import { SearchInput } from "@/pages/playground/search"
 import { agents } from "@/lib/agents"
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup, DropdownMenuCheckboxItem,
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuGroup, DropdownMenuRadioGroup, DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu"
 import ChatMessageComponent from "@/pages/playground/chatmessage"
 import "../index.css"
@@ -170,7 +170,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     rebuilding: false,
     loadingAgentList: false,
     agents: {} as Record<number, AgentEntry>,
-    selectedAgents: [] as number[],
+    selectedAgent: null as number | null,
   })
 
   const toggleSidebar = () => {
@@ -180,7 +180,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
   const handleResetChat = () => {
     setMessages([])
     setActiveChat(null)
-    setState({ selectedAgents: [] })
+    setState({ selectedAgent: null })
     setSidebarVisible(false)
   }
 
@@ -222,7 +222,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
       const selectedAgents = chatSession.selectedAgents || []
 
       setState({
-        selectedAgents,
+        selectedAgent: selectedAgents.length > 0 ? selectedAgents[0] : null,
       })
 
       setMessage(prev => prev + "")
@@ -230,44 +230,38 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     }, 50)
   }
 
-  function toggleAgent(id: number) {
-    const next = state.selectedAgents.includes(id)
-      ? state.selectedAgents.filter(x => x !== id)
-      : [...state.selectedAgents, id]
-    setState({ selectedAgents: next })
+  function selectAgent(id: number) {
+    setState({ selectedAgent: id })
     setMessages([])
     setActiveChat(null)
   }
 
   const label =
-    state.selectedAgents.length > 0
-      ? state.selectedAgents.map(id => state.agents[id]?.name).filter(Boolean).join(", ")
+    state.selectedAgent !== null
+      ? state.agents[state.selectedAgent]?.name || "Select Agent"
       : "Select Agent"
 
   const onSelectAgent = (e: string[] | string) => {
     console.log("Selecting agent:", e)
 
-    const previousSelectedAgent = state.selectedAgents.length > 0 ? state.selectedAgents[0] : null
+    const previousSelectedAgent = state.selectedAgent
 
     if (!e || (Array.isArray(e) && e.length === 0)) {
-      setState({ selectedAgents: [] })
+      setState({ selectedAgent: null })
       return
     }
 
-    let newSelectedAgents: number[] = []
+    let newSelectedAgent: number | null = null
 
     if (Array.isArray(e)) {
-      newSelectedAgents = e.map(Number)
-      setState({ selectedAgents: newSelectedAgents })
+      newSelectedAgent = e.length > 0 ? Number(e[0]) : null
     } else if (typeof e === "string") {
-      newSelectedAgents = [Number(e)]
-      setState({ selectedAgents: newSelectedAgents })
+      newSelectedAgent = Number(e)
     }
 
-    const selectionChanged =
-      previousSelectedAgent !== newSelectedAgents[0] ||
-      state.selectedAgents.length !== newSelectedAgents.length ||
-      !state.selectedAgents.every(id => newSelectedAgents.includes(id))
+    const selectionChanged = previousSelectedAgent !== newSelectedAgent
+
+    setState({ selectedAgent: newSelectedAgent })
 
     if (selectionChanged) {
       setMessages([])
@@ -279,7 +273,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     const handles = p.worker?.handlersArray?.map((h: any) => ({ [h.name]: h.value })) || []
     const logData = {
       team_id: selectedTeam?.id,
-      agent: state.selectedAgents.map(id => state.agents[id]).filter(Boolean)[0].id,
+      agent: state.selectedAgent ? state.agents[state.selectedAgent]?.id : null,
       worker: p.worker.config.type,
       state: p.state,
       handles,
@@ -335,49 +329,79 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     const updatedMessages = [...messages, humanMsg]
     setMessages(updatedMessages)
 
-    const selected = state.selectedAgents.map(id => state.agents[id]).filter(Boolean)
+    const selectedAgent = state.selectedAgent ? state.agents[state.selectedAgent] : null
     let reply: AgentChatMessage
-    if (selected.length) {
+    if (selectedAgent) {
       try {
-        const entry = selected[0] as AgentEntry;
+        const entry = selectedAgent as AgentEntry;
         const worker = await agents.loadAgent(Number(entry.id));
 
-        const conversationHistory = updatedMessages.map(msg => {
-          const sender = (msg.type === "human") ? "User" : "Bot";
-          let messageContent = "";
-
+        // Convert messages to ChatHistory format for conversational agents
+        const chatHistory: ChatHistory = updatedMessages.map(msg => {
           if (msg.type === "human") {
-            messageContent = typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message);
-          } else if (msg.type === "agent") {
-            messageContent = typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message);
+            return {
+              role: "user",
+              content: typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message)
+            };
+          } else {
+            return {
+              role: "assistant", 
+              content: typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message)
+            };
           }
+        });
 
-          return sender + ": " + messageContent;
-        }).join("\n");
         const logId = crypto.randomUUID()
 
-        const parameters: {
-          input: {
-            question?: string;
-            conversation_history?: string;
-            uid: string;
-            [key: string]: any;
+        // Check if this is a conversational agent and use appropriate input format
+        const isConversationalAgent = worker.isConversational;
+        
+        let parameters: AgentParameters;
+        
+        if (isConversationalAgent) {
+          // Use the same input format as chat.tsx for conversational agents
+          parameters = {
+            input: {
+              message: isJsonInput ? JSON.stringify(inputData) : (userText || ""),
+              history: chatHistory.slice(0, -1) // Exclude the current message from history
+            },
+            apiKeys: apiKeys,
+            state: {
+              agent: {},
+              workers: {}
+            },
+            uid: currentUid,
+            logWriter: (p) => onWorkerExecuted(p, logId),
           };
-          apiKeys: APIKeys;
-          output?: string;
-          state?: any;
-          uid?: string;
-          logWriter?: (p: { worker: AIWorker; state: any }) => void;
-        } = {
-          input: {
-            ...(isJsonInput ? inputData : { question: userText || "" }),
-            conversation_history: conversationHistory,
-            uid: currentUid
-          },
-          apiKeys: apiKeys,
-          state: {},
-          uid: currentUid,
-          logWriter: (p) => onWorkerExecuted(p, logId),
+        } else {
+          // Use the existing format for non-conversational agents
+          const conversationHistory = updatedMessages.map(msg => {
+            const sender = (msg.type === "human") ? "User" : "Bot";
+            let messageContent = "";
+
+            if (msg.type === "human") {
+              messageContent = typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message);
+            } else if (msg.type === "agent") {
+              messageContent = typeof msg.message === "string" ? msg.message : JSON.stringify(msg.message);
+            }
+
+            return sender + ": " + messageContent;
+          }).join("\n");
+
+          parameters = {
+            input: {
+              ...(isJsonInput ? inputData : { question: userText || "" }),
+              conversation_history: conversationHistory,
+              uid: currentUid
+            },
+            apiKeys: apiKeys,
+            state: {
+              agent: {},
+              workers: {}
+            },
+            uid: currentUid,
+            logWriter: (p) => onWorkerExecuted(p, logId),
+          };
         }
 
         await worker.execute(parameters);
@@ -405,8 +429,8 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
 
     const newSession: ChatSession = {
       uid: currentUid,
-      agentName: state.agents[state.selectedAgents[0]]?.name ?? "Chat",
-      selectedAgents: [...state.selectedAgents],
+      agentName: state.selectedAgent ? state.agents[state.selectedAgent]?.name ?? "Chat" : "Chat",
+      selectedAgents: state.selectedAgent ? [state.selectedAgent] : [],
       messages: finalMessages,
       timestamp: new Date().toISOString(),
     }
@@ -414,7 +438,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     setActiveChat(newSession);
     
     if (user?.id && selectedTeam?.id) {
-      const agentId = state.selectedAgents[0]?.toString() || 'unknown'
+      const agentId = state.selectedAgent?.toString() || 'unknown'
       
       try {
         const userMessage = finalMessages[finalMessages.length - 2]
@@ -444,7 +468,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     setState({ isSending: false });
   }
 
-  const hasSelectedAgents = state.selectedAgents.length > 0
+  const hasSelectedAgents = state.selectedAgent !== null
 
   return (
     <div className="h-screen flex flex-col">
@@ -462,17 +486,21 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-60 max-h-60 overflow-y-auto p-1">
                     <DropdownMenuGroup>
-                      <DropdownMenuLabel>Agents</DropdownMenuLabel>
-                      {Object.entries(state.agents)
-                        .map(([key, a]) => (
-                          <DropdownMenuCheckboxItem
-                            key={key}
-                            checked={state.selectedAgents.includes(Number(key))}
-                            onCheckedChange={() => toggleAgent(Number(key))}
-                          >
-                            {a.name}
-                          </DropdownMenuCheckboxItem>
-                        ))}
+                      <DropdownMenuLabel>Select Agent</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup 
+                        value={state.selectedAgent?.toString() || ""} 
+                        onValueChange={(value) => selectAgent(Number(value))}
+                      >
+                        {Object.entries(state.agents)
+                          .map(([key, a]) => (
+                            <DropdownMenuRadioItem
+                              key={key}
+                              value={key}
+                            >
+                              {a.name}
+                            </DropdownMenuRadioItem>
+                          ))}
+                      </DropdownMenuRadioGroup>
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
