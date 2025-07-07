@@ -29,6 +29,7 @@ import { UsersSettings } from "@/pages/settings/users"
 import { AddTeamMembers } from "@/pages/settings/team-members"
 import { ApiKeysSettings } from "@/pages/settings/api-keys"
 import ApiKeyView from "@/pages/settings/api-key"
+import { ProfileSettings } from "@/pages/settings/profile"
 
 const routeNames: Record<string, string> = {
   '/': 'Designer',
@@ -46,6 +47,7 @@ const routeNames: Record<string, string> = {
   '/settings/roles': 'Settings / Access Control',
   '/settings/users': 'Settings / Users',
   '/settings/apikeys': 'Settings / Api Keys',
+  '/settings/profile': 'Settings / Profile',
 }
 
 function NavigationLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -184,6 +186,11 @@ export function AppLayout() {
               <Route path="apikeys/:id" element={
                 <ProtectedRoute resource="apikeys" action="update">
                   <ApiKeyView />
+                </ProtectedRoute>
+              } />
+              <Route path="profile" element={
+                <ProtectedRoute>
+                  <ProfileSettings />
                 </ProtectedRoute>
               } />
             </Route>
