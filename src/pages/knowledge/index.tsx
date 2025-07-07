@@ -7,6 +7,7 @@ import { CollectionsTable } from "./components/collections-table"
 import { DeleteCollectionDialog } from "./components/delete-collection-dialog"
 import { EditCollectionDialog } from "./components/edit-collection-dialog"
 import { useCollections, useCollectionSources } from "./collections-logic"
+import { downloadCollectionSources } from "./download-utils"
 
 export default function Knowledge() {
   // State
@@ -127,6 +128,45 @@ export default function Knowledge() {
     }
   }
 
+  const handleDownloadCollection = async (collection: CollectionWithSourceCount) => {
+    try {
+      toast({
+        title: "Download Started",
+        description: "Preparing your collection sources for download...",
+        duration: 3000,
+      })
+      
+      await downloadCollectionSources(collection.id, collection.name)
+      
+      toast({
+        title: "Download Complete",
+        description: `Successfully downloaded sources from "${collection.name}" collection.`,
+        duration: 5000,
+      })
+    } catch (error) {
+      console.error('Error downloading collection sources:', error)
+      
+      let errorDescription = "There was an error downloading the collection sources. Please try again."
+      
+      if (error instanceof Error) {
+        if (error.message.includes('No sources found')) {
+          errorDescription = "This collection has no sources to download."
+        } else if (error.message.includes('No sources with content')) {
+          errorDescription = "This collection has no sources with content to download."
+        } else {
+          errorDescription = `Error: ${error.message}`
+        }
+      }
+      
+      toast({
+        title: "Download Failed",
+        description: errorDescription,
+        variant: "destructive",
+        duration: 8000,
+      })
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 p-8 pt-6">
@@ -165,6 +205,7 @@ export default function Knowledge() {
               onEdit={handleEditCollection}
               onDelete={handleDeleteCollection}
               onGenerateVector={handleGenerateVector}
+              onDownload={handleDownloadCollection}
               loading={collectionsLoading || isGeneratingVector}
             />
           )}
