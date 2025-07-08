@@ -448,14 +448,14 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
           const userContent = typeof userMessage.message === 'string' 
             ? userMessage.message 
             : JSON.stringify(userMessage.message)
-          await saveChatMessage(user.id, agentId, selectedTeam.id, 'user', userContent)
+          await saveChatMessage(user.id, agentId, selectedTeam.id, 'user', userContent, currentUid, (finalMessages.length - 1).toString())
         }
         
         if (assistantMessage) {
           const assistantContent = typeof assistantMessage.message === 'string' 
             ? assistantMessage.message 
             : JSON.stringify(assistantMessage.message)
-          await saveChatMessage(user.id, agentId, selectedTeam.id, 'assistant', assistantContent)
+          await saveChatMessage(user.id, agentId, selectedTeam.id, 'assistant', assistantContent, currentUid, finalMessages.length.toString())
         }
         
         const { data: updatedSessions } = await getChatSessions(user.id, selectedTeam.id)

@@ -16,7 +16,9 @@ export async function saveChatMessage(
   agentId: string,
   teamId: string,
   role: 'user' | 'assistant',
-  content: string
+  content: string,
+  conversationId: string,
+  chatNumber: string
 ): Promise<{ data: any; error: any }> {
   const { data, error } = await supabase
     .from('chat_history')
@@ -25,7 +27,9 @@ export async function saveChatMessage(
       agent_id: agentId,
       team_id: teamId,
       role,
-      content
+      content,
+      conversation_id: conversationId,
+      chat_number: chatNumber
     })
     .select()
     .single()
@@ -39,7 +43,7 @@ export async function getChatSessions(userId: string, teamId: string): Promise<{
     .select('*')
     .eq('user_id', userId)
     .eq('team_id', teamId)
-    .order('created_at', { ascending: true })
+    .order('chat_number', { ascending: true })
   
   if (error || !chatRecords) {
     return { data: null, error }
@@ -48,11 +52,11 @@ export async function getChatSessions(userId: string, teamId: string): Promise<{
   const sessionsMap = new Map<string, ChatSession>()
 
   chatRecords.forEach(record => {
-    const sessionKey = `${record.user_id}-${record.agent_id}-${record.team_id}`
+    const conversationId = record.conversation_id || 'unknown'
     
-    if (!sessionsMap.has(sessionKey)) {
-      sessionsMap.set(sessionKey, {
-        uid: sessionKey,
+    if (!sessionsMap.has(conversationId)) {
+      sessionsMap.set(conversationId, {
+        uid: conversationId,
         agentName: record.agent_id,
         selectedAgents: [parseInt(record.agent_id)],
         messages: [],
@@ -60,7 +64,7 @@ export async function getChatSessions(userId: string, teamId: string): Promise<{
       })
     }
 
-    const session = sessionsMap.get(sessionKey)!
+    const session = sessionsMap.get(conversationId)!
     const message: AgentChatMessage = {
       type: record.role === 'user' ? 'human' : 'agent',
       message: record.content
