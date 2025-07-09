@@ -77,10 +77,13 @@ function Flow(props: { onAgentUpdate?: () => void }) {
       }
 
       //ToDo: Fix me
-      // if (w.config.width && w.config.height) {
-      //   newNode.width = w.config.width
-      //   newNode.height = w.config.height
-      // }
+      if (w.type === "ai" || w.type === "promptAgent" || w.type === "handoffAgent") {
+        if (w.config.width && w.config.height) {
+          newNode.width = w.config.width
+          newNode.height = w.config.height
+        }
+
+      }
 
       initialNodes.push(newNode)
     }

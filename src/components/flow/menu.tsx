@@ -162,6 +162,7 @@ export function Toolbar(props: Props) {
     if (!app.agent.debuguuid) return
     agentForm.modal.hide()
     await supabase.from("states").delete().eq("id", app.agent.debuguuid)
+    await supabase.from("history").delete().eq("uid", app.agent.debuguuid)
   }
 
   function onShowChat() {
@@ -241,7 +242,7 @@ export function Toolbar(props: Props) {
       </Row>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="rounded-sm">Reset State</Button>
+          <Button variant="destructive" className="rounded-sm">Reset State and History</Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
