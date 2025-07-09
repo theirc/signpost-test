@@ -528,6 +528,51 @@ export type Database = {
           },
         ]
       }
+      history: {
+        Row: {
+          agent: string | null
+          arguments: Json | null
+          content: Json | null
+          created_at: string
+          id: number
+          name: string | null
+          payload: Json | null
+          role: string | null
+          status: string | null
+          type: string | null
+          uid: string | null
+          worker: string | null
+        }
+        Insert: {
+          agent?: string | null
+          arguments?: Json | null
+          content?: Json | null
+          created_at?: string
+          id?: number
+          name?: string | null
+          payload?: Json | null
+          role?: string | null
+          status?: string | null
+          type?: string | null
+          uid?: string | null
+          worker?: string | null
+        }
+        Update: {
+          agent?: string | null
+          arguments?: Json | null
+          content?: Json | null
+          created_at?: string
+          id?: number
+          name?: string | null
+          payload?: Json | null
+          role?: string | null
+          status?: string | null
+          type?: string | null
+          uid?: string | null
+          worker?: string | null
+        }
+        Relationships: []
+      }
       live_data_elements: {
         Row: {
           content: string

@@ -11,3 +11,5 @@
 * Select the apropiate icon and assign it in the same way as other nodes at src\components\flow\nodes
 * Open src\components\flow\flow.tsx and add the newly created component node and add it to the `nodeTypes` const.
 * Ask the user any data you need to perform the task.
+* Set the category as "tool" as default, or try to infer which is the correct one based on usage and available categories.
+* 
