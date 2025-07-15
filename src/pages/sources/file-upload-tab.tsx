@@ -132,6 +132,7 @@ export function FileUploadTab({ onSourcesUpdated, onOpenChange }: FileUploadTabP
           className="col-span-3"
           disabled={isLoading}
           ref={fileInputRef}
+          accept=".pdf,.docx,.doc,.txt,.md,.html,.css,.js,.csv,.json,.xml,.jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp,image/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,text/plain,text/markdown,text/html,text/css,text/javascript,text/csv,application/vnd.ms-excel,application/json,application/xml,text/xml"
         />
       </div>
       <p className="text-sm text-muted-foreground col-start-2 col-span-3">
