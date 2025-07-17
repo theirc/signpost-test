@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, RefreshCcw, Database } from "lucide-react"
+import { Loader2, RefreshCcw, Database, List, Map } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Collection, CollectionWithSourceCount } from "./types"
 import { CollectionsTable } from "./components/collections-table"
@@ -8,6 +8,8 @@ import { DeleteCollectionDialog } from "./components/delete-collection-dialog"
 import { EditCollectionDialog } from "./components/edit-collection-dialog"
 import { useCollections, useCollectionSources } from "./collections-logic"
 import { downloadCollectionSources } from "./download-utils"
+import { CollectionGraph } from '@/components/CollectionGraph';
+import { Switch } from '@/components/ui/switch';
 
 export default function Knowledge() {
   // State
@@ -15,6 +17,7 @@ export default function Knowledge() {
   const [collectionToEdit, setCollectionToEdit] = useState<Collection | null>(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isGeneratingVector, setIsGeneratingVector] = useState(false)
+  const [showGraph, setShowGraph] = useState(false);
   
   // Hooks
   const { toast } = useToast()
@@ -170,43 +173,61 @@ export default function Knowledge() {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 p-8 pt-6">
-        <div className="flex items-center justify-between">
+        {/* Header and actions row */}
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage your collections and their sources.
             </p>
           </div>
-          <div className="flex flex-col items-end space-y-2">
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={handleRefresh} disabled={collectionsLoading}>
-                {collectionsLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                )}
-                Refresh
-              </Button>
-              <Button onClick={handleCreateCollection}>
-                Create Collection
-              </Button>
+          <div className="flex items-center gap-4">
+            {/* Toggle between List and Graph views */}
+            <div className="flex items-center">
+              <span className={`mr-2 ${!showGraph ? 'text-blue-600' : 'text-muted-foreground'}`}><List className="h-5 w-5" /></span>
+              <Switch checked={showGraph} onCheckedChange={setShowGraph} />
+              <span className={`ml-2 ${showGraph ? 'text-blue-600' : 'text-muted-foreground'}`}><Map className="h-5 w-5" /></span>
+              <span className="ml-4 text-sm text-muted-foreground">{showGraph ? 'Graph View' : 'List View'}</span>
+            </div>
+            <div className="flex flex-col items-end space-y-2">
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={handleRefresh} disabled={collectionsLoading}>
+                  {collectionsLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                  )}
+                  Refresh
+                </Button>
+                <Button onClick={handleCreateCollection}>
+                  Create Collection
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-
-        {collectionsLoading ? (
-          <div className="w-full h-64 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
+        {/* Collection Graph Visualization */}
+        {showGraph && (
+          <div className="mb-8">
+            <CollectionGraph collections={collections} collectionSources={collectionSources} />
           </div>
-        ) : (
-          <CollectionsTable
-            collections={collections}
-            onEdit={handleEditCollection}
-            onDelete={handleDeleteCollection}
-            onGenerateVector={handleGenerateVector}
-            onDownload={handleDownloadCollection}
-            loading={collectionsLoading || isGeneratingVector}
-          />
+        )}
+
+        {!showGraph && (
+          collectionsLoading ? (
+            <div className="w-full h-64 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <CollectionsTable
+              collections={collections}
+              onEdit={handleEditCollection}
+              onDelete={handleDeleteCollection}
+              onGenerateVector={handleGenerateVector}
+              onDownload={handleDownloadCollection}
+              loading={collectionsLoading || isGeneratingVector}
+            />
+          )
         )}
       </div>
 
