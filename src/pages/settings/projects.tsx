@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import CustomTable from "@/components/ui/custom-table"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
@@ -68,7 +68,7 @@ export function ProjectsSettings() {
   }, [selectedTeam])
 
   return (
-    <div className="space-y-6">
+    <div>
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-medium">Projects</h3>
@@ -85,8 +85,7 @@ export function ProjectsSettings() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <CustomTable
-          tableId="projects-table"
+        <EnhancedDataTable
           columns={columns as any}
           data={projects}
           onRowClick={(row) => {

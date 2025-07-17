@@ -16,7 +16,7 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         gradient: "bg-[linear-gradient(238deg,#EA5850,#6286F7)] text-white hover:opacity-90",
-        primary: "bg-[radial-gradient(100%_100%_at_50%_0%,#6286F7,#9B53D2)] text-white hover:opacity-90",
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90",
         action: "bg-[linear-gradient(45deg,#6286F7,#EA5850)] text-white hover:opacity-90",
         highlight: "bg-[linear-gradient(to_right,#6286F7,#9B53D2)] text-white hover:opacity-90",
         special: "bg-[conic-gradient(from_45deg,#6286F7,#9B53D2,#EA5850,#6286F7)] text-white hover:opacity-90",
@@ -29,7 +29,7 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "primary",
       size: "default",
     },
   }

@@ -1,20 +1,15 @@
 import { format } from "date-fns"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Trash2, Edit2, Save, X, Check } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Trash2, Edit2, Save, X, Check, MoreHorizontal } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { DeleteSourceDialog } from "./delete-source-dialog"
 import { SourceDisplay } from "./types"
 import { supabase } from "@/lib/agents/db"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
+import { ColumnDef } from "@tanstack/react-table"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface SourcesTableProps {
   onRowClick: (row: SourceDisplay) => void
@@ -24,18 +19,11 @@ interface SourcesTableProps {
 export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) {
   const [allData, setAllData] = useState<SourceDisplay[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [search, setSearch] = useState("")
-  const [sortBy, setSortBy] = useState<"name" | "lastUpdated">("lastUpdated")
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-  const [sourceToDelete, setSourceToDelete] = useState<SourceDisplay | null>(null)
-  const { selectedTeam } = useTeamStore()
-  const itemsPerPage = 10
-
-  // Editing states
   const [editingSourceId, setEditingSourceId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [saving, setSaving] = useState(false)
+  const [sourceToDelete, setSourceToDelete] = useState<SourceDisplay | null>(null)
+  const { selectedTeam } = useTeamStore()
 
   const fetchSources = async () => {
     try {
@@ -76,39 +64,11 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
     fetchSources()
   }, [selectedTeam])
 
-  // Refresh when refreshTrigger changes
   useEffect(() => {
     if (refreshTrigger) {
       fetchSources()
     }
   }, [refreshTrigger])
-
-  // Filtering
-  const filteredData = allData.filter(row =>
-    row.name.toLowerCase().includes(search.toLowerCase())
-  )
-
-  // Sorting
-  const sortedData = [...filteredData].sort((a, b) => {
-    if (sortBy === "name") {
-      if (a.name.toLowerCase() < b.name.toLowerCase()) return sortDir === "asc" ? -1 : 1
-      if (a.name.toLowerCase() > b.name.toLowerCase()) return sortDir === "asc" ? 1 : -1
-      return 0
-    } else {
-      // lastUpdated
-      const aDate = new Date(a.lastUpdated).getTime()
-      const bDate = new Date(b.lastUpdated).getTime()
-      return sortDir === "asc" ? aDate - bDate : bDate - aDate
-    }
-  })
-
-  // Pagination
-  const totalCount = sortedData.length
-  const totalPages = Math.ceil(totalCount / itemsPerPage)
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
 
   const handleSaveName = async () => {
     if (!editingSourceId || !editingName.trim()) return
@@ -122,7 +82,6 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
 
       if (error) throw error
 
-      // Update local state
       setAllData(prev => prev.map(source => 
         source.id === editingSourceId 
           ? { ...source, name: editingName.trim() }
@@ -148,237 +107,140 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
     setEditingName(source.name)
   }
 
-  const handleNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleSaveName()
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      handleCancelEdit()
-    }
-  }
+  const columns = useMemo<ColumnDef<SourceDisplay>[]>(() => [
+    {
+      accessorKey: "name",
+      header: "Name",
+      enableSorting: true,
+      cell: ({ row }) => {
+        if (editingSourceId === row.original.id) {
+          return (
+            <div className="flex items-center gap-2">
+              <Input
+                value={editingName}
+                onChange={e => setEditingName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') handleCancelEdit()
+                }}
+                className="h-8"
+                autoFocus
+              />
+              <Button size="icon" variant="ghost" onClick={handleSaveName} disabled={saving}>
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={handleCancelEdit}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )
+        }
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className="cursor-pointer underline decoration-dotted"
+              onClick={() => onRowClick(row.original)}
+            >
+              {row.original.name}
+            </span>
+            <Button size="icon" variant="ghost" onClick={() => startEditing(row.original)}>
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      enableSorting: true,
+      cell: info => info.getValue(),
+    },
+    {
+      accessorKey: "lastUpdated",
+      header: "Last Updated",
+      enableSorting: true,
+      cell: info => format(new Date(info.getValue() as string), "MMM dd, yyyy"),
+    },
+    {
+      accessorKey: "tags",
+      header: "Tags",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap gap-1">
+          {row.original.tags.map((tag: string) => {
+            let tagStyle = "bg-muted"
+            if (tag === 'File Upload') {
+              tagStyle = "bg-blue-100 text-blue-800"
+            } else if (tag === 'Live Data') {
+              tagStyle = "bg-purple-100 text-purple-800"
+            }
+            return (
+              <span
+                key={tag}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
+              >
+                {tag}
+              </span>
+            )
+          })}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "vector",
+      header: "Vector",
+      enableSorting: false,
+      cell: ({ row }) => (
+        row.original.vector ? (
+          <span className="text-green-600 font-semibold">Yes</span>
+        ) : (
+          <span className="text-gray-400">No</span>
+        )
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onRowClick(row.original)}>
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSourceToDelete(row.original)}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+      enableSorting: false,
+    },
+  ], [editingSourceId, editingName, saving, onRowClick])
 
   return (
-    <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="flex items-center mb-2">
-        <input
-          type="text"
-          placeholder="Search by name..."
-          value={search}
-          onChange={e => {
-            setSearch(e.target.value)
-            setCurrentPage(1) // Reset to first page when searching
-          }}
-          className="border rounded px-3 py-2 w-64 text-sm"
-        />
-      </div>
-      
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead
-              className="cursor-pointer select-none"
-              onClick={() => {
-                if (sortBy === "name") {
-                  setSortDir(sortDir === "asc" ? "desc" : "asc")
-                } else {
-                  setSortBy("name"); setSortDir("asc")
-                }
-              }}
-            >
-              Name
-              {sortBy === "name" && (
-                sortDir === "asc" ? <ChevronUp className="inline ml-1 h-3 w-3" /> : <ChevronDown className="inline ml-1 h-3 w-3" />
-              )}
-            </TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead
-              className="cursor-pointer select-none"
-              onClick={() => {
-                if (sortBy === "lastUpdated") {
-                  setSortDir(sortDir === "asc" ? "desc" : "asc")
-                } else {
-                  setSortBy("lastUpdated"); setSortDir("desc")
-                }
-              }}
-            >
-              Last Updated
-              {sortBy === "lastUpdated" && (
-                sortDir === "asc" ? <ChevronUp className="inline ml-1 h-3 w-3" /> : <ChevronDown className="inline ml-1 h-3 w-3" />
-              )}
-            </TableHead>
-            <TableHead>Tags</TableHead>
-            <TableHead>Vector</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
-                Loading...
-              </TableCell>
-            </TableRow>
-          ) : paginatedData.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="h-24 text-center">
-                No sources found
-              </TableCell>
-            </TableRow>
-          ) : (
-            paginatedData.map((row) => (
-              <TableRow key={row.id} className="group">
-                <TableCell 
-                  className="cursor-pointer"
-                  onClick={() => onRowClick(row)}
-                >
-                  {editingSourceId === row.id ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        className="flex-1"
-                        disabled={saving}
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={handleNameKeyDown}
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleSaveName()
-                        }}
-                        disabled={saving}
-                        className="h-6 w-6 p-0"
-                      >
-                        {saving ? "..." : <Save className="h-3 w-3" />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleCancelEdit()
-                        }}
-                        disabled={saving}
-                        className="h-6 w-6 p-0"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1">{row.name}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          startEditing(row)
-                        }}
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell 
-                  className="cursor-pointer"
-                  onClick={() => onRowClick(row)}
-                >
-                  {row.type}
-                </TableCell>
-                <TableCell 
-                  className="cursor-pointer"
-                  onClick={() => onRowClick(row)}
-                >
-                  {format(new Date(row.lastUpdated), "MMM dd, yyyy")}
-                </TableCell>
-                <TableCell 
-                  className="cursor-pointer"
-                  onClick={() => onRowClick(row)}
-                >
-                  <div className="flex flex-wrap gap-1">
-                    {row.tags.map(tag => {
-                      let tagStyle = "bg-muted"
-                      if (tag === 'File Upload') {
-                        tagStyle = "bg-blue-100 text-blue-800"
-                      } else if (tag === 'Live Data') {
-                        tagStyle = "bg-purple-100 text-purple-800"
-                      }
-                      return (
-                        <span
-                          key={tag}
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${tagStyle}`}
-                        >
-                          {tag}
-                        </span>
-                      )
-                    })}
-                  </div>
-                </TableCell>
-                <TableCell 
-                  className="cursor-pointer"
-                  onClick={() => onRowClick(row)}
-                >
-                  {row.vector ? (
-                    <Check className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <X className="h-4 w-4 text-red-500" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  <span
-                    className="cursor-pointer text-red-500 hover:text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSourceToDelete(row)
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </span>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-
-      <div className="flex items-center justify-between px-2">
-        <div className="text-sm text-muted-foreground">
-          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} results
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1 || loading}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="text-sm font-medium">
-            Page {currentPage} of {totalPages}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages || loading}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
+    <>
+      <EnhancedDataTable
+        columns={columns}
+        data={allData}
+        searchKey="name"
+        searchPlaceholder="Search by name..."
+        showPagination={true}
+        showColumnToggle={true}
+        pageSize={10}
+        placeholder={loading ? "Loading..." : "No sources found"}
+      />
       <DeleteSourceDialog
         source={sourceToDelete}
         onClose={() => setSourceToDelete(null)}
         onSourceDeleted={fetchSources}
       />
-    </div>
+    </>
   )
 } 

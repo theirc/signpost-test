@@ -1,12 +1,15 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import CustomTable from "@/components/ui/custom-table"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { supabase } from "@/lib/agents/db"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { ChevronDown, Loader2, UserPlus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 interface TeamWithUsers extends Team {
   users: User[]
@@ -48,6 +51,13 @@ export function TeamSettings() {
   const [teams, setTeams] = useState<TeamWithUsers[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editTeam, setEditTeam] = useState<Team | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const [editLoading, setEditLoading] = useState(false)
+  // Placeholder admin check
+  const isAdmin = true // TODO: Replace with real admin check
 
   const fetchTeam = async () => {
     setIsLoading(true)
@@ -93,6 +103,26 @@ export function TeamSettings() {
 
   const handleEdit = (id: string) => {
     navigate(`/settings/users/${id}`)
+  }
+
+  const openEditDialog = (team: Team) => {
+    setEditTeam(team)
+    setEditName(team.name)
+    setEditDescription(team.description || "")
+    setEditDialogOpen(true)
+  }
+
+  const handleEditSubmit = async () => {
+    if (!editTeam) return
+    setEditLoading(true)
+    const { error } = await supabase.from("teams").update({ name: editName, description: editDescription }).eq("id", editTeam.id)
+    setEditLoading(false)
+    if (!error) {
+      setEditDialogOpen(false)
+      fetchTeam()
+    } else {
+      alert("Failed to update team")
+    }
   }
 
   const columns: ColumnDef<{ id: any }>[] = [
@@ -164,7 +194,7 @@ export function TeamSettings() {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div>
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-medium">Teams</h3>
@@ -186,8 +216,7 @@ export function TeamSettings() {
                 <div className="flex items-center" onClick={() => toggleTeam(team.id)}>
                   <Button variant="ghost" size="icon">
                     <ChevronDown
-                      className={`h-4 w-4 transform transition-transform ${isTeamExpanded(team.id) ? "rotate-180" : ""
-                        }`}
+                      className={`h-4 w-4 transform transition-transform ${isTeamExpanded(team.id) ? "rotate-180" : ""}`}
                     />
                   </Button>
                   <div>
@@ -195,28 +224,67 @@ export function TeamSettings() {
                     <div className="text-sm text-muted-foreground">{team.description}</div>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/settings/teams/members/${team.id}`)}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add Team Member
-                </Button>
+                <div className="flex items-center gap-2">
+                  {isAdmin && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(team)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/settings/teams/members/${team.id}`)}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add Team Member
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
               {isTeamExpanded(team.id) && (
-                <CustomTable
+                <EnhancedDataTable
                   data={team.users || []}
                   columns={columns}
-                  tableId={`team-${team.id}-users`}
-                  pageSize={5}
                   onRowClick={(row) => handleEdit(row.id)}
+                  pageSize={5}
+                  placeholder="No team members found"
                 />
               )}
             </div>
           ))}
         </div>
       )}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Team</DialogTitle>
+            <DialogDescription>Edit the team name and description.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={editName}
+              onChange={e => setEditName(e.target.value)}
+              placeholder="Team name"
+              disabled={editLoading}
+            />
+            <Textarea
+              value={editDescription}
+              onChange={e => setEditDescription(e.target.value)}
+              placeholder="Team description"
+              disabled={editLoading}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editLoading}>Cancel</Button>
+              <Button onClick={handleEditSubmit} disabled={editLoading}>Save</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

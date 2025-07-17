@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react"
 import "jspdf-autotable"
 import { useNavigate } from "react-router-dom"
 import { ColumnDef } from "@tanstack/react-table"
-import CustomTable from "@/components/ui/custom-table"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/hooks/usePermissions"
@@ -92,7 +92,7 @@ export function AccessControlSettings() {
     ], [])
 
     return (
-        <div className="space-y-6">
+        <div>
             <div className="flex justify-between items-center">
                 <div>
                     <h3 className="text-lg font-medium">Roles</h3>
@@ -109,8 +109,7 @@ export function AccessControlSettings() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : (
-                <CustomTable
-                    tableId="roles-table"
+                <EnhancedDataTable
                     columns={columns as any}
                     data={roles}
                     onRowClick={(row) => {

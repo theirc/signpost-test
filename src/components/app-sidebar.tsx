@@ -88,9 +88,8 @@ export function AppSidebar() {
       url: '#',
       icon: Logs,
       items: [
-        { title: "Logs", url: "/logs", permission: "logs" },
-        { title: "Scores", url: "/scores", permission: "scores" },
-        { title: "Custom View", url: "/customview", permission: "scores" }
+        { title: "Logs", url: "/evaluation/logs", permission: "logs" },
+        { title: "Scores", url: "/evaluation/scores", permission: "scores" },
       ],
       show: !permissionsLoading && (canRead("logs") || canRead("scores"))
     },
@@ -100,7 +99,7 @@ export function AppSidebar() {
       icon: Book,
       items: [
         { title: "Collections", url: "/collections", permission: "collections" },
-        { title: "Data Sources", url: "/sources", permission: "sources" },
+        { title: "Sources", url: "/sources", permission: "sources" },
       ],
       show: !permissionsLoading && (canRead("collections") || canRead("sources"))
     },
