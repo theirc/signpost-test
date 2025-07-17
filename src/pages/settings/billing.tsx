@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button"
-import CustomTable from "@/components/ui/custom-table"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
@@ -51,7 +51,7 @@ export function BillingSettings() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div>
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-medium">Billing & Subscription</h3>
@@ -64,25 +64,20 @@ export function BillingSettings() {
         )}
       </div>
 
-      <div className="grid gap-6">
-        <div className="rounded-lg border p-4">
-          <h4 className="text-sm font-medium mb-4">Current Plan</h4>
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-medium">Enterprise Plan</p>
-              <p className="text-sm text-muted-foreground">$499/month</p>
-            </div>
-            {canUpdate("billing") && (
-              <Button variant="outline">Change Plan</Button>
-            )}
+      <div className="rounded-lg border p-4 mb-6">
+        <h4 className="text-sm font-medium mb-4">Current Plan</h4>
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="font-medium">Enterprise Plan</p>
+            <p className="text-sm text-muted-foreground">$499/month</p>
           </div>
-        </div>
-
-        <div>
-          <h4 className="text-sm font-medium mb-4">Billing History</h4>
-          <CustomTable tableId="billing-history-table" columns={columns as any} data={mockBillingData} placeholder="No billing history found" />
+          {canUpdate("billing") && (
+            <Button variant="outline">Change Plan</Button>
+          )}
         </div>
       </div>
+      <h4 className="text-sm font-medium mb-4">Billing History</h4>
+      <EnhancedDataTable columns={columns as any} data={mockBillingData} placeholder="No billing history found" />
     </div>
   )
 } 

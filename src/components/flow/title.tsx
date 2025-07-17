@@ -18,7 +18,7 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
   const { agent } = app
   const { deleteElements } = useReactFlow()
 
-  let Icon: any = worker.registry.icon ? <worker.registry.icon size={16} className='mr-1 mt-[2px] text-gray-600' /> : <Settings size={16} className='mr-1 mt-[2px] text-gray-600' />
+  let Icon: any = worker.registry.icon ? <worker.registry.icon size={24} className='mr-2 mt-[2px] text-white' /> : <Settings size={24} className='mr-2 mt-[2px] text-white' />
   const handleDelete = () => deleteElements({ nodes: [{ id: worker?.config.id }] })
   const { currentWorker } = agent
 
@@ -28,7 +28,7 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
   }
 
   if (currentWorker && currentWorker.id === worker.id) {
-    Icon = <LoaderCircle size={16} className="animate-spin mr-1 mt-[2px] text-gray-600" />
+    Icon = <LoaderCircle size={24} className="animate-spin mr-2 mt-[2px] text-white" />
   }
 
   if (worker.error) {
@@ -43,12 +43,12 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
     </HoverCard>
   }
 
-  return <div className='w-full p-1 pl-2 mb-1 bg-[#FAE264] text-sm flex border-b-gray-200 border-b relative group'>
+  return <div className='w-full p-3 pl-4 mb-1 min-h-[56px] bg-[#6386F7] text-sm text-white flex items-center border-b-gray-200 border-b relative group'>
     {Icon}
-    <div className="flex-grow">{worker?.registry.title ?? "Title"}</div>
+    <div className="flex-grow text-white text-xl font-dm-mono">{worker?.registry.title ?? "Title"}</div>
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="cursor-pointer">
-        <EllipsisVertical size={16} className="mt-[2px]" />
+        <EllipsisVertical size={24} className="mt-[2px] text-white" />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <DropdownMenuItem onClick={handleDelete}>

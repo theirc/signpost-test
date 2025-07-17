@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Plus, Copy, Trash2 } from "lucide-react"
-import CustomTable from "@/components/ui/custom-table"
+import { Plus, Copy, Trash2, ArrowUpDown, ChevronDown } from "lucide-react"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState, useCallback } from "react"
 import { format } from "date-fns"
@@ -17,6 +17,19 @@ import {
   AlertDialogCancel,
   AlertDialogAction
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { supabase } from "@/lib/agents/db"
 
 export function AgentList() {
@@ -25,6 +38,7 @@ export function AgentList() {
   const { selectedTeam } = useTeamStore()
   const { toast } = useToast()
   const [agentToDelete, setAgentToDelete] = useState<any | null>(null)
+  const [templatePopoverOpen, setTemplatePopoverOpen] = useState(false)
 
   const fetchAgents = useCallback(async () => {
     if (!selectedTeam) {
@@ -129,7 +143,16 @@ export function AgentList() {
     { 
       id: "id", 
       accessorKey: "id", 
-      header: "ID", 
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="h-auto p-0 font-semibold"
+        >
+          ID
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       enableResizing: true, 
       enableHiding: true, 
       enableSorting: true 
@@ -137,7 +160,16 @@ export function AgentList() {
     { 
       id: "title", 
       accessorKey: "title", 
-      header: "Title", 
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="h-auto p-0 font-semibold"
+        >
+          Title
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       enableResizing: true, 
       enableHiding: true, 
       enableSorting: true 
@@ -145,7 +177,16 @@ export function AgentList() {
     { 
       id: "created_at", 
       accessorKey: "created_at", 
-      header: "Created At", 
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="h-auto p-0 font-semibold"
+        >
+          Created At
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
       enableResizing: true, 
       enableHiding: true, 
       enableSorting: true,
@@ -204,32 +245,57 @@ export function AgentList() {
       </AlertDialog>
 
       <div className="flex flex-col h-full">
-        <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex-1 p-8 pt-6">
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
-            <Link to={`/agent/new`}>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                New Agent
-              </Button>
-            </Link>
-          </div>
-
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Manage your agents and their configurations.
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Manage your agents and their configurations.
+              </p>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Agent
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => navigate('/agent/new')}>
+                  New Agent
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTemplatePopoverOpen(true)}>
+                  From Template
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            <div className="flex-grow">
-              <CustomTable 
-                tableId="agents-table"
-                columns={columns}
-                data={agents}
-                onRowClick={(row) => handleRowClick(row.id)}
-                placeholder="No agents found"
-              />
-            </div>
+            <Dialog open={templatePopoverOpen} onOpenChange={setTemplatePopoverOpen}>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>From Template</DialogTitle>
+                  <DialogDescription>
+                    Select a template to create a new agent from.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Templates will be available soon.
+                  </p>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
+          <EnhancedDataTable 
+            columns={columns}
+            data={agents}
+            onRowClick={(row) => handleRowClick(row.id)}
+            placeholder="No agents found"
+            searchKey="title"
+            searchPlaceholder="Search agents..."
+            showPagination={true}
+            pageSize={10}
+          />
         </div>
       </div>
     </>

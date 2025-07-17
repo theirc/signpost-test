@@ -2,7 +2,6 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import Chat from "@/pages/playground"
-import { CustomView } from "@/pages/evaluation/custom-view"
 import { LogForm } from "@/pages/evaluation/log"
 import { BotLogsTable } from "@/pages/evaluation/logs"
 import { ScoreForm } from "@/pages/evaluation/score"
@@ -32,13 +31,12 @@ import ApiKeyView from "@/pages/settings/api-key"
 import { ProfileSettings } from "@/pages/settings/profile"
 
 const routeNames: Record<string, string> = {
-  '/': 'Designer',
+  '/': 'Agents',
   '/playground': 'Playground',
   '/collections': 'Collections',
-  '/sources': 'Data Sources',
-  '/logs': 'Evaluation / Logs',
-  '/scores': 'Evaluation / Scores',
-  '/customview': 'Evaluation / Custom View',
+  '/sources': 'Sources',
+  '/evaluation/logs': 'Logs',
+  '/evaluation/scores': 'Scores',
   '/agent/:id': 'Agent Details',
   '/settings/projects': 'Settings / Projects',
   '/settings/teams': 'Settings / Teams',
@@ -65,11 +63,71 @@ export function AppLayout() {
   const currentName = routeNames[currentPath] || 'Unknown'
   const isAgentRoute = useMatch("/agent/:id")
 
+  // Breadcrumb logic for menu/submenu
+  const breadcrumbItems: { name: string; to?: string }[] = [
+    { name: 'Home', to: '/' },
+  ]
+  if (currentPath.startsWith('/evaluation/')) {
+    breadcrumbItems.push({ name: 'Evaluation', to: '/evaluation/logs' })
+    if (currentPath === '/evaluation/logs') {
+      breadcrumbItems.push({ name: 'Logs' })
+    } else if (currentPath === '/evaluation/scores') {
+      breadcrumbItems.push({ name: 'Scores' })
+    }
+  } else if (currentPath.startsWith('/collections') || currentPath.startsWith('/sources')) {
+    breadcrumbItems.push({ name: 'Knowledge', to: '/collections' })
+    if (currentPath === '/collections') {
+      breadcrumbItems.push({ name: 'Collections' })
+    } else if (currentPath === '/sources') {
+      breadcrumbItems.push({ name: 'Sources' })
+    }
+  } else if (currentPath.startsWith('/settings/')) {
+    breadcrumbItems.push({ name: 'Settings', to: '/settings/projects' })
+    if (currentPath === '/settings/projects') {
+      breadcrumbItems.push({ name: 'Projects' })
+    } else if (currentPath === '/settings/teams') {
+      breadcrumbItems.push({ name: 'Teams' })
+    } else if (currentPath === '/settings/billing') {
+      breadcrumbItems.push({ name: 'Billing' })
+    } else if (currentPath === '/settings/usage') {
+      breadcrumbItems.push({ name: 'Usage' })
+    } else if (currentPath === '/settings/roles') {
+      breadcrumbItems.push({ name: 'Access Control' })
+    } else if (currentPath === '/settings/users') {
+      breadcrumbItems.push({ name: 'Users' })
+    } else if (currentPath === '/settings/apikeys') {
+      breadcrumbItems.push({ name: 'Api Keys' })
+    } else if (currentPath === '/settings/profile') {
+      breadcrumbItems.push({ name: 'Profile' })
+    }
+  } else if (routeNames[currentPath]) {
+    breadcrumbItems.push({ name: routeNames[currentPath] })
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <HeaderControls isAgentRoute={!!isAgentRoute} />
+        {/* Breadcrumb with menu/submenu support and sidebar trigger flush left */}
+        <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+          <SidebarTrigger className="mr-2" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              {breadcrumbItems.map((item, idx) => (
+                <React.Fragment key={item.name}>
+                  <BreadcrumbItem>
+                    {idx !== breadcrumbItems.length - 1 && item.to ? (
+                      <NavigationLink to={item.to}>{item.name}</NavigationLink>
+                    ) : (
+                      <BreadcrumbPage>{item.name}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                  {idx < breadcrumbItems.length - 1 && <BreadcrumbSeparator />}
+                </React.Fragment>
+              ))}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
         <div className="flex flex-1 flex-col rounded-md bg-background border border-border">
           <Routes>
             <Route path="/" element={
@@ -92,29 +150,24 @@ export function AppLayout() {
                 <Sources />
               </ProtectedRoute>
             } />
-            <Route path="/logs" element={
+            <Route path="/evaluation/logs" element={
               <ProtectedRoute resource="logs" action="read">
                 <BotLogsTable />
               </ProtectedRoute>
             } />
-            <Route path="/logs/:id" element={
+            <Route path="/evaluation/logs/:id" element={
               <ProtectedRoute resource="logs" action="update">
                 <LogForm />
               </ProtectedRoute>
             } />
-            <Route path="/scores" element={
+            <Route path="/evaluation/scores" element={
               <ProtectedRoute resource="scores" action="read">
                 <BotScoresTable />
               </ProtectedRoute>
             } />
-            <Route path="/scores/:id" element={
+            <Route path="/evaluation/scores/:id" element={
               <ProtectedRoute resource="scores" action="update">
                 <ScoreForm />
-              </ProtectedRoute>
-            } />
-            <Route path="/customview" element={
-              <ProtectedRoute resource="scores" action="read">
-                <CustomView />
               </ProtectedRoute>
             } />
             <Route path="/agent/:id" element={
@@ -198,47 +251,5 @@ export function AppLayout() {
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
-}
-
-function HeaderControls({ isAgentRoute }: { isAgentRoute: boolean }) {
-  const location = useLocation()
-  const currentPath = location.pathname
-  const currentName = routeNames[currentPath] || 'Unknown'
-  const agentLoading = useAppStore(state => state.agentLoading)
-
-  return (
-    <>
-      <header className="flex h-12 shrink-0 items-center justify-between gap-2 px-4">
-        <div className="flex items-center gap-2">
-          <SidebarTrigger className="ml-2" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <NavigationLink to="/">
-                  <span className="cursor-pointer">Home</span>
-                </NavigationLink>
-              </BreadcrumbItem>
-              {currentPath !== '/' && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    {isAgentRoute && app.agent && !agentLoading ? (
-                      <div className="text-sm flex items-center">
-                        <span className="font-medium text-foreground">
-                          {app.agent.title}
-                        </span>
-                      </div>
-                    ) : (
-                      <BreadcrumbPage>{currentName}</BreadcrumbPage>
-                    )}
-                  </BreadcrumbItem>
-                </>
-              )}
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
-    </>
   )
 }

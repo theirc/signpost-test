@@ -475,7 +475,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 flex flex-col">
           <div className="py-4 border-b flex justify-between items-center bg-white px-4 flex-shrink-0">
-            <h2 className="text-2xl font-bold tracking-tight">Playground</h2>
+            <h2 className="text-3xl font-bold tracking-tight">Playground</h2>
             <div className="flex items-center gap-2">
               <div>
                 <DropdownMenu>

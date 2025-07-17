@@ -1,4 +1,4 @@
-import CustomTable from "@/components/ui/custom-table"
+import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { ColumnDef } from "@tanstack/react-table"
 
 export function UsageSettings() {
@@ -71,7 +71,7 @@ export function UsageSettings() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div>
       <div>
         <h3 className="text-lg font-medium">Usage</h3>
         <p className="text-sm text-muted-foreground">
@@ -79,14 +79,9 @@ export function UsageSettings() {
         </p>
       </div>
 
-      <div className="grid gap-4">
-        <CustomTable tableId="usage-table" columns={columnsUsage as any} data={mockUsageData} placeholder="No usage data found" />
-
-        <div className="mt-8">
-          <h4 className="text-sm font-medium mb-4">Usage History</h4>
-          <CustomTable tableId="usage-history-table" columns={columnsHistory as any} data={mockHistoryData} placeholder="No usage history found" />
-        </div>
-      </div>
+      <EnhancedDataTable columns={columnsUsage as any} data={mockUsageData} placeholder="No usage data found" />
+      <h4 className="text-sm font-medium mt-8 mb-4">Usage History</h4>
+      <EnhancedDataTable columns={columnsHistory as any} data={mockHistoryData} placeholder="No usage history found" />
     </div>
   )
 } 
