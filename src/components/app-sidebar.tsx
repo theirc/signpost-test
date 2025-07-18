@@ -77,6 +77,13 @@ export function AppSidebar() {
 
   const navItems = [
     {
+      title: "Templates",
+      url: "/templates",
+      icon: Book,
+      isLink: true,
+      show: !permissionsLoading && canRead("templates")
+    },
+    {
       title: "Playground",
       url: "/playground",
       icon: MessagesSquare,

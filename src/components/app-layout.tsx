@@ -8,6 +8,7 @@ import { ScoreForm } from "@/pages/evaluation/score"
 import { BotScoresTable } from "@/pages/evaluation/scores"
 import { Agent } from "@/pages/flow/agent"
 import { AgentList } from "@/pages/flow/agents"
+import { AgentList as TemplateList } from "@/pages/templates/agents"
 import { CollectionsManagement } from "@/pages/knowledge"
 import { AccessControlSettings } from "@/pages/settings/access-control"
 import { BillingSettings } from "@/pages/settings/billing"
@@ -133,6 +134,11 @@ export function AppLayout() {
             <Route path="/" element={
               <ProtectedRoute resource="agents" action="read">
                 <AgentList />
+              </ProtectedRoute>
+            } />
+            <Route path="/templates" element={
+              <ProtectedRoute resource="templates" action="read">
+                <TemplateList />
               </ProtectedRoute>
             } />
             <Route path="/playground" element={

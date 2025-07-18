@@ -29,6 +29,7 @@ interface RoleFormData {
 
 const APP_RESOURCES = [
     { id: 'agents', label: 'Agents' },
+    { id: 'templates', label: 'Templates' },
     { id: 'bots', label: 'Bots' },
     { id: 'prompts', label: 'System Prompts' },
     { id: 'playground', label: 'Playground' },
