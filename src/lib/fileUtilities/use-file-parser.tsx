@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import Tesseract from 'tesseract.js'
 
 // CDN URLs for file parsers
 const PARSER_CDNS = {
@@ -28,7 +29,15 @@ const MIME_TYPES = {
   'application/json': '.json',
   // Other common formats
   'application/xml': '.xml',
-  'text/xml': '.xml'
+  'text/xml': '.xml',
+  // Images
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/bmp': '.bmp',
+  'image/tiff': '.tiff',
+  'image/webp': '.webp'
 }
 
 // Load a script from CDN if not already loaded
@@ -54,7 +63,6 @@ export interface ParsedFile {
 
 export function useFileParser() {
   const [isLoading, setIsLoading] = useState(false)
-  const [dependenciesLoaded, setDependenciesLoaded] = useState(false)
 
   // Load parser dependencies
   useEffect(() => {
@@ -67,7 +75,6 @@ export function useFileParser() {
           loadScript(PARSER_CDNS.docx),
           loadScript(PARSER_CDNS.csv)
         ])
-        setDependenciesLoaded(true)
       } finally {
         setIsLoading(false)
       }
@@ -114,6 +121,16 @@ export function useFileParser() {
 
   const parseText = (file: File): Promise<string> => file.text()
 
+  const parseImage = async (file: File): Promise<string> => {
+    try {
+      const { data } = await Tesseract.recognize(file, 'eng', {})
+      return data.text.trim()
+    } catch (error) {
+      console.error('OCR error:', error)
+      throw new Error(`Failed to extract text from image: ${error}`)
+    }
+  }
+
   // Detect file type based on MIME type or extension
   const detectFileType = (file: File): string => {
     // First try by MIME type
@@ -134,7 +151,7 @@ export function useFileParser() {
   }
 
   const parseFiles = async (files: File[]): Promise<ParsedFile[]> => {
-    if (!dependenciesLoaded || files.length === 0) return []
+    if (files.length === 0) return []
     
     setIsLoading(true)
     try {
@@ -155,6 +172,8 @@ export function useFileParser() {
             content = await parseCSV(file)
           } else if (fileType.startsWith('text/') || fileType === 'application/json') {
             content = await parseText(file)
+          } else if (fileType.startsWith('image/')) {
+            content = await parseImage(file)
           } else {
             console.warn(`Unsupported file type: ${fileType} for file ${file.name}`)
             continue
@@ -197,7 +216,7 @@ export function useFileParser() {
   return {
     isLoading,
     parseFiles,
-    supportedTypes: ['.pdf', '.docx', '.txt', '.md', '.csv', '.json', '.xml', '.html', '.js', '.css'],
+    supportedTypes: ['.pdf', '.docx', '.txt', '.md', '.csv', '.json', '.xml', '.html', '.js', '.css', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'],
     supportedMimeTypes: Object.keys(MIME_TYPES),
     getSupportedExtensions,
     getAcceptString
