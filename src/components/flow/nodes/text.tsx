@@ -59,33 +59,42 @@ function Parameters({ worker }: { worker: TextWorker }) {
     }
   })
 
+  // Function to update field type based on content type
+  const updateFieldType = useCallback((contentType: string) => {
+    if (contentType === "text") {
+      worker.fields.output.type = "string"
+    } else if (contentType === "number") {
+      worker.fields.output.type = "number"
+    } else if (contentType === "audio") {
+      worker.fields.output.type = "audio"
+    } else if (contentType === "image" || contentType === "file") {
+      worker.fields.output.type = "date"
+    } else if (contentType === "Timestamp") {
+      worker.fields.output.type = "date"
+    } else {
+      worker.fields.output.type = "string"
+    }
+    update()
+    worker.updateWorker()
+    app.agent.update()
+  }, [worker, update])
+
+  // Set initial field type on mount
+  useEffect(() => {
+    updateFieldType(worker.parameters.contentType || "text")
+  }, [updateFieldType])
+
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       if (name === "output") worker.parameters.text = value.output
       if (name === "numberValue") worker.parameters.numberValue = value.numberValue
       if (name === "contentType") {
         worker.parameters.contentType = value.contentType as any
-
-        if (value.contentType === "text") {
-          worker.fields.output.type = "string"
-        } else if (value.contentType === "number") {
-          worker.fields.output.type = "number"
-        } else if (value.contentType === "audio") {
-          worker.fields.output.type = "audio"
-        } else if (value.contentType === "image" || value.contentType === "file") {
-          worker.fields.output.type = "date"
-        } else if (value.contentType === "Timestamp") {
-          worker.fields.output.type = "date"
-        } else {
-          worker.fields.output.type = "string"
-        }
-        update()
-        worker.updateWorker()
-        app.agent.update()
+        updateFieldType(value.contentType)
       }
     })
     return () => subscription.unsubscribe()
-  }, [watch, worker.parameters, update])
+  }, [watch, worker.parameters, updateFieldType])
 
   const contentType = worker.parameters.contentType
 
