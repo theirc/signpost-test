@@ -5,11 +5,13 @@ import { supabase } from "@/lib/agents/db"
 import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { ChevronDown, Loader2, UserPlus } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useQuery } from "@tanstack/react-query"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 interface TeamWithUsers extends Team {
   users: User[]
@@ -48,48 +50,39 @@ export interface User {
 
 export function TeamSettings() {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([])
-  const [teams, setTeams] = useState<TeamWithUsers[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editTeam, setEditTeam] = useState<Team | null>(null)
   const [editName, setEditName] = useState("")
   const [editDescription, setEditDescription] = useState("")
   const [editLoading, setEditLoading] = useState(false)
-  // Placeholder admin check
-  const isAdmin = true // TODO: Replace with real admin check
+  const { canCreate, canUpdate } = usePermissions()
 
-  const fetchTeam = async () => {
-    setIsLoading(true)
-    const { data: teamsData, error: teamsError } = await supabase.from("teams").select("*")
-    if (teamsError) {
-      console.error('Error fetching teams:', teamsError)
-      return
-    }
+  const { data: usersData, isLoading, error } = useQuery({
+    queryKey: ['users_with_teams'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("users_with_teams").select("*")
+      if (error) throw error
+      return data || []
+    },
+  })
 
-    const teamsWithUsers = await Promise.all(
-      teamsData.map(async (team) => {
-        const { data } = await supabase.from("users").select(`
-          *,
-          user_teams!inner(team_id),
-          roles:role (*)
-        `).eq("user_teams.team_id", team.id)
-
-        const transformedData = data?.map(user => ({
-          ...user,
-          role_name: user.roles?.name
-        })) || []
-
-        return {
-          ...team,
-          users: transformedData || []
+  const teamsWithUsers = useMemo(() => {
+    if (!usersData) return []
+    
+    const teamMap = {};
+    usersData.forEach(user => {
+      (user.team_ids || []).forEach((teamId, idx) => {
+        const teamNamesArr = (user.team_names || '').split(',');
+        const teamName = teamNamesArr[idx] || teamId;
+        if (!teamMap[teamId]) {
+          teamMap[teamId] = { id: teamId, name: teamName, users: [] };
         }
-      })
-    )
-
-    setTeams(teamsWithUsers as unknown as TeamWithUsers[])
-    setIsLoading(false)
-  }
+        teamMap[teamId].users.push(user);
+      });
+    });
+    return Object.values(teamMap) as TeamWithUsers[];
+  }, [usersData])
 
   const isTeamExpanded = (teamId: string) => expandedTeams.includes(teamId)
 
@@ -119,7 +112,6 @@ export function TeamSettings() {
     setEditLoading(false)
     if (!error) {
       setEditDialogOpen(false)
-      fetchTeam()
     } else {
       alert("Failed to update team")
     }
@@ -189,9 +181,15 @@ export function TeamSettings() {
     },
   ]
 
-  useEffect(() => {
-    fetchTeam()
-  }, [])
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600">Error loading teams: {error.message}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -202,7 +200,9 @@ export function TeamSettings() {
             Manage your organization's teams and their members
           </p>
         </div>
-        <Button onClick={() => navigate("/settings/teams/new")}>Create Team</Button>
+        {canCreate("teams") && (
+          <Button onClick={() => navigate("/settings/teams/new")}>Create Team</Button>
+        )}
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center h-[400px]">
@@ -210,7 +210,7 @@ export function TeamSettings() {
         </div>
       ) : (
         <div className="space-y-4">
-          {teams.map((team) => (
+          {teamsWithUsers.map((team) => (
             <div key={team.id} className="space-y-4">
               <div className="flex items-center justify-between p-4 cursor-pointer">
                 <div className="flex items-center" onClick={() => toggleTeam(team.id)}>
@@ -225,7 +225,7 @@ export function TeamSettings() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {isAdmin && (
+                  {canUpdate("teams") && (
                     <>
                       <Button
                         variant="outline"

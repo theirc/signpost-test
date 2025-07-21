@@ -9,56 +9,22 @@ import { Input } from "@/components/ui/input"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Team, User } from "@/pages/settings/teams"
-import { getCurrentUser } from "@/lib/hooks/useUser"
-import { supabase } from "@/lib/agents/db"
+import { useUser } from "@/lib/hooks/useUser"
 
 export function AppSidebar() {
   const navigate = useNavigate()
   const { canRead, loading: permissionsLoading } = usePermissions()
-  const [teams, setTeams] = useState<Team[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [dropdownWidth, setDropdownWidth] = useState<number>(0)
   const sidebarHeaderRef = useRef<HTMLDivElement>(null)
-  const [user, setUser] = useState<User | null>(null)
+  const { data: user, isLoading: userLoading } = useUser()
   const { selectedTeam, setSelectedTeam } = useTeamStore()
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const loadTeams = async () => {
-      setIsLoading(true)
-      try {
-        const { data: userData, error: userError } = await getCurrentUser()
-        if (userError || !userData) {
-          console.error('Error fetching user:', userError)
-          return
-        }
-        setUser(userData)
-
-        const { data, error } = await supabase.from('teams')
-          .select(`
-          *,
-          user_teams!inner(user_id)
-        `)
-          .eq('user_teams.user_id', userData.id)
-        if (error) {
-          console.error('Error fetching user teams:', error)
-          return
-        }
-        setTeams(data)
-
-        // Only set initial team if no team is selected and we have teams
-        if (data.length > 0 && !selectedTeam) {
-          setSelectedTeam(data[0])
-        }
-      } catch (error) {
-        console.error('Error loading teams:', error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (user?.teams && user.teams.length > 0 && !selectedTeam) {
+      setSelectedTeam(user.teams[0])
     }
-
-    loadTeams()
-  }, [])
+  }, [user, selectedTeam, setSelectedTeam])
 
   useEffect(() => {
     if (sidebarHeaderRef.current) {
@@ -66,10 +32,10 @@ export function AppSidebar() {
     }
   }, [])
 
-  const filteredTeams = teams.filter(team =>
+  const filteredTeams = user?.teams?.filter(team =>
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     team.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  ) || []
 
   const handleTeamSelect = (team: Team) => {
     setSelectedTeam(team)
@@ -132,6 +98,8 @@ export function AppSidebar() {
     }
     return item.show
   })
+
+  const isLoading = userLoading || permissionsLoading;
 
   return (
     <>

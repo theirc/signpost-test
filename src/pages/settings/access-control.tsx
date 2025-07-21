@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react"
+import { useMemo } from "react"
 import "jspdf-autotable"
 import { useNavigate } from "react-router-dom"
 import { ColumnDef } from "@tanstack/react-table"
@@ -6,9 +6,9 @@ import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { usePermissions } from "@/lib/hooks/usePermissions"
-import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/agents/db"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { useQuery } from "@tanstack/react-query"
 
 const defaultPageSize = 10
 
@@ -31,35 +31,28 @@ interface Role {
 export function AccessControlSettings() {
     const navigate = useNavigate()
     const { canCreate, canUpdate } = usePermissions()
-    const [roles, setRoles] = useState<Role[]>([])
-    const [isLoading, setIsLoading] = useState(false)
     const { selectedTeam } = useTeamStore()
 
-    const fetchRole = async () => {
-        setIsLoading(true)
-        const { data, error } = await supabase
-            .from("roles")
-            .select("*")
-            .contains("teams_id", [selectedTeam?.id])
-        if (error) {
-            console.error('Error fetching roles:', error)
-        }
-        const formattedRoles = data?.map(role => ({
-            ...role,
-            created_at: role.created_at || new Date().toISOString(),
-            teams: role.teams_id
-        }))
-        setRoles(formattedRoles as unknown as Role[] || [])
-        setIsLoading(false)
-    }
+    const { data: roles = [], isLoading, error } = useQuery({
+        queryKey: ['roles', selectedTeam?.id],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from("roles")
+                .select("*")
+                .contains("teams_id", [selectedTeam?.id])
+            if (error) throw error
+            return data?.map(role => ({
+                ...role,
+                created_at: role.created_at || new Date().toISOString(),
+                teams: role.teams_id
+            })) || []
+        },
+        enabled: !!selectedTeam?.id,
+    })
 
     const handleEdit = (id: string) => {
         navigate(`/settings/roles/${id}`)
     }
-
-    useEffect(() => {
-        fetchRole()
-    }, [selectedTeam])
 
     const columns = useMemo<ColumnDef<Role>[]>(() => [
         {
@@ -91,6 +84,16 @@ export function AccessControlSettings() {
         },
     ], [])
 
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-[400px]">
+                <div className="text-center">
+                    <p className="text-red-600">Error loading roles: {error.message}</p>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div>
             <div className="flex justify-between items-center">
@@ -104,19 +107,13 @@ export function AccessControlSettings() {
                     <Button onClick={() => navigate("/settings/roles/new")}>Create Role</Button>
                 )}
             </div>
-            {isLoading ? (
-                <div className="flex items-center justify-center h-[400px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <EnhancedDataTable
-                    columns={columns as any}
-                    data={roles}
-                    onRowClick={(row) => {
-                        canUpdate("roles") ? handleEdit(row.id) : undefined
-                    }}
-                    placeholder="No roles found" />
-            )}
+            <EnhancedDataTable
+                columns={columns as any}
+                data={roles}
+                onRowClick={(row) => {
+                    canUpdate("roles") ? handleEdit(row.id) : undefined
+                }}
+                placeholder="No roles found" />
         </div>
     )
 }

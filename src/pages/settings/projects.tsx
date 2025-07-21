@@ -8,6 +8,7 @@ import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/agents/db"
+import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
 
 interface Project {
   created_at: string
@@ -85,13 +86,17 @@ export function ProjectsSettings() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <EnhancedDataTable
-          columns={columns as any}
-          data={projects}
+        <PaginatedSupabaseTableWrapper
+          table="projects"
+          columns={columns}
+          tableComponent={EnhancedDataTable}
+          filters={{ team: selectedTeam?.id }}
+          searchKey="name"
           onRowClick={(row) => {
-            canUpdate("projects") ? handleEdit(row.id) : undefined
+            if (canUpdate("projects")) handleEdit(row.id)
           }}
-          placeholder="No projects found" />
+          placeholder="No projects found"
+        />
       )}
     </div>
   )

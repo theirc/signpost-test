@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
-import { Loader2 } from "lucide-react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from "@/lib/agents/db"
+import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
+import { useQuery } from "@tanstack/react-query"
+
 export interface ApiKey {
     id: string
     key?: string
@@ -21,23 +22,19 @@ export function ApiKeysSettings() {
     const navigate = useNavigate()
     const { selectedTeam } = useTeamStore()
     const { canCreate, canUpdate } = usePermissions()
-    const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
-    const [isLoading, setIsLoading] = useState(false)
 
-    const fetchApiKey = async () => {
-        setIsLoading(true)
-        const { data, error } = await supabase.from("api_keys").select("*").eq("team_id", selectedTeam?.id)
-        if (error) {
-            console.error('Error fetching api keys:', error)
-        }
-
-        const formattedApiKeys = data.map(apikey => ({
-            ...apikey,
-            created_at: apikey.created_at || new Date().toISOString()
-        }))
-        setApiKeys(formattedApiKeys)
-        setIsLoading(false)
-    }
+    const { data: apiKeys = [], isLoading, error } = useQuery({
+        queryKey: ['api_keys', selectedTeam?.id],
+        queryFn: async () => {
+            const { data, error } = await supabase.from("api_keys").select("*").eq("team_id", selectedTeam?.id)
+            if (error) throw error
+            return data?.map(apikey => ({
+                ...apikey,
+                created_at: apikey.created_at || new Date().toISOString()
+            })) || []
+        },
+        enabled: !!selectedTeam?.id,
+    })
 
     const handleEdit = (id: string) => {
         navigate(`/settings/apikeys/${id}`)
@@ -50,9 +47,15 @@ export function ApiKeysSettings() {
         { id: "created_at", enableResizing: true, enableHiding: true, accessorKey: "created_at", header: "Created", enableSorting: false, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
     ]
 
-    useEffect(() => {
-        fetchApiKey()
-    }, [selectedTeam])
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-[400px]">
+                <div className="text-center">
+                    <p className="text-red-600">Error loading API keys: {error.message}</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div>
@@ -67,19 +70,17 @@ export function ApiKeysSettings() {
                     <Button onClick={() => navigate("/settings/apikeys/new")}>Create Api Key</Button>
                 )}
             </div>
-            {isLoading ? (
-                <div className="flex items-center justify-center h-[400px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <EnhancedDataTable
-                    columns={columns as any}
-                    data={apiKeys}
-                    onRowClick={(row) => {
-                        canUpdate("users") ? handleEdit(row.id) : undefined
-                    }}
-                    placeholder="No keys found" />
-            )}
+            <PaginatedSupabaseTableWrapper
+                table="api_keys"
+                columns={columns}
+                tableComponent={EnhancedDataTable}
+                filters={{ team_id: selectedTeam?.id }}
+                searchKey="description"
+                onRowClick={(row) => {
+                    if (canUpdate("users")) handleEdit(row.id)
+                }}
+                placeholder="No keys found"
+            />
         </div>
     )
 } 

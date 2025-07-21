@@ -1,76 +1,27 @@
 import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { usePermissions } from "@/lib/hooks/usePermissions"
-import { Loader2 } from "lucide-react"
-import { User } from "./teams"
-import { supabase } from "@/lib/agents/db"
+import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 export function UsersSettings() {
     const navigate = useNavigate()
     const { canCreate, canUpdate } = usePermissions()
-    const [users, setUsers] = useState<User[]>([])
-    const [isLoading, setIsLoading] = useState(false)
-
-    const fetchUser = async () => {
-        setIsLoading(true)
-        const { data, error } = await supabase.from("users").select(`
-            *,
-            roles(name)
-          `)
-          .order('first_name', { ascending: true })
-        if (error) {
-            console.error('Error fetching users:', error)
-        }
-
-        const transformedData = data?.map(user => ({
-            ...user,
-            role_name: user.roles?.name,
-          })) || []
-
-        const usersWithTeams = await Promise.all(
-            transformedData.map(async (user) => {
-                const { data: teamsData } = await supabase.from("user_teams").select(`
-                    teams!inner(*)
-                `)
-                    .eq('user_id', user.id)
-                return {
-                    ...user,
-                    teams: teamsData?.map(team => team.teams) || []
-                }
-            })
-        )
-
-        const formattedUsers = usersWithTeams.map(user => ({
-            ...user,
-            created_at: user.created_at || new Date().toISOString()
-        }))
-        setUsers(formattedUsers as unknown as User[] || [])
-        setIsLoading(false)
-    }
-
-    const handleEdit = (id: string) => {
-        navigate(`/settings/users/${id}`)
-    }
-
+    const { selectedTeam } = useTeamStore()
     const columns: ColumnDef<any>[] = [
         { id: "first_name", accessorKey: "first_name", header: "First Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
         { id: "last_name", accessorKey: "last_name", header: "Last Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
         { id: "role_name", enableResizing: true, enableHiding: true, accessorKey: "role_name", header: "Role", enableSorting: true, cell: (info) => info.getValue() },
-        {
-            id: "teams", enableResizing: true, enableHiding: true, accessorKey: "teams", header: "Teams", enableSorting: true, cell: ({ row }) => (
-                row.original.teams.map((team: any) => team.name).join(', ')
-            )
-        },
+        { id: "team_names", accessorKey: "team_names", header: "Teams", enableResizing: true, enableHiding: true, enableSorting: false, cell: (info) => info.getValue() },
         { id: "created_at", enableResizing: true, enableHiding: true, accessorKey: "created_at", header: "Created", enableSorting: false, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
     ]
 
-    useEffect(() => {
-        fetchUser()
-    }, [])
+    const handleEdit = (id: string) => {
+        navigate(`/settings/users/${id}`)
+    }
 
     return (
         <div>
@@ -85,19 +36,17 @@ export function UsersSettings() {
                     <Button onClick={() => navigate("/settings/users/new")}>Create User</Button>
                 )}
             </div>
-            {isLoading ? (
-                <div className="flex items-center justify-center h-[400px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-            ) : (
-                <EnhancedDataTable
-                    columns={columns as any}
-                    data={users}
-                    onRowClick={(row) => {
-                        canUpdate("users") ? handleEdit(row.id) : undefined
-                    }}
-                    placeholder="No users found" />
-            )}
+            <PaginatedSupabaseTableWrapper
+                table="users_with_teams"
+                columns={columns}
+                tableComponent={EnhancedDataTable}
+                filters={{ team_ids: selectedTeam?.id ? { cs: `{"${selectedTeam.id}"}` } : undefined }}
+                searchKey="first_name"
+                onRowClick={(row) => {
+                    if (canUpdate("users")) handleEdit(row.id)
+                }}
+                placeholder="No users found"
+            />
         </div>
     )
 } 

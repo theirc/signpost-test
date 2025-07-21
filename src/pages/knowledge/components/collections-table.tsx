@@ -2,15 +2,15 @@ import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, Pencil, Trash, Database, Download } from "lucide-react"
 import { useMemo } from "react"
-import { Input } from "@/components/ui/input"
 import { CollectionWithSourceCount } from "../types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { calculateVectorPercentage } from "../utils"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { ColumnDef } from "@tanstack/react-table"
+import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 interface CollectionsTableProps {
-  collections: CollectionWithSourceCount[]
   onEdit: (collection: CollectionWithSourceCount) => void
   onDelete: (collection: CollectionWithSourceCount) => void
   onGenerateVector: (collection: CollectionWithSourceCount) => void
@@ -19,14 +19,13 @@ interface CollectionsTableProps {
 }
 
 export function CollectionsTable({
-  collections,
   onEdit,
   onDelete,
   onGenerateVector,
   onDownload,
   loading = false
 }: CollectionsTableProps) {
-  // Define columns for EnhancedDataTable
+  const { selectedTeam } = useTeamStore()
   const columns = useMemo<ColumnDef<CollectionWithSourceCount>[]>(() => [
     {
       accessorKey: "name",
@@ -52,12 +51,14 @@ export function CollectionsTable({
       enableSorting: true,
       accessorFn: row => row.sourceCount > 0 ? row.vectorizedCount / row.sourceCount : 0,
       cell: ({ row }) => {
-        const vectorPercentage = calculateVectorPercentage(row.original.vectorizedCount, row.original.sourceCount)
+        const vectorizedCount = typeof row.original.vectorizedCount === 'number' && !isNaN(row.original.vectorizedCount) ? row.original.vectorizedCount : 0
+        const sourceCount = typeof row.original.sourceCount === 'number' && !isNaN(row.original.sourceCount) ? row.original.sourceCount : 0
+        const vectorPercentage = calculateVectorPercentage(vectorizedCount, sourceCount)
         return (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span>
-                {row.original.vectorizedCount} / {row.original.sourceCount} sources
+                {vectorizedCount} / {sourceCount} sources
               </span>
               <span>{vectorPercentage}%</span>
             </div>
@@ -117,15 +118,14 @@ export function CollectionsTable({
   ], [onEdit, onDelete, onGenerateVector, onDownload])
 
   return (
-    <EnhancedDataTable
+    <PaginatedSupabaseTableWrapper
+      table="collections_with_counts"
       columns={columns}
-      data={collections}
+      tableComponent={EnhancedDataTable}
+      filters={{ team_id: selectedTeam?.id }}
       searchKey="name"
-      searchPlaceholder="Search collections..."
-      showPagination={true}
-      showColumnToggle={true}
-      pageSize={10}
       placeholder={loading ? "Loading..." : "No collections found"}
+      searchPlaceholder="Search collections..."
     />
   )
 }

@@ -10,43 +10,16 @@ export const formatDate = (date: string): string => {
   return format(new Date(date), "MMM dd, yyyy")
 }
 
-/**
- * Transforms sources from database format to display format
- * @param sources Array of sources from database
- * @returns Array of sources formatted for display
- */
 export const transformSourcesForDisplay = (sources: Source[]): SourceDisplay[] => {
-  return sources.map(source => {
-    // Process tags: convert from string or string[] to string[]
-    let tags: string[] = []
-    if (source.tags) {
-      if (typeof source.tags === 'string') {
-        try {
-          // First try JSON parse for ["tag1","tag2"] format
-          tags = JSON.parse(source.tags)
-        } catch {
-          // If that fails, try PostgreSQL {tag1,tag2} format
-          tags = source.tags
-            .replace('{', '')
-            .replace('}', '')
-            .split(',')
-            .map(tag => tag.trim())
-            .filter(tag => tag.length > 0)
-        }
-      } else if (Array.isArray(source.tags)) {
-        tags = source.tags
-      }
-    }
-
-    return {
-      id: source.id,
-      name: source.name,
-      type: source.type,
-      lastUpdated: source.last_updated || source.created_at,
-      content: source.content,
-      tags: tags
-    }
-  })
+    if (!sources) return []
+    return sources.map(source => ({
+        id: source.id,
+        name: source.name,
+        type: source.type || 'Unknown',
+        lastUpdated: source.last_updated || source.created_at || new Date().toISOString(),
+        content: source.content || '',
+        tags: Array.isArray(source.tags) ? source.tags : [],
+    }))
 }
 
 /**

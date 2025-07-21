@@ -2,14 +2,16 @@ import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, Edit2, Save, X, Check, MoreHorizontal } from "lucide-react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { DeleteSourceDialog } from "./delete-source-dialog"
 import { SourceDisplay } from "./types"
-import { supabase } from "@/lib/agents/db"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
+import { supabase } from "@/lib/agents/db"
+import { useQueryClient } from '@tanstack/react-query'
 
 interface SourcesTableProps {
   onRowClick: (row: SourceDisplay) => void
@@ -17,95 +19,12 @@ interface SourcesTableProps {
 }
 
 export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) {
-  const [allData, setAllData] = useState<SourceDisplay[]>([])
-  const [loading, setLoading] = useState(true)
   const [editingSourceId, setEditingSourceId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState("")
   const [saving, setSaving] = useState(false)
   const [sourceToDelete, setSourceToDelete] = useState<SourceDisplay | null>(null)
   const { selectedTeam } = useTeamStore()
-
-  const fetchSources = async () => {
-    try {
-      setLoading(true)
-      if (!selectedTeam) {
-        throw new Error('No team selected')
-      }
-
-      const { data: sources, error } = await supabase
-        .from('sources')
-        .select('id, name, type, created_at, last_updated, tags, vector')
-        .eq('team_id', selectedTeam.id)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
-      const transformedData = sources.map(source => ({
-        id: source.id,
-        content: undefined,
-        name: source.name,
-        type: source.type,
-        lastUpdated: source.last_updated || source.created_at,
-        tags: typeof source.tags === 'string' 
-          ? (source.tags as string).replace('{', '').replace('}', '').split(',').filter(tag => tag.length > 0)
-          : source.tags || [],
-        vector: source.vector !== null && source.vector !== undefined
-      }))
-
-      setAllData(transformedData)
-    } catch (error) {
-      console.error('Error fetching sources:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchSources()
-  }, [selectedTeam])
-
-  useEffect(() => {
-    if (refreshTrigger) {
-      fetchSources()
-    }
-  }, [refreshTrigger])
-
-  const handleSaveName = async () => {
-    if (!editingSourceId || !editingName.trim()) return
-
-    try {
-      setSaving(true)
-      const { error } = await supabase
-        .from('sources')
-        .update({ name: editingName.trim() })
-        .eq('id', editingSourceId)
-
-      if (error) throw error
-
-      setAllData(prev => prev.map(source => 
-        source.id === editingSourceId 
-          ? { ...source, name: editingName.trim() }
-          : source
-      ))
-
-      setEditingSourceId(null)
-      setEditingName("")
-    } catch (error) {
-      console.error('Error updating source name:', error)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleCancelEdit = () => {
-    setEditingSourceId(null)
-    setEditingName("")
-  }
-
-  const startEditing = (source: SourceDisplay) => {
-    setEditingSourceId(source.id)
-    setEditingName(source.name)
-  }
+  const queryClient = useQueryClient()
 
   const columns = useMemo<ColumnDef<SourceDisplay>[]>(() => [
     {
@@ -120,13 +39,13 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
                 value={editingName}
                 onChange={e => setEditingName(e.target.value)}
                 onKeyDown={e => {
-                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Enter') handleSaveName(row.original)
                   if (e.key === 'Escape') handleCancelEdit()
                 }}
                 className="h-8"
                 autoFocus
               />
-              <Button size="icon" variant="ghost" onClick={handleSaveName} disabled={saving}>
+              <Button size="icon" variant="ghost" onClick={() => handleSaveName(row.original)} disabled={saving}>
                 <Check className="h-4 w-4" />
               </Button>
               <Button size="icon" variant="ghost" onClick={handleCancelEdit}>
@@ -157,10 +76,16 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
       cell: info => info.getValue(),
     },
     {
-      accessorKey: "lastUpdated",
+      accessorKey: "last_updated",
       header: "Last Updated",
       enableSorting: true,
-      cell: info => format(new Date(info.getValue() as string), "MMM dd, yyyy"),
+      cell: info => {
+        const value = info.getValue() as string;
+        const date = value ? new Date(value) : null;
+        return date && !isNaN(date.getTime())
+          ? format(date, "MMM dd, yyyy")
+          : "-";
+      },
     },
     {
       accessorKey: "tags",
@@ -224,22 +149,49 @@ export function SourcesTable({ onRowClick, refreshTrigger }: SourcesTableProps) 
     },
   ], [editingSourceId, editingName, saving, onRowClick])
 
+  function startEditing(source: SourceDisplay) {
+    setEditingSourceId(source.id)
+    setEditingName(source.name)
+  }
+  function handleCancelEdit() {
+    setEditingSourceId(null)
+    setEditingName("")
+  }
+  async function handleSaveName(source: SourceDisplay) {
+    if (!editingName.trim()) return
+    setSaving(true)
+    try {
+      await supabase.from('sources').update({ name: editingName.trim() }).eq('id', source.id)
+      queryClient.invalidateQueries({
+        queryKey: ['supabase-table', 'sources'],
+        exact: false
+      })
+      setEditingSourceId(null)
+      setEditingName("")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <>
-      <EnhancedDataTable
+      <PaginatedSupabaseTableWrapper
+        table="sources"
         columns={columns}
-        data={allData}
+        tableComponent={EnhancedDataTable}
+        filters={{ team_id: selectedTeam?.id }}
         searchKey="name"
         searchPlaceholder="Search by name..."
-        showPagination={true}
-        showColumnToggle={true}
-        pageSize={10}
-        placeholder={loading ? "Loading..." : "No sources found"}
       />
       <DeleteSourceDialog
         source={sourceToDelete}
         onClose={() => setSourceToDelete(null)}
-        onSourceDeleted={fetchSources}
+        onSourceDeleted={() => {
+          queryClient.invalidateQueries({
+            queryKey: ['supabase-table', 'sources'],
+            exact: false
+          })
+        }}
       />
     </>
   )

@@ -628,5 +628,5 @@ function CustomTable<T extends { id: any }>({
         </DndContext>
     )
 }
-
 export default CustomTable
+

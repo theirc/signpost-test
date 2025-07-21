@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
@@ -8,67 +8,75 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { supabase } from "@/lib/agents/db"
+import { useQuery } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
 
 export function AddTeamMembers() {
     const navigate = useNavigate()
-    const { id } = useParams()
+    const { id: teamId } = useParams<{ id: string }>()
     const { canCreate } = usePermissions()
-    const [isLoading, setIsLoading] = useState(false)
-    const [users, setUsers] = useState([])
     const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+    const { toast } = useToast()
 
     const fetchAvailableUsers = async () => {
-        setIsLoading(true)
-        try {
-            const { data, error } = await supabase.from("users").select(`
-                *,
-                roles(name)
-              `)
-              .order('first_name', { ascending: true })
-            if (error) {
-                console.error('Error fetching users:', error)
-                return
-            }
+        if (!teamId) return []
 
-            const transformedData = data?.map(user => ({
-                ...user,
-                role_name: user.roles?.name,
-              })) || []
+        const { data: allUsers, error: usersError } = await supabase
+            .from("users")
+            .select("*, roles(name)")
+            .order('first_name', { ascending: true })
 
-            const usersWithTeams = await Promise.all(
-                transformedData.map(async (user) => {
-                    const { data: teamsData } = await supabase.from("teams").select(`
-                        *,
-                        user_teams!inner(user_id)
-                    `).eq('user_teams.user_id', user.id)
-                    return {
-                        ...user,
-                        teams: teamsData || []
-                    }
-                })
-            )
-
-            const availableUsers = usersWithTeams.filter(user => !user.teams?.some(team => team.id === id))
-            setUsers(availableUsers)
-        } catch (error) {
-            console.error('Error loading users:', error)
-        } finally {
-            setIsLoading(false)
+        if (usersError) {
+            console.error('Error fetching users:', usersError)
+            throw new Error(usersError.message)
         }
+
+        const transformedData = allUsers?.map(user => ({
+            ...user,
+            role_name: user.roles?.name,
+        })) || []
+
+        const { data: teamMembers, error: teamMembersError } = await supabase
+            .from("user_teams")
+            .select("user_id")
+            .eq("team_id", teamId)
+
+        if (teamMembersError) {
+            console.error('Error fetching team members:', teamMembersError)
+            throw new Error(teamMembersError.message)
+        }
+
+        const memberIds = new Set(teamMembers.map(m => m.user_id))
+        return transformedData.filter(user => !memberIds.has(user.id))
     }
 
-    const handleAddMembers = async () => {
-        if (selectedUsers.length === 0) return
+    const { data: users, isLoading, isError, refetch } = useQuery({
+        queryKey: ["availableUsers", teamId],
+        queryFn: fetchAvailableUsers,
+        enabled: !!teamId,
+    })
 
-        setIsLoading(true)
-        try {
-            const addPromises = selectedUsers.map(userId => supabase.from("user_teams").insert({ user_id: userId, team_id: id }))
-            await Promise.all(addPromises)
-            navigate(`/settings/teams`)
-        } catch (error) {
+    const handleAddMembers = async () => {
+        if (selectedUsers.length === 0 || !teamId) return
+
+        const { error } = await supabase
+            .from("user_teams")
+            .insert(selectedUsers.map(userId => ({ user_id: userId, team_id: teamId })))
+
+        if (error) {
             console.error('Error adding team members:', error)
-        } finally {
-            setIsLoading(false)
+            toast({
+                title: "Error",
+                description: "Failed to add members.",
+                variant: "destructive",
+            })
+        } else {
+            toast({
+                title: "Success",
+                description: "Members added successfully.",
+            })
+            setSelectedUsers([])
+            refetch()
         }
     }
 
@@ -81,15 +89,27 @@ export function AddTeamMembers() {
     }
 
     const handleSelectAll = () => {
-        setSelectedUsers(prev => prev.length === users.length ? [] : users.map(user => user.id))
+        if (users && users.length > 0) {
+            if (selectedUsers.length === users.length) {
+                setSelectedUsers([])
+            } else {
+                setSelectedUsers(users.map(user => user.id))
+            }
+        }
     }
 
     const columns: ColumnDef<any>[] = [
         {
             id: "select",
-            header: ({ table }) => (
+            header: () => (
                 <Checkbox
-                    checked={selectedUsers.length === users.length}
+                    checked={
+                        users && users.length > 0 && selectedUsers.length === users.length
+                          ? true
+                          : selectedUsers.length > 0
+                          ? 'indeterminate'
+                          : false
+                    }
                     onCheckedChange={handleSelectAll}
                     aria-label="Select all"
                 />
@@ -143,10 +163,6 @@ export function AddTeamMembers() {
         }
     ]
 
-    useEffect(() => {
-        fetchAvailableUsers()
-    }, [id])
-
     return (
         <div className="container mx-auto py-8">
             <div className="max-w-4xl mx-auto">
@@ -184,10 +200,12 @@ export function AddTeamMembers() {
                     <div className="flex items-center justify-center h-[400px]">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
+                ) : isError ? (
+                    <div className="text-red-500 text-center p-4">Failed to load users.</div>
                 ) : (
                     <CustomTable
                         columns={columns}
-                        data={users}
+                        data={users ?? []}
                         tableId="add-team-members-table"
                     />
                 )}
