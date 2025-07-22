@@ -175,7 +175,7 @@ export function useFileParser() {
       const prompt = `Analyze this image and provide a comprehensive summary. 
 
 If there's any text in the image, I'll provide the OCR-extracted text below. However, OCR can be inaccurate, so please:
-1. Describe what you see in the image visually
+1. Describe what you see in the image visually, do not attempt to identify any individuals or personally identifiable information
 2. Correct any obvious OCR errors in the text
 3. Provide a clear, structured summary of the image content
 

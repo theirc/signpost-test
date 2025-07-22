@@ -268,18 +268,21 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
 
   return (
     <Dialog open={!!sourceId} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Source Preview</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-xl font-bold">Source Preview</DialogTitle>
         </DialogHeader>
 
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            Loading...
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <span className="text-muted-foreground">Loading source...</span>
+            </div>
           </div>
         ) : source ? (
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-6 flex-1 overflow-y-auto">
+            <div className="bg-gradient-to-br from-muted/20 to-muted/40 rounded-xl p-6 border">
               {isEditingTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
@@ -310,7 +313,7 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold flex-1">{source.name}</h3>
+                  <h3 className="font-bold text-lg flex-1">{source.name}</h3>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -321,24 +324,27 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                   </Button>
                 </div>
               )}
-              <p className="text-sm text-muted-foreground">{source.type}</p>
+              <p className="text-sm text-muted-foreground mt-1">{source.type}</p>
               {isEditingTitle && (
-                <p className="text-xs text-muted-foreground">Editing title...</p>
+                <p className="text-xs text-muted-foreground mt-2">Editing title...</p>
               )}
             </div>
 
-            <div>
-              <h4 className="font-medium mb-2">Tags</h4>
-              <div className="flex flex-wrap gap-2 mb-2">
+            <div className="bg-gradient-to-br from-muted/20 to-muted/40 rounded-xl p-6 border">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <h4 className="font-semibold text-foreground">Tags</h4>
+              </div>
+              <div className="flex flex-wrap gap-2 mb-4">
                 {source.tags.map(tag => (
                   <span
                     key={tag}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-muted"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-background/80 border border-border hover:bg-background transition-colors"
                   >
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="ml-2 text-muted-foreground hover:text-foreground"
+                      className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
                       disabled={saving}
                     >
                       ×
@@ -352,8 +358,9 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                   onChange={(e) => setNewTag(e.target.value)}
                   placeholder="Add new tag"
                   disabled={saving}
+                  className="flex-1"
                 />
-                <Button onClick={handleAddTag} disabled={saving}>
+                <Button onClick={handleAddTag} disabled={saving} size="sm">
                   Add
                 </Button>
               </div>
@@ -411,28 +418,75 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                   const imageUrlMatch = source.content.match(/Image URL: (https?:\/\/[^\s\n]+)/)
                   if (imageUrlMatch) {
                     const imageUrl = imageUrlMatch[1]
+                    // Extract text content without the image URL
+                    const textContent = source.content.replace(/Image URL: https?:\/\/[^\s\n]+\n\nVision Analysis:\n/, '')
                     return (
-                      <div className="mb-4">
-                        <h5 className="font-medium mb-2">Image</h5>
-                        <div className="flex justify-center">
-                          <img 
-                            src={imageUrl} 
-                            alt={source.name}
-                            className="max-w-full max-h-96 object-contain rounded-lg border"
-                            onError={(e) => {
-                              console.error('Failed to load image:', imageUrl)
-                              e.currentTarget.style.display = 'none'
-                            }}
-                          />
+                      <div className="space-y-6">
+                        {/* Image Section */}
+                        <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border">
+                          <h5 className="font-semibold mb-4 text-center text-foreground">Image Preview</h5>
+                          <div className="flex justify-center mb-4">
+                            <div className="relative max-w-md max-h-80 overflow-hidden rounded-lg border-2 border-border shadow-lg">
+                              <img 
+                                src={imageUrl} 
+                                alt={source.name}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  console.error('Failed to load image:', imageUrl)
+                                  e.currentTarget.style.display = 'none'
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground break-all bg-background/50 rounded px-2 py-1">
+                              {imageUrl}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2 text-center">
-                          Image URL: {imageUrl}
-                        </p>
+
+                        {/* Vision Analysis Section */}
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <h5 className="font-semibold text-foreground">AI Vision Analysis</h5>
+                          </div>
+                          {textContent.trim() ? (
+                            <div className="prose prose-sm max-w-none">
+                              <div className="bg-background/80 rounded-lg p-4 border max-h-[250px] overflow-y-auto">
+                                <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">
+                                  {textContent}
+                                </pre>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="bg-background/80 rounded-lg p-4 border text-center">
+                              <p className="text-sm text-muted-foreground italic">
+                                No AI analysis available for this image.
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )
                   }
                   return null
                 })()}
+                
+                {/* Display regular content if no image URL found */}
+                {!source.content.match(/Image URL: (https?:\/\/[^\s\n]+)/) && (
+                  <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <h5 className="font-semibold text-foreground">Content</h5>
+                    </div>
+                    <div className="bg-background/80 rounded-lg p-4 border max-h-[300px] overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">
+                        {source.content}
+                      </pre>
+                    </div>
+                  </div>
+                )}
                 {isEditingContent ? (
                   <div className="space-y-2">
                     <Textarea
