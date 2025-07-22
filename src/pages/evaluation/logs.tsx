@@ -9,6 +9,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { supabase } from "@/lib/agents/db"
+import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
+import { useQuery } from "@tanstack/react-query"
 
 type Log = {
     id: string
@@ -28,14 +30,10 @@ export function BotLogsTable() {
     const navigate = useNavigate()
     const { canCreate, canUpdate } = usePermissions()
     const { selectedTeam } = useTeamStore()
-    const [logs, setLogs] = useState([])
-    const [isLoading, setIsLoading] = useState(false)
 
     const fetchLogs = async () => {
-        setIsLoading(true)
-        try {
-            const { data, error } = await supabase.from('bot_logs')
-                .select(`
+        const { data, error } = await supabase.from('bot_logs')
+            .select(`
               *,
               bots (
                 name
@@ -44,22 +42,24 @@ export function BotLogsTable() {
                 name
               )
             `)
-                .eq('team_id', selectedTeam.id)
-                .order('created_at', { ascending: false })
-            if (error) {
-                console.error('Error fetching bot logs:', error)
-            }
-            const formattedLogs = data.map(log => ({
-                ...log,
-                bot_name: log.bots?.name,
-                category_name: log.service_categories?.name,
-                created_at: log.created_at || new Date().toISOString()
-            }))
-            setLogs(formattedLogs)
-        } finally {
-            setIsLoading(false)
+            .eq('team_id', selectedTeam.id)
+            .order('created_at', { ascending: false })
+        if (error) {
+            throw new Error(error.message)
         }
+        return data.map(log => ({
+            ...log,
+            bot_name: log.bots?.name,
+            category_name: log.service_categories?.name,
+            created_at: log.created_at || new Date().toISOString()
+        }))
     }
+
+    const { data: logs, isLoading } = useQuery({
+        queryKey: ['botLogs', selectedTeam?.id],
+        queryFn: fetchLogs,
+        enabled: !!selectedTeam,
+    })
 
     const columns: ColumnDef<any>[] = [
         { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, cell: (info) => info.getValue() },
@@ -77,10 +77,6 @@ export function BotLogsTable() {
         navigate(`/logs/${id}`)
     }
 
-    useEffect(() => {
-        fetchLogs()
-    }, [selectedTeam])
-
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 p-8 pt-6">
@@ -92,31 +88,22 @@ export function BotLogsTable() {
                         </p>
                     </div>
                     {canCreate("logs") && (
-                        <Button onClick={() => navigate("/logs/new")}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Log
-                        </Button>
+                        <Button onClick={() => navigate("/logs/new")}> <Plus className="h-4 w-4 mr-2" /> Add Log </Button>
                     )}
                 </div>
-                {isLoading ? (
-                    <div className="flex items-center justify-center h-[400px]">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <EnhancedDataTable
-                        columns={columns}
-                        data={logs}
-                        onRowClick={(row) => {
-                            canUpdate("logs") ? handleEdit(row.id) : undefined
-                        }}
-                        placeholder="No logs found"
-                        searchKey="bot_name"
-                        searchPlaceholder="Search by bot name..."
-                        showPagination={true}
-                        showColumnToggle={true}
-                        pageSize={10}
-                    />
-                )}
+                <PaginatedSupabaseTableWrapper
+                    table="bot_logs"
+                    columns={columns}
+                    tableComponent={EnhancedDataTable}
+                    data={logs ?? []}
+                    isLoading={isLoading}
+                    filters={{ team_id: selectedTeam?.id }}
+                    searchKey="bot_name"
+                    onRowClick={(row) => {
+                        if (canUpdate("logs")) handleEdit(row.id)
+                    }}
+                    placeholder="No logs found"
+                />
             </div>
         </div>
     )

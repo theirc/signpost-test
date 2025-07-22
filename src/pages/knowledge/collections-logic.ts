@@ -1,13 +1,12 @@
-import { useState, useCallback, useEffect } from "react"
+import { useEffect } from "react"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from "@/lib/agents/db"
 import { 
-  Collection, 
   DeleteCollectionResult, 
-  VectorGenerationResult,
   CollectionWithSourceCount
 } from "./types"
 import { generateCollectionVector } from "./vector-generation"
+import { useQuery } from "@tanstack/react-query"
 
 // Export hooks from separate files
 export { useCollectionSources } from './collection-sources-hooks'
@@ -17,99 +16,27 @@ export { useSources } from './sources-hooks'
  * Custom hook for managing collections
  */
 export const useCollections = () => {
-  const [collections, setCollections] = useState<CollectionWithSourceCount[]>([])
-  const [loading, setLoading] = useState(true)
   const { selectedTeam } = useTeamStore()
-  const [collectionSourceCounts, setCollectionSourceCounts] = useState<Record<string, { total: number, vectorized: number }>>({})
 
-  /**
-   * Fetch collections from the database
-   */
-  const fetchCollections = useCallback(async () => {
-    if (!selectedTeam) return
-
-    setLoading(true)
-    try {
-      // Fetch collections
-      const { data, error } = await supabase.from('collections')
-        .select('*')
-        .eq('team_id', selectedTeam.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching collections:', error)
-        setCollections([])
-        return
-      }
-
-      // Get source counts for each collection
-      const sourceCounts = await getCollectionSourceCounts(data.map(c => c.id))
-      
-      // Enhance collections with source counts
-      const enhancedCollections = data.map(collection => ({
-        ...collection,
-        sourceCount: sourceCounts[collection.id]?.total || 0,
-        vectorizedCount: sourceCounts[collection.id]?.vectorized || 0
-      }))
-
-      setCollections(enhancedCollections)
-      setCollectionSourceCounts(sourceCounts)
-    } catch (err) {
-      console.error('Error in fetchCollections:', err)
-      setCollections([])
-    } finally {
-      setLoading(false)
+  const fetchCollections = async () => {
+    if (!selectedTeam) return []
+    const { data, error } = await supabase
+      .from("collections_with_counts")
+      .select("*")
+      .eq("team_id", selectedTeam.id)
+      .order("created_at", { ascending: false })
+    if (error) {
+      console.error('Error fetching collections:', error)
+      return []
     }
-  }, [selectedTeam])
-
-  /**
-   * Get source counts for collections, including vectorization status
-   */
-  const getCollectionSourceCounts = async (collectionIds: string[]): Promise<Record<string, { total: number, vectorized: number }>> => {
-    if (!collectionIds.length) return {}
-    
-    try {
-      // Query to get all collection sources with their vector status
-      const { data, error } = await supabase
-        .from('collection_sources')
-        .select(`
-          collection_id,
-          sources:source_id (
-            id,
-            vector
-          )
-        `)
-        .in('collection_id', collectionIds)
-
-      if (error) {
-        console.error('Error fetching collection source counts:', error)
-        return {}
-      }
-
-      // Process the results to count total and vectorized sources per collection
-      const counts: Record<string, { total: number, vectorized: number }> = {}
-      
-      data.forEach(item => {
-        const collectionId = item.collection_id
-        
-        if (!counts[collectionId]) {
-          counts[collectionId] = { total: 0, vectorized: 0 }
-        }
-        
-        counts[collectionId].total++
-        
-        // Check if the source has a vector
-        if (item.sources?.vector) {
-          counts[collectionId].vectorized++
-        }
-      })
-
-      return counts
-    } catch (error) {
-      console.error('Error in getCollectionSourceCounts:', error)
-      return {}
-    }
+    return data as CollectionWithSourceCount[]
   }
+
+  const { data: collections, isLoading, refetch } = useQuery({
+    queryKey: ['collections', selectedTeam?.id],
+    queryFn: fetchCollections,
+    enabled: !!selectedTeam
+  })
 
   /**
    * Delete a collection and its relationships
@@ -172,6 +99,7 @@ export const useCollections = () => {
       }
 
       console.log(`[deleteCollection] Successfully deleted collection ${id} and its relationships`)
+      refetch()
       return { success: true, error: null }
     } catch (error) {
       console.error(`[deleteCollection] Error:`, error)
@@ -194,7 +122,7 @@ export const useCollections = () => {
         { event: '*', schema: 'public', table: 'collections' },
         payload => {
           console.log('Collections real-time update received:', payload)
-          fetchCollections() // Refresh collections on change
+          refetch() // Refresh collections on change
         }
       )
       .subscribe()
@@ -202,19 +130,13 @@ export const useCollections = () => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [selectedTeam, fetchCollections])
-
-  // Initial fetch
-  useEffect(() => {
-    fetchCollections()
-  }, [fetchCollections])
+  }, [selectedTeam, refetch])
 
   return {
-    collections,
-    loading,
-    fetchCollections,
+    collections: collections ?? [],
+    loading: isLoading,
     deleteCollection,
     generateCollectionVector,
-    collectionSourceCounts
+    refetchCollections: refetch
   }
 }

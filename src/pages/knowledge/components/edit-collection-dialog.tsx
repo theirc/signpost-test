@@ -17,6 +17,7 @@ import { SourcesTable } from "./sources-table"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from "@/lib/agents/db"
 import { useCollectionSources, useSources } from "../collections-logic"
+import { transformSourcesForDisplay } from "../utils"
 
 interface EditCollectionDialogProps {
   open: boolean
@@ -36,7 +37,7 @@ export function EditCollectionDialog({
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const { selectedTeam } = useTeamStore()
-  const { sourcesDisplay, loading: sourcesLoading } = useSources()
+  const { sources, loading: sourcesLoading } = useSources()
   const { 
     loadCollectionSources, 
     addSourcesToCollection, 
@@ -88,7 +89,7 @@ export function EditCollectionDialog({
   const handleSelectAll = () => {
     // If all sources are already selected, deselect all
     // Otherwise, select all sources
-    const allSourceIds = sourcesDisplay.map(source => source.id)
+    const allSourceIds = sources.map(source => source.id)
     const allSelected = allSourceIds.every(id => selectedSources.includes(id))
     
     if (allSelected) {
@@ -249,7 +250,7 @@ export function EditCollectionDialog({
           <div className="space-y-2">
             <Label>Select Sources</Label>
             <SourcesTable
-              sources={sourcesDisplay}
+              sources={transformSourcesForDisplay(sources) ?? []}
               selectedSources={selectedSources}
               onSourceSelect={handleToggleSource}
               onSelectAll={handleSelectAll}

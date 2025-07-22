@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../agents/db'
 
 export const getCurrentUser = async () => {
@@ -22,19 +22,26 @@ export const getCurrentUser = async () => {
     return { data: authData.user, error: publicUserError }
   }
 
+  const { data: userTeams, error: userTeamsError } = await supabase
+    .from('user_teams')
+    .select('teams!inner(*)')
+    .eq('user_id', authData.user.id)
+
+  if (userTeamsError) {
+    return { data: authData.user, error: userTeamsError }
+  }
+
   return {
     data: {
       ...authData.user,
       ...publicUserData,
       role_name: publicUserData.roles?.name,
-      team_name: publicUserData.teams?.name
+      teams: userTeams.map(ut => ut.teams)
     },
     error: null
   }
 }
 export function useUser() {
-  const queryClient = useQueryClient()
-
   return useQuery({
     queryKey: ['user'],
     queryFn: async () => {

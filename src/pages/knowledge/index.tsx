@@ -1,13 +1,13 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2, RefreshCcw, Database } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Collection, CollectionWithSourceCount } from "./types"
 import { CollectionsTable } from "./components/collections-table"
 import { DeleteCollectionDialog } from "./components/delete-collection-dialog"
 import { EditCollectionDialog } from "./components/edit-collection-dialog"
-import { useCollections, useCollectionSources } from "./collections-logic"
 import { downloadCollectionSources } from "./download-utils"
+import { generateCollectionVector } from "./vector-generation"
+import { useQueryClient } from "@tanstack/react-query"
 
 export default function Knowledge() {
   // State
@@ -18,20 +18,9 @@ export default function Knowledge() {
   
   // Hooks
   const { toast } = useToast()
-  const { 
-    collections, 
-    loading: collectionsLoading, 
-    fetchCollections,
-    generateCollectionVector,
-    collectionSourceCounts
-  } = useCollections()
-  
-  const { collectionSources } = useCollectionSources()
+  const queryClient = useQueryClient()
 
   // Handlers
-  const handleRefresh = () => {
-    fetchCollections()
-  }
 
   const handleCreateCollection = () => {
     setCollectionToEdit(null)
@@ -49,7 +38,6 @@ export default function Knowledge() {
 
   const handleGenerateVector = async (collection: CollectionWithSourceCount) => {
     if (isGeneratingVector) return
-    
     setIsGeneratingVector(true)
     try {
       toast({
@@ -57,69 +45,37 @@ export default function Knowledge() {
         description: "Vector generation is running in the background. This may take some time depending on the number of sources.",
         duration: 5000,
       })
-      
-      const { success, error, partialSuccess, results } = await generateCollectionVector(collection.id)
-      
-      if (!success && !partialSuccess) {
-        throw error || new Error('Vector generation failed')
-      }
-      
-      if (partialSuccess && results) {
-        // Some vectors were generated, but some failed - show detailed error information
-        const errorDetails = error?.message || `${results.failed} sources failed to process`
-        
-        toast({
-          title: "Vector Generation Partially Complete",
-          description: `Successfully generated ${results.successful} vectors, but failed for ${results.failed} sources. ${errorDetails}`,
-          variant: "destructive",
-          duration: 10000,
-        })
-        
-        // If there are specific error types, show additional guidance
-        if (error?.message.includes('too large') || error?.message.includes('token limit')) {
-          toast({
-            title: "Large Sources Detected",
-            description: "Some sources are too large for embedding. Consider splitting them into smaller chunks before vectorization.",
-            variant: "destructive",
-            duration: 8000,
-          })
-        }
-      } else if (success) {
-        // All vectors were generated successfully
+      const result = await generateCollectionVector(collection.id)
+      if (result.success) {
         toast({
           title: "Vector Generation Complete",
-          description: results 
-            ? `Successfully generated ${results.successful} vectors.` 
+          description: result.results
+            ? `Successfully generated ${result.results.successful} vectors.`
             : "The vector generation process has been completed successfully.",
           duration: 3000,
         })
+      } else if (result.partialSuccess) {
+        toast({
+          title: "Vector Generation Partially Complete",
+          description: result.error?.message || "Some sources failed to process.",
+          variant: "destructive",
+          duration: 8000,
+        })
+      } else {
+        toast({
+          title: "Vector Generation Failed",
+          description: result.error?.message || "There was an error generating vectors. Please try again.",
+          variant: "destructive",
+          duration: 8000,
+        })
       }
-      
-      // Refresh collections to update vector status
-      fetchCollections()
+      // Refetch the paginated table data
+      queryClient.invalidateQueries({ queryKey: ['supabase-table', 'collections_with_counts'] })
     } catch (error) {
       console.error('Error generating vectors:', error)
-      
-      // Provide detailed error message based on the error content
-      let errorDescription = "There was an error generating vectors. Please try again."
-      
-      if (error instanceof Error) {
-        const errorMsg = error.message.toLowerCase()
-        
-        if (errorMsg.includes('token') || errorMsg.includes('too large')) {
-          errorDescription = `Error: ${error.message}. Some sources may be too large and need to be split into smaller chunks.`
-        } else if (errorMsg.includes('embedding')) {
-          errorDescription = `Embedding generation failed: ${error.message}. Check your API configuration.`
-        } else if (errorMsg.includes('database') || errorMsg.includes('supabase')) {
-          errorDescription = `Database error: ${error.message}. Please check your connection.`
-        } else {
-          errorDescription = `Error: ${error.message}`
-        }
-      }
-      
       toast({
         title: "Vector Generation Failed",
-        description: errorDescription,
+        description: error instanceof Error ? error.message : "There was an error generating vectors. Please try again.",
         variant: "destructive",
         duration: 8000,
       })
@@ -179,14 +135,6 @@ export default function Knowledge() {
           </div>
           <div className="flex flex-col items-end space-y-2">
             <div className="flex space-x-2">
-              <Button variant="outline" onClick={handleRefresh} disabled={collectionsLoading}>
-                {collectionsLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                )}
-                Refresh
-              </Button>
               <Button onClick={handleCreateCollection}>
                 Create Collection
               </Button>
@@ -194,33 +142,25 @@ export default function Knowledge() {
           </div>
         </div>
 
-        {collectionsLoading ? (
-          <div className="w-full h-64 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <CollectionsTable
-            collections={collections}
-            onEdit={handleEditCollection}
-            onDelete={handleDeleteCollection}
-            onGenerateVector={handleGenerateVector}
-            onDownload={handleDownloadCollection}
-            loading={collectionsLoading || isGeneratingVector}
-          />
-        )}
+        <CollectionsTable
+          onEdit={handleEditCollection}
+          onDelete={handleDeleteCollection}
+          onGenerateVector={handleGenerateVector}
+          onDownload={handleDownloadCollection}
+          loading={isGeneratingVector}
+        />
       </div>
 
       <DeleteCollectionDialog
         collection={collectionToDelete}
         onClose={() => setCollectionToDelete(null)}
-        onCollectionDeleted={fetchCollections}
       />
 
       <EditCollectionDialog
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         collection={collectionToEdit}
-        onSuccess={fetchCollections}
+        onSuccess={() => {}}
       />
     </div>
   )

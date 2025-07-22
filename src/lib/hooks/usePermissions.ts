@@ -1,6 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useUser } from './useUser'
-import { useEffect } from 'react'
 import { supabase } from '../agents/db'
 
 type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
@@ -15,7 +14,6 @@ interface Permission {
 }
 
 export function usePermissions() {
-    const queryClient = useQueryClient()
     const { data: user, isLoading: userLoading } = useUser()
 
     const { data: permissions = [], isLoading: permissionsLoading } = useQuery<Permission[]>({
@@ -32,16 +30,6 @@ export function usePermissions() {
         refetchOnMount: false, // Don't refetch on mount
         refetchOnReconnect: false, // Don't refetch on reconnect
     })
-
-    // Only invalidate permissions when user's role actually changes
-    useEffect(() => {
-        if (user?.role) {
-            queryClient.invalidateQueries({ 
-                queryKey: ['permissions', user.role],
-                exact: true // Only invalidate exact match
-            })
-        }
-    }, [user?.role, queryClient])
 
     const hasPermission = (resource: string, action: PermissionAction): boolean => {
         if (userLoading || permissionsLoading) return false

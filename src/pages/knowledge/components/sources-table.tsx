@@ -36,30 +36,31 @@ export function SourcesTable({
 
   // Filter sources based on search query
   const filteredSources = useMemo(() => {
+    const safeSources = sources || []
     if (!search) {
-      return sources
+      return safeSources
     }
     const lowerCaseQuery = search.toLowerCase()
-    return sources.filter(source =>
+    return safeSources.filter(source =>
       source.name.toLowerCase().includes(lowerCaseQuery) ||
       (source.content && source.content.toLowerCase().includes(lowerCaseQuery))
     )
   }, [sources, search])
 
   // Pagination
-  const totalCount = filteredSources.length
+  const totalCount = filteredSources?.length || 0
   const totalPages = Math.ceil(totalCount / itemsPerPage)
-  const paginatedSources = filteredSources.slice(
+  const paginatedSources = filteredSources?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
 
   // Check if all filtered sources on the current page are selected
-  const isAllSelected = paginatedSources.length > 0 && 
+  const isAllSelected = paginatedSources?.length > 0 && 
     paginatedSources.every(source => selectedSources.includes(source.id))
   
   // Check if some filtered sources on the current page are selected
-  const isSomeSelected = paginatedSources.length > 0 && 
+  const isSomeSelected = paginatedSources?.length > 0 && 
     paginatedSources.some(source => selectedSources.includes(source.id)) && 
     !isAllSelected
 
@@ -128,7 +129,7 @@ export function SourcesTable({
                 <TableCell>{source.name}</TableCell>
                 <TableCell>{source.type}</TableCell>
                 <TableCell>
-                  {format(new Date(source.lastUpdated), "MMM dd, yyyy")}
+                  {source.lastUpdated ? format(new Date(source.lastUpdated), "MMM dd, yyyy") : 'N/A'}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">

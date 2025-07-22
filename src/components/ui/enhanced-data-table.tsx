@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useRef } from "react"
 import { ColumnDef, ColumnFiltersState, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, SortingState, useReactTable, VisibilityState, RowSelectionState, ColumnOrderState } from "@tanstack/react-table"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowUpDown, Settings2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react"
+import { Settings2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -21,7 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core"
-import { restrictToHorizontalAxis } from "@dnd-kit/modifiers"
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from "@dnd-kit/sortable"
 
 interface EnhancedDataTableProps<TData, TValue> {
@@ -33,8 +32,15 @@ interface EnhancedDataTableProps<TData, TValue> {
   showPagination?: boolean
   onRowClick?: (row: TData) => void
   pageSize?: number
+  page?: number
+  pageCount?: number
+  onPageChange?: (page: number) => void
+  onPageSizeChange?: (size: number) => void
+  onFilter?: (filters: ColumnFiltersState) => void
   className?: string
   placeholder?: string
+  onSort?: (columnId: string, direction: 'asc' | 'desc' | undefined) => void
+  sorting?: SortingState
 }
 
 // Draggable header component
@@ -106,15 +112,30 @@ export function EnhancedDataTable<TData, TValue>({
   showColumnToggle = true,
   showPagination = true,
   onRowClick,
-  pageSize =10,
+  pageSize: propPageSize = 10,
+  page: controlledPage,
+  pageCount: controlledPageCount,
+  onPageChange,
+  onPageSizeChange,
+  onFilter,
   placeholder = "No results.",
-  className
+  className,
+  onSort,
+  sorting: controlledSorting
 }: EnhancedDataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [internalSorting, setInternalSorting] = useState<SortingState>([])
+  const sorting = controlledSorting !== undefined ? controlledSorting : internalSorting
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([])
+  const [internalPage, setInternalPage] = useState(0)
+  const [internalPageSize, setInternalPageSize] = useState(propPageSize)
+  const [searchValue, setSearchValue] = useState("")
+  const debounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  const page = controlledPage !== undefined ? controlledPage : internalPage
+  const pageSize = propPageSize !== undefined ? propPageSize : internalPageSize
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -131,7 +152,6 @@ export function EnhancedDataTable<TData, TValue>({
     useSensor(KeyboardSensor)
   )
 
-  // Always add selection column as the leftmost column
   const tableColumns = useMemo(() => {
     const selectionColumn: ColumnDef<TData, TValue> = {
       id: "select",
@@ -165,7 +185,20 @@ export function EnhancedDataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns: tableColumns,
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      let nextSorting: SortingState;
+      if (typeof updater === 'function') {
+        nextSorting = updater(sorting ?? [])
+      } else {
+        nextSorting = updater
+      }
+      if (onSort) {
+        const sort = nextSorting[0]
+        onSort(sort?.id, sort?.desc === undefined ? undefined : (sort.desc ? 'desc' : 'asc'))
+      } else {
+        setInternalSorting(nextSorting)
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -175,21 +208,27 @@ export function EnhancedDataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     onColumnOrderChange: setColumnOrder,
     state: {
-      sorting,
+      sorting: sorting ?? [],
       columnFilters,
       columnVisibility,
       rowSelection,
       columnOrder,
+      pagination: {
+        pageIndex: page,
+        pageSize: pageSize,
+      },
     },
     initialState: {
       pagination: {
-        pageSize,
+        pageSize: pageSize,
       },
       columnOrder: columnOrder.length > 0 ? columnOrder : undefined,
     },
+    manualPagination: controlledPage !== undefined,
+    pageCount: controlledPageCount,
+    meta: { onSort },
   })
 
-  // Handle drag end for column reordering
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
@@ -269,10 +308,18 @@ export function EnhancedDataTable<TData, TValue>({
         {searchKey && (
           <Input
             placeholder={searchPlaceholder}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
+            value={searchValue}
+            onChange={(event) => {
+              setSearchValue(event.target.value)
+              if (onFilter) {
+                if (debounceRef.current) clearTimeout(debounceRef.current)
+                debounceRef.current = setTimeout(() => {
+                  onFilter([{ id: searchKey, value: event.target.value }])
+                }, 400)
+              } else {
+                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+              }
+            }}
             className="max-w-sm rounded-full"
           />
         )}
@@ -390,34 +437,37 @@ export function EnhancedDataTable<TData, TValue>({
             <div className="flex items-center space-x-2">
               <p className="text-sm font-medium">Rows per page</p>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${pageSize}`}
                 onValueChange={(value) => {
+                  if (onPageSizeChange) {
+                    onPageSizeChange(Number(value))
+                  } else {
+                    setInternalPageSize(Number(value))
+                    setInternalPage(0)
+                  }
                   table.setPageSize(Number(value))
                 }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue placeholder={`${table.getState().pagination.pageSize}`} />
+                  <SelectValue placeholder={`${pageSize}`} />
                 </SelectTrigger>
                 <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
+                  {[10, 20, 30, 40, 50].map((size) => (
+                    <SelectItem key={size} value={`${size}`}>{size}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+              Page {page + 1} of {controlledPageCount ?? table.getPageCount()}
             </div>
             <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
                 size="icon"
                 className="hidden h-8 w-8 lg:flex"
-                onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => onPageChange ? onPageChange(0) : setInternalPage(0)}
+                disabled={page === 0}
               >
                 <span className="sr-only">Go to first page</span>
                 <ChevronsLeft className="h-4 w-4"/>
@@ -426,8 +476,8 @@ export function EnhancedDataTable<TData, TValue>({
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
+                onClick={() => onPageChange ? onPageChange(page - 1) : setInternalPage(page - 1)}
+                disabled={page === 0}
               >
                 <span className="sr-only">Go to previous page</span>
                 <ChevronLeft className="h-4 w-4"/>
@@ -436,8 +486,8 @@ export function EnhancedDataTable<TData, TValue>({
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                onClick={() => onPageChange ? onPageChange(page + 1) : setInternalPage(page + 1)}
+                disabled={controlledPageCount ? page + 1 >= controlledPageCount : !table.getCanNextPage()}
               >
                 <span className="sr-only">Go to next page</span>
                 <ChevronRight className="h-4 w-4"/>
@@ -446,8 +496,8 @@ export function EnhancedDataTable<TData, TValue>({
                 variant="outline"
                 size="icon"
                 className="hidden h-8 w-8 lg:flex"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
+                onClick={() => onPageChange ? onPageChange((controlledPageCount ?? table.getPageCount()) - 1) : setInternalPage((controlledPageCount ?? table.getPageCount()) - 1)}
+                disabled={controlledPageCount ? page + 1 >= controlledPageCount : !table.getCanNextPage()}
               >
                 <span className="sr-only">Go to last page</span>
                 <ChevronsRight className="h-4 w-4"/>
