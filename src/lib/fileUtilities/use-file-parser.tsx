@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import Tesseract from 'tesseract.js'
+import { supabase } from '../agents/db'
+import { ulid } from 'ulid'
+import { app } from '../app'
+import { generateText } from 'ai'
 
 // CDN URLs for file parsers
 const PARSER_CDNS = {
@@ -121,13 +125,131 @@ export function useFileParser() {
 
   const parseText = (file: File): Promise<string> => file.text()
 
-  const parseImage = async (file: File): Promise<string> => {
+  const uploadImageToStorage = async (file: File): Promise<string> => {
     try {
-      const { data } = await Tesseract.recognize(file, 'eng', {})
-      return data.text.trim()
+      const fileName = `${ulid()}-${file.name}`
+      const { data, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(data.path)
+
+      return urlData.publicUrl
     } catch (error) {
-      console.error('OCR error:', error)
-      throw new Error(`Failed to extract text from image: ${error}`)
+      console.error('Image upload error:', error)
+      throw new Error(`Failed to upload image: ${error}`)
+    }
+  }
+
+  const analyzeImageWithVision = async (imageUrl: string, ocrText: string): Promise<string> => {
+    try {
+      // Get API keys from the current team
+      const { selectedTeam } = await import('../hooks/useTeam').then(m => m.useTeamStore.getState())
+      if (!selectedTeam) {
+        console.warn('No team selected, skipping vision analysis')
+        return ocrText
+      }
+
+      const apiKeys = await app.fetchAPIkeys(selectedTeam.id)
+      const openaiKey = apiKeys.openai
+
+      if (!openaiKey) {
+        console.warn('No OpenAI API key found, using OCR text only')
+        return ocrText
+      }
+
+      // Create OpenAI client
+      const { createOpenAI } = await import('@ai-sdk/openai')
+      const openai = createOpenAI({ apiKey: openaiKey })
+      const model = openai('gpt-4o')
+
+      // Prepare the prompt for vision analysis
+      const prompt = `Analyze this image and provide a comprehensive summary. 
+
+If there's any text in the image, I'll provide the OCR-extracted text below. However, OCR can be inaccurate, so please:
+1. Describe what you see in the image visually
+2. Correct any obvious OCR errors in the text
+3. Provide a clear, structured summary of the image content
+
+OCR Text (may contain errors):
+${ocrText}
+
+Please provide a detailed summary of this image:`
+
+      // Convert image to base64 for the API call
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+
+      // Call OpenAI vision API directly
+      const apiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: prompt
+                },
+                {
+                  type: 'image_url',
+                  image_url: {
+                    url: base64
+                  }
+                }
+              ]
+            }
+          ],
+          max_tokens: 1000
+        })
+      })
+
+      const result = await apiResponse.json()
+      const text = result.choices?.[0]?.message?.content || ocrText
+
+      return text
+    } catch (error) {
+      console.error('Vision analysis error:', error)
+      // Fallback to OCR text if vision analysis fails
+      return ocrText
+    }
+  }
+
+  const parseImage = async (file: File): Promise<{ text: string; imageUrl: string }> => {
+    try {
+      // Upload image to storage first
+      const imageUrl = await uploadImageToStorage(file)
+      
+      // Then perform OCR
+      const { data } = await Tesseract.recognize(file, 'eng', {})
+      const ocrText = data.text.trim()
+      
+      // Use vision analysis to get better summary
+      const visionText = await analyzeImageWithVision(imageUrl, ocrText)
+      
+      return { text: visionText, imageUrl }
+    } catch (error) {
+      console.error('Image processing error:', error)
+      throw new Error(`Failed to process image: ${error}`)
     }
   }
 
@@ -173,7 +295,8 @@ export function useFileParser() {
           } else if (fileType.startsWith('text/') || fileType === 'application/json') {
             content = await parseText(file)
           } else if (fileType.startsWith('image/')) {
-            content = await parseImage(file)
+            const imageResult = await parseImage(file)
+            content = `Image URL: ${imageResult.imageUrl}\n\nVision Analysis:\n${imageResult.text}`
           } else {
             console.warn(`Unsupported file type: ${fileType} for file ${file.name}`)
             continue

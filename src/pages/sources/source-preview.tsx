@@ -405,6 +405,34 @@ export function SourcePreview({ sourceId, onClose, onSourceUpdate }: SourcePrevi
                     <span className="text-sm text-muted-foreground">Editing...</span>
                   )}
                 </div>
+                
+                {/* Display image if available */}
+                {(() => {
+                  const imageUrlMatch = source.content.match(/Image URL: (https?:\/\/[^\s\n]+)/)
+                  if (imageUrlMatch) {
+                    const imageUrl = imageUrlMatch[1]
+                    return (
+                      <div className="mb-4">
+                        <h5 className="font-medium mb-2">Image</h5>
+                        <div className="flex justify-center">
+                          <img 
+                            src={imageUrl} 
+                            alt={source.name}
+                            className="max-w-full max-h-96 object-contain rounded-lg border"
+                            onError={(e) => {
+                              console.error('Failed to load image:', imageUrl)
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-2 text-center">
+                          Image URL: {imageUrl}
+                        </p>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
                 {isEditingContent ? (
                   <div className="space-y-2">
                     <Textarea
