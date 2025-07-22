@@ -22,7 +22,8 @@ export interface FolderCrawlerActions {
 export function useFolderCrawler(
   onSourcesUpdated: () => void,
   onOpenChange: (open: boolean) => void,
-  parseFiles: (files: File[]) => Promise<ParsedFile[]>
+  parseFiles: (files: File[]) => Promise<ParsedFile[]>,
+  teamId?: string
 ): [FolderCrawlerState, FolderCrawlerActions] {
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)

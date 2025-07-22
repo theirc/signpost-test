@@ -7,6 +7,7 @@ import { X, Loader2 } from "lucide-react"
 import { SourceNameEditor } from "./components/source-name-editor"
 import { TagManager } from "./components/tag-manager"
 import { useFolderCrawler } from "./folder-crawler-logic"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 interface FolderCrawlerProps {
   open: boolean
@@ -15,8 +16,9 @@ interface FolderCrawlerProps {
 }
 
 export function FolderCrawler({ open, onOpenChange, onSourcesUpdated }: FolderCrawlerProps) {
-  const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser()
-  const [state, actions] = useFolderCrawler(onSourcesUpdated, onOpenChange, parseFiles)
+  const { selectedTeam } = useTeamStore()
+  const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser(selectedTeam?.id)
+  const [state, actions] = useFolderCrawler(onSourcesUpdated, onOpenChange, parseFiles, selectedTeam?.id)
   const { isLoading, progress, files, sourceNames, currentTags } = state
   const { handleFileChange, handleNameChange, handleAddTag, handleRemoveTag, handleSubmit } = actions
   const fileInputRef = useRef<HTMLInputElement>(null)

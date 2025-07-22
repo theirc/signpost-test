@@ -16,7 +16,8 @@ interface FileUploadTabProps {
 
 export function FileUploadTab({ onSourcesUpdated, onOpenChange }: FileUploadTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser()
+  const { selectedTeam } = useTeamStore()
+  const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser(selectedTeam?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [files, setFiles] = useState<ParsedFile[]>([])
