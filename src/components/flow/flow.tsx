@@ -35,6 +35,7 @@ import { HandoffAgentNode } from './nodes/handoffAgent'
 import { TemplateNode } from './nodes/template'
 import { ChatHistoryNode } from './nodes/chathistory'
 import { ChatFlow } from './chat'
+import { StructuredOutputNode } from './nodes/structuredoutput'
 
 const nodeTypes = {
   request: RequestNode,
@@ -57,6 +58,7 @@ const nodeTypes = {
   handoffAgent: HandoffAgentNode,
   template: TemplateNode,
   chatHistory: ChatHistoryNode,
+  structured: StructuredOutputNode,
 }
 
 function Flow(props: { onAgentUpdate?: () => void }) {

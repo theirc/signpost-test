@@ -43,7 +43,9 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
     </HoverCard>
   }
 
-  return <div className='w-full p-3 pl-4 mb-1 min-h-[56px] bg-[#6386F7] text-sm text-white flex items-center border-b-gray-200 border-b relative group'>
+  //Fixed because we should avoid using pixel units for responsiveness and readability.
+  // return <div className='w-full p-3 pl-4 mb-1 min-h-[56px] bg-[#6386F7] text-sm text-white flex items-center border-b-gray-200 border-b relative group'>
+  return <div className='w-full p-1 pl-4 mb-1 bg-[#6386F7] text-sm text-white flex items-center border-b-gray-200 border-b relative group'>
     {Icon}
     <div className="flex-grow text-white text-xl font-dm-mono">{worker?.registry.title ?? "Title"}</div>
     <DropdownMenu>
