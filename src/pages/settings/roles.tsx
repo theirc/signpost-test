@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/lib/agents/db"
 import { Json } from "@/lib/agents/supabase"
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 interface Permission {
     resource: string
@@ -64,6 +65,7 @@ export function RoleForm() {
     const { selectedTeam } = useTeamStore()
     const [loading, setLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
+    const { canCreate, canUpdate } = usePermissions()
     const [formData, setFormData] = useState<RoleFormData>({
         name: "",
         description: "",
@@ -356,13 +358,14 @@ export function RoleForm() {
                                                     {Object.entries(PERMISSION_ICONS).map(([action, Icon]) => {
                                                         const permissionAction = action as PermissionAction
                                                         const isChecked = Boolean(permission?.[permissionAction])
+                                                        const disabled = (id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14" || !canUpdate("roles") || !canCreate("roles"))
                                                         return (
                                                             <td key={action} className="text-center py-2">
                                                                 <Checkbox
                                                                     id={`${resource.id}-${action}`}
                                                                     checked={isChecked}
                                                                     onCheckedChange={(checked) => handlePermissionChange(resource.id, permissionAction, checked as boolean)}
-                                                                    disabled={id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}
+                                                                    disabled={disabled}
                                                                 />
                                                             </td>
                                                         )
@@ -395,9 +398,9 @@ export function RoleForm() {
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={loading || id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}>
+                            {(canCreate("roles") || canUpdate("roles")) && <Button type="submit" disabled={loading || id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}>
                                 {loading ? (isNewRole ? "Creating..." : "Updating...") : (isNewRole ? "Create Role" : "Update Role")}
-                            </Button>
+                            </Button>}
                         </div>
                     </form>
                 </CardContent>

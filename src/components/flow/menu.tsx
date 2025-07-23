@@ -15,6 +15,7 @@ import { redirect, useNavigate } from "react-router-dom"
 import { Button } from "../ui/button"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { supabase } from "@/lib/agents/db"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 interface Props {
   update?: () => void
@@ -67,10 +68,10 @@ const agentModel = createModel({
 
 
 export function Toolbar(props: Props) {
-
   const { selectedTeam } = useTeamStore()
   let navigate = useNavigate()
   const update = useForceUpdate()
+  const { canCreate, canUpdate } = usePermissions()
 
   const { form: agentForm, m: f } = useForm(agentModel, {
     values: {
@@ -177,16 +178,16 @@ export function Toolbar(props: Props) {
         </div>
       </div>
       {/* <Separator orientation="vertical" /> */}
-      <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => onSave()}>
+      {(canUpdate("agents") || canCreate("agents")) && <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => onSave()}>
         {saving && <LoaderCircle size={18} className="animate-spin" />}
         {!saving && <Save size={18} />}
-      </div>
+      </div>}
       {/* <Separator orientation="vertical" /> */}
-      <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play" onClick={() => onPlay()}>
+      {(canUpdate("agents") || canCreate("agents")) && <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play" onClick={() => onPlay()}>
         <Play size={18} />
-      </div>
+      </div>}
       {/* <Separator orientation="vertical" /> */}
-      <Menubar className="h-4 border-0">
+      {(canUpdate("agents") || canCreate("agents")) && <Menubar className="h-4 border-0">
         <MenubarMenu>
           <MenubarTrigger className="font-normal text-xs">I/O</MenubarTrigger>
           <MenubarContent>
@@ -224,7 +225,7 @@ export function Toolbar(props: Props) {
             </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
-      </Menubar>
+      </Menubar>}
     </div>
 
     <Modal form={agentForm} title="Agent Configuration">

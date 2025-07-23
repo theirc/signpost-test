@@ -162,7 +162,7 @@ export function AppLayout() {
               </ProtectedRoute>
             } />
             <Route path="/evaluation/logs/:id" element={
-              <ProtectedRoute resource="logs" action="update">
+              <ProtectedRoute resource="logs" action="read">
                 <LogForm />
               </ProtectedRoute>
             } />
@@ -172,12 +172,12 @@ export function AppLayout() {
               </ProtectedRoute>
             } />
             <Route path="/evaluation/scores/:id" element={
-              <ProtectedRoute resource="scores" action="update">
+              <ProtectedRoute resource="scores" action="read">
                 <ScoreForm />
               </ProtectedRoute>
             } />
             <Route path="/agent/:id" element={
-              <ProtectedRoute resource="agents" action="update">
+              <ProtectedRoute resource="agents" action="read">
                 <Agent />
               </ProtectedRoute>
             } />
@@ -208,17 +208,17 @@ export function AppLayout() {
                 </ProtectedRoute>
               } />
               <Route path="roles/:id" element={
-                <ProtectedRoute resource="roles" action="update">
+                <ProtectedRoute resource="roles" action="read">
                   <RoleForm />
                 </ProtectedRoute>
               } />
               <Route path="teams/:id" element={
-                <ProtectedRoute resource="teams" action="update">
+                <ProtectedRoute resource="teams" action="read">
                   <TeamForm />
                 </ProtectedRoute>
               } />
               <Route path="teams/members/:id" element={
-                <ProtectedRoute resource="teams" action="update">
+                <ProtectedRoute resource="teams" action="read">
                   <AddTeamMembers />
                 </ProtectedRoute>
               } />
@@ -228,12 +228,12 @@ export function AppLayout() {
                 </ProtectedRoute>
               } />
               <Route path="users/:id" element={
-                <ProtectedRoute resource="users" action="update">
+                <ProtectedRoute resource="users" action="read">
                   <UserForm />
                 </ProtectedRoute>
               } />
               <Route path="projects/:id" element={
-                <ProtectedRoute resource="projects" action="update">
+                <ProtectedRoute resource="projects" action="read">
                   <ProjectForm />
                 </ProtectedRoute>
               } />
@@ -243,14 +243,12 @@ export function AppLayout() {
                 </ProtectedRoute>
               } />
               <Route path="apikeys/:id" element={
-                <ProtectedRoute resource="apikeys" action="update">
+                <ProtectedRoute resource="apikeys" action="read">
                   <ApiKeyView />
                 </ProtectedRoute>
               } />
               <Route path="profile" element={
-                <ProtectedRoute>
-                  <ProfileSettings />
-                </ProtectedRoute>
+                <ProfileSettings />
               } />
             </Route>
           </Routes>

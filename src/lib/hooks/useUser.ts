@@ -2,6 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../agents/db'
 
 export const getCurrentUser = async () => {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+  if (sessionError || !sessionData?.session) {
+    return { data: null, error: sessionError }
+  }
+
   const { data: authData, error: authError } = await supabase.auth.getUser()
 
   if (authError || !authData?.user) {
@@ -31,16 +37,21 @@ export const getCurrentUser = async () => {
     return { data: authData.user, error: userTeamsError }
   }
 
+  const userData = {
+    ...authData.user,
+    ...publicUserData,
+    email: authData.user.email,
+    role: publicUserData.roles?.id,
+    role_name: publicUserData.roles?.name,
+    teams: userTeams.map(ut => ut.teams)
+  }
+
   return {
-    data: {
-      ...authData.user,
-      ...publicUserData,
-      role_name: publicUserData.roles?.name,
-      teams: userTeams.map(ut => ut.teams)
-    },
+    data: userData,
     error: null
   }
 }
+
 export function useUser() {
   return useQuery({
     queryKey: ['user'],
@@ -49,10 +60,10 @@ export function useUser() {
       if (error) throw error
       return data
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    refetchOnMount: false, // Don't refetch on mount
-    refetchOnReconnect: false, // Don't refetch on reconnect
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
   })
 } 
