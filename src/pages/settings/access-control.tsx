@@ -30,7 +30,7 @@ interface Role {
 
 export function AccessControlSettings() {
     const navigate = useNavigate()
-    const { canCreate, canUpdate } = usePermissions()
+    const { canCreate, canUpdate, canRead } = usePermissions()
     const { selectedTeam } = useTeamStore()
 
     const { data: roles = [], isLoading, error } = useQuery({
@@ -111,7 +111,7 @@ export function AccessControlSettings() {
                 columns={columns as any}
                 data={roles}
                 onRowClick={(row) => {
-                    canUpdate("roles") ? handleEdit(row.id) : undefined
+                    (canUpdate("roles") || canRead("roles")) ? handleEdit(row.id) : undefined
                 }}
                 placeholder="No roles found" />
         </div>

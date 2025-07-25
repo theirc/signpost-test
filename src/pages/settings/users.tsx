@@ -9,7 +9,7 @@ import { useTeamStore } from "@/lib/hooks/useTeam"
 
 export function UsersSettings() {
     const navigate = useNavigate()
-    const { canCreate, canUpdate } = usePermissions()
+    const { canCreate, canUpdate, canRead } = usePermissions()
     const { selectedTeam } = useTeamStore()
     const columns: ColumnDef<any>[] = [
         { id: "first_name", accessorKey: "first_name", header: "First Name", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
@@ -43,7 +43,7 @@ export function UsersSettings() {
                 filters={{ team_ids: selectedTeam?.id ? { cs: `{"${selectedTeam.id}"}` } : undefined }}
                 searchKey="first_name"
                 onRowClick={(row) => {
-                    if (canUpdate("users")) handleEdit(row.id)
+                    if (canUpdate("users") || canRead("users")) handleEdit(row.id)
                 }}
                 placeholder="No users found"
             />

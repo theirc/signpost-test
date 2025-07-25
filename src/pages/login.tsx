@@ -22,21 +22,23 @@ export function Login() {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        password
+        password,
       })
-      if (error) {
-        throw error
-      }
 
-      if (data) {
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Invalid email or password",
+          variant: "destructive",
+        })
+      } else {
         navigate("/")
       }
     } catch (error) {
-      console.error('Error logging in:', error)
       toast({
         title: "Error",
-        description: "Invalid email or password",
-        variant: "destructive"
+        description: "An unexpected error occurred",
+        variant: "destructive",
       })
     } finally {
       setLoading(false)
@@ -49,24 +51,27 @@ export function Login() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) {
-        throw error
+        toast({
+          title: "Error",
+          description: "Failed to send reset email",
+          variant: "destructive",
+        })
+      } else {
+        toast({
+          title: "Success",
+          description: "Password reset email sent",
+        })
+        setForgotPasswordMode(false)
       }
-
-      toast({
-        title: "Success",
-        description: "Password reset email sent. Please check your inbox."
-      })
-      setForgotPasswordMode(false)
     } catch (error) {
-      console.error('Error sending reset email:', error)
       toast({
         title: "Error",
-        description: "Failed to send reset email. Please try again.",
-        variant: "destructive"
+        description: "An unexpected error occurred",
+        variant: "destructive",
       })
     } finally {
       setLoading(false)
@@ -77,53 +82,41 @@ export function Login() {
     <div className="flex h-screen items-center justify-center">
       <Card className="w-[350px]">
         <CardHeader>
-          <CardTitle>{forgotPasswordMode ? "Reset Password" : "Login"}</CardTitle>
+          <CardTitle>Login</CardTitle>
           <CardDescription>
-            {forgotPasswordMode 
-              ? "Enter your email to receive a password reset link"
-              : "Enter your credentials to access your account"
-            }
+            Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
         <form onSubmit={forgotPasswordMode ? handleForgotPassword : handleSubmit}>
-          <CardContent>
-            <div className="grid w-full items-center gap-4">
-              <div className="flex flex-col space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            {!forgotPasswordMode && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
-              {!forgotPasswordMode && (
-                <div className="flex flex-col space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={loading}
-            >
-              {forgotPasswordMode 
-                ? (loading ? "Sending..." : "Send Reset Link")
-                : (loading ? "Logging in..." : "Login")
-              }
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : forgotPasswordMode ? "Send Reset Email" : "Login"}
             </Button>
             <Button
               type="button"

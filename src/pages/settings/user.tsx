@@ -9,6 +9,7 @@ import { MultiSelect } from "@/components/ui/multi-select"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/agents/db"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 
 const createNewUser = async (userData: {
     email: string
@@ -133,6 +134,7 @@ export function UserForm() {
     const navigate = useNavigate()
     const { id } = useParams()
     const isNewUser = id === 'new'
+    const { canCreate, canUpdate } = usePermissions()
 
     const [loading, setLoading] = useState(false)
     const [isFetching, setIsFetching] = useState(false)
@@ -239,9 +241,8 @@ export function UserForm() {
                 title: "Success",
                 description: isNewUser ? "User created successfully" : "User updated successfully"
             })
-            navigate("/settings/teams")
+            navigate("/settings/users")
         } catch (error) {
-            console.error("Error saving user:", error)
             toast({
                 title: "Error",
                 description: error instanceof Error ? error.message : "Failed to save user",
@@ -361,14 +362,14 @@ export function UserForm() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => navigate("/settings/teams")}
+                                onClick={() => navigate("/settings/users")}
                                 disabled={loading}
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={loading}>
+                            {(canCreate("users") || canUpdate("users")) && <Button type="submit" disabled={loading}>
                                 {loading ? (isNewUser ? "Creating..." : "Updating...") : (isNewUser ? "Create User" : "Update User")}
-                            </Button>
+                            </Button>}
                         </div>
                     </form>
                 )}
