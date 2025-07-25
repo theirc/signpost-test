@@ -70,8 +70,12 @@ ${doc.body}
     if (!Array.isArray(value)) value = []
     value = ((value || []) as CoreMessage[]).map((msg, i) => {
       const role = msg.role == "user" ? "User" : "AI"
-      const content = typeof msg.content === 'string' ? msg.content : 
-        (msg.content[0] && 'text' in msg.content[0] ? msg.content[0].text : '')
+      let content = ""
+      if (typeof msg.content === 'string') {
+        content = msg.content
+      } else if (Array.isArray(msg.content) && msg.content.length > 0) {
+        content = (msg.content[0] as any)?.text || 'Empty'
+      }
       return `## ${role} 
       ${content}`
     }).join("\n\n")
