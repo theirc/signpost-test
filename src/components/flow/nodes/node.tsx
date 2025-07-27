@@ -42,9 +42,9 @@ export function NodeLayout(props: Props) {
 
     {/* <div className={cn("shadow-xl rounded-sm bg-white border border-stone-400 size-full pb-4 min-w-[224px]", props.className)}> */}
     <div className={cn(
-      "shadow-xl rounded-sm bg-white border border-stone-400 size-full pb-4 min-w-[224px] transition-shadow", 
+      "shadow-xl rounded-sm bg-white border border-stone-400 size-full pb-4 min-w-[224px] transition-all duration-300", 
       {
-        "ring-1 ring-[hsl(var(--node-running-color))]": running,
+        "node-running": running,
       }, 
       props.className
     )}>

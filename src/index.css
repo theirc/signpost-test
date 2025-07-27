@@ -310,3 +310,100 @@
   background-size: 200% auto;
   animation: gradientText 3s ease infinite;
 }
+
+/* Edge animation styles for running workers */
+@keyframes edgePulse {
+  0%, 100% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8));
+  }
+}
+
+@keyframes edgeGlow {
+  0%, 100% {
+    opacity: 0.3;
+    filter: blur(4px);
+  }
+  50% {
+    opacity: 0.5;
+    filter: blur(6px);
+  }
+}
+
+.edge-running-highlight {
+  animation: edgePulse 1s ease-in-out infinite;
+}
+
+.edge-running-glow {
+  animation: edgeGlow 1.5s ease-in-out infinite;
+}
+
+/* Node animation styles for running workers */
+@keyframes nodePulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 0 2px rgba(139, 92, 246, 0.3),
+      0 0 0 4px rgba(139, 92, 246, 0.2),
+      0 0 20px rgba(139, 92, 246, 0.4),
+      0 0 40px rgba(139, 92, 246, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 0 3px rgba(139, 92, 246, 0.5),
+      0 0 0 6px rgba(139, 92, 246, 0.3),
+      0 0 30px rgba(139, 92, 246, 0.6),
+      0 0 60px rgba(139, 92, 246, 0.3);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes nodeGlow {
+  0%, 100% {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+    border-color: rgba(139, 92, 246, 0.6);
+  }
+}
+
+.node-running {
+  animation: nodePulse 1.5s ease-in-out infinite, nodeGlow 2s ease-in-out infinite;
+  position: relative;
+  z-index: 10;
+}
+
+.node-running::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
+  border-radius: inherit;
+  z-index: -1;
+  animation: nodeGlow 2s ease-in-out infinite;
+}
+
+.node-running::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid transparent;
+  border-radius: inherit;
+  background: linear-gradient(45deg, #8B5CF6, #A855F7, #C084FC, #8B5CF6) border-box;
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) padding-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask: 
+    linear-gradient(#fff 0 0) padding-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: nodePulse 1.5s ease-in-out infinite;
+  z-index: -1;
+}

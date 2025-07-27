@@ -18,7 +18,7 @@ const buttonVariants = cva(
         gradient: "bg-[linear-gradient(238deg,#EA5850,#6286F7)] text-white hover:opacity-90",
         primary: "bg-primary text-primary-foreground hover:bg-primary/90",
         action: "bg-[linear-gradient(45deg,#6286F7,#EA5850)] text-white hover:opacity-90",
-        highlight: "bg-[linear-gradient(to_right,#6286F7,#9B53D2)] text-white hover:opacity-90",
+        highlight: "bg-[#6286f7] text-white hover:opacity-90",
         special: "bg-[conic-gradient(from_45deg,#6286F7,#9B53D2,#EA5850,#6286F7)] text-white hover:opacity-90",
       },
       size: {

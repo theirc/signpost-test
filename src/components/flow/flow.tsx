@@ -380,7 +380,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                   <Parentheses size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-80">
+              <DropdownMenuContent side="right" align="start" className="w-[480px]" sideOffset={0}>
                 <div className="p-2">
                   <h3 className="font-semibold text-base text-gray-900">Input & Output</h3>
                 </div>
@@ -430,7 +430,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                   <BrainCog size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-80">
+              <DropdownMenuContent side="right" align="start" className="w-[480px]" sideOffset={0}>
                 <div className="p-2">
                   <h3 className="font-semibold text-base text-gray-900">Generators</h3>
                 </div>
@@ -480,7 +480,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                   <Wrench size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-80">
+              <DropdownMenuContent side="right" align="start" className="w-[480px]" sideOffset={0}>
                 <div className="p-2">
                   <h3 className="font-semibold text-base text-gray-900">Tools</h3>
                 </div>
@@ -530,7 +530,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                   <BugOff size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-80">
+              <DropdownMenuContent side="right" align="start" className="w-[480px]" sideOffset={0}>
                 <div className="p-2">
                   <h3 className="font-semibold text-base text-gray-900">Debug</h3>
                 </div>

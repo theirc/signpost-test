@@ -123,7 +123,7 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
     className={`w-full p-1 pl-4 mb-1 ${headerBgColor} text-sm ${headerTextColor} flex items-center border-b-gray-200 border-b relative group`}
   >
     {Icon}
-    <div className={`flex-grow ${headerTextColor} text-xl font-dm-mono`}>{worker?.registry.title ?? "Title"}</div>
+    <div className={`flex-grow ${headerTextColor} text-2xl font-bold font-dm-mono`}>{worker?.registry.title ?? "Title"}</div>
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="cursor-pointer">
         <EllipsisVertical size={24} className={`mt-[2px] ${headerTextColor}`} />

@@ -77,7 +77,9 @@ export function AppLayout() {
   ]
   if (currentPath.startsWith('/agent/')) {
     breadcrumbItems.push({ name: 'Agents', to: '/' })
-    breadcrumbItems.push({ name: app.agent?.title || 'Agent' })
+    // Ensure we have a proper agent title, fallback to 'Agent' if empty
+    const agentTitle = app.agent?.title?.trim() || 'Agent'
+    breadcrumbItems.push({ name: agentTitle })
   } else if (currentPath.startsWith('/evaluation/')) {
     breadcrumbItems.push({ name: 'Evaluation', to: '/evaluation/logs' })
     if (currentPath === '/evaluation/logs') {
@@ -130,27 +132,28 @@ export function AppLayout() {
                     {idx !== breadcrumbItems.length - 1 && item.to ? (
                       <NavigationLink to={item.to}>{item.name}</NavigationLink>
                     ) : (
-                      agentId && currentPath.startsWith('/agent/') && idx === breadcrumbItems.length - 1 ? (
+                      currentPath.startsWith('/agent/') && idx === breadcrumbItems.length - 1 ? (
                         <div className="flex items-center gap-1">
                           <Input
-                            value={app.agent.title}
+                            value={app.agent?.title || ''}
                             onChange={(e) => {
-                              app.agent.title = e.target.value
-                              update()
+                              if (app.agent) {
+                                app.agent.title = e.target.value
+                                update()
+                              }
                             }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.currentTarget.blur()
                               }
                             }}
-                            className="text-sm font-semibold w-64 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-gray-50 rounded px-1 transition-colors"
+                            className="text-sm font-semibold w-64 border border-gray-200 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-blue-500 hover:bg-gray-50 rounded transition-colors"
                             placeholder="Agent Title"
                             autoFocus={false}
                           />
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => navigate(`/agent/${agentId}/edit`, { replace: true })}
                             className="text-gray-500 hover:text-gray-700"
                           >
                             <Edit className="h-4 w-4" />

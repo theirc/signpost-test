@@ -261,7 +261,7 @@ export function Toolbar(props: Props) {
     <div className="relative">
       <div className="flex gap-6 items-center py-2" id="menuroot">
         <div className="flex items-center gap-3">
-          {(canUpdate("agents") || canCreate("agents")) && <Button variant="outline" size="sm" className="rounded hover:bg-sidebar-accent hover:text-white" onClick={() => onPlay()}>
+          {(canUpdate("agents") || canCreate("agents")) && <Button variant="highlight" size="sm" className="rounded hover:opacity-90" onClick={() => onPlay()}>
             <Play size={18} />
             Run
           </Button>}
@@ -274,7 +274,7 @@ export function Toolbar(props: Props) {
             <MenubarMenu>
               <MenubarTrigger asChild>
                 <Button variant="outline" size="sm" className="rounded hover:bg-sidebar-accent hover:text-white">
-                  <EllipsisVertical size={18} />
+                  <Settings size={18} />
                 </Button>
               </MenubarTrigger>
               <MenubarContent>
