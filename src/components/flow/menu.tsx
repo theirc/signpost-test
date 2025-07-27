@@ -2,7 +2,7 @@ import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } fro
 import { workerRegistry } from "@/lib/agents/registry"
 import { createModel } from "@/lib/data/model"
 import { cloneDeep } from "lodash"
-import { Bug, Cog, EllipsisVertical, LoaderCircle, MessageCircle, Play, Save, Settings } from "lucide-react"
+import { Bug, BugOff, Cog, EllipsisVertical, LoaderCircle, MessageCircle, Parentheses, Play, Save, Settings, Wrench, BrainCog } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
@@ -16,6 +16,8 @@ import { Button } from "../ui/button"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog"
 import { supabase } from "@/lib/agents/db"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { Input as ShadcnInput } from "@/components/ui/input"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface Props {
   update?: () => void
@@ -66,6 +68,91 @@ const agentModel = createModel({
   }
 })
 
+function DropdownButtons() {
+  const { canCreate, canUpdate } = usePermissions()
+  
+  if (!canUpdate("agents") && !canCreate("agents")) return null
+  
+  return (
+    <div className="absolute left-0 top-12 flex flex-col space-y-1 bg-slate-50 p-2 rounded-r-md">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <Parentheses size={16} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" className="w-80">
+          {Object.entries(workerRegistry).filter(([key, node]) => node.category == "io").map(([key, node]) => (
+            <DropdownMenuItem key={key} className="flex items-center gap-2 p-2">
+              {node.icon && <node.icon size={16} />}
+              <div>
+                <div className="font-medium">{node.title}</div>
+                <div className="text-xs text-muted-foreground">{node.description}</div>
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <BrainCog size={16} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" className="w-80">
+          {Object.entries(workerRegistry).filter(([key, node]) => node.category == "generator").map(([key, node]) => (
+            <DropdownMenuItem key={key} className="flex items-center gap-2 p-2">
+              {node.icon && <node.icon size={16} />}
+              <div>
+                <div className="font-medium">{node.title}</div>
+                <div className="text-xs text-muted-foreground">{node.description}</div>
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <Wrench size={16} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" className="w-80">
+          {Object.entries(workerRegistry).filter(([key, node]) => node.category == "tool").map(([key, node]) => (
+            <DropdownMenuItem key={key} className="flex items-center gap-2 p-2">
+              {node.icon && <node.icon size={16} />}
+              <div>
+                <div className="font-medium">{node.title}</div>
+                <div className="text-xs text-muted-foreground">{node.description}</div>
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <BugOff size={16} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" className="w-80">
+          {Object.entries(workerRegistry).filter(([key, node]) => node.category == "debug").map(([key, node]) => (
+            <DropdownMenuItem key={key} className="flex items-center gap-2 p-2">
+              {node.icon && <node.icon size={16} />}
+              <div>
+                <div className="font-medium">{node.title}</div>
+                <div className="text-xs text-muted-foreground">{node.description}</div>
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+}
 
 export function Toolbar(props: Props) {
   const { selectedTeam } = useTeamStore()
@@ -171,61 +258,42 @@ export function Toolbar(props: Props) {
   }
 
   return <>
-    <div className="flex gap-3 border-b text-xs items-center" id="menuroot">
-      <div className="flex flex-grow items-center p-2">
-        <div className="text-sm flex" >
-          {app.agent.title} {(app.agent.isConversational) && <MessageCircle size={16} className="ml-2 mt-[2px] cursor-pointer" onClick={onShowChat} />}
+    <div className="relative">
+      <div className="flex gap-6 items-center py-2" id="menuroot">
+        <div className="flex items-center gap-3">
+          {(canUpdate("agents") || canCreate("agents")) && <Button variant="outline" size="sm" className="rounded hover:bg-sidebar-accent hover:text-white" onClick={() => onPlay()}>
+            <Play size={18} />
+            Run
+          </Button>}
+          {(canUpdate("agents") || canCreate("agents")) && <Button variant="outline" size="sm" className="rounded hover:bg-sidebar-accent hover:text-white" onClick={() => onSave()}>
+            {saving && <LoaderCircle size={18} className="animate-spin" />}
+            {!saving && <Save size={18} />}
+            Save
+          </Button>}
+          {(canUpdate("agents") || canCreate("agents")) && <Menubar className="!bg-transparent !border-none p-0 space-x-3 shadow-none h-4">
+            <MenubarMenu>
+              <MenubarTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded hover:bg-sidebar-accent hover:text-white">
+                  <EllipsisVertical size={18} />
+                </Button>
+              </MenubarTrigger>
+              <MenubarContent>
+                <MenubarItem className="text-xs" onClick={onSetAgent}>
+                  <Settings size={14} className="inline mr-1" onClick={onSetAgent} />
+                  Settings
+                </MenubarItem>
+                <MenubarItem className="text-xs" onClick={onChangeDisplayData}>
+                  <Bug size={14} className="inline mr-1" />
+                  {app.agent.displayData ? "Hide Debug Data" : "Show Debug Data"}
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>}
+          {(app.agent.isConversational) && <Button variant="outline" size="sm" className="rounded hover:bg-sidebar-accent hover:text-white" onClick={onShowChat}>
+            <MessageCircle size={16} />
+          </Button>}
         </div>
       </div>
-      {/* <Separator orientation="vertical" /> */}
-      {(canUpdate("agents") || canCreate("agents")) && <div className="rounded-sm hover:text-blue-400 cursor-pointer" onClick={() => onSave()}>
-        {saving && <LoaderCircle size={18} className="animate-spin" />}
-        {!saving && <Save size={18} />}
-      </div>}
-      {/* <Separator orientation="vertical" /> */}
-      {(canUpdate("agents") || canCreate("agents")) && <div className="rounded-sm hover:text-rose-600 text-indigo-500 cursor-pointer" title="Play" onClick={() => onPlay()}>
-        <Play size={18} />
-      </div>}
-      {/* <Separator orientation="vertical" /> */}
-      {(canUpdate("agents") || canCreate("agents")) && <Menubar className="h-4 border-0">
-        <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs">I/O</MenubarTrigger>
-          <MenubarContent>
-            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "io").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs">Generators</MenubarTrigger>
-          <MenubarContent>
-            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "generator").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs">Tools</MenubarTrigger>
-          <MenubarContent>
-            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "tool").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs">Debug</MenubarTrigger>
-          <MenubarContent>
-            {Object.entries(workerRegistry).filter(([key, node]) => node.category == "debug").map(([key, node]) => (<DragableItem key={key} reg={node} />))}
-          </MenubarContent>
-        </MenubarMenu>
-        <MenubarMenu>
-          <MenubarTrigger className="font-normal text-xs"><EllipsisVertical size={18} className="cursor-pointer" /></MenubarTrigger>
-          <MenubarContent>
-            <MenubarItem className="text-xs" onClick={onSetAgent}>
-              <Settings size={14} className="inline mr-1" onClick={onSetAgent} />
-              Settings
-            </MenubarItem>
-            <MenubarItem className="text-xs" onClick={onChangeDisplayData}>
-              <Bug size={14} className="inline mr-1" />
-              {app.agent.displayData ? "Hide Debug Data" : "Show Debug Data"}
-            </MenubarItem>
-          </MenubarContent>
-        </MenubarMenu>
-      </Menubar>}
     </div>
 
     <Modal form={agentForm} title="Agent Configuration">

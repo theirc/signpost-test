@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb"
+import { Input } from "@/components/ui/input"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import Chat from "@/pages/playground"
 import { LogForm } from "@/pages/evaluation/log"
@@ -21,7 +22,7 @@ import { TeamSettings } from "@/pages/settings/teams"
 import { UsageSettings } from "@/pages/settings/usage"
 import { UserForm } from "@/pages/settings/user"
 import Sources from "@/pages/sources"
-import { Routes, Route, useLocation, useNavigate, useMatch } from "react-router-dom"
+import { Routes, Route, useLocation, useNavigate, useMatch, useParams } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
 import React from 'react'
 import { app, useAppStore } from "@/lib/app"
@@ -30,6 +31,9 @@ import { AddTeamMembers } from "@/pages/settings/team-members"
 import { ApiKeysSettings } from "@/pages/settings/api-keys"
 import ApiKeyView from "@/pages/settings/api-key"
 import { ProfileSettings } from "@/pages/settings/profile"
+import { useForceUpdate } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Edit } from "lucide-react"
 
 const routeNames: Record<string, string> = {
   '/': 'Agents',
@@ -59,8 +63,11 @@ function NavigationLink({ to, children }: { to: string; children: React.ReactNod
 }
 
 export function AppLayout() {
+  const navigate = useNavigate()
   const location = useLocation()
   const currentPath = location.pathname
+  const update = useForceUpdate()
+  const { id: agentId } = useParams()
   const currentName = routeNames[currentPath] || 'Unknown'
   const isAgentRoute = useMatch("/agent/:id")
 
@@ -68,7 +75,10 @@ export function AppLayout() {
   const breadcrumbItems: { name: string; to?: string }[] = [
     { name: 'Home', to: '/' },
   ]
-  if (currentPath.startsWith('/evaluation/')) {
+  if (currentPath.startsWith('/agent/')) {
+    breadcrumbItems.push({ name: 'Agents', to: '/' })
+    breadcrumbItems.push({ name: app.agent?.title || 'Agent' })
+  } else if (currentPath.startsWith('/evaluation/')) {
     breadcrumbItems.push({ name: 'Evaluation', to: '/evaluation/logs' })
     if (currentPath === '/evaluation/logs') {
       breadcrumbItems.push({ name: 'Logs' })
@@ -120,7 +130,35 @@ export function AppLayout() {
                     {idx !== breadcrumbItems.length - 1 && item.to ? (
                       <NavigationLink to={item.to}>{item.name}</NavigationLink>
                     ) : (
-                      <BreadcrumbPage>{item.name}</BreadcrumbPage>
+                      agentId && currentPath.startsWith('/agent/') && idx === breadcrumbItems.length - 1 ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={app.agent.title}
+                            onChange={(e) => {
+                              app.agent.title = e.target.value
+                              update()
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.currentTarget.blur()
+                              }
+                            }}
+                            className="text-sm font-semibold w-64 border-none bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:bg-gray-50 rounded px-1 transition-colors"
+                            placeholder="Agent Title"
+                            autoFocus={false}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/agent/${agentId}/edit`, { replace: true })}
+                            className="text-gray-500 hover:text-gray-700"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <BreadcrumbPage>{item.name}</BreadcrumbPage>
+                      )
                     )}
                   </BreadcrumbItem>
                   {idx < breadcrumbItems.length - 1 && <BreadcrumbSeparator />}
@@ -129,7 +167,7 @@ export function AppLayout() {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
-        <div className="flex flex-1 flex-col rounded-md bg-background border border-border">
+        <div className="flex flex-1 flex-col rounded-md border border-border bg-white">
           <Routes>
             <Route path="/" element={
               <ProtectedRoute resource="agents" action="read">
@@ -178,7 +216,9 @@ export function AppLayout() {
             } />
             <Route path="/agent/:id" element={
               <ProtectedRoute resource="agents" action="read">
-                <Agent />
+                <div className="flex flex-1 flex-col">
+                  <Agent />
+                </div>
               </ProtectedRoute>
             } />
             <Route path="/settings" element={<SettingsLayout />}>

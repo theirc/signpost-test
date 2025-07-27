@@ -81,7 +81,7 @@ export function ChatFlow() {
     }
   }
 
-  return <div className='w-1/4 border-r border-gray-200 flex flex-col resize-x'>
+  return <div className='w-[30%] border-l border-r border-gray-200 flex flex-col resize-x'>
     <div className='grid grid-rows-[1fr_auto] flex-grow h-0 min-h-0'>
       <div ref={scrollRef} className="overflow-y-auto p-2 space-y-1 text-sm">
         {history.map((message, index) => {

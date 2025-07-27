@@ -1,4 +1,4 @@
-import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Connection, Controls, Edge, EdgeChange, Node, NodeChange, Panel, ReactFlow, ReactFlowProvider, useEdges, useReactFlow } from '@xyflow/react'
+import { addEdge, applyEdgeChanges, applyNodeChanges, Background, Connection, Controls, Edge, EdgeChange, Node, NodeChange, Panel, ReactFlow, ReactFlowProvider, useEdges, useReactFlow, MiniMap } from '@xyflow/react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Toolbar } from './menu'
 import { toast, Toaster } from "sonner"
@@ -36,6 +36,47 @@ import { TemplateNode } from './nodes/template'
 import { ChatHistoryNode } from './nodes/chathistory'
 import { ChatFlow } from './chat'
 import { StructuredOutputNode } from './nodes/structuredoutput'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Parentheses, BrainCog, Wrench, BugOff } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+// Function to generate rotating colors for icons
+const getIconColor = (index: number) => {
+  const colors = [
+    'text-purple-600', // Purple
+    'text-orange-600', // Orange
+    'text-pink-600',   // Pink
+    'text-blue-600',   // Blue
+    'text-green-600',  // Green
+    'text-red-600',    // Red
+    'text-indigo-600', // Indigo
+    'text-teal-600',   // Teal
+    'text-yellow-600', // Yellow
+    'text-cyan-600',   // Cyan
+    'text-emerald-600', // Emerald
+    'text-violet-600', // Violet
+  ]
+  return colors[index % colors.length]
+}
+
+// Function to generate background colors for icon containers
+const getIconBackgroundColor = (index: number) => {
+  const backgroundColors = [
+    'bg-purple-100', // Light purple
+    'bg-orange-100', // Light orange
+    'bg-pink-100',   // Light pink
+    'bg-blue-100',   // Light blue
+    'bg-green-100',  // Light green
+    'bg-red-100',    // Light red
+    'bg-indigo-100', // Light indigo
+    'bg-teal-100',   // Light teal
+    'bg-yellow-100', // Light yellow
+    'bg-cyan-100',   // Light cyan
+    'bg-emerald-100', // Light emerald
+    'bg-violet-100', // Light violet
+  ]
+  return backgroundColors[index % backgroundColors.length]
+}
 
 const nodeTypes = {
   request: RequestNode,
@@ -61,10 +102,12 @@ const nodeTypes = {
   structured: StructuredOutputNode,
 }
 
-function Flow(props: { onAgentUpdate?: () => void }) {
+function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
 
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [colorUpdateTrigger, setColorUpdateTrigger] = useState(0)
   const counter = useRef(0)
   const { screenToFlowPosition } = useReactFlow()
   const { agent } = app
@@ -99,6 +142,20 @@ function Flow(props: { onAgentUpdate?: () => void }) {
     }
     setEdges(initialEdges)
 
+  }, [])
+
+  // Add global drop handler for debugging
+  useEffect(() => {
+    const handleGlobalDrop = (event: DragEvent) => {
+      console.log("Global drop event!")
+      console.log("Global drop dataTransfer types:", event.dataTransfer?.types)
+      if (event.dataTransfer) {
+        console.log("Global drop nodeType:", event.dataTransfer.getData("nodeType"))
+      }
+    }
+
+    document.addEventListener('drop', handleGlobalDrop)
+    return () => document.removeEventListener('drop', handleGlobalDrop)
   }, [])
 
 
@@ -174,18 +231,39 @@ function Flow(props: { onAgentUpdate?: () => void }) {
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    event.stopPropagation()
     event.dataTransfer.dropEffect = 'move'
-    // console.log("DragOver:", event.dataTransfer.getData("nodeType"))
+    console.log("DragOver event on ReactFlow")
+    // Add visual feedback
+    event.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)'
+  }, [])
 
+  const onDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.currentTarget.style.backgroundColor = ''
   }, [])
 
   const onDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    console.log("Drop event triggered!")
+    console.log("Event target:", event.target)
+    console.log("Event currentTarget:", event.currentTarget)
     event.preventDefault()
-    // console.log("Drop:", event.dataTransfer.getData("nodeType"))
+    event.stopPropagation()
+    
+    // Reset background color
+    event.currentTarget.style.backgroundColor = ''
+    
+    const nodeType = event.dataTransfer.getData("nodeType")
+    console.log("Drop event received, nodeType:", nodeType)
+    console.log("All dataTransfer types:", event.dataTransfer.types)
+    console.log("All dataTransfer items:", event.dataTransfer.items)
 
-    const type = event.dataTransfer.getData("nodeType") as WorkerTypes
-    if (!type) return
+    if (!nodeType) {
+      console.log("No nodeType found in drop event")
+      return
+    }
 
+    const type = nodeType as WorkerTypes
+    console.log("Creating node of type:", type)
 
     if (type == "request" && app.agent.hasInput()) {
       toast("Only one Input is allowed.", {
@@ -202,22 +280,36 @@ function Flow(props: { onAgentUpdate?: () => void }) {
     }
 
     const factory = workerRegistry[type] as WorkerRegistryItem
-    if (!factory) return
-    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY, })
-    const worker = factory.create(app.agent)
-    worker.config.x = position.x
-    worker.config.y = position.y
-
-    const node = {
-      id: worker.config.id,
-      type: worker.config.type,
-      position,
-      data: {}
+    if (!factory) {
+      console.log("No factory found for type:", type)
+      toast("Unknown node type: " + type)
+      return
     }
+    
+    try {
+      const position = screenToFlowPosition({ x: event.clientX, y: event.clientY, })
+      console.log("Drop position:", position)
+      
+      const worker = factory.create(app.agent)
+      worker.config.x = position.x
+      worker.config.y = position.y
 
-    setNodes((nds) => nds.concat(node))
+      const node = {
+        id: worker.config.id,
+        type: worker.config.type,
+        position,
+        data: {}
+      }
+
+      console.log("Adding node:", node)
+      setNodes((nds) => nds.concat(node))
+      
+      toast(`Added ${factory.title} to flow`)
+    } catch (error) {
+      console.error("Error creating node:", error)
+      toast("Error creating node: " + error.message)
+    }
   }, [screenToFlowPosition])
-
 
   const onDelete = useCallback(({ nodes }: { nodes: Node[]; edges: Edge[] }): void => {
     if (nodes && nodes.length > 0) {
@@ -227,27 +319,267 @@ function Flow(props: { onAgentUpdate?: () => void }) {
     }
   }, [])
 
+  const addNodeToFront = (nodeType: string) => {
+    const factory = workerRegistry[nodeType] as WorkerRegistryItem
+    if (!factory) {
+      console.error("No factory found for type:", nodeType)
+      toast("Unknown node type: " + nodeType)
+      return
+    }
+
+    try {
+      const position = screenToFlowPosition({ x: 100, y: 100 }) // Example position
+      const worker = factory.create(app.agent)
+      worker.config.x = position.x
+      worker.config.y = position.y
+
+      const node = {
+        id: worker.config.id,
+        type: worker.config.type,
+        position,
+        data: {}
+      }
+
+      setNodes((nds) => [node, ...nds])
+      toast(`Added ${factory.title} to front of flow`)
+    } catch (error) {
+      console.error("Error adding node to front:", error)
+      toast("Error adding node to front: " + error.message)
+    }
+  }
 
 
   return <div className='flex-1'>
-    <ReactFlow
-      nodes={nodes}
-      edges={edges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onConnect={onConnect}
+    <div 
+      className="w-full h-full"
       onDrop={onDrop}
       onDragOver={onDragOver}
-      onDelete={onDelete}
-      className='!bg-sky-50'
-      nodeTypes={nodeTypes}
-      edgeTypes={{ customEdge: ButtonEdge }}
-      fitView
-      minZoom={0.2}
+      onDragLeave={onDragLeave}
     >
-      <Background />
-      <Controls />
-    </ReactFlow>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onDelete={onDelete}
+        className={`!bg-sky-50`}
+        nodeTypes={nodeTypes}
+        edgeTypes={{ customEdge: ButtonEdge }}
+        fitView
+        minZoom={0.1}
+      >
+        <Background />
+        <Controls />
+        <MiniMap />
+        <Panel position="top-left" className="!bg-transparent !border-none !shadow-none">
+          <div className="absolute left-0 top-12 flex flex-col space-y-1 bg-slate-50 p-2 rounded-md border border-slate-300">
+            <DropdownMenu open={openDropdown === 'io'} onOpenChange={(open) => setOpenDropdown(open ? 'io' : null)}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Input & Output">
+                  <Parentheses size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start" className="w-80">
+                <div className="p-2">
+                  <h3 className="font-semibold text-base text-gray-900">Input & Output</h3>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-1 p-2">
+                    {Object.entries(workerRegistry).filter(([key, node]) => node.category == "io").map(([key, node], index) => (
+                      <div 
+                        key={key} 
+                        className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
+                        draggable
+                        onDragStart={(event) => {
+                          console.log('Drag start for IO:', key)
+                          event.dataTransfer.setData('nodeType', key)
+                          event.dataTransfer.effectAllowed = 'move'
+                          // Set a visual indicator
+                          event.dataTransfer.setDragImage(event.currentTarget, 0, 0)
+                          console.log('Drag started for:', key)
+                          // Close the dropdown when dragging starts
+                          setOpenDropdown(null)
+                        }}
+                        onDragEnd={(event) => {
+                          console.log('Drag end for IO:', key)
+                        }}
+                        onClick={(event) => {
+                          // Quick click - add to front of flow
+                          console.log('Quick click - adding to front:', key)
+                          addNodeToFront(key)
+                        }}
+                      >
+                        <div className={`${getIconBackgroundColor(index)} rounded-md p-1`}>
+                          <node.icon size={16} className={getIconColor(index)} />
+                        </div>
+                        <div>
+                          <div className="font-medium">{node.title}</div>
+                          <div className="text-xs text-muted-foreground">{node.description}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <DropdownMenu open={openDropdown === 'generator'} onOpenChange={(open) => setOpenDropdown(open ? 'generator' : null)}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Generators">
+                  <BrainCog size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start" className="w-80">
+                <div className="p-2">
+                  <h3 className="font-semibold text-base text-gray-900">Generators</h3>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-1 p-2">
+                    {Object.entries(workerRegistry).filter(([key, node]) => node.category == "generator").map(([key, node], index) => (
+                      <div 
+                        key={key} 
+                        className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
+                        draggable
+                        onDragStart={(event) => {
+                          console.log('Drag start for Generator:', key)
+                          event.dataTransfer.setData('nodeType', key)
+                          event.dataTransfer.effectAllowed = 'move'
+                          // Set a visual indicator
+                          event.dataTransfer.setDragImage(event.currentTarget, 0, 0)
+                          console.log('Drag started for:', key)
+                          // Close the dropdown when dragging starts
+                          setOpenDropdown(null)
+                        }}
+                        onDragEnd={(event) => {
+                          console.log('Drag end for Generator:', key)
+                        }}
+                        onClick={(event) => {
+                          // Quick click - add to front of flow
+                          console.log('Quick click - adding to front:', key)
+                          addNodeToFront(key)
+                        }}
+                      >
+                        <div className={`${getIconBackgroundColor(index)} rounded-md p-1`}>
+                          <node.icon size={16} className={getIconColor(index)} />
+                        </div>
+                        <div>
+                          <div className="font-medium">{node.title}</div>
+                          <div className="text-xs text-muted-foreground">{node.description}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <DropdownMenu open={openDropdown === 'tool'} onOpenChange={(open) => setOpenDropdown(open ? 'tool' : null)}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Tools">
+                  <Wrench size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start" className="w-80">
+                <div className="p-2">
+                  <h3 className="font-semibold text-base text-gray-900">Tools</h3>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-1 p-2">
+                    {Object.entries(workerRegistry).filter(([key, node]) => node.category == "tool").map(([key, node], index) => (
+                      <div 
+                        key={key} 
+                        className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
+                        draggable
+                        onDragStart={(event) => {
+                          console.log('Drag start for Tool:', key)
+                          event.dataTransfer.setData('nodeType', key)
+                          event.dataTransfer.effectAllowed = 'move'
+                          // Set a visual indicator
+                          event.dataTransfer.setDragImage(event.currentTarget, 0, 0)
+                          console.log('Drag started for:', key)
+                          // Close the dropdown when dragging starts
+                          setOpenDropdown(null)
+                        }}
+                        onDragEnd={(event) => {
+                          console.log('Drag end for Tool:', key)
+                        }}
+                        onClick={(event) => {
+                          // Quick click - add to front of flow
+                          console.log('Quick click - adding to front:', key)
+                          addNodeToFront(key)
+                        }}
+                      >
+                        <div className={`${getIconBackgroundColor(index)} rounded-md p-1`}>
+                          <node.icon size={16} className={getIconColor(index)} />
+                        </div>
+                        <div>
+                          <div className="font-medium">{node.title}</div>
+                          <div className="text-xs text-muted-foreground">{node.description}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+              
+            <DropdownMenu open={openDropdown === 'debug'} onOpenChange={(open) => setOpenDropdown(open ? 'debug' : null)}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Debug">
+                  <BugOff size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start" className="w-80">
+                <div className="p-2">
+                  <h3 className="font-semibold text-base text-gray-900">Debug</h3>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-1 p-2">
+                    {Object.entries(workerRegistry).filter(([key, node]) => node.category == "debug").map(([key, node], index) => (
+                      <div 
+                        key={key} 
+                        className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
+                        draggable
+                        onDragStart={(event) => {
+                          console.log('Drag start for Debug:', key)
+                          event.dataTransfer.setData('nodeType', key)
+                          event.dataTransfer.effectAllowed = 'move'
+                          // Set a visual indicator
+                          event.dataTransfer.setDragImage(event.currentTarget, 0, 0)
+                          console.log('Drag started for:', key)
+                          // Close the dropdown when dragging starts
+                          setOpenDropdown(null)
+                        }}
+                        onDragEnd={(event) => {
+                          console.log('Drag end for Debug:', key)
+                        }}
+                        onClick={(event) => {
+                          // Quick click - add to front of flow
+                          console.log('Quick click - adding to front:', key)
+                          addNodeToFront(key)
+                        }}
+                      >
+                        <div className={`${getIconBackgroundColor(index)} rounded-md p-1`}>
+                          <node.icon size={16} className={getIconColor(index)} />
+                        </div>
+                        <div>
+                          <div className="font-medium">{node.title}</div>
+                          <div className="text-xs text-muted-foreground">{node.description}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </Panel>
+        <Panel position="top-right" className="!bg-transparent !border-none !shadow-none">
+          <Toolbar onShowChat={props.onShowChat} />
+        </Panel>
+      </ReactFlow>
+    </div>
   </div>
 
 
@@ -301,11 +633,10 @@ export function FlowDesigner({ id }: { id?: string }) {
   }
 
   return <>
-    <Toolbar onShowChat={onShowChat} />
     <ReactFlowProvider>
       <div className='w-full flex-grow flex'>
+        <Flow onAgentUpdate={onAgentUpdate} onShowChat={onShowChat} />
         {showChat && <ChatFlow />}
-        <Flow onAgentUpdate={onAgentUpdate} />
       </div>
       <Toaster />
     </ReactFlowProvider>
