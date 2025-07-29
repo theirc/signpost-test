@@ -36,6 +36,7 @@ import { TemplateNode } from './nodes/template'
 import { ChatHistoryNode } from './nodes/chathistory'
 import { ChatFlow } from './chat'
 import { StructuredOutputNode } from './nodes/structuredoutput'
+import { TooltipNode } from './nodes/tooltip'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Parentheses, BrainCog, Wrench, BugOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -100,6 +101,7 @@ const nodeTypes = {
   template: TemplateNode,
   chatHistory: ChatHistoryNode,
   structured: StructuredOutputNode,
+  tooltip: TooltipNode,
 }
 
 function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
