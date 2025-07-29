@@ -32,7 +32,11 @@ function Parameters({ worker }: { worker: TooltipWorker }) {
   return <form.context>
     <div className='px-2 nodrag w-full flex-grow flex flex-col'>
       <div className='py-2'>
-        <InputTextArea field={m.notes} placeholder="Add your notes here..." />
+        <InputTextArea 
+          field={m.notes} 
+          placeholder="Add your notes here..." 
+          className="min-h-[100px] resize-none"
+        />
       </div>
     </div>
   </form.context>
