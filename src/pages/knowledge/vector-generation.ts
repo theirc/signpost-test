@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/agents/db"
 import { useSimilaritySearch } from "@/lib/fileUtilities/use-similarity-search"
 import { VectorGenerationResult } from "./types"
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter"
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
 
 /**
  * Generate vectors for a collection's sources
