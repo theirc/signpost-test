@@ -6,6 +6,15 @@ import { createModel } from '../utils'
 declare global {
   type HistoryMode = "none" | "full" | "sumarized"
 
+  interface AgentStateResponse {
+    _context: {
+      usage: {
+        inputTokens: number
+        outputTokens: number
+      },
+    }
+  }
+
   interface PromptAgentWorker extends AIWorker {
     state: {
       context: {}
@@ -152,6 +161,15 @@ async function execute(worker: PromptAgentWorker, p: AgentParameters) {
   })
 
   const result = await run(agent, history)
+  console.log("Agent State:", result.state)
+
+  let inputTokens = 0
+  let outputTokens = 0
+  const state: AgentStateResponse = result.state as any
+  if (state && state._context && state._context.usage) {
+    inputTokens = state._context.usage.inputTokens || 0
+    outputTokens = state._context.usage.outputTokens || 0
+  }
 
   console.log("Result History:", result.history)
 
@@ -160,7 +178,7 @@ async function execute(worker: PromptAgentWorker, p: AgentParameters) {
 
   if (hw) {
     console.log("History Worker", hw)
-    await hw.saveHistory(hw, p, result.history, searchContext)
+    await hw.saveHistory(hw, p, result.history, searchContext, inputTokens, outputTokens)
   }
 
   worker.fields.output.value = result.finalOutput
@@ -197,15 +215,5 @@ export const promptAgent: WorkerRegistryItem = {
   get registry() { return promptAgent },
 }
 
-// interface HistoryItem {
-//   type?: "message" | "function_call" | "function_call_result" | "hosted_tool_call" | "computer_call" | "computer_call_result" | "reasoning" | "unknown"
-//   role?: "user" | "assistant"
-//   status?: "completed"
-//   callId?: string
-//   name?: string
-//   arguments?: any
-//   content?: {
-//     type?: "input_text" | "output_text"
-//     text?: string | object
-//   }[]
-// }
+
+

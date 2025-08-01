@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/agents/db"
 import { useSimilaritySearch } from "@/lib/fileUtilities/use-similarity-search"
 import { VectorGenerationResult } from "./types"
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter"
 
 /**
  * Generate vectors for a collection's sources
@@ -61,6 +62,11 @@ export const generateCollectionVector = async (
       failedSources: [] as string[]
     }
 
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+    });
+
     // Process sources
     for (const cs of sourcesToProcess) {
       try {
@@ -77,7 +83,10 @@ export const generateCollectionVector = async (
         // Generate embedding
         let embedding;
         try {
-          embedding = await generateEmbedding(cs.sources.content)
+          const chunks = await textSplitter.splitText(cs.sources.content);
+          const embeddings = await Promise.all(chunks.map(chunk => generateEmbedding(chunk)));
+          embedding = embeddings.reduce((acc, emb) => acc.map((val, i) => val + emb[i]));
+          embedding = embedding.map((val: number) => val / embeddings.length);
           
           if (!embedding || !Array.isArray(embedding)) {
             console.error(`[generateCollectionVector] Invalid embedding for source ${cs.source_id}:`, embedding)
