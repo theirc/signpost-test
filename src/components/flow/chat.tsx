@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { app } from "@/lib/app"
 import { toast } from "sonner"
 import { useTeamStore } from "@/lib/hooks/useTeam"
@@ -9,26 +9,116 @@ import { ArrowUp, FileText, FileJson, Type } from 'lucide-react'
 import Tesseract from 'tesseract.js'
 import { JsonEditor } from 'json-edit-react'
 
-export function ChatFlow() {
+interface ChatFlowProps {
+  history?: ChatHistory
+  onHistoryChange?: (history: ChatHistory) => void
+  input?: string
+  onInputChange?: (input: string) => void
+  executing?: boolean
+  onExecutingChange?: (executing: boolean) => void
+  ocrLoading?: boolean
+  onOcrLoadingChange?: (loading: boolean) => void
+  isJsonInput?: boolean
+  onIsJsonInputChange?: (isJson: boolean) => void
+  jsonError?: string
+  onJsonErrorChange?: (error: string) => void
+  isJsonEditorMode?: boolean
+  onIsJsonEditorModeChange?: (mode: boolean) => void
+  jsonData?: any
+  onJsonDataChange?: (data: any) => void
+  copiedMessageId?: number | null
+  onCopiedMessageIdChange?: (id: number | null) => void
+}
 
-  const [history, setHistory] = useState<ChatHistory>([])
-  const [input, setInput] = useState("")
-  const [executing, setExecuting] = useState(false)
-  const [ocrLoading, setOcrLoading] = useState<boolean>(false)
-  const [isJsonInput, setIsJsonInput] = useState<boolean>(false)
-  const [jsonError, setJsonError] = useState<string>("")
-  const [isJsonEditorMode, setIsJsonEditorMode] = useState<boolean>(false)
-  const [jsonData, setJsonData] = useState<any>({})
-  const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null)
+export function ChatFlow(props?: ChatFlowProps) {
+
+  const [history, setHistory] = useState<ChatHistory>(props?.history || [])
+  const [input, setInput] = useState(props?.input || "")
+  const [executing, setExecuting] = useState(props?.executing || false)
+  const [ocrLoading, setOcrLoading] = useState<boolean>(props?.ocrLoading || false)
+  const [isJsonInput, setIsJsonInput] = useState<boolean>(props?.isJsonInput || false)
+  const [jsonError, setJsonError] = useState<string>(props?.jsonError || "")
+  const [isJsonEditorMode, setIsJsonEditorMode] = useState<boolean>(props?.isJsonEditorMode || false)
+  const [jsonData, setJsonData] = useState<any>(props?.jsonData || {})
+  const [copiedMessageId, setCopiedMessageId] = useState<number | null>(props?.copiedMessageId || null)
   const { selectedTeam } = useTeamStore()
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const stateRef = useRef({})
+  const inputRef = useRef<string>(props?.input || "")
+
+  // Update local state when props change
+  useEffect(() => {
+    if (props?.history !== undefined) setHistory(props.history)
+    if (props?.input !== undefined) setInput(props.input)
+    if (props?.executing !== undefined) setExecuting(props.executing)
+    if (props?.ocrLoading !== undefined) setOcrLoading(props.ocrLoading)
+    if (props?.isJsonInput !== undefined) setIsJsonInput(props.isJsonInput)
+    if (props?.jsonError !== undefined) setJsonError(props.jsonError)
+    if (props?.isJsonEditorMode !== undefined) setIsJsonEditorMode(props.isJsonEditorMode)
+    if (props?.jsonData !== undefined) setJsonData(props.jsonData)
+    if (props?.copiedMessageId !== undefined) setCopiedMessageId(props.copiedMessageId)
+  }, [props])
+
+  // Notify parent of state changes
+  const updateHistory = useCallback((newHistory: ChatHistory) => {
+    setHistory(newHistory)
+    props?.onHistoryChange?.(newHistory)
+  }, [props?.onHistoryChange])
+
+  const updateInput = useCallback((newInput: string) => {
+    setInput(newInput)
+    props?.onInputChange?.(newInput)
+  }, [props?.onInputChange])
+
+  const updateExecuting = useCallback((newExecuting: boolean) => {
+    setExecuting(newExecuting)
+    props?.onExecutingChange?.(newExecuting)
+  }, [props?.onExecutingChange])
+
+  const updateOcrLoading = useCallback((newLoading: boolean) => {
+    setOcrLoading(newLoading)
+    props?.onOcrLoadingChange?.(newLoading)
+  }, [props?.onOcrLoadingChange])
+
+  const updateIsJsonInput = useCallback((newIsJson: boolean) => {
+    setIsJsonInput(newIsJson)
+    props?.onIsJsonInputChange?.(newIsJson)
+  }, [props?.onIsJsonInputChange])
+
+  const updateJsonError = useCallback((newError: string) => {
+    setJsonError(newError)
+    props?.onJsonErrorChange?.(newError)
+  }, [props?.onJsonErrorChange])
+
+  const updateIsJsonEditorMode = useCallback((newMode: boolean) => {
+    setIsJsonEditorMode(newMode)
+    props?.onIsJsonEditorModeChange?.(newMode)
+  }, [props?.onIsJsonEditorModeChange])
+
+  const updateJsonData = useCallback((newData: any) => {
+    setJsonData(newData)
+    props?.onJsonDataChange?.(newData)
+  }, [props?.onJsonDataChange])
+
+  const updateCopiedMessageId = useCallback((newId: number | null) => {
+    setCopiedMessageId(newId)
+    props?.onCopiedMessageIdChange?.(newId)
+  }, [props?.onCopiedMessageIdChange])
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [history, executing])
+
+  // Sync input state to parent when component unmounts or input changes significantly
+  useEffect(() => {
+    return () => {
+      if (props?.onInputChange && inputRef.current !== props?.input) {
+        updateInput(inputRef.current)
+      }
+    }
+  }, [props?.onInputChange])
 
   const validateJsonInput = (input: string) => {
     const trimmed = input.trim()
@@ -36,21 +126,22 @@ export function ChatFlow() {
         (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
       try {
         JSON.parse(trimmed)
-        setIsJsonInput(true)
-        setJsonError("")
+        updateIsJsonInput(true)
+        updateJsonError("")
       } catch (e) {
-        setIsJsonInput(true)
-        setJsonError("Invalid JSON format")
+        updateIsJsonInput(true)
+        updateJsonError("Invalid JSON format")
       }
     } else {
-      setIsJsonInput(false)
-      setJsonError("")
+      updateIsJsonInput(false)
+      updateJsonError("")
     }
   }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
     setInput(newValue)
+    inputRef.current = newValue
     validateJsonInput(newValue)
     e.target.style.height = "auto"
     e.target.style.height = `${e.target.scrollHeight}px`
@@ -68,8 +159,12 @@ export function ChatFlow() {
     if (isJsonInput && jsonError) return
     onSend(v, '', false)
     setInput("")
-    setIsJsonInput(false)
-    setJsonError("")
+    inputRef.current = ""
+    if (props?.onInputChange) {
+      updateInput("")
+    }
+    updateIsJsonInput(false)
+    updateJsonError("")
   }
 
   const submitJson = () => {
@@ -77,41 +172,41 @@ export function ChatFlow() {
       const jsonString = JSON.stringify(jsonData, null, 2)
       if (jsonString === '{}' || jsonString === '[]') return
       onSend(jsonString, '', false)
-      setJsonData({})
+      updateJsonData({})
     } catch (error) {
       console.error('Error submitting JSON:', error)
     }
   }
 
   const toggleJsonEditorMode = () => {
-    setIsJsonEditorMode(!isJsonEditorMode)
+    updateIsJsonEditorMode(!isJsonEditorMode)
     if (!isJsonEditorMode) {
       // Switching to JSON editor mode
       if (input.trim()) {
         try {
           const parsed = JSON.parse(input)
-          setJsonData(parsed)
+          updateJsonData(parsed)
         } catch (e) {
-          setJsonData({})
+          updateJsonData({})
         }
       }
-      setInput("")
+      updateInput("")
     } else {
       // Switching to text mode
       if (Object.keys(jsonData).length > 0) {
-        setInput(JSON.stringify(jsonData, null, 2))
+        updateInput(JSON.stringify(jsonData, null, 2))
       }
-      setJsonData({})
+      updateJsonData({})
     }
-    setIsJsonInput(false)
-    setJsonError("")
+    updateIsJsonInput(false)
+    updateJsonError("")
   }
 
   const handleOcrFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    setOcrLoading(true)
+    updateOcrLoading(true)
     try {
       const { data } = await Tesseract.recognize(file, 'eng', {
         logger: m => console.log('[OCR]', m),
@@ -122,15 +217,15 @@ export function ChatFlow() {
       console.error("OCR error:", err)
       onSend(`❗️ OCR failed: ${err.message ?? err}`)
     } finally {
-      setOcrLoading(false)
+      updateOcrLoading(false)
       e.target.value = ""  
     }
   }
 
   const handleCopyText = (messageId: number, content: string) => {
     navigator.clipboard.writeText(content).then(() => {
-      setCopiedMessageId(messageId)
-      setTimeout(() => setCopiedMessageId(null), 2000)
+      updateCopiedMessageId(messageId)
+      setTimeout(() => updateCopiedMessageId(null), 2000)
     })
   }
 
@@ -144,14 +239,16 @@ export function ChatFlow() {
   async function onSend(message?: string, audio?: any, tts?: boolean) {
     if (!message || !message.trim()) return
     const content = message.trim()
-    setHistory(h => [...h, { role: "user", content },])
-    setInput("")
-    setExecuting(true)
+    const newHistory = [...history, { role: "user" as const, content }]
+    updateHistory(newHistory)
+    updateInput("")
+    updateExecuting(true)
     const response = await execute(content)
     if (response) {
-      setHistory(h => [...h, { role: "assistant", content: response }])
+      const updatedHistory = [...newHistory, { role: "assistant" as const, content: response }]
+      updateHistory(updatedHistory)
     }
-    setExecuting(false)
+    updateExecuting(false)
   }
 
   async function execute(message: string) {
@@ -186,7 +283,7 @@ export function ChatFlow() {
     return p.output.response
   }
 
-  return <div className='w-[30%] border-l border-r border-gray-200 flex flex-col resize-x'>
+  return <div className='border-l h-full border-r border-gray-200 flex flex-col resize-x'>
     <div className='grid grid-rows-[1fr_auto] flex-grow h-0 min-h-0'>
       <div ref={scrollRef} className="overflow-y-auto p-4 space-y-4 text-sm">
         {history.map((message, index) => {
@@ -301,6 +398,7 @@ export function ChatFlow() {
                     value={input}
                     onChange={handleSearchChange}
                     onKeyDown={handleKeyDown}
+
                     placeholder={isJsonInput ? "Enter valid JSON object or array..." : "Type your message here."}
                     className="w-full outline-none resize-none py-1 px-1 text-sm min-h-[40px] text-black placeholder-gray-500"
                     style={{ 

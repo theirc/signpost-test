@@ -40,6 +40,7 @@ import { TooltipNode } from './nodes/tooltip'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Parentheses, BrainCog, Wrench, BugOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { WorkerConfigPanel } from './worker-config-panel'
 
 // Function to generate rotating colors for icons
 const getIconColor = (index: number) => {
@@ -104,7 +105,7 @@ const nodeTypes = {
   tooltip: TooltipNode,
 }
 
-function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
+function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void; onWorkerSelect?: (worker: AIWorker) => void }) {
 
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
@@ -231,6 +232,13 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
     agent.update()
   }
 
+  const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+    const worker = app.agent.workers[node.id];
+    if (worker && props.onWorkerSelect) {
+      props.onWorkerSelect(worker);
+    }
+  }, [props.onWorkerSelect]);
+
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault()
     event.stopPropagation()
@@ -351,7 +359,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
   }
 
 
-  return <div className='flex-1'>
+  return <div className='flex-1 h-full'>
     <div 
       className="w-full h-full"
       onDrop={onDrop}
@@ -365,7 +373,9 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDelete={onDelete}
+        onNodeDoubleClick={onNodeDoubleClick}
         className={`!bg-sky-50`}
+        style={{ width: '100%', height: '100%' }}
         nodeTypes={nodeTypes}
         edgeTypes={{ customEdge: ButtonEdge }}
         fitView
@@ -594,6 +604,9 @@ export function FlowDesigner({ id }: { id?: string }) {
   const [agent, setAgent] = useState<Agent>(null)
   const [conversational, setConversational] = useState(false)
   const [showChat, setShowChat] = useState(false)
+  const [selectedWorker, setSelectedWorker] = useState<AIWorker | null>(null)
+  const [showConfigPanel, setShowConfigPanel] = useState(false)
+  const [chatHistory, setChatHistory] = useState<ChatHistory>([])
   const update = useForceUpdate()
 
   useEffect(() => {
@@ -632,13 +645,39 @@ export function FlowDesigner({ id }: { id?: string }) {
   function onShowChat() {
     // console.log("show chat", conversational)
     setShowChat(s => !s)
+    setShowConfigPanel(true)
+    setSelectedWorker(null)
+  }
+
+  function onWorkerSelect(worker: AIWorker) {
+    setSelectedWorker(worker)
+    setShowConfigPanel(true)
+  }
+
+  function onCloseWorkerPanel() {
+    setSelectedWorker(null)
+    setShowConfigPanel(false)
   }
 
   return <>
     <ReactFlowProvider>
-      <div className='w-full flex-grow flex'>
-        <Flow onAgentUpdate={onAgentUpdate} onShowChat={onShowChat} />
-        {showChat && <ChatFlow />}
+      <div className='w-full h-full flex'>
+        <div className={`flex-1 h-full ${showConfigPanel ? 'mr-0' : ''}`}>
+          <Flow 
+            onAgentUpdate={onAgentUpdate} 
+            onShowChat={onShowChat} 
+            onWorkerSelect={onWorkerSelect}
+          />
+        </div>
+                {showConfigPanel && (
+          <WorkerConfigPanel
+            selectedWorker={selectedWorker}
+            onClose={onCloseWorkerPanel}
+            showChat={showChat}
+            chatHistory={chatHistory}
+            onChatHistoryChange={setChatHistory}
+          />
+        )}
       </div>
       <Toaster />
     </ReactFlowProvider>
