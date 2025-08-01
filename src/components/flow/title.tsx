@@ -13,11 +13,11 @@ import React from 'react'
 const getHeaderBackgroundColor = (workerType: string) => {
   const worker = workerRegistry[workerType]
   if (!worker) return 'bg-blue-100' // Default fallback
-  
+
   // Find the index of this worker in its category (same logic as dropdown)
   const categoryEntries = Object.entries(workerRegistry).filter(([key, node]) => node.category === worker.category)
   const index = categoryEntries.findIndex(([key, _]) => key === workerType)
-  
+
   const backgroundColors = [
     'bg-purple-100', // Light purple
     'bg-orange-100', // Light orange
@@ -39,11 +39,11 @@ const getHeaderBackgroundColor = (workerType: string) => {
 const getHeaderTextColor = (workerType: string) => {
   const worker = workerRegistry[workerType]
   if (!worker) return 'text-blue-600' // Default fallback
-  
+
   // Find the index of this worker in its category (same logic as dropdown)
   const categoryEntries = Object.entries(workerRegistry).filter(([key, node]) => node.category === worker.category)
   const index = categoryEntries.findIndex(([key, _]) => key === workerType)
-  
+
   const textColors = [
     'text-purple-600', // Purple
     'text-orange-600', // Orange
@@ -75,15 +75,15 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
   // Get dynamic colors based on worker type
   const headerBgColor = getHeaderBackgroundColor(worker.config.type)
   const headerTextColor = getHeaderTextColor(worker.config.type)
-  
+
   // Debug logging
-  console.log(`Worker type: ${worker.config.type}, Category: ${worker.registry.category}, Background: ${headerBgColor}, Text: ${headerTextColor}`)
-  
+  // console.log(`Worker type: ${worker.config.type}, Category: ${worker.registry.category}, Background: ${headerBgColor}, Text: ${headerTextColor}`)
+
   // Additional debugging for Search specifically
   if (worker.config.type === 'search') {
     const categoryEntries = Object.entries(workerRegistry).filter(([key, node]) => node.category === worker.registry.category)
     const index = categoryEntries.findIndex(([key, _]) => key === worker.config.type)
-    console.log(`Search worker - Category: ${worker.registry.category}, Index in category: ${index}, Total in category: ${categoryEntries.length}`)
+    // console.log(`Search worker - Category: ${worker.registry.category}, Index in category: ${index}, Total in category: ${categoryEntries.length}`)
   }
 
   // Force agent update to trigger re-render
@@ -118,7 +118,7 @@ export const NodeTitle = memo((props: Props & React.ComponentProps<"div">) => {
 
   //Fixed because we should avoid using pixel units for responsiveness and readability.
   // return <div className='w-full p-3 pl-4 mb-1 min-h-[56px] bg-[#6386F7] text-sm text-white flex items-center border-b-gray-200 border-b relative group'>
-  return <div 
+  return <div
     key={`${worker.config.type}-${headerBgColor}-${headerTextColor}-${Date.now()}`}
     className={`w-full p-1 pl-4 mb-1 ${headerBgColor} text-sm ${headerTextColor} flex items-center border-b-gray-200 border-b relative group`}
   >
