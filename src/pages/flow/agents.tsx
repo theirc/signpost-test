@@ -13,7 +13,7 @@ import { useTeamStore } from "@/lib/hooks/useTeam"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/lib/data/db"
-import { Plus, Copy, Trash2, ArrowUpDown, LoaderCircle, Sparkles } from "lucide-react"
+import { Plus, Copy, Trash2, ArrowUpDown, LoaderCircle, Sparkles, Save } from "lucide-react"
 import { format } from "date-fns"
 import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
@@ -124,6 +124,16 @@ export function AgentList() {
           >
             <Copy className="h-4 w-4" />
           </span>}
+          {canCreate("templates") && <span
+            title="Save as template"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSaveAsTemplate(row.original, e);
+            }}
+            className="cursor-pointer hover:text-green-600 ml-6"
+          >
+            <Save className="h-4 w-4" />
+          </span>}
           {canDelete("agents") && <span
             title="Delete agent"
             onClick={(e) => {
@@ -138,9 +148,9 @@ export function AgentList() {
       ),
       enableSorting: false,
       enableHiding: false,
-      size: 60,
-      minSize: 40,
-      maxSize: 80,
+      size: 80,
+      minSize: 60,
+      maxSize: 100,
     }
   ]
 
@@ -196,6 +206,42 @@ export function AgentList() {
       })
     } finally {
       setAgentToDelete(null)
+    }
+  }
+
+  async function handleSaveAsTemplate(agent: any, e: React.MouseEvent) {
+    e.stopPropagation()
+    try {
+      // Create a template version of the agent (with team_id set to null)
+      const templateAgent = {
+        ...agent,
+        title: `${agent.title} (Template)`,
+        team_id: null, // Templates have no team_id
+        id: undefined // Remove the id so a new one is generated
+      }
+      
+      const { data, error } = await supabase
+        .from("agents")
+        .insert(templateAgent)
+        .select()
+      
+      if (error) throw error
+      
+      toast({
+        title: "Agent saved as template",
+        description: `'${agent.title}' has been successfully saved as a template.`,
+      })
+      
+      // Invalidate both agents and templates queries
+      queryClient.invalidateQueries({ queryKey: ['supabase-table', 'agents'] })
+      queryClient.invalidateQueries({ queryKey: ['agents-template'] })
+    } catch (error) {
+      console.error('Error saving agent as template:', error)
+      toast({
+        title: "Error saving as template",
+        description: (error as Error)?.message || "Could not save the agent as a template.",
+        variant: "destructive",
+      })
     }
   }
 

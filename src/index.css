@@ -407,3 +407,8 @@
   animation: nodePulse 1.5s ease-in-out infinite;
   z-index: -1;
 }
+
+/* Force user message text to be white in dark mode */
+.dark .user-message-text {
+  color: white !important;
+}

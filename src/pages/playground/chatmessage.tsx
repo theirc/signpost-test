@@ -104,8 +104,13 @@ if (msg.type === 'human') {
         </div>
         <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">
           {copied ? 
-            <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} /> :
-            msg.message ? <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} onClick={handleCopyText} /> : null
+            <div title="Copied!">
+              <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} />
+            </div> :
+            msg.message ? 
+            <div title="Copy Message" onClick={handleCopyText}>
+              <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={24} />
+            </div> : null
           }
         </div>
       </div>

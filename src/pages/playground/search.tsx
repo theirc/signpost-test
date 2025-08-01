@@ -195,6 +195,7 @@ export function SearchInput(props: SearchInputProps) {
                   disabled={disabled}
                   variant='ghost'
                   className="w-10 h-10"
+                  title="Upload File (Image/PDF)"
                 >
                   <FileText className='h-6 w-6 text-gray-400 hover:text-black'/>
                 </Button>
@@ -223,6 +224,7 @@ export function SearchInput(props: SearchInputProps) {
                   }}
                   className="w-10 h-10 flex items-center justify-center rounded-full bg-black text-white"
                   disabled={disabled || (!value.trim() && Object.keys(jsonData).length === 0) || (isJsonInput && !!jsonError)}
+                  title="Send Message"
                 >
                   <ArrowUp className="h-5 w-5" />
                 </Button>

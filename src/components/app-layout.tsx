@@ -31,6 +31,7 @@ import { AddTeamMembers } from "@/pages/settings/team-members"
 import { ApiKeysSettings } from "@/pages/settings/api-keys"
 import ApiKeyView from "@/pages/settings/api-key"
 import { ProfileSettings } from "@/pages/settings/profile"
+import TestWebpage from "@/pages/webpage/test"
 import { useForceUpdate } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Edit } from "lucide-react"
@@ -294,6 +295,7 @@ export function AppLayout() {
                 <ProfileSettings />
               } />
             </Route>
+            <Route path="/webpage-test" element={<TestWebpage />} />
           </Routes>
         </div>
       </SidebarInset>

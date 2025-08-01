@@ -62,7 +62,8 @@ const ExecutionLogDisplay = ({ executions, isVisible, onToggle }: {
       <Button
         variant="ghost"
         onClick={onToggle}
-        className="w-full flex items-center justify-between p-3 h-auto">
+        className="w-full flex items-center justify-between p-3 h-auto"
+        title={isVisible ? "Hide Execution Log" : "Show Execution Log"}>
         <span className="font-light">Execution Log ({executions.length} steps)</span>
         {isVisible ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </Button>
@@ -480,7 +481,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
               <div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
+                    <Button variant="outline" className="w-full justify-between" title="Select Agent">
                       {label}
                     </Button>
                   </DropdownMenuTrigger>
@@ -496,6 +497,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
                             <DropdownMenuRadioItem
                               key={key}
                               value={key}
+                              title={`Select ${a.name}`}
                             >
                               {a.name}
                             </DropdownMenuRadioItem>
@@ -510,6 +512,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
                 size="sm"
                 variant="ghost"
                 className="flex items-center gap-1"
+                title="Chat History"
               >
                 <History className="h-5 w-5" />
               </Button>

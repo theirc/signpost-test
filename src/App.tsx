@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import { Login } from "@/pages/login"
 import { ResetPassword } from "@/pages/reset-password"
 import { AppLayout } from "@/components/app-layout"
+import WebpageRoute from "@/pages/webpage/[slug]"
 import { Toaster } from "@/components/ui/toaster"
 import { useEffect } from "react"
 import { supabase } from "./lib/agents/db"
@@ -33,6 +34,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/webpage/:slug" element={<WebpageRoute />} />
           <Route path="/*" element={<AppLayout />} />
         </Routes>
         <Toaster />

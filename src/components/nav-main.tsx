@@ -98,11 +98,11 @@ export function NavMain({ items }: Props) {
                   {item.items?.map((subItem) => (
                     <SidebarMenuSubItem key={subItem.title}>
                       {subItem.onClick ? (
-                        <SidebarMenuSubButton onClick={subItem.onClick}>
+                        <SidebarMenuSubButton onClick={subItem.onClick} title={subItem.title}>
                           <span>{subItem.title}</span>
                         </SidebarMenuSubButton>
                       ) : (
-                        <SidebarMenuSubButton asChild>
+                        <SidebarMenuSubButton asChild title={subItem.title}>
                           <Link to={subItem.url}>
                             <span>{subItem.title}</span>
                           </Link>

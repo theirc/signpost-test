@@ -109,7 +109,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
+                  <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground" title="Select Workspace">
                     <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-100">
                       <span className="text-blue-600 font-semibold">
                         {isLoading ? '...' : selectedTeam?.name?.[0] || 'T'}
@@ -147,6 +147,7 @@ export function AppSidebar() {
                       key={team.id}
                       onClick={() => handleTeamSelect(team)}
                       className={selectedTeam?.id === team.id ? "bg-accent" : ""}
+                      title={`Switch to ${team.name}`}
                     >
                       {team.name}
                     </DropdownMenuItem>
@@ -155,6 +156,7 @@ export function AppSidebar() {
                   <DropdownMenuItem
                     onClick={() => navigate("/settings/teams/new")}
                     className="flex items-center gap-2"
+                    title="Create New Workspace"
                   >
                     <Plus className="h-4 w-4" />
                     <span>Add a workspace</span>
@@ -162,6 +164,7 @@ export function AppSidebar() {
                   <DropdownMenuItem
                     onClick={() => navigate("/settings/teams")}
                     className="flex items-center gap-2"
+                    title="Manage All Workspaces"
                   >
                     <Network className="h-4 w-4" />
                     <span>All workspaces</span>
