@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { app } from "@/lib/app"
 import { toast } from "sonner"
 import { useTeamStore } from "@/lib/hooks/useTeam"
@@ -9,9 +9,14 @@ import { ArrowUp, FileText, FileJson, Type } from 'lucide-react'
 import Tesseract from 'tesseract.js'
 import { JsonEditor } from 'json-edit-react'
 
-export function ChatFlow() {
+interface ChatFlowProps {
+  history?: ChatHistory
+  onHistoryChange?: (history: ChatHistory) => void
+}
 
-  const [history, setHistory] = useState<ChatHistory>([])
+export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProps) {
+
+  const [history, setHistory] = useState<ChatHistory>(propHistory || [])
   const [input, setInput] = useState("")
   const [executing, setExecuting] = useState(false)
   const [ocrLoading, setOcrLoading] = useState<boolean>(false)
@@ -27,8 +32,20 @@ export function ChatFlow() {
   const stateRef = useRef({})
 
   useEffect(() => {
+    if (propHistory) {
+      setHistory(propHistory)
+    }
+  }, [propHistory])
+
+  useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [history, executing])
+
+  const updateHistory = useCallback((newHistory: ChatHistory) => {
+    setHistory(newHistory);
+    onHistoryChange?.(newHistory);
+  }, [onHistoryChange]);
+
 
   const validateJsonInput = (input: string) => {
     const trimmed = input.trim()
@@ -66,7 +83,7 @@ export function ChatFlow() {
   const submitText = (v: string) => {
     if (!v.trim()) return
     if (isJsonInput && jsonError) return
-    onSend(v, '', false)
+    onSend(v)
     setInput("")
     setIsJsonInput(false)
     setJsonError("")
@@ -76,7 +93,7 @@ export function ChatFlow() {
     try {
       const jsonString = JSON.stringify(jsonData, null, 2)
       if (jsonString === '{}' || jsonString === '[]') return
-      onSend(jsonString, '', false)
+      onSend(jsonString)
       setJsonData({})
     } catch (error) {
       console.error('Error submitting JSON:', error)
@@ -117,7 +134,7 @@ export function ChatFlow() {
         logger: m => console.log('[OCR]', m),
       })
       const text = data.text.trim()
-      onSend(text, undefined, false)
+      onSend(text)
     } catch (err: any) {
       console.error("OCR error:", err)
       onSend(`❗️ OCR failed: ${err.message ?? err}`)
@@ -141,20 +158,22 @@ export function ChatFlow() {
            (trimmed.startsWith('[') && trimmed.endsWith(']'))
   }
 
-  async function onSend(message?: string, audio?: any, tts?: boolean) {
+  async function onSend(message?: string) {
     if (!message || !message.trim()) return
     const content = message.trim()
-    setHistory(h => [...h, { role: "user", content },])
+    const newHistory: ChatHistory = [...history, { role: "user" as const, content }]
+    updateHistory(newHistory)
     setInput("")
     setExecuting(true)
-    const response = await execute(content)
+    const response = await execute(content, newHistory.slice(0, -1))
     if (response) {
-      setHistory(h => [...h, { role: "assistant", content: response }])
+      const updatedHistory = [...newHistory, { role: "assistant" as const, content: response }]
+      updateHistory(updatedHistory)
     }
     setExecuting(false)
   }
 
-  async function execute(message: string) {
+  async function execute(message: string, history: ChatHistory) {
     const { agent } = app
     const apikeys = await app.fetchAPIkeys(selectedTeam?.id)
     const state: any = stateRef.current
@@ -186,7 +205,7 @@ export function ChatFlow() {
     return p.output.response
   }
 
-  return <div className='w-[30%] border-l border-r border-gray-200 flex flex-col resize-x'>
+  return <div className='border-l h-full border-r border-gray-200 flex flex-col resize-x'>
     <div className='grid grid-rows-[1fr_auto] flex-grow h-0 min-h-0'>
       <div ref={scrollRef} className="overflow-y-auto p-4 space-y-4 text-sm">
         {history.map((message, index) => {

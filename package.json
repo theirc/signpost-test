@@ -83,6 +83,7 @@
     "react-json-view": "^1.21.3",
     "react-markdown": "^10.0.0",
     "react-media-recorder": "^1.7.1",
+    "react-resizable-panels": "^3.0.4",
     "react-router-dom": "^7.1.5",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
