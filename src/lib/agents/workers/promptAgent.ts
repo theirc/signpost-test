@@ -1,4 +1,4 @@
-import { AgentInputItem, FunctionTool, Agent as OpenAIAgent, run, tool, user } from '@openai/agents'
+import { AgentInputItem, FunctionTool, Agent as OpenAIAgent, run, tool, user, webSearchTool } from '@openai/agents'
 import { aisdk } from '@openai/agents-extensions'
 import { z } from 'zod'
 import { createModel } from '../utils'
@@ -22,6 +22,7 @@ declare global {
     }
     parameters: {
       model?: string
+      searchTheWeb?: boolean
     }
     fields: {
       input: NodeIO
@@ -34,65 +35,13 @@ declare global {
   }
 }
 
-async function contextExtractor(instructions: string, context: any, model: any, userHandlers: NodeIO[], history: AgentInputItem[]) {
-  if (userHandlers.length === 0) return context
-
-  const schemaFields: Record<string, z.ZodTypeAny> = {}
-
-  for (let s of userHandlers) {
-    let fieldSchema: z.ZodTypeAny
-    if (s.type == "boolean") {
-      fieldSchema = z.boolean()
-    } else if (s.type == "number") {
-      fieldSchema = z.number()
-    } else if (s.type == "string") {
-      fieldSchema = z.string()
-    } else if (s.type == "string[]") {
-      fieldSchema = z.array(z.string())
-    } else if (s.type == "number[]") {
-      fieldSchema = z.array(z.number())
-    } else if (s.type == "enum" && s.enum && s.enum.length > 0) {
-      fieldSchema = z.enum(s.enum as [string, ...string[]])
-    } else {
-      fieldSchema = z.any()
-    }
-    // schemaFields[s.name] = fieldSchema.nullable().optional().default(null).describe(s.prompt || "")
-    schemaFields[s.name] = fieldSchema.nullable().default(null)
-  }
-
-  const parameters = z.object(schemaFields)
-
-  const contextTool = tool({
-    name: 'context_gathering_tool',
-    description: 'Always call this tool on each execution.',
-    parameters,
-    async execute(ctx) {
-      if (ctx) context = ctx
-      // console.log("🔨 context_change_tool", ctx)
-      return ``
-    },
-  })
-
-  const extractAgent = new OpenAIAgent({
-    name: 'Agent Context Extractor',
-    model,
-    instructions: `
-       **ALWAYS CALL THE TOOL "context_gathering_tool" ON EACH EXECUTION.**
-      ${instructions}
-      `,
-    modelSettings: { toolChoice: 'required' },
-    tools: [contextTool],
-  })
-  await run(extractAgent, [...history], { context, })
-  console.log("Context Extract:", context)
-
-  return context
-}
 
 async function execute(worker: PromptAgentWorker, p: AgentParameters) {
 
   const handoffAgents = worker.getConnectedWokersToHandle(worker.fields.handoff, p).filter((w) => w.config.type === "handoffAgent") as any as HandoffAgentWorker[]
   const baseModel = createModel(p.apiKeys, worker.parameters.model ||= "openai/gpt-4.1")
+  const useSearch = worker.parameters.searchTheWeb || false
+
 
   if (!baseModel) {
     worker.error = "No model selected"
@@ -115,15 +64,8 @@ async function execute(worker: PromptAgentWorker, p: AgentParameters) {
   const model = aisdk(baseModel)
   const instructions = worker.fields.instructions.value
   const input = worker.fields.input.value
-  const userHandlers = worker.getUserHandlers()
 
   history.push(user(input || ""))
-
-  worker.state.context = (await contextExtractor(instructions, worker.state.context, model, userHandlers, history)) || {}
-  for (const key in worker.state.context) {
-    const field = userHandlers.find((h) => h.name === key)
-    if (field && worker.state.context[key] != null) field.value = worker.state.context[key]
-  }
 
   const handoffs = []
   for (const handoffAgent of handoffAgents) {
@@ -138,6 +80,10 @@ async function execute(worker: PromptAgentWorker, p: AgentParameters) {
       execute: t.execute,
     })
   })
+
+  if (useSearch) {
+    tools.push(webSearchTool() as any)
+  }
 
   const agent = new OpenAIAgent({
     name: 'Agent',
