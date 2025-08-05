@@ -108,13 +108,15 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
 
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
+  const update = useForceUpdate()
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [colorUpdateTrigger, setColorUpdateTrigger] = useState(0)
   const counter = useRef(0)
   const { screenToFlowPosition } = useReactFlow()
   const { agent } = app
 
-  useEffect(() => {
+  function rebuildAgent() {
+    const { agent } = app
     const initialNodes: Node[] = []
     for (const key in agent.workers) {
       const w = agent.workers[key]
@@ -131,9 +133,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
           newNode.width = w.config.width
           newNode.height = w.config.height
         }
-
       }
-
       initialNodes.push(newNode)
     }
     setNodes(initialNodes)
@@ -143,7 +143,12 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
       initialEdges.push({ id: key, source: e.source, target: e.target, sourceHandle: e.sourceHandle, targetHandle: e.targetHandle, type: "customEdge" })
     }
     setEdges(initialEdges)
+    update()
+  }
 
+
+  useEffect(() => {
+    rebuildAgent()
   }, [])
 
   // Add global drop handler for debugging
@@ -250,10 +255,10 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
     console.log("Event currentTarget:", event.currentTarget)
     event.preventDefault()
     event.stopPropagation()
-    
+
     // Reset background color
     event.currentTarget.style.backgroundColor = ''
-    
+
     const nodeType = event.dataTransfer.getData("nodeType")
     console.log("Drop event received, nodeType:", nodeType)
     console.log("All dataTransfer types:", event.dataTransfer.types)
@@ -287,11 +292,11 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
       toast("Unknown node type: " + type)
       return
     }
-    
+
     try {
       const position = screenToFlowPosition({ x: event.clientX, y: event.clientY, })
       console.log("Drop position:", position)
-      
+
       const worker = factory.create(app.agent)
       worker.config.x = position.x
       worker.config.y = position.y
@@ -305,7 +310,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
 
       console.log("Adding node:", node)
       setNodes((nds) => nds.concat(node))
-      
+
       toast(`Added ${factory.title} to flow`)
     } catch (error) {
       console.error("Error creating node:", error)
@@ -352,7 +357,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
 
 
   return <div className='flex-1'>
-    <div 
+    <div
       className="w-full h-full"
       onDrop={onDrop}
       onDragOver={onDragOver}
@@ -389,8 +394,8 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 <div className="max-h-96 overflow-y-auto">
                   <div className="grid grid-cols-2 gap-1 p-2">
                     {Object.entries(workerRegistry).filter(([key, node]) => node.category == "io").map(([key, node], index) => (
-                      <div 
-                        key={key} 
+                      <div
+                        key={key}
                         className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
                         draggable
                         onDragStart={(event) => {
@@ -425,7 +430,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             <DropdownMenu open={openDropdown === 'generator'} onOpenChange={(open) => setOpenDropdown(open ? 'generator' : null)}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Generators">
@@ -439,8 +444,8 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 <div className="max-h-96 overflow-y-auto">
                   <div className="grid grid-cols-2 gap-1 p-2">
                     {Object.entries(workerRegistry).filter(([key, node]) => node.category == "generator").map(([key, node], index) => (
-                      <div 
-                        key={key} 
+                      <div
+                        key={key}
                         className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
                         draggable
                         onDragStart={(event) => {
@@ -475,7 +480,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             <DropdownMenu open={openDropdown === 'tool'} onOpenChange={(open) => setOpenDropdown(open ? 'tool' : null)}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Tools">
@@ -489,8 +494,8 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 <div className="max-h-96 overflow-y-auto">
                   <div className="grid grid-cols-2 gap-1 p-2">
                     {Object.entries(workerRegistry).filter(([key, node]) => node.category == "tool").map(([key, node], index) => (
-                      <div 
-                        key={key} 
+                      <div
+                        key={key}
                         className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
                         draggable
                         onDragStart={(event) => {
@@ -525,7 +530,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-              
+
             <DropdownMenu open={openDropdown === 'debug'} onOpenChange={(open) => setOpenDropdown(open ? 'debug' : null)}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100" title="Debug">
@@ -539,8 +544,8 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
                 <div className="max-h-96 overflow-y-auto">
                   <div className="grid grid-cols-2 gap-1 p-2">
                     {Object.entries(workerRegistry).filter(([key, node]) => node.category == "debug").map(([key, node], index) => (
-                      <div 
-                        key={key} 
+                      <div
+                        key={key}
                         className="flex items-center gap-2 p-2 cursor-move hover:bg-accent rounded-sm select-none"
                         draggable
                         onDragStart={(event) => {
@@ -578,7 +583,7 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void }) {
           </div>
         </Panel>
         <Panel position="top-right" className="!bg-transparent !border-none !shadow-none">
-          <Toolbar onShowChat={props.onShowChat} />
+          <Toolbar onShowChat={props.onShowChat} rebuild={rebuildAgent} />
         </Panel>
       </ReactFlow>
     </div>

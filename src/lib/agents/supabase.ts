@@ -49,6 +49,7 @@ export type Database = {
           team_id: string | null
           title: string | null
           type: Database["public"]["Enums"]["agent_types"] | null
+          versions: Json | null
           workers: Json | null
         }
         Insert: {
@@ -60,6 +61,7 @@ export type Database = {
           team_id?: string | null
           title?: string | null
           type?: Database["public"]["Enums"]["agent_types"] | null
+          versions?: Json | null
           workers?: Json | null
         }
         Update: {
@@ -71,6 +73,7 @@ export type Database = {
           team_id?: string | null
           title?: string | null
           type?: Database["public"]["Enums"]["agent_types"] | null
+          versions?: Json | null
           workers?: Json | null
         }
         Relationships: [

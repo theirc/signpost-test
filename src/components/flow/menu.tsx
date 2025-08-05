@@ -2,10 +2,10 @@ import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } fro
 import { workerRegistry } from "@/lib/agents/registry"
 import { createModel } from "@/lib/data/model"
 import { cloneDeep } from "lodash"
-import { Bug, BugOff, Cog, EllipsisVertical, LoaderCircle, MessageCircle, Parentheses, Play, Save, Settings, Wrench, BrainCog, Zap, PanelTop, MessageCircleCode, Workflow } from "lucide-react"
+import { Bug, BugOff, Cog, EllipsisVertical, LoaderCircle, MessageCircle, Parentheses, Play, Save, Settings, Wrench, BrainCog, Zap, PanelTop, MessageCircleCode, Workflow, Delete, DeleteIcon, CircleX, Download } from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
-import { Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
+import { Col, Input, InputTextArea, Modal, Row, Select, useForm } from "../forms"
 import { Separator } from "../ui/separator"
 import { agents } from "@/lib/agents"
 import { app } from "@/lib/app"
@@ -23,12 +23,80 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DeploymentService } from "@/lib/services/deployment-service"
 import { WebpageConfig } from "@/lib/services/webpage-generator"
 import { WebpageViewer } from "@/components/webpage-viewer"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import React from "react"
+import { UseFormWatch } from "react-hook-form"
+import { loadVersion, saveVersion } from "@/lib/agents/agentfactory"
 
 interface Props {
   update?: () => void
   onShowChat?: () => void
+  rebuild: () => void
 }
 
+function VersionSaver({ watch, field, team, rebuild, hide }: { field: Field, watch: UseFormWatch<any>, team: string, rebuild: () => void, hide: () => void }) {
+
+  const [versionTitle, setVersionTitle] = useState("")
+  const update = useForceUpdate()
+
+  watch((value, { name }) => {
+    if (name === "version") setVersionTitle(value.version)
+  })
+
+  function onSaveVersion() {
+    console.log("Saving Version...")
+    saveVersion(versionTitle, app.agent, team)
+    setVersionTitle("")
+  }
+
+  function onRemoveVersion(i: number) {
+    console.log("Removing Version...", i)
+    app.agent.versions.splice(i, 1)
+    update()
+  }
+
+  function onLoadVersion(i: number) {
+    console.log("Loading Version...", i)
+    const loaded = loadVersion(i, app.agent)
+    app.agent = loaded
+    rebuild()
+    app.agent.update()
+    hide()
+  }
+
+  return <>
+    <div>
+      <Row className="my-4">
+        <Input span={8} field={field} />
+        <Col span={4} className="pt-5">
+          <Button disabled={!versionTitle} onClick={onSaveVersion} >Create Version</Button>
+        </Col>
+      </Row>
+    </div>
+    <ScrollArea className="h-64  rounded-md border w-full">
+      <div className="p-4">
+        {app.agent.versions.map((version, i) => (
+          <div key={i} >
+            <div className="flex">
+              <div className=" flex-grow p-2 text-sm " onClick={() => onLoadVersion(i)}>{version.title}</div>
+              <div className="flex">
+                <div title="Load Version">
+                  <Download className="text-blue-500 mt-3 cursor-pointer ml-4" size={16} onClick={() => onLoadVersion(i)} />
+                </div>
+                <div title="Remove Version">
+                  <CircleX className="text-red-500 mt-3 cursor-pointer ml-4" size={16} onClick={() => onRemoveVersion(i)} />
+                </div>
+              </div>
+            </div>
+            <Separator className="my-2" />
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
+
+  </>
+}
 
 function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: WorkerRegistryItem }) {
 
@@ -56,13 +124,7 @@ function DragableItem({ reg: { title, icon: Icon, description, type } }: { reg: 
 
 }
 
-const model = createModel({
-  fields: {
-    openai: { type: 'string', title: 'OpenAI' },
-    anthropic: { type: 'string', title: 'Anthropic' },
-    zendesk: { type: 'string', title: 'Zendesk' },
-  }
-})
+
 
 const agentModel = createModel({
   fields: {
@@ -70,14 +132,15 @@ const agentModel = createModel({
     description: { type: 'string', title: 'Description' },
     type: { type: 'string', title: 'Type', list: [{ value: "conversational", label: "Conversational" }, { value: "data", label: "Data" }] },
     debuguid: { type: 'string', title: 'Debug UID' },
+    version: { type: 'string', title: 'Version Title' },
   }
 })
 
 function DropdownButtons() {
   const { canCreate, canUpdate } = usePermissions()
-  
+
   if (!canUpdate("agents") && !canCreate("agents")) return null
-  
+
   return (
     <div className="absolute left-0 top-12 flex flex-col space-y-1 bg-slate-50 p-2 rounded-r-md">
       <DropdownMenu>
@@ -98,7 +161,7 @@ function DropdownButtons() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
@@ -117,7 +180,7 @@ function DropdownButtons() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
@@ -136,7 +199,7 @@ function DropdownButtons() {
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
@@ -165,7 +228,7 @@ export function Toolbar(props: Props) {
   const update = useForceUpdate()
   const { canCreate, canUpdate } = usePermissions()
 
-  const { form: agentForm, m: f } = useForm(agentModel, {
+  const { form: agentForm, m: f, watch } = useForm(agentModel, {
     values: {
       title: app.agent.title,
     }
@@ -308,7 +371,7 @@ export function Toolbar(props: Props) {
         const agentId = String(app.agent.id || "")
         const savedConfig = localStorage.getItem(`webpageConfig_${agentId}`)
         let existingConfig: WebpageConfig | null = null
-        
+
         if (savedConfig) {
           try {
             existingConfig = JSON.parse(savedConfig)
@@ -316,7 +379,7 @@ export function Toolbar(props: Props) {
             console.error('Failed to parse saved config:', e)
           }
         }
-        
+
         setWebpageConfig({
           title: existingConfig?.title || app.agent.title || "My Agent",
           description: existingConfig?.description || app.agent.description || "A powerful AI agent",
@@ -348,8 +411,6 @@ export function Toolbar(props: Props) {
     }
   }
 
-
-
   return <>
     <div className="relative">
       <div className="flex gap-6 items-center py-2" id="menuroot">
@@ -370,15 +431,15 @@ export function Toolbar(props: Props) {
                 Deploy
               </Button>
             </DropdownMenuTrigger>
-                        <DropdownMenuContent>
+            <DropdownMenuContent>
               <DropdownMenuItem onClick={() => handleDeploy("public-webpage")} title="Deploy as Public Webpage">
                 <div className="flex items-center gap-2">
                   <PanelTop className="w-4 h-4 text-blue-500" />
                   Webpage
                 </div>
               </DropdownMenuItem>
-                
-              
+
+
               <DropdownMenuItem onClick={() => handleDeploy("communication-channel")} title="Deploy to Communication Channel">
                 <div className="flex items-center gap-2">
                   <MessageCircleCode className="w-4 h-4 text-green-500" />
@@ -424,35 +485,51 @@ export function Toolbar(props: Props) {
     </div>
 
     <Modal form={agentForm} title="Agent Configuration">
-      <Row>
-        <Input span={12} field={f.title} required />
-      </Row>
-      <Row>
-        <InputTextArea rows={10} span={12} field={f.description} />
-      </Row>
-      <Row>
-        <Select span={12} field={f.type} required />
-      </Row>
-      <Row>
-        <Input span={12} field={f.debuguid} />
-      </Row>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="destructive" className="rounded-sm" title="Reset Agent State and History">Reset State and History</Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the Agent state.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onResetState} >Continue</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
+      <Tabs defaultValue="versions">
+        <TabsList className="flex w-full overflow-y-auto">
+          <TabsTrigger className="flex-grow" value="settings">Settings</TabsTrigger>
+          <TabsTrigger className="flex-grow" value="versions">Versions</TabsTrigger>
+        </TabsList>
+        <TabsContent value="settings" className="focus:ring-0 focus:ring-transparent focus:ring-offset-0">
+          <div className="w-full flex flex-col gap-4 overflow-y-auto">
+            <Row>
+              <Input span={12} field={f.title} required />
+            </Row>
+            <Row>
+              <InputTextArea rows={5} span={12} field={f.description} />
+            </Row>
+            <Row>
+              <Select span={12} field={f.type} required />
+            </Row>
+            <Row>
+              <Input span={12} field={f.debuguid} />
+            </Row>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="rounded-sm w-full" title="Reset Agent State and History">Reset State and History</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the Agent state.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onResetState} >Continue</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </TabsContent>
+        <TabsContent value="versions">
+          <VersionSaver field={f.version} watch={watch} team={selectedTeam.id} rebuild={props.rebuild} hide={agentForm.modal.hide} />
+        </TabsContent>
+      </Tabs>
+
+
     </Modal>
 
     <Dialog open={webpagePopoverOpen} onOpenChange={setWebpagePopoverOpen}>
@@ -463,29 +540,29 @@ export function Toolbar(props: Props) {
             Configure your agent's public webpage with custom branding and settings.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div>
             <label className="text-sm font-medium">Page Title</label>
             <ShadcnInput
               value={webpageConfig.title}
-              onChange={(e) => setWebpageConfig({...webpageConfig, title: e.target.value})}
+              onChange={(e) => setWebpageConfig({ ...webpageConfig, title: e.target.value })}
               placeholder="My AI Agent"
               className="mt-1"
             />
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">Description</label>
             <textarea
               value={webpageConfig.description}
-              onChange={(e) => setWebpageConfig({...webpageConfig, description: e.target.value})}
+              onChange={(e) => setWebpageConfig({ ...webpageConfig, description: e.target.value })}
               placeholder="Describe your agent..."
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none"
               rows={3}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium">Primary Color</label>
@@ -493,35 +570,35 @@ export function Toolbar(props: Props) {
                 <input
                   type="color"
                   value={webpageConfig.primaryColor}
-                  onChange={(e) => setWebpageConfig({...webpageConfig, primaryColor: e.target.value})}
+                  onChange={(e) => setWebpageConfig({ ...webpageConfig, primaryColor: e.target.value })}
                   className="w-8 h-8 border rounded cursor-pointer"
                 />
                 <ShadcnInput
                   value={webpageConfig.primaryColor}
-                  onChange={(e) => setWebpageConfig({...webpageConfig, primaryColor: e.target.value})}
+                  onChange={(e) => setWebpageConfig({ ...webpageConfig, primaryColor: e.target.value })}
                   className="text-xs"
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium">Secondary Color</label>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="color"
                   value={webpageConfig.secondaryColor}
-                  onChange={(e) => setWebpageConfig({...webpageConfig, secondaryColor: e.target.value})}
+                  onChange={(e) => setWebpageConfig({ ...webpageConfig, secondaryColor: e.target.value })}
                   className="w-8 h-8 border rounded cursor-pointer"
                 />
                 <ShadcnInput
                   value={webpageConfig.secondaryColor}
-                  onChange={(e) => setWebpageConfig({...webpageConfig, secondaryColor: e.target.value})}
+                  onChange={(e) => setWebpageConfig({ ...webpageConfig, secondaryColor: e.target.value })}
                   className="text-xs"
                 />
               </div>
             </div>
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">Logo</label>
             <div className="mt-1">
@@ -532,27 +609,27 @@ export function Toolbar(props: Props) {
                   const file = e.target.files?.[0]
                   if (file) {
                     console.log('File selected:', file.name, file.size, file.type)
-                    
+
                     // Validate file type
                     if (!file.type.startsWith('image/')) {
                       alert('Please select an image file')
                       return
                     }
-                    
+
                     // Check file size (max 5MB)
                     if (file.size > 5 * 1024 * 1024) {
                       alert('File size must be less than 5MB')
                       return
                     }
-                    
+
                     const reader = new FileReader()
                     reader.onload = (event) => {
                       const result = event.target?.result as string
                       console.log('Logo converted to base64, length:', result.length)
                       console.log('Base64 starts with:', result.substring(0, 50))
-                      
+
                       if (result && result.startsWith('data:image/')) {
-                        setWebpageConfig({...webpageConfig, logoUrl: result})
+                        setWebpageConfig({ ...webpageConfig, logoUrl: result })
                         console.log('Logo URL set successfully')
                         console.log('Updated webpageConfig.logoUrl:', result.substring(0, 100))
                       } else {
@@ -560,12 +637,12 @@ export function Toolbar(props: Props) {
                         alert('Failed to convert image to base64')
                       }
                     }
-                    
+
                     reader.onerror = () => {
                       console.error('FileReader error:', reader.error)
                       alert('Failed to read image file')
                     }
-                    
+
                     reader.readAsDataURL(file)
                   }
                 }}
@@ -574,9 +651,9 @@ export function Toolbar(props: Props) {
             </div>
             {webpageConfig.logoUrl && (
               <div className="mt-2">
-                <img 
-                  src={webpageConfig.logoUrl} 
-                  alt="Logo Preview" 
+                <img
+                  src={webpageConfig.logoUrl}
+                  alt="Logo Preview"
                   className="w-8 h-8 rounded object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none'
@@ -585,44 +662,44 @@ export function Toolbar(props: Props) {
               </div>
             )}
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">Custom Domain (Optional)</label>
             <ShadcnInput
               value={webpageConfig.customDomain}
-              onChange={(e) => setWebpageConfig({...webpageConfig, customDomain: e.target.value})}
+              onChange={(e) => setWebpageConfig({ ...webpageConfig, customDomain: e.target.value })}
               placeholder="myagent.com"
               className="mt-1"
             />
           </div>
-          
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Enable Chat Interface</label>
               <input
                 type="checkbox"
                 checked={webpageConfig.enableChat}
-                onChange={(e) => setWebpageConfig({...webpageConfig, enableChat: e.target.checked})}
+                onChange={(e) => setWebpageConfig({ ...webpageConfig, enableChat: e.target.checked })}
                 className="rounded"
               />
             </div>
-            
+
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">Enable Analytics</label>
               <input
                 type="checkbox"
                 checked={webpageConfig.enableAnalytics}
-                onChange={(e) => setWebpageConfig({...webpageConfig, enableAnalytics: e.target.checked})}
+                onChange={(e) => setWebpageConfig({ ...webpageConfig, enableAnalytics: e.target.checked })}
                 className="rounded"
               />
             </div>
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">Theme</label>
             <select
               value={webpageConfig.theme}
-              onChange={(e) => setWebpageConfig({...webpageConfig, theme: e.target.value as 'light' | 'dark' | 'auto'})}
+              onChange={(e) => setWebpageConfig({ ...webpageConfig, theme: e.target.value as 'light' | 'dark' | 'auto' })}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             >
               <option value="light">Light</option>
@@ -630,10 +707,10 @@ export function Toolbar(props: Props) {
               <option value="auto">Auto</option>
             </select>
           </div>
-          
+
           <div className="border-t pt-3">
             <label className="text-sm font-medium mb-2 block">Preview</label>
-            <div 
+            <div
               className={`border rounded-lg overflow-hidden ${webpageConfig.theme === 'dark' ? 'dark' : ''}`}
               style={{
                 backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff',
@@ -642,15 +719,15 @@ export function Toolbar(props: Props) {
             >
               {/* Header */}
               <div className="py-4 border-b flex justify-between items-center"
-                   style={{
-                     backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff',
-                     borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#e5e7eb'
-                   }}>
+                style={{
+                  backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff',
+                  borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#e5e7eb'
+                }}>
                 <div className="flex items-center gap-3 px-4">
                   {webpageConfig.logoUrl && (
-                    <img 
-                      src={webpageConfig.logoUrl} 
-                      alt="Logo" 
+                    <img
+                      src={webpageConfig.logoUrl}
+                      alt="Logo"
                       className="w-8 h-8 rounded object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none'
@@ -658,59 +735,59 @@ export function Toolbar(props: Props) {
                     />
                   )}
                   <h2 className="text-xl font-semibold tracking-tight"
-                      style={{ color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#111827' }}>
+                    style={{ color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#111827' }}>
                     {webpageConfig.title || "My AI Agent"}
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 px-4">
                   <div className="w-8 h-8 rounded border flex items-center justify-center"
-                       style={{ 
-                         borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#d1d5db',
-                         color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#6b7280'
-                       }}>
+                    style={{
+                      borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#d1d5db',
+                      color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#6b7280'
+                    }}>
                     🌙
                   </div>
                   <div className="w-8 h-8 rounded border flex items-center justify-center"
-                       style={{ 
-                         borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#d1d5db',
-                         color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#6b7280'
-                       }}>
+                    style={{
+                      borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#d1d5db',
+                      color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#6b7280'
+                    }}>
                     ➕
                   </div>
                 </div>
               </div>
-              
+
               {/* Main Content */}
               <div className="flex-1 min-h-[200px] flex items-center justify-center"
-                   style={{ backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff' }}>
+                style={{ backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff' }}>
                 <h1 className="text-4xl font-bold text-center"
-                    style={{ 
-                      background: `linear-gradient(to right, ${webpageConfig.primaryColor}, ${webpageConfig.secondaryColor})`,
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text'
-                    }}>
+                  style={{
+                    background: `linear-gradient(to right, ${webpageConfig.primaryColor}, ${webpageConfig.secondaryColor})`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>
                   Hello, how can I help you?
                 </h1>
               </div>
-              
+
               {/* Input Area */}
               <div className="p-4 border-t"
-                   style={{ 
-                     backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff',
-                     borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#e5e7eb'
-                   }}>
+                style={{
+                  backgroundColor: webpageConfig.theme === 'dark' ? '#1f2937' : '#ffffff',
+                  borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#e5e7eb'
+                }}>
                 <div className="max-w-4xl mx-auto">
                   <div className="border rounded-xl p-3"
-                       style={{ 
-                         borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#d1d5db',
-                         backgroundColor: webpageConfig.theme === 'dark' ? '#111827' : '#ffffff'
-                       }}>
+                    style={{
+                      borderColor: webpageConfig.theme === 'dark' ? '#374151' : '#d1d5db',
+                      backgroundColor: webpageConfig.theme === 'dark' ? '#111827' : '#ffffff'
+                    }}>
                     <div className="px-2 py-3">
-                      <textarea 
+                      <textarea
                         placeholder="Type your message here."
                         className="w-full outline-none resize-none text-sm min-h-[40px]"
-                        style={{ 
+                        style={{
                           color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#111827',
                           backgroundColor: 'transparent'
                         }}
@@ -720,27 +797,27 @@ export function Toolbar(props: Props) {
                     <div className="flex justify-between items-center p-2">
                       <div className="flex items-center space-x-2">
                         <div className="w-10 h-10 flex items-center justify-center rounded-lg"
-                             style={{ color: webpageConfig.theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
+                          style={{ color: webpageConfig.theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
                           📄
                         </div>
                         <div className="w-10 h-10 flex items-center justify-center rounded-lg"
-                             style={{ color: webpageConfig.theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
+                          style={{ color: webpageConfig.theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
                           📋
                         </div>
                       </div>
                       <div>
                         <div className="w-10 h-10 flex items-center justify-center rounded-full"
-                             style={{ 
-                               backgroundColor: webpageConfig.theme === 'dark' ? '#374151' : '#6b7280',
-                               color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#ffffff'
-                             }}>
+                          style={{
+                            backgroundColor: webpageConfig.theme === 'dark' ? '#374151' : '#6b7280',
+                            color: webpageConfig.theme === 'dark' ? '#f9fafb' : '#ffffff'
+                          }}>
                           ↑
                         </div>
                       </div>
                     </div>
                   </div>
                   <p className="text-xs text-center mt-2"
-                     style={{ color: webpageConfig.theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
+                    style={{ color: webpageConfig.theme === 'dark' ? '#9ca3af' : '#6b7280' }}>
                     Signpost AI is experimental. Please validate results. Supports both text and JSON input.
                   </p>
                 </div>
@@ -748,9 +825,9 @@ export function Toolbar(props: Props) {
             </div>
           </div>
         </div>
-        
+
         <DialogFooter>
-          <Button 
+          <Button
             variant="outline"
             onClick={() => {
               setWebpageConfig({
@@ -771,13 +848,13 @@ export function Toolbar(props: Props) {
           >
             Reset
           </Button>
-          <Button 
+          <Button
             onClick={async () => {
               if (!webpageConfig.title.trim()) {
                 toast.error("Please enter a page title")
                 return
               }
-              
+
               try {
                 console.log('Deploying with config:', webpageConfig)
                 console.log('Logo URL in deployment:', webpageConfig.logoUrl)
@@ -785,17 +862,17 @@ export function Toolbar(props: Props) {
                 console.log('Logo URL length:', webpageConfig.logoUrl?.length)
                 console.log('Logo URL starts with:', webpageConfig.logoUrl?.substring(0, 50))
                 console.log('Is base64 data URL:', webpageConfig.logoUrl?.startsWith('data:image/'))
-                
+
                 if (webpageConfig.logoUrl && !webpageConfig.logoUrl.startsWith('data:image/')) {
                   console.error('Invalid logo URL format:', webpageConfig.logoUrl)
                 }
-                
+
                 const deployment = await DeploymentService.deployWebpage(webpageConfig)
-                
+
                 setCurrentDeploymentUrl(deployment.deploymentUrl)
                 setWebpageViewerOpen(true)
                 setWebpagePopoverOpen(false)
-                
+
                 const fullUrl = window.location.origin + deployment.deploymentUrl
                 toast.success("Webpage deployed!", {
                   description: `Your agent is now live at ${fullUrl}`,
