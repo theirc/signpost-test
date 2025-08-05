@@ -4,6 +4,10 @@ import { useModal } from "./modal"
 import { DeleteButton, SubmitButton } from "./submitbutton"
 import { useEffect, useRef } from "react"
 
+declare global {
+  type AppForm = ReturnType<typeof useForm<any>>
+}
+
 export type FormContext = (props: { children: any }) => any
 export type FormHookInstance = ReturnType<typeof useForm>["form"]
 
