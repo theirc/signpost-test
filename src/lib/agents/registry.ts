@@ -10,6 +10,7 @@ import { search } from "./workers/search"
 import { text } from "./workers/text"
 import { api } from "./workers/api"
 import { documentSelector } from "./workers/documentselector"
+import { documentGenerator } from "./workers/documentgenerator"
 import { state } from "./workers/state"
 import { stt } from "./workers/stt"
 import { tts } from "./workers/tts"
@@ -55,6 +56,7 @@ export const workerRegistry = {
   search,
   combine,
   documentSelector,
+  documentGenerator,
 
   mock,
   display,
