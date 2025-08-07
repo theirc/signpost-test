@@ -37,6 +37,7 @@ import { ChatHistoryNode } from './nodes/chathistory'
 import { ChatFlow } from './chat'
 import { StructuredOutputNode } from './nodes/structuredoutput'
 import { TooltipNode } from './nodes/tooltip'
+import { DocumentGeneratorNode } from './nodes/documentgenerator'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Parentheses, BrainCog, Wrench, BugOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -94,6 +95,7 @@ const nodeTypes = {
   agentWorker: AgentNode,
   api: ApiNode,
   documentSelector: DocumentSelectorNode,
+  documentGenerator: DocumentGeneratorNode,
   state: StateNode,
   stt: STTNode,
   tts: TTSNode,
@@ -169,15 +171,18 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void; onWo
 
 
   agent.update = () => {
-    // console.log("Flow Update, currentWorker: ", agent.currentWorker?.config.type || "null")
     counter.current++
     setNodes((nds) =>
       nds.map((node) => {
+        const worker = app.agent.workers[node.id]
+        if (!worker) {
+          return node
+        }
         return {
           ...node,
           data: {
             ...node.data,
-            lastUpdate: app.agent.workers[node.id]?.lastUpdate,
+            label: counter.current.toString(),
           },
         }
       }),
@@ -192,33 +197,34 @@ function Flow(props: { onAgentUpdate?: () => void; onShowChat?: () => void; onWo
         if (!w) continue
         w.config.x = change.position.x
         w.config.y = change.position.y
-
       }
       if (change.type == "dimensions") {
         const w = app.agent.workers[change.id]
         if (!w) continue
         if (!change.resizing) {
-          // console.log("Node resized:", change.id, change.dimensions)
           w.config.width = change.dimensions.width
           w.config.height = change.dimensions.height
         }
       }
     }
     setNodes((nds) => applyNodeChanges(changes, nds))
-
   }
 
   const onEdgesChange = (changes: EdgeChange[]) => {
+    let hasRemovals = false
     for (const change of changes) {
-      if (change.type === 'remove') delete app.agent.edges[change.id]
+      if (change.type === 'remove') {
+        delete app.agent.edges[change.id]
+        hasRemovals = true
+      }
     }
-    // console.log("Edges changed:", app.agent.edges)
 
     setEdges((eds) => applyEdgeChanges(changes, eds))
 
-    agent.updateWorkers()
-    agent.update()
-
+    if (!hasRemovals) {
+      agent.updateWorkers()
+      agent.update()
+    }
   }
 
   const onConnect = (c: Connection) => {

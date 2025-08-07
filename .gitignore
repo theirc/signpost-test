@@ -39,3 +39,4 @@ pad/
 /playwright/.cache/
 
 .vercel
+.cursor
