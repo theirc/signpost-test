@@ -31,6 +31,13 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
   const fileInputRef = useRef<HTMLInputElement>(null)
   const stateRef = useRef({})
 
+  function extractFilenameAndUrl(text: string): { filename?: string; url?: string } {
+    const match = /Generated file:\s+([^\s]+)\s+(blob:[^\s>]+)/.exec(text)
+    if (match) return { filename: match[1], url: match[2] }
+    const urlMatch = /(blob:[^\s>]+)/.exec(text)
+    return { url: urlMatch?.[1] }
+  }
+
   useEffect(() => {
     if (propHistory) {
       setHistory(propHistory)
@@ -151,11 +158,43 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
     })
   }
 
-  const isJsonString = (value: any): boolean => {
+  function isJsonString(value: any): boolean {
     if (typeof value !== "string") return false
     const trimmed = value.trim()
     return (trimmed.startsWith('{') && trimmed.endsWith('}')) || 
            (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  }
+
+  function LinkyText({ text }: { text: string }) {
+    const parts: (string | { url: string, name?: string })[] = []
+    const regex = /(Generated file:\s+[^\s]+\s+blob:[^\s>]+|blob:[^\s>]+|data:[^\s>]+)/g
+    let lastIndex = 0
+    let match
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index))
+      const seg = match[0]
+      if (seg.startsWith('Generated file:')) {
+        const { filename, url } = extractFilenameAndUrl(seg)
+        if (url) parts.push({ url, name: filename })
+      } else {
+        parts.push({ url: seg })
+      }
+      lastIndex = regex.lastIndex
+    }
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+    return (
+      <div className="whitespace-pre-wrap break-words">
+        {parts.map((part, i) => {
+          if (typeof part === 'string') return <span key={i}>{part}</span>
+          const label = part.name || part.url
+          return (
+            <a key={i} className="text-blue-600 hover:underline" href={part.url} target="_blank" rel="noopener noreferrer" download={part.name || undefined}>
+              {label}
+            </a>
+          )
+        })}
+      </div>
+    )
   }
 
   async function onSend(message?: string) {
@@ -190,6 +229,43 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
 
     await agent.execute(p)
 
+    // Helper: build markdown download link(s) for any file-like outputs
+    const createDownloadLink = (fileObj: any): string | null => {
+      try {
+        if (!fileObj) return null
+        const { filename, mimeType, buffer } = fileObj
+        if (!filename || !buffer) return null
+        let data: Uint8Array
+        if (buffer instanceof Uint8Array) data = buffer
+        else if (buffer?.data && Array.isArray(buffer.data)) data = new Uint8Array(buffer.data)
+        else if (Array.isArray(buffer)) data = new Uint8Array(buffer)
+        else if (buffer?.byteLength !== undefined) data = new Uint8Array(buffer)
+        else return null
+        const blob = new Blob([data], { type: mimeType || 'application/octet-stream' })
+        const url = URL.createObjectURL(blob)
+        // Note: blob URLs live for this session. They will be revoked on page unload.
+        // Return a compact descriptor; we will render an anchor with filename in LinkyText
+        return `Generated file: ${filename} ${url}`
+      } catch (e) {
+        console.error('Create download link failed:', e)
+        return null
+      }
+    }
+
+    const outForLinks: any = p.output || {}
+    const linkCandidates: any[] = []
+    if (outForLinks.response && typeof outForLinks.response === 'object') linkCandidates.push(outForLinks.response)
+    if (outForLinks.output && typeof outForLinks.output === 'object') linkCandidates.push(outForLinks.output)
+    for (const key of Object.keys(outForLinks)) {
+      if (outForLinks[key] && typeof outForLinks[key] === 'object') linkCandidates.push(outForLinks[key])
+    }
+    const fileLinks: string[] = []
+    for (const c of linkCandidates) {
+      const link = createDownloadLink(c)
+      if (link) fileLinks.push(link)
+    }
+    const fileLinksText = fileLinks.join('\n')
+
     stateRef.current = p.state
 
     if (p.error) {
@@ -202,7 +278,37 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
       })
     }
 
-    return p.output.response
+    const outForMessage: any = p.output || {}
+    const responseText = (typeof outForMessage.response === 'string' && outForMessage.response.trim()) ? outForMessage.response : ''
+    const answerText = (typeof outForMessage.answer === 'string' && outForMessage.answer.trim()) ? outForMessage.answer : ''
+    if (fileLinksText && (responseText || answerText)) {
+      const finalMsg = `${responseText || answerText}\n\n${fileLinksText}`
+      return finalMsg
+    }
+    if (fileLinksText) {
+      return fileLinksText
+    }
+    if (responseText) return responseText
+    if (answerText) return answerText
+    if (outForMessage.response && typeof outForMessage.response === 'object') {
+      if (outForMessage.response.filename) return `Generated file: ${outForMessage.response.filename}`
+      try { return JSON.stringify(outForMessage.response) } catch { /* ignore */ }
+    }
+    if (outForMessage.output) {
+      if (typeof outForMessage.output === 'string' && outForMessage.output.trim()) return outForMessage.output
+      if (typeof outForMessage.output === 'object' && outForMessage.output?.filename) return `Generated file: ${outForMessage.output.filename}`
+      try { return JSON.stringify(outForMessage.output) } catch { /* ignore */ }
+    }
+    const keys = Object.keys(outForMessage || {})
+    for (const k of keys) {
+      const v = outForMessage[k]
+      if (typeof v === 'string' && v.trim()) return v
+      if (v && typeof v === 'object' && v.filename) return `Generated file: ${v.filename}`
+    }
+    if (keys.length) {
+      try { return JSON.stringify(outForMessage[keys[0]]) } catch { /* ignore */ }
+    }
+    return undefined
   }
 
   return <div className='border-l h-full border-r border-gray-200 flex flex-col resize-x'>
@@ -257,7 +363,10 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                 </div>
                 <div className="flex-1">
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <ToMarkdown>{message.content}</ToMarkdown>
+                    {message.content.includes('blob:') || message.content.includes('data:')
+                        ? <LinkyText text={message.content} />
+                        : <ToMarkdown>{message.content}</ToMarkdown>
+                      }
                   </div>
                   <div className="mt-1 pl-1 flex gap-2 text-gray-400">
                     {copiedMessageId === index ? 

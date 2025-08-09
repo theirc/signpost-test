@@ -16,14 +16,51 @@ import { marked } from 'marked'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 
-async function convertMarkdownToPdf(markdown: string): Promise<Uint8Array> {
-  const html = marked(markdown)
-  
+function extractTitle(content: string): string {
+  if (!content) return 'generated'
+  // Try YAML front matter: ---\n title: ...
+  const fm = /^---[\s\S]*?\btitle\s*:\s*(.+?)\s*$(?:[\s\S]*?)---/m.exec(content)
+  if (fm && fm[1]) return fm[1].trim()
+  const lines = content.split(/\r?\n/)
+  for (const line of lines) {
+    const m = /^(#{1,6})\s+(.*)$/.exec(line.trim())
+    if (m && m[2]) return m[2].trim()
+  }
+  for (const line of lines) {
+    const t = line.trim()
+    if (!t) continue
+    const tv = /^title\s*:\s*(.+)$/i.exec(t)
+    if (tv && tv[1]) return tv[1].trim()
+  }
+  // Skip common code-fence or formatting lines
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (/^```/.test(trimmed)) continue
+    return trimmed
+  }
+  return 'generated'
+}
+
+function toSnakeCaseBase(name: string): string {
+  const noDiacritics = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
+  const base = noDiacritics
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()
+  return base || 'generated'
+}
+
+async function generatePdf(content: string): Promise<Uint8Array> {
+  const html = marked(content || '')
   const fullHtml = `
     <!DOCTYPE html>
     <html>
     <head>
-      <meta charset="UTF-8">
+      <meta charset=\"UTF-8\">
       <style>
         body { 
           font-family: Arial, sans-serif; 
@@ -71,14 +108,14 @@ async function convertMarkdownToPdf(markdown: string): Promise<Uint8Array> {
     </html>
   `
 
-  // Create a temporary div to render the HTML
   const tempDiv = document.createElement('div')
   tempDiv.innerHTML = fullHtml
-  tempDiv.style.position = 'absolute'
-  tempDiv.style.left = '-9999px'
-  tempDiv.style.top = '-9999px'
-  tempDiv.style.width = '800px'
-  tempDiv.style.background = 'white'
+  const s = tempDiv.style
+  s.position = 'absolute'
+  s.left = '-9999px'
+  s.top = '-9999px'
+  s.width = '800px'
+  s.background = 'white'
   document.body.appendChild(tempDiv)
 
   try {
@@ -116,65 +153,64 @@ async function convertMarkdownToPdf(markdown: string): Promise<Uint8Array> {
   }
 }
 
-async function convertMarkdownToDocx(markdown: string): Promise<Uint8Array> {
-  const textContent = markdown.replace(/[#*`]/g, '')
-  const docxText = `DOCX Content:\n\n${textContent}`
+async function generateDocx(content: string): Promise<Uint8Array> {
+  const docxText = `DOCX Content:\n\n${content}`
   
   const encoder = new TextEncoder()
   return encoder.encode(docxText)
 }
 
-async function convertToFile(markdown: string, type: string): Promise<Uint8Array> {
-  if (type === "pdf") {
-    return await convertMarkdownToPdf(markdown)
-  } else {
-    return await convertMarkdownToDocx(markdown)
-  }
+async function generateFile(content: string, type: string): Promise<Uint8Array> {
+  if (type === 'pdf') return await generatePdf(content)
+  return await generateDocx(content)
 }
 
 async function execute(worker: AIWorker) {
-  const inputValue = worker.fields.input.value
-  const docType = worker.parameters.doc || "docx"
+  const inputValue = worker.fields.input.value as string
+  const docType = worker.parameters.doc || 'docx'
   
-  if (inputValue) {
-    try {
-      const filename = `generated.${docType === "pdf" ? "pdf" : "docx"}`
-      
-      const buffer = await convertToFile(inputValue, docType)
-      
-      worker.fields.output.value = {
-        content: inputValue,
-        type: docType,
-        filename: filename,
-        buffer: buffer,
-        mimeType: docType === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      }
-    } catch (error) {
-      console.error('Document generation error:', error)
-      worker.fields.output.value = {
-        error: `Failed to generate ${docType}: ${error.message}`,
-        type: docType,
-        filename: `error.${docType === "pdf" ? "pdf" : "docx"}`
-      }
+  if (!inputValue) return
+
+  try {
+    const chosenTitle = extractTitle(inputValue)
+    const base = toSnakeCaseBase(chosenTitle)
+    const ext = docType === 'pdf' ? 'pdf' : 'docx'
+    const filename = `${base}.${ext}`
+    
+    const buffer = await generateFile(inputValue, docType)
+    
+    worker.fields.output.value = {
+      content: inputValue,
+      type: docType,
+      filename,
+      buffer,
+      mimeType: docType === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    }
+  } catch (error) {
+    console.error('Document generation error:', error)
+    worker.fields.output.value = {
+      error: `Failed to generate ${docType}: ${error.message}`,
+      type: docType,
+      filename: `error.${docType === 'pdf' ? 'pdf' : 'docx'}`
     }
   }
 }
 
 export const documentGenerator: WorkerRegistryItem = {
-  title: "Document Generator",
+  title: 'Document Generator',
   execute,
-  category: "tool",
-  type: "documentGenerator",
-  description: "Generates documents (DOC or PDF) from text input.",
+  category: 'tool',
+  type: 'documentGenerator',
+  description: 'Generates documents (DOCX or PDF) from AI worker input.',
   create(agent: Agent) {
     return agent.initializeWorker(
-      { type: "documentGenerator" },
+      { type: 'documentGenerator' },
       [
-        { type: "string", direction: "input", title: "Input", name: "input" },
-        { type: "file", direction: "output", title: "Output", name: "output" },
+        { type: 'string', direction: 'input', title: 'AI Input', name: 'input' },
+        { type: 'file', direction: 'output', title: 'Generated File', name: 'output' },
       ],
       documentGenerator,
-      { doc: "docx" }
+      { doc: 'docx' }
     )
   },
   get registry() { return documentGenerator },
