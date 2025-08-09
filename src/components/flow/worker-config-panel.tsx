@@ -23,7 +23,6 @@ export function WorkerConfigPanel({
     onChatHistoryChange
 }: WorkerConfigPanelProps) {
     if (!selectedWorker && !showChat) return null
-    console.log('selectedWorker', selectedWorker)
 
     const inputsToRender = useMemo(() => {
         if (!selectedWorker) return [];
