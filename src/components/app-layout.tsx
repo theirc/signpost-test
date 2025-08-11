@@ -24,7 +24,7 @@ import { UserForm } from "@/pages/settings/user"
 import Sources from "@/pages/sources"
 import { Routes, Route, useLocation, useNavigate, useMatch, useParams } from "react-router-dom"
 import { ProtectedRoute } from "@/components/protected-route"
-import React from 'react'
+import React, { useState } from 'react'
 import { app, useAppStore } from "@/lib/app"
 import { UsersSettings } from "@/pages/settings/users"
 import { AddTeamMembers } from "@/pages/settings/team-members"
@@ -71,6 +71,14 @@ export function AppLayout() {
   const { id: agentId } = useParams()
   const currentName = routeNames[currentPath] || 'Unknown'
   const isAgentRoute = useMatch("/agent/:id")
+  const { agent } = useAppStore()
+  
+  const [editingTitle, setEditingTitle] = useState(agent?.title || '')
+  React.useEffect(() => {
+    if (agent?.title) {
+      setEditingTitle(agent.title)
+    }
+  }, [agent?.id])
 
   // Breadcrumb logic for menu/submenu
   const breadcrumbItems: { name: string; to?: string }[] = [
@@ -79,7 +87,7 @@ export function AppLayout() {
   if (currentPath.startsWith('/agent/')) {
     breadcrumbItems.push({ name: 'Agents', to: '/' })
     // Ensure we have a proper agent title, fallback to 'Agent' if empty
-    const agentTitle = app.agent?.title?.trim() || 'Agent'
+    const agentTitle = agent?.title?.trim() || 'Agent'
     breadcrumbItems.push({ name: agentTitle })
   } else if (currentPath.startsWith('/evaluation/')) {
     breadcrumbItems.push({ name: 'Evaluation', to: '/evaluation/logs' })
@@ -136,16 +144,16 @@ export function AppLayout() {
                       currentPath.startsWith('/agent/') && idx === breadcrumbItems.length - 1 ? (
                         <div className="flex items-center gap-1">
                           <Input
-                            value={app.agent?.title || ''}
-                            onChange={(e) => {
-                              if (app.agent) {
-                                app.agent.title = e.target.value
-                                update()
-                              }
-                            }}
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.currentTarget.blur()
+                              }
+                            }}
+                            onBlur={() => {
+                              if (agent && editingTitle !== agent.title) {
+                                agent.title = editingTitle
                               }
                             }}
                             className="text-sm font-semibold w-64 border border-gray-200 bg-transparent p-1 focus-visible:ring-1 focus-visible:ring-blue-500 hover:bg-gray-50 rounded transition-colors"
