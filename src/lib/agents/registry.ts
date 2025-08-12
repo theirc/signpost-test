@@ -21,6 +21,7 @@ import { template } from "./workers/template"
 import { chatHistory } from "./workers/chathistory"
 import { structured } from "./workers/structuredoutput"
 import { tooltip } from "./workers/tooltip"
+import { message } from "./workers/message"
 
 
 type WorkerCategories = "io" | "generator" | "debug" | "tool"
@@ -70,5 +71,6 @@ export const workerRegistry = {
   template,
   chatHistory,
   tooltip,
+  message,
 
 } satisfies { [index: string]: WorkerRegistryItem }
