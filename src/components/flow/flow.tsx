@@ -28,6 +28,7 @@ import { AgentNode } from './nodes/agent'
 import { ApiNode } from './nodes/api'
 import { DocumentSelectorNode } from './nodes/documentselector'
 import { StateNode } from './nodes/state'
+import { MessageNode } from './nodes/message'
 import { translate } from '@/lib/agents/workers/translate'
 import { TranslateNode } from './nodes/translate'
 import { PromptAgentNode } from './nodes/promptAgent'
@@ -97,6 +98,7 @@ const nodeTypes = {
   documentSelector: DocumentSelectorNode,
   documentGenerator: DocumentGeneratorNode,
   state: StateNode,
+  message: MessageNode,
   stt: STTNode,
   tts: TTSNode,
   translate: TranslateNode,
