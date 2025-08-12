@@ -9,13 +9,14 @@ import { Row, useForm } from "@/components/forms"
 import { Input } from "@/components/forms/input"
 import { InputTextArea } from "@/components/forms/textarea"
 import { createModel } from "@/lib/data/model"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 const { message } = workerRegistry
 message.icon = MessageSquare
 
 const model = createModel({
   fields: {
+    integrationChannel: { title: "Integration Channel", type: "string", required: true },
     telerivetApiKey: { title: "Telerivet API Key", type: "string", required: false },
     telerivetProjectId: { title: "Telerivet Project ID", type: "string", required: false },
     username: { title: "Username", type: "string", required: false },
@@ -29,6 +30,7 @@ function Parameters({ worker }: { worker: MessageWorker }) {
   const { form, watch, m } = useForm(model, {
     doNotReset: true,
     values: {
+      integrationChannel: worker.parameters.integrationChannel || "telerivet",
       telerivetApiKey: worker.parameters.telerivetApiKey || "",
       telerivetProjectId: worker.parameters.telerivetProjectId || "",
       username: worker.parameters.username || "",
@@ -38,22 +40,28 @@ function Parameters({ worker }: { worker: MessageWorker }) {
     }
   })
 
+  // Local state for integration channel to handle dropdown changes
+  const [localIntegrationChannel, setLocalIntegrationChannel] = useState(
+    worker.parameters.integrationChannel || "telerivet"
+  )
+
+  // Sync local state with worker parameter when it changes externally
+  useEffect(() => {
+    setLocalIntegrationChannel(worker.parameters.integrationChannel || "telerivet")
+  }, [worker.parameters.integrationChannel])
+
   // Watch for form changes and update worker parameters
   useEffect(() => {
     const subscription = watch((value, { name }) => {
       console.log(`[Message Node] Form field changed: ${name} = ${value[name as keyof typeof value]}`)
       
+      if (name === "integrationChannel") {
+        worker.parameters.integrationChannel = value.integrationChannel
+        console.log(`[Message Node] Updated integrationChannel: ${worker.parameters.integrationChannel}`)
+      }
       if (name === "telerivetApiKey") {
         worker.parameters.telerivetApiKey = value.telerivetApiKey
         console.log(`[Message Node] Updated telerivetApiKey: ${worker.parameters.telerivetApiKey}`)
-      }
-      if (name === "telerivetProjectId") {
-        worker.parameters.telerivetProjectId = value.telerivetProjectId
-        console.log(`[Message Node] Updated telerivetProjectId: ${worker.parameters.telerivetProjectId}`)
-      }
-      if (name === "username") {
-        worker.parameters.username = value.username
-        console.log(`[Message Node] Updated username: ${worker.parameters.username}`)
       }
       if (name === "defaultToNumber") {
         worker.parameters.defaultToNumber = value.defaultToNumber
@@ -76,24 +84,54 @@ function Parameters({ worker }: { worker: MessageWorker }) {
 
   return <form.context>
     <div className="p-2 flex flex-col gap-2 w-full">
-      <Row>
-        <Input span={12} field={m.telerivetApiKey} hideLabel placeholder="Telerivet API Key" />
-      </Row>
-      <Row>
-        <Input span={12} field={m.telerivetProjectId} hideLabel placeholder="Telerivet Project ID" />
-      </Row>
-      <Row>
-        <Input span={12} field={m.username} hideLabel placeholder="Username (default: api)" />
-      </Row>
-      <Row>
+      {/* Integration Channel Selector */}
+      <div className="w-full">
+        <select 
+          value={localIntegrationChannel} 
+          onChange={(e) => {
+            const newValue = e.target.value;
+            setLocalIntegrationChannel(newValue);
+            // Update the worker parameter immediately for instant feedback
+            worker.parameters.integrationChannel = newValue;
+          }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="telerivet">Telerivet</option>
+          <option value="twilio">Twilio (Coming Soon)</option>
+        </select>
+      </div>
+
+      {/* Telerivet-specific fields */}
+      {localIntegrationChannel === "telerivet" && (
+        <>
+          <div className="w-full">
+            <Input span={12} field={m.telerivetApiKey} hideLabel placeholder="Telerivet API Key" />
+          </div>
+          <div className="w-full">
+            <Input span={12} field={m.telerivetProjectId} hideLabel placeholder="Telerivet Project ID" />
+          </div>
+        </>
+      )}
+
+      {/* Twilio coming soon message */}
+      {localIntegrationChannel === "twilio" && (
+        <div className="w-full">
+          <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
+            🚧 Twilio integration is coming soon! For now, please select Telerivet.
+          </div>
+        </div>
+      )}
+
+      {/* General fields */}
+      <div className="w-full">
         <Input span={12} field={m.defaultToNumber} hideLabel placeholder="Default To Number" />
-      </Row>
-      <Row>
+      </div>
+      <div className="w-full">
         <Input span={12} field={m.defaultQuickReplies} hideLabel placeholder="Default Quick Replies (comma-separated)" />
-      </Row>
-      <Row>
+      </div>
+      <div className="w-full">
         <Input span={12} field={m.defaultRouteId} hideLabel placeholder="Default Route ID" />
-      </Row>
+      </div>
     </div>
   </form.context>
 }
