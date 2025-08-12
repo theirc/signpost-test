@@ -19,6 +19,7 @@ const openAiModels = [
   'o3-pro',
   'o1',
   'gpt-4o',
+  'gpt-4o-search-preview',
   'chatgpt-4o-latest',
   'gpt-4o-mini',
   'gpt-4-turbo',
