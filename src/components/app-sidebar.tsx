@@ -63,8 +63,9 @@ export function AppSidebar() {
       items: [
         { title: "Logs", url: "/evaluation/logs", permission: "logs" },
         { title: "Scores", url: "/evaluation/scores", permission: "scores" },
+        { title: "Evaluations", url: "/evaluation/evaluations", permission: "evaluations" },
       ],
-      show: !permissionsLoading && (canRead("logs") || canRead("scores"))
+      show: !permissionsLoading && (canRead("logs") || canRead("scores") || canRead("evaluations"))
     },
     {
       title: "Knowledge",

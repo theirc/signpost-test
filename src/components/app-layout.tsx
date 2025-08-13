@@ -7,6 +7,7 @@ import { LogForm } from "@/pages/evaluation/log"
 import { BotLogsTable } from "@/pages/evaluation/logs"
 import { ScoreForm } from "@/pages/evaluation/score"
 import { BotScoresTable } from "@/pages/evaluation/scores"
+import { EvaluationsTable } from "@/pages/evaluation/evaluations"
 import { Agent } from "@/pages/flow/agent"
 import { AgentList } from "@/pages/flow/agents"
 import { AgentList as TemplateList } from "@/pages/templates/agents"
@@ -43,6 +44,7 @@ const routeNames: Record<string, string> = {
   '/sources': 'Sources',
   '/evaluation/logs': 'Logs',
   '/evaluation/scores': 'Scores',
+  '/evaluation/evaluations': 'Evaluations',
   '/agent/:id': 'Agent Details',
   '/settings/projects': 'Settings / Projects',
   '/settings/teams': 'Settings / Teams',
@@ -87,6 +89,8 @@ export function AppLayout() {
       breadcrumbItems.push({ name: 'Logs' })
     } else if (currentPath === '/evaluation/scores') {
       breadcrumbItems.push({ name: 'Scores' })
+    } else if (currentPath === '/evaluation/evaluations') {
+      breadcrumbItems.push({ name: 'Evaluations' })
     }
   } else if (currentPath.startsWith('/collections') || currentPath.startsWith('/sources')) {
     breadcrumbItems.push({ name: 'Knowledge', to: '/collections' })
@@ -216,6 +220,11 @@ export function AppLayout() {
             <Route path="/evaluation/scores/:id" element={
               <ProtectedRoute resource="scores" action="read">
                 <ScoreForm />
+              </ProtectedRoute>
+            } />
+            <Route path="/evaluation/evaluations" element={
+              <ProtectedRoute resource="evaluations" action="read">
+                <EvaluationsTable />
               </ProtectedRoute>
             } />
             <Route path="/agent/:id" element={

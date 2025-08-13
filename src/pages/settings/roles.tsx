@@ -36,6 +36,7 @@ const APP_RESOURCES = [
     { id: 'playground', label: 'Playground' },
     { id: 'logs', label: 'Logs' },
     { id: 'scores', label: 'Scores' },
+    { id: 'evaluations', label: 'Evaluations' },
     { id: 'collections', label: 'Collections' },
     { id: 'sources', label: 'Data Sources' },
     { id: 'projects', label: 'Projects' },

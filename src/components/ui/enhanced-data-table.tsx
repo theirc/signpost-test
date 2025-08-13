@@ -329,7 +329,7 @@ export function EnhancedDataTable<TData, TValue>({
               variant="outline"
               size="sm"
               onClick={exportToCSV}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-full"
             >
               <Download className="h-4 w-4"/>
               Export ({selectedRowCount})
@@ -338,32 +338,35 @@ export function EnhancedDataTable<TData, TValue>({
           {showColumnToggle && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
+                <Button variant="outline" className="ml-auto rounded-full">
                   <Settings2 className="mr-2 h-4 w-4"/>
                   View
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="max-h-[300px] overflow-y-auto" onCloseAutoFocus={(e) => e.preventDefault()}>
                 <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {table
-                  .getAllColumns()
-                  .filter(
-                    (column) =>
-                      typeof column.accessorFn !== "undefined" && column.getCanHide()
-                  )
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
+                <div className="max-h-[250px] overflow-y-auto">
+                  {table
+                    .getAllColumns()
+                    .filter(
+                      (column) =>
+                        typeof column.accessorFn !== "undefined" && column.getCanHide()
                     )
-                  })}
+                    .map((column) => {
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      )
+                    })}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -371,7 +374,7 @@ export function EnhancedDataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-xl border shadow-sm overflow-hidden">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -384,7 +387,7 @@ export function EnhancedDataTable<TData, TValue>({
                 strategy={horizontalListSortingStrategy}
               >
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="h-12">
+                  <TableRow key={headerGroup.id} className="h-12 bg-muted/40">
                     {headerGroup.headers.map((header) => (
                       <DraggableTableHeader key={header.id} header={header} table={table} />
                     ))}
@@ -399,7 +402,7 @@ export function EnhancedDataTable<TData, TValue>({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     onClick={() => onRowClick?.(row.original)}
-                    className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                    className={onRowClick ? "cursor-pointer hover:bg-muted/40 transition-colors" : ""}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="h-12 py-0">
