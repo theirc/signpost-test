@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/agents/db"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query"
+import { invalidateTeamCache } from "./teams"
 
 const createNewUser = async (userData: {
     email: string
@@ -17,115 +19,42 @@ const createNewUser = async (userData: {
     first_name?: string
     last_name?: string
     role?: string
-    team?: string
-    location?: string
-    title?: string
-    description?: string
-    language?: {
-        code: string
-        name: string
-    }
+    status?: string
 }) => {
-    try {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: userData.email,
-            password: userData.password,
-        })
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+    })
 
-        if (authError) {
-            console.error('Error creating auth user:', authError)
-            return { data: null, error: authError }
-        }
+    if (authError) throw authError
+    if (!authData.user) throw new Error('No user data returned from auth creation')
 
-        if (!authData.user) {
-            return { data: null, error: new Error('No user data returned from auth creation') }
-        }
-
-        const { data: existingUser, error: checkError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authData.user.id)
-            .single()
-
-        if (checkError && checkError.code !== 'PGRST116') {
-            console.error('Error checking existing user:', checkError)
-            return { data: null, error: checkError }
-        }
-
-        let publicUserData
-        let publicUserError
-
-        if (existingUser) {
-            const { data, error } = await supabase
-                .from('users')
-                .update({
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    role: userData.role,
-                    team: userData.team,
-                    location: userData.location,
-                    title: userData.title,
-                    description: userData.description,
-                    language: userData.language,
-                    status: 'active'
-                })
-                .eq('id', authData.user.id)
-                .select(`
+    const { data: publicUserData, error: publicUserError } = await supabase
+        .from('users')
+        .upsert([{
+            id: authData.user.id,
+            first_name: userData.first_name,
+            last_name: userData.last_name,
+            role: userData.role,
+            status: userData.status || 'active'
+        }])
+        .select(`
             *,
-            roles:role (*),
-            teams:team (*)
-          `)
-                .single()
+            roles:role (*)
+        `)
+        .single()
 
-            publicUserData = data
-            publicUserError = error
-        } else {
-            const { data, error } = await supabase
-                .from('users')
-                .insert([{
-                    id: authData.user.id,
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    role: userData.role,
-                    team: userData.team,
-                    location: userData.location,
-                    title: userData.title,
-                    description: userData.description,
-                    language: userData.language,
-                    status: 'active'
-                }])
-                .select(`
-            *,
-            roles:role (*),
-            teams:team (*)
-          `)
-                .single()
+    if (publicUserError) {
+        await supabase.auth.signOut()
+        throw publicUserError
+    }
 
-            publicUserData = data
-            publicUserError = error
-        }
-
-        if (publicUserError) {
-            console.error('Error creating/updating public user:', publicUserError)
-            await supabase.auth.signOut()
-            return { data: null, error: publicUserError }
-        }
-
-        return {
-            data: {
-                ...authData.user,
-                ...publicUserData,
-                role_name: publicUserData.roles?.name,
-                team_name: publicUserData.teams?.name
-            },
-            error: null
-        }
-    } catch (error) {
-        console.error('Error in createNewUser:', error)
-        return {
-            data: null,
-            error: error instanceof Error ? error : new Error(String(error))
-        }
+    return {
+        data: {
+            ...authData.user,
+            ...publicUserData
+        },
+        error: null
     }
 }
 
@@ -135,12 +64,8 @@ export function UserForm() {
     const { id } = useParams()
     const isNewUser = id === 'new'
     const { canCreate, canUpdate } = usePermissions()
+    const queryClient = useQueryClient()
 
-    const [loading, setLoading] = useState(false)
-    const [isFetching, setIsFetching] = useState(false)
-    const [roles, setRoles] = useState([])
-    const [teams, setTeams] = useState([])
-    const [userTeams, setUserTeams] = useState([])
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -151,112 +76,192 @@ export function UserForm() {
         teams: [] as string[]
     })
 
-    useEffect(() => {
-        const loadData = async () => {
-            setIsFetching(true)
-            try {
-                const [{ data: rolesData }, { data: teamsData }] = await Promise.all([
-                    supabase.from("roles").select("*"),
-                    supabase.from("teams").select("*")
-                ])
-                setRoles(rolesData)
-                setTeams(teamsData)
-
-                if (id && !isNewUser) {
-                    const { data: user, error: userError } = await supabase.from("users").select("*").eq("id", id).single()
-                    if (userError) {
-                        throw new Error("Failed to load user data")
-                    }
-
-                    const { data: userTeamsData } = await supabase.from("user_teams").select(`
-                            teams!inner(*)
-                        `)
-                        .eq('user_id', user.id)
-
-                    setUserTeams(userTeamsData?.map(team => team.teams) || [])
-
-                    if (user) {
-                        setFormData({
-                            email: user.email || "",
-                            password: "",
-                            first_name: user.first_name || "",
-                            last_name: user.last_name || "",
-                            role: user.role || "",
-                            status: user.status || "active",
-                            teams: userTeamsData?.map(team => team.teams.id) || []
-                        })
-                    }
-                }
-            } catch (error) {
-                console.error("Error loading data:", error)
-                toast({
-                    title: "Error",
-                    description: "Failed to load data",
-                    variant: "destructive"
-                })
-            } finally {
-                setIsFetching(false)
-            }
+    const { data: roles, isLoading: isRolesLoading, error: rolesError } = useQuery({
+        queryKey: ['roles'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from("roles").select("*")
+            if (error) throw error
+            return data || []
         }
-        loadData()
-    }, [id, isNewUser, toast])
+    })
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
+    const { data: teams, isLoading: isTeamsLoading, error: teamsError } = useQuery({
+        queryKey: ['teams'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from("teams").select("*")
+            if (error) throw error
+            return data || []
+        }
+    })
 
-        try {
-            let result
-            if (isNewUser) {
-                result = await createNewUser(formData)
-            } else {
-                const userData = {
-                    first_name: formData.first_name,
-                    last_name: formData.last_name,
-                    role: formData.role,
-                    status: formData.status
-                }
-                result = await supabase.from("users").update(userData).eq("id", id!)
-            }
+    const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
+        queryKey: ['user', id],
+        queryFn: async () => {
+            if (!id || isNewUser) return null
+            const { data, error } = await supabase.from("users").select("*").eq("id", id).single()
+            if (error) throw error
+            return data
+        },
+        enabled: !!id && !isNewUser
+    })
 
-            if (result.error) {
-                throw new Error(result.error.message)
-            }
+    const { data: userTeamsData, isLoading: isUserTeamsLoading, error: userTeamsError } = useQuery({
+        queryKey: ['user_teams', id],
+        queryFn: async () => {
+            if (!id || isNewUser || !user) return []
+            const { data, error } = await supabase.from("user_teams").select(`teams!inner(*)`).eq('user_id', id)
+            if (error) throw error
+            return data || []
+        },
+        enabled: !!id && !isNewUser && !!user
+    })
 
+    const userTeams = userTeamsData?.map(team => team.teams) || []
+    const isFetching = isRolesLoading || isTeamsLoading || isUserLoading || isUserTeamsLoading
+    const hasError = rolesError || teamsError || userError || userTeamsError
+
+    const hasRequiredData = roles && teams && (isNewUser || (user && userTeamsData))
+
+    const createUserMutation = useMutation({
+        mutationFn: async (userData: typeof formData) => {
+            return await createNewUser(userData)
+        },
+        onSuccess: async (result) => {
             if (result.data) {
-                const id = result.data.id
-                const currentTeamIds = userTeams.map(team => team.id)
-                const newTeamIds = formData.teams
-                const teamsToRemove = currentTeamIds.filter(id => !newTeamIds.includes(id))
-                await Promise.all(
-                    teamsToRemove.map(teamId => supabase.from("user_teams").delete().match({ user_id: id, team_id: teamId }))
-                )
-                const teamsToAdd = newTeamIds.filter(id => !currentTeamIds.includes(id))
-                await Promise.all(
-                    teamsToAdd.map(teamId => supabase.from("user_teams").insert({ user_id: id, team_id: teamId }))
-                )
+                await handleTeamUpdates(result.data.id, [], formData.teams)
             }
-
+            invalidateTeamCache(queryClient)
             toast({
                 title: "Success",
-                description: isNewUser ? "User created successfully" : "User updated successfully"
+                description: "User created successfully"
             })
             navigate("/settings/users")
-        } catch (error) {
+        },
+        onError: (error) => {
             toast({
                 title: "Error",
-                description: error instanceof Error ? error.message : "Failed to save user",
+                description: error instanceof Error ? error.message : "Failed to create user",
                 variant: "destructive"
             })
-        } finally {
-            setLoading(false)
+        }
+    })
+
+    const updateUserMutation = useMutation({
+        mutationFn: async (userData: typeof formData) => {
+            const userUpdateData = {
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+                role: userData.role,
+                status: userData.status
+            }
+            const { error } = await supabase.from("users").update(userUpdateData).eq("id", id!)
+            if (error) throw error
+            return { success: true }
+        },
+        onSuccess: async () => {
+            await handleTeamUpdates(id!, userTeams.map(team => team.id), formData.teams)
+            invalidateTeamCache(queryClient)
+            toast({
+                title: "Success",
+                description: "User updated successfully"
+            })
+            navigate("/settings/users")
+        },
+        onError: (error) => {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to update user",
+                variant: "destructive"
+            })
+        }
+    })
+
+    const handleTeamUpdates = async (userId: string, currentTeamIds: string[], newTeamIds: string[]) => {
+        const teamsToRemove = currentTeamIds.filter(teamId => !newTeamIds.includes(teamId))
+        const teamsToAdd = newTeamIds.filter(teamId => !currentTeamIds.includes(teamId))
+
+        if (teamsToRemove.length > 0) {
+            await Promise.all(teamsToRemove.map(async (teamId) => {
+                const { error } = await supabase
+                    .from("user_teams")
+                    .delete()
+                    .match({ user_id: userId, team_id: teamId })
+                if (error) throw new Error(`Failed to remove team ${teamId}: ${error.message}`)
+            }))
+        }
+
+        if (teamsToAdd.length > 0) {
+            const { error } = await supabase
+                .from("user_teams")
+                .insert(teamsToAdd.map(teamId => ({ user_id: userId, team_id: teamId })))
+            if (error) throw new Error(`Failed to add teams: ${error.message}`)
         }
     }
 
-    const teamOptions = teams.map(team => ({
-        label: team.name,
-        value: team.id
-    }))
+    useEffect(() => {
+        if (user && userTeamsData) {
+            const teamIds = userTeamsData.map(team => team.teams.id) || []
+
+            setFormData({
+                email: user.email || "",
+                password: "",
+                first_name: user.first_name || "",
+                last_name: user.last_name || "",
+                role: user.role || "",
+                status: user.status || "active",
+                teams: teamIds
+            })
+        }
+    }, [user, userTeamsData])
+
+    if (isFetching || !hasRequiredData) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>{isNewUser ? "Create User" : "Edit User"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex justify-center items-center h-64">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (hasError) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Error Loading Data</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-center text-red-600">
+                        <p>Failed to load required data. Please try refreshing the page.</p>
+                        <Button
+                            onClick={() => window.location.reload()}
+                            variant="outline"
+                            className="mt-4"
+                        >
+                            Refresh Page
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        )
+    }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        
+        if (isNewUser) {
+            createUserMutation.mutate(formData)
+        } else {
+            updateUserMutation.mutate(formData)
+        }
+    }
+
+    const mutationError = createUserMutation.error || updateUserMutation.error
 
     return (
         <Card>
@@ -264,6 +269,14 @@ export function UserForm() {
                 <CardTitle>{isNewUser ? "Create User" : "Edit User"}</CardTitle>
             </CardHeader>
             <CardContent>
+                {mutationError && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+                        <p className="text-red-800">
+                            Error: {mutationError instanceof Error ? mutationError.message : 'An error occurred while saving the user'}
+                        </p>
+                    </div>
+                )}
+
                 {isFetching ? (
                     <div className="flex justify-center items-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin" />
@@ -315,7 +328,7 @@ export function UserForm() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="role">Role</Label>
+                                <Label>Role</Label>
                                 <Select
                                     value={formData.role}
                                     onValueChange={(value) => setFormData({ ...formData, role: value })}
@@ -324,7 +337,7 @@ export function UserForm() {
                                         <SelectValue placeholder="Select a role" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {roles.map((role) => (
+                                        {(roles || []).map((role) => (
                                             <SelectItem key={role.id} value={role.id}>
                                                 {role.name}
                                             </SelectItem>
@@ -335,8 +348,14 @@ export function UserForm() {
                             <div className="space-y-2">
                                 <Label>Teams</Label>
                                 <MultiSelect
-                                    options={teamOptions}
-                                    onValueChange={(selected) => setFormData({ ...formData, teams: selected })}
+                                    key={`teams-${userTeamsData?.length || 0}-${formData.teams.join(',')}`}
+                                    options={(teams || []).map(team => ({
+                                        label: team.name,
+                                        value: team.id
+                                    }))}
+                                    onValueChange={(selected) => {
+                                        setFormData({ ...formData, teams: selected })
+                                    }}
                                     defaultValue={formData.teams}
                                     placeholder="Select teams"
                                 />
@@ -363,12 +382,15 @@ export function UserForm() {
                                 type="button"
                                 variant="outline"
                                 onClick={() => navigate("/settings/users")}
-                                disabled={loading}
+                                disabled={createUserMutation.isPending || updateUserMutation.isPending}
                             >
                                 Cancel
                             </Button>
-                            {(canCreate("users") || canUpdate("users")) && <Button type="submit" disabled={loading}>
-                                {loading ? (isNewUser ? "Creating..." : "Updating...") : (isNewUser ? "Create User" : "Update User")}
+                            {(canCreate("users") || canUpdate("users")) && <Button
+                                type="submit"
+                                disabled={createUserMutation.isPending || updateUserMutation.isPending}
+                            >
+                                {createUserMutation.isPending || updateUserMutation.isPending ? (isNewUser ? "Creating..." : "Updating...") : (isNewUser ? "Create User" : "Update User")}
                             </Button>}
                         </div>
                     </form>

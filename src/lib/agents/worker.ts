@@ -409,9 +409,21 @@ export function buildWorker(w: WorkerConfig) {
       return Object.values(w.handles || {})
     },
 
-    async loadAgent() {
+    async loadAgent(teamId?: string) {
       if (!worker.parameters || !worker.parameters.agent) return
-      const agent = await loadAgent(worker.parameters.agent)
+      
+      if (!teamId) {
+        console.warn(`Cannot load referenced agent ${worker.parameters.agent} without team ID`)
+        return
+      }
+      
+      const agent = await loadAgent(worker.parameters.agent, teamId)
+      
+      if (!agent) {
+        console.warn(`Referenced agent ${worker.parameters.agent} not found or not accessible for current team`)
+        return
+      }
+      
       const inp = agent.getInputWorker()
       const out = agent.getResponseWorker()
       if (!inp || !out) return

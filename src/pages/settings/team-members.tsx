@@ -8,8 +8,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Checkbox } from "@/components/ui/checkbox"
 import { supabase } from "@/lib/agents/db"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { invalidateTeamCache } from "./teams"
 
 export function AddTeamMembers() {
     const navigate = useNavigate()
@@ -17,6 +18,7 @@ export function AddTeamMembers() {
     const { canCreate } = usePermissions()
     const [selectedUsers, setSelectedUsers] = useState<string[]>([])
     const { toast } = useToast()
+    const queryClient = useQueryClient()
 
     const fetchAvailableUsers = async () => {
         if (!teamId) return []
@@ -71,6 +73,7 @@ export function AddTeamMembers() {
                 variant: "destructive",
             })
         } else {
+            invalidateTeamCache(queryClient)
             toast({
                 title: "Success",
                 description: "Members added successfully.",
@@ -78,6 +81,7 @@ export function AddTeamMembers() {
             setSelectedUsers([])
             refetch()
         }
+        navigate(`/settings/teams`)
     }
 
     const handleToggleSelect = (userId: string) => {
@@ -105,10 +109,10 @@ export function AddTeamMembers() {
                 <Checkbox
                     checked={
                         users && users.length > 0 && selectedUsers.length === users.length
-                          ? true
-                          : selectedUsers.length > 0
-                          ? 'indeterminate'
-                          : false
+                            ? true
+                            : selectedUsers.length > 0
+                                ? 'indeterminate'
+                                : false
                     }
                     onCheckedChange={handleSelectAll}
                     aria-label="Select all"

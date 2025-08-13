@@ -4,6 +4,7 @@ import { Toolbar } from './menu'
 import { toast, Toaster } from "sonner"
 import { app } from '@/lib/app'
 import { workerRegistry } from '@/lib/agents/registry'
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 import { ButtonEdge } from './edges'
 import { RequestNode } from './nodes/input'
@@ -634,10 +635,24 @@ export function FlowDesigner({ id }: { id?: string }) {
       setAgent(app.agent)
     } else {
       app.state.agentLoading = true
-      agents.loadAgent(id as any).then((a) => {
+      const selectedTeam = useTeamStore.getState().selectedTeam
+      if (!selectedTeam?.id) {
+        console.error("No team selected")
+        app.state.agentLoading = false
+        return
+      }
+      agents.loadAgent(id as any, selectedTeam.id).then((a) => {
         // console.log("Agent loaded:", a)
+        if (!a) {
+          console.error(`Agent ${id} not found or not accessible for current team`)
+          app.state.agentLoading = false
+          return
+        }
         app.agent = a
         setAgent(a)
+        app.state.agentLoading = false
+      }).catch((error) => {
+        console.error("Error loading agent:", error)
         app.state.agentLoading = false
       })
     }
