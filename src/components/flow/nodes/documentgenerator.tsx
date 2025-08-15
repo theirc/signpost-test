@@ -1,4 +1,4 @@
-import { Input, Row, Select, useForm } from '@/components/forms'
+import { Row, Select, useForm } from '@/components/forms'
 import { createModel } from '@/lib/data/model'
 import type { DocumentGeneratorWorker } from '@/lib/agents/workers/documentgenerator'
 import { NodeProps } from '@xyflow/react'
@@ -39,6 +39,9 @@ function Parameters({ worker }: { worker: DocumentGeneratorWorker }) {
       <div className='p-2 -mt-2 nodrag w-full space-y-3'>
         <div>
           <h3 className="font-semibold text-sm mb-2">Document Configuration</h3>
+          <p className="text-xs text-muted-foreground mb-3">
+            Receives input from AI workers and generates files in the selected format
+          </p>
           <Row>
             <Select field={m.doc} span={12} />
           </Row>

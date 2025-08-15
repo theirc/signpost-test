@@ -8,14 +8,12 @@ import { Button } from "../ui/button"
 import { ArrowUp, FileText, FileJson, Type } from 'lucide-react'
 import Tesseract from 'tesseract.js'
 import { JsonEditor } from 'json-edit-react'
-
 interface ChatFlowProps {
   history?: ChatHistory
   onHistoryChange?: (history: ChatHistory) => void
 }
 
 export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProps) {
-
   const [history, setHistory] = useState<ChatHistory>(propHistory || [])
   const [input, setInput] = useState("")
   const [executing, setExecuting] = useState(false)
@@ -46,11 +44,10 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
     onHistoryChange?.(newHistory);
   }, [onHistoryChange]);
 
-
   const validateJsonInput = (input: string) => {
     const trimmed = input.trim()
-    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
-        (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
       try {
         JSON.parse(trimmed)
         setIsJsonInput(true)
@@ -103,7 +100,6 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
   const toggleJsonEditorMode = () => {
     setIsJsonEditorMode(!isJsonEditorMode)
     if (!isJsonEditorMode) {
-      // Switching to JSON editor mode
       if (input.trim()) {
         try {
           const parsed = JSON.parse(input)
@@ -114,7 +110,6 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
       }
       setInput("")
     } else {
-      // Switching to text mode
       if (Object.keys(jsonData).length > 0) {
         setInput(JSON.stringify(jsonData, null, 2))
       }
@@ -140,7 +135,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
       onSend(`❗️ OCR failed: ${err.message ?? err}`)
     } finally {
       setOcrLoading(false)
-      e.target.value = ""  
+      e.target.value = ""
     }
   }
 
@@ -151,11 +146,66 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
     })
   }
 
-  const isJsonString = (value: any): boolean => {
+  function isJsonString(value: any): boolean {
     if (typeof value !== "string") return false
     const trimmed = value.trim()
-    return (trimmed.startsWith('{') && trimmed.endsWith('}')) || 
-           (trimmed.startsWith('[') && trimmed.endsWith(']'))
+    return (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+      (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  }
+
+  function renderFileLink(fileObj: any) {
+    if (!fileObj || !fileObj.filename) return null
+
+    const { filename, mimeType, buffer } = fileObj
+    if (!buffer) return null
+
+    let data: Uint8Array
+    if (buffer instanceof Uint8Array) {
+      data = buffer
+    } else if (buffer?.data && Array.isArray(buffer.data)) {
+      data = new Uint8Array(buffer.data)
+    } else if (Array.isArray(buffer)) {
+      data = new Uint8Array(buffer)
+    } else if (buffer?.byteLength !== undefined) {
+      data = new Uint8Array(buffer)
+    } else {
+      return null
+    }
+
+    const blob = new Blob([data], { type: mimeType || 'application/octet-stream' })
+    const url = URL.createObjectURL(blob)
+
+    return (
+      <div className="mt-2">
+        <span className="text-gray-700">Generated file: </span>
+        <a
+          className="text-blue-600 hover:underline cursor-pointer"
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={filename}
+        >
+          📎 {filename}
+        </a>
+      </div>
+    )
+  }
+
+  function renderMessageContent(content: string | undefined, fileObjects: any[] = []) {
+    if (fileObjects.length === 0) {
+      return content ? <ToMarkdown>{content}</ToMarkdown> : null
+    }
+
+    return (
+      <>
+        {content && <ToMarkdown>{content}</ToMarkdown>}
+        {fileObjects.map((fileObj, index) => (
+          <div key={index}>
+            {renderFileLink(fileObj)}
+          </div>
+        ))}
+      </>
+    )
   }
 
   async function onSend(message?: string) {
@@ -167,7 +217,11 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
     setExecuting(true)
     const response = await execute(content, newHistory.slice(0, -1))
     if (response) {
-      const updatedHistory = [...newHistory, { role: "assistant" as const, content: response }]
+      const updatedHistory = [...newHistory, {
+        role: "assistant" as const,
+        content: response.content || "",
+        files: response.files
+      }]
       updateHistory(updatedHistory)
     }
     setExecuting(false)
@@ -177,7 +231,6 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
     const { agent } = app
     const apikeys = await app.fetchAPIkeys(selectedTeam?.id)
     const state: any = stateRef.current
-
     const p: AgentParameters = {
       debug: true,
       input: {
@@ -190,6 +243,24 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
 
     await agent.execute(p)
 
+    const extractFileObjects = (output: any): any[] => {
+      const fileObjects: any[] = []
+      if (output?.output && typeof output.output === 'object') {
+        if (output.output.filename && output.output.buffer) {
+          fileObjects.push(output.output)
+        }
+      }
+
+      if (output?.response && typeof output.response === 'object') {
+        if (output.response.filename && output.response.buffer) {
+          fileObjects.push(output.response)
+        }
+      }
+
+      return fileObjects
+    }
+
+    const fileObjects = extractFileObjects(p.output || {})
     stateRef.current = p.state
 
     if (p.error) {
@@ -202,7 +273,29 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
       })
     }
 
-    return p.output.response
+    const output = p.output || {}
+
+    let content: string | undefined
+    const allValues = Object.values(output)
+
+    for (const value of allValues) {
+      if (typeof value === 'string' && value.trim()) {
+        content = value.trim()
+        break
+      }
+    }
+
+    if (!content) {
+      for (const value of allValues) {
+        if (value && typeof value === 'object' && !('filename' in value)) {
+          try {
+            content = JSON.stringify(value)
+            break
+          } catch { }
+        }
+      }
+    }
+    return { content, files: fileObjects }
   }
 
   return <div className='border-l h-full border-r border-gray-200 flex flex-col resize-x'>
@@ -215,9 +308,8 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
               <div key={index} className="w-full message-fade-in" dir="auto">
                 <div className="flex flex-col items-end">
                   <div
-                    className={`bg-blue-500 message-bubble shadow-sm text-white ${
-                      !isJsonMessage && message.content.length < 50 ? 'single-line' : ''
-                    }`}
+                    className={`bg-blue-500 message-bubble shadow-sm text-white ${!isJsonMessage && message.content.length < 50 ? 'single-line' : ''
+                      }`}
                     dir="auto"
                   >
                     {isJsonMessage && (
@@ -228,9 +320,9 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                     )}
                     <div
                       className="break-words whitespace-pre-wrap"
-                      style={{ 
-                        fontFamily: isJsonMessage ? 'Monaco, Consolas, monospace' : 'Inter, sans-serif', 
-                        lineHeight: 1.5, 
+                      style={{
+                        fontFamily: isJsonMessage ? 'Monaco, Consolas, monospace' : 'Inter, sans-serif',
+                        lineHeight: 1.5,
                         fontSize: '0.925rem',
                         color: '#000000'
                       }}
@@ -239,16 +331,16 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                     </div>
                   </div>
                   <div className="mt-1 pr-1 flex justify-end gap-2 text-gray-400">
-                    {copiedMessageId === index ? 
+                    {copiedMessageId === index ?
                       <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={20} /> :
-                      <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={20} onClick={() => handleCopyText(index, message.content)} />
+                      <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={20} onClick={() => handleCopyText(index, message.content || "")} />
                     }
                   </div>
                 </div>
               </div>
             )
           }
-          
+
           return (
             <div key={index} className="w-full message-fade-in">
               <div className="flex">
@@ -257,12 +349,12 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                 </div>
                 <div className="flex-1">
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <ToMarkdown>{message.content}</ToMarkdown>
+                    {renderMessageContent(message.content, message.files)}
                   </div>
                   <div className="mt-1 pl-1 flex gap-2 text-gray-400">
-                    {copiedMessageId === index ? 
+                    {copiedMessageId === index ?
                       <Check className="cursor-pointer text-gray-400 hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={20} /> :
-                      <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={20} onClick={() => handleCopyText(index, message.content)} />
+                      <Copy className="cursor-pointer hover:text-black transition-colors p-1 hover:bg-gray-100 rounded-md" size={20} onClick={() => handleCopyText(index, message.content || "")} />
                     }
                   </div>
                 </div>
@@ -274,7 +366,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
       {!executing && <div className='p-2'>
         <div className="relative">
           <form
-            onSubmit={e => { 
+            onSubmit={e => {
               e.preventDefault()
               if (isJsonEditorMode) {
                 submitJson()
@@ -282,28 +374,26 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                 submitText(input)
               }
             }}
-            className={`relative bg-white rounded-xl border overflow-hidden ${
-              jsonError 
+            className={`relative bg-white rounded-xl border overflow-hidden ${jsonError
                 ? 'border-red-400 shadow-[0_0_10px_rgba(239,68,68,0.3)]'
                 : (isJsonInput || isJsonEditorMode)
                   ? 'border-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
                   : !input.trim() && Object.keys(jsonData).length === 0
                     ? 'border-gray-200'
                     : 'border-gray-200 shadow-[4px_4px_20px_-4px_rgba(236,72,153,0.1),_-4px_4px_20px_-4px_rgba(124,58,237,0.1),_0_4px_20px_-4px_rgba(34,211,238,0.1)]'
-            }`}
+              }`}
           >
             <div className="flex flex-col w-full">
               {(isJsonInput || isJsonEditorMode) && (
-                <div className={`px-3 py-1 text-xs flex items-center justify-between ${
-                  jsonError ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
-                }`}>
+                <div className={`px-3 py-1 text-xs flex items-center justify-between ${jsonError ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
+                  }`}>
                   <span>{jsonError || (isJsonEditorMode ? 'JSON Editor Mode' : 'JSON input detected')}</span>
                   {!jsonError && (
                     <span className="text-xs bg-blue-100 px-1.5 py-0.5 rounded">JSON</span>
                   )}
                 </div>
               )}
-              
+
               {isJsonEditorMode ? (
                 <div className="p-3 min-h-[200px] max-h-80 overflow-y-auto">
                   <JsonEditor
@@ -322,14 +412,14 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                     onKeyDown={handleKeyDown}
                     placeholder={isJsonInput ? "Enter valid JSON object or array..." : "Type your message here."}
                     className="w-full outline-none resize-none py-1 px-1 text-sm min-h-[40px] text-black placeholder-gray-500"
-                    style={{ 
+                    style={{
                       fontFamily: isJsonInput ? 'Monaco, Consolas, monospace' : 'Inter, sans-serif',
                       color: '#000000'
                     }}
                   />
                 </div>
               )}
-              
+
               <div className="flex justify-between items-center p-2">
                 <div className="flex items-center space-x-2">
                   <Button
@@ -339,7 +429,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                     className="w-8 h-8"
                     title={isJsonEditorMode ? 'Switch to text mode' : 'Switch to JSON editor'}
                   >
-                    {isJsonEditorMode ? <Type className='h-4 w-4' /> : <FileJson className='h-4 w-4 text-gray-400 hover:text-black'/>}
+                    {isJsonEditorMode ? <Type className='h-4 w-4' /> : <FileJson className='h-4 w-4 text-gray-400 hover:text-black' />}
                   </Button>
                   <Button
                     type="button"
@@ -348,7 +438,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                     variant='ghost'
                     className="w-8 h-8"
                   >
-                    <FileText className='h-4 w-4 text-gray-400 hover:text-black'/>
+                    <FileText className='h-4 w-4 text-gray-400 hover:text-black' />
                   </Button>
                   <input
                     ref={fileInputRef}
@@ -359,7 +449,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
                   />
                   {ocrLoading && (
                     <span className="ml-2 text-xs text-gray-500">
-                       Extracting…
+                      Extracting…
                     </span>
                   )}
                 </div>
