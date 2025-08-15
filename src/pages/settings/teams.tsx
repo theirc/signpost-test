@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { useQuery } from "@tanstack/react-query"
+import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 
 interface TeamWithUsers extends Team {
@@ -48,6 +48,17 @@ export interface User {
   teams?: Team[]
 }
 
+export const invalidateTeamCache = (queryClient: QueryClient) => {
+  queryClient.invalidateQueries({ queryKey: ['teams_and_users'] })
+  queryClient.invalidateQueries({ queryKey: ['teams'] })
+  queryClient.invalidateQueries({ queryKey: ['users'] })
+  queryClient.invalidateQueries({ queryKey: ['users_with_teams'] })
+  queryClient.invalidateQueries({ queryKey: ['user_teams'] })
+  queryClient.invalidateQueries({ queryKey: ['supabase-table', 'users_with_teams'] })
+  queryClient.invalidateQueries({ queryKey: ['supabase-table', 'users_with_teams'], exact: false })
+}
+
+
 export function TeamSettings() {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([])
   const navigate = useNavigate()
@@ -57,32 +68,53 @@ export function TeamSettings() {
   const [editDescription, setEditDescription] = useState("")
   const [editLoading, setEditLoading] = useState(false)
   const { canCreate, canUpdate } = usePermissions()
+  const queryClient = useQueryClient()
 
-  const { data: usersData, isLoading, error } = useQuery({
-    queryKey: ['users_with_teams'],
+  const { data: teamsAndUsersData, isLoading, error } = useQuery({
+    queryKey: ['teams_and_users'],
     queryFn: async () => {
-      const { data, error } = await supabase.from("users_with_teams").select("*")
-      if (error) throw error
-      return data || []
+      const [usersResponse, teamsResponse] = await Promise.all([
+        supabase.from("users_with_teams").select("*"),
+        supabase.from("teams").select("*")
+      ])
+
+      if (usersResponse.error) throw usersResponse.error
+      if (teamsResponse.error) throw teamsResponse.error
+
+      return {
+        users: usersResponse.data || [],
+        teams: teamsResponse.data || []
+      }
     },
   })
 
   const teamsWithUsers = useMemo(() => {
-    if (!usersData) return []
-    
+    if (!teamsAndUsersData) return []
+
+    const { users, teams } = teamsAndUsersData
     const teamMap = {};
-    usersData.forEach(user => {
+
+    teams.forEach(team => {
+      teamMap[team.id] = {
+        id: team.id,
+        name: team.name,
+        description: team.description,
+        status: team.status,
+        created_at: team.created_at,
+        users: []
+      };
+    });
+
+    users.forEach(user => {
       (user.team_ids || []).forEach((teamId, idx) => {
-        const teamNamesArr = (user.team_names || '').split(',');
-        const teamName = teamNamesArr[idx] || teamId;
-        if (!teamMap[teamId]) {
-          teamMap[teamId] = { id: teamId, name: teamName, users: [] };
+        if (teamMap[teamId]) {
+          teamMap[teamId].users.push(user);
         }
-        teamMap[teamId].users.push(user);
       });
     });
+
     return Object.values(teamMap) as TeamWithUsers[];
-  }, [usersData])
+  }, [teamsAndUsersData])
 
   const isTeamExpanded = (teamId: string) => expandedTeams.includes(teamId)
 
@@ -112,6 +144,7 @@ export function TeamSettings() {
     setEditLoading(false)
     if (!error) {
       setEditDialogOpen(false)
+      invalidateTeamCache(queryClient)
     } else {
       alert("Failed to update team")
     }
@@ -220,8 +253,10 @@ export function TeamSettings() {
                     />
                   </Button>
                   <div>
-                    <div className="font-medium">{team.name}</div>
-                    <div className="text-sm text-muted-foreground">{team.description}</div>
+                    <div className="font-medium">{team.name || 'Unnamed Team'}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {team.description || 'No description'} • {team.users?.length || 0} member{(team.users?.length || 0) !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

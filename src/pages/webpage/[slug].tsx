@@ -519,7 +519,16 @@ export default function DeployedAgentPlayground() {
 
     try {
       // Load the agent
-      const worker = await agents.loadAgent(Number(config.agentId))
+      const { selectedTeam } = useTeamStore()
+      if (!selectedTeam?.id) {
+        throw new Error("No team selected")
+      }
+      
+      const worker = await agents.loadAgent(Number(config.agentId), selectedTeam.id)
+      
+      if (!worker) {
+        throw new Error(`Agent ${config.agentId} not found or not accessible for current team`)
+      }
       
       // Convert messages to ChatHistory format for conversational agents
       const chatHistory = updatedMessages.map(msg => {

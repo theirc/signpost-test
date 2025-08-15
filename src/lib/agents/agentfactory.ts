@@ -362,19 +362,37 @@ export async function saveAgent(agent: Agent, team_id?: string) {
 
 }
 
-export async function loadAgent(id: number): Promise<Agent> {
+export async function loadAgent(id: number, teamId: string): Promise<Agent | null> {
+  if (!teamId) {
+    throw new Error("No team ID provided")
+  }
 
-  // console.log("Loading agent: ", id)
-  const { data } = await supabase.from("agents").select("*").eq("id", id).single()
+  const { data, error } = await supabase
+    .from("agents")
+    .select("*")
+    .eq("id", id)
+    .eq("team_id", teamId)
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      // No agent found - either doesn't exist or doesn't belong to selected team
+      return null
+    }
+    throw error
+  }
+
+  if (!data) {
+    return null
+  }
+
   const agent = configureAgent(data as any)
-
   for (const key in agent.workers) {
     const w = agent.workers[key]
     if (w.config.type == "agentWorker" && w.parameters.agent) {
-      await w.loadAgent()
+      await w.loadAgent(teamId)
     }
   }
-
 
   return agent
 }

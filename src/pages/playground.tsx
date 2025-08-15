@@ -336,7 +336,16 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
     if (selectedAgent) {
       try {
         const entry = selectedAgent as AgentEntry;
-        const worker = await agents.loadAgent(Number(entry.id));
+        const { selectedTeam } = useTeamStore()
+        if (!selectedTeam?.id) {
+          throw new Error("No team selected")
+        }
+        
+        const worker = await agents.loadAgent(Number(entry.id), selectedTeam.id);
+
+        if (!worker) {
+          throw new Error(`Agent ${entry.id} not found or not accessible for current team`)
+        }
 
         // Convert messages to ChatHistory format for conversational agents
         const chatHistory: ChatHistory = updatedMessages.map(msg => {
