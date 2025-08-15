@@ -8,6 +8,7 @@ import { EditCollectionDialog } from "./components/edit-collection-dialog"
 import { downloadCollectionSources } from "./download-utils"
 import { generateCollectionVector } from "./vector-generation"
 import { useQueryClient } from "@tanstack/react-query"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 export default function Knowledge() {
   // State
@@ -128,14 +129,14 @@ export default function Knowledge() {
       <div className="flex-1 p-8 pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Collections</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Collections" className="text-4xl font-bold" /></h1>
+            <p className="text-lg text-gray-600 font-medium leading-relaxed">
               Manage your collections and their sources.
             </p>
           </div>
           <div className="flex flex-col items-end space-y-2">
             <div className="flex space-x-2">
-              <Button onClick={handleCreateCollection}>
+              <Button onClick={handleCreateCollection} className="rounded-lg">
                 Create Collection
               </Button>
             </div>

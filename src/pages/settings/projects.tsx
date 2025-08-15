@@ -78,7 +78,7 @@ export function ProjectsSettings() {
           </p>
         </div>
         {canCreate("projects") && (
-          <Button onClick={() => navigate("/settings/projects/new")}>Create Project</Button>
+          <Button onClick={() => navigate("/settings/projects/new")} className="rounded-lg">Create Project</Button>
         )}
       </div>
       {isLoading ? (

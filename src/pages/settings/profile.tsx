@@ -150,7 +150,7 @@ export function ProfileSettings() {
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent rounded-lg"
                                         onClick={() => setShowNewPassword(!showNewPassword)}
                                     >
                                         {showNewPassword ? (
@@ -177,7 +177,7 @@ export function ProfileSettings() {
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent rounded-lg"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                     >
                                         {showConfirmPassword ? (
@@ -189,7 +189,7 @@ export function ProfileSettings() {
                                 </div>
                             </div>
 
-                            <Button type="submit" disabled={loading}>
+                            <Button type="submit" disabled={loading} className="rounded-lg">
                                 {loading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

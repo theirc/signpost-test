@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 export function AgentList() {
     const navigate = useNavigate()
@@ -165,8 +166,8 @@ export function AgentList() {
         <div>
             <div className="p-8 pt-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-                    <Button onClick={() => navigate("/agents/new")}>
+                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Templates" className="text-4xl font-bold" /></h1>
+                    <Button onClick={() => navigate("/agents/new")} className="rounded-lg">
                         <Plus className="h-4 w-4 mr-2" /> Add Agent
                     </Button>
                 </div>

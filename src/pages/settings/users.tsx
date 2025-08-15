@@ -33,7 +33,7 @@ export function UsersSettings() {
                     </p>
                 </div>
                 {canCreate("users") && (
-                    <Button onClick={() => navigate("/settings/users/new")}>Create User</Button>
+                    <Button onClick={() => navigate("/settings/users/new")} className="rounded-lg">Create User</Button>
                 )}
             </div>
             <PaginatedSupabaseTableWrapper

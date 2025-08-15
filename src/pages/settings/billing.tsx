@@ -60,7 +60,7 @@ export function BillingSettings() {
           </p>
         </div>
         {canUpdate("billing") && (
-          <Button>Update Payment Method</Button>
+                          <Button className="rounded-lg">Update Payment Method</Button>
         )}
       </div>
 
@@ -72,7 +72,7 @@ export function BillingSettings() {
             <p className="text-sm text-muted-foreground">$499/month</p>
           </div>
           {canUpdate("billing") && (
-            <Button variant="outline">Change Plan</Button>
+                            <Button variant="outline" className="rounded-lg">Change Plan</Button>
           )}
         </div>
       </div>

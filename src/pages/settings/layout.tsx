@@ -2,6 +2,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useNavigate, useLocation } from "react-router-dom"
 import { Outlet } from "react-router-dom"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 export function SettingsLayout() {
   const navigate = useNavigate()
@@ -13,7 +14,7 @@ export function SettingsLayout() {
     <div className="flex flex-col h-full">
       <div className="border-b">
         <div className="px-8 py-6">
-          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+          <h2 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Settings" className="text-4xl font-bold" /></h2>
         </div>
         <Tabs value={currentPath} className="px-8">
           <TabsList>

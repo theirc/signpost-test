@@ -67,7 +67,7 @@ export function ApiKeysSettings() {
                     </p>
                 </div>
                 {canCreate("apikeys") && (
-                    <Button onClick={() => navigate("/settings/apikeys/new")}>Create Api Key</Button>
+                    <Button onClick={() => navigate("/settings/apikeys/new")} className="rounded-lg">Create Api Key</Button>
                 )}
             </div>
             <PaginatedSupabaseTableWrapper

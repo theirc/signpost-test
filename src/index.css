@@ -95,6 +95,11 @@
     @apply border-border outline-ring/50;
   }
 
+  .transform-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+
   body {
     margin: 0;
     height: 100vh;

@@ -393,12 +393,13 @@ export function RoleForm() {
                             <Button
                                 type="button"
                                 variant="outline"
+                                className="rounded-lg"
                                 onClick={() => navigate("/settings/roles")}
                                 disabled={loading}
                             >
                                 Cancel
                             </Button>
-                            {(canCreate("roles") || canUpdate("roles")) && <Button type="submit" disabled={loading || id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}>
+                            {(canCreate("roles") || canUpdate("roles")) && <Button type="submit" className="rounded-lg" disabled={loading || id === "12219f26-0293-4954-8dbd-c5ba3ecc2b14"}>
                                 {loading ? (isNewRole ? "Creating..." : "Updating...") : (isNewRole ? "Create Role" : "Update Role")}
                             </Button>}
                         </div>

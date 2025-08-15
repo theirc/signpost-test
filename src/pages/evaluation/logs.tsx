@@ -11,6 +11,7 @@ import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { supabase } from "@/lib/agents/db"
 import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
 import { useQuery } from "@tanstack/react-query"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 type Log = {
     id: string
@@ -82,13 +83,13 @@ export function BotLogsTable() {
             <div className="flex-1 p-8 pt-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Logs</h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Logs" className="text-4xl font-bold" /></h1>
+                        <p className="text-lg text-gray-600 font-medium leading-relaxed">
                             View and manage your bot interaction logs.
                         </p>
                     </div>
                     {canCreate("logs") && (
-                        <Button onClick={() => navigate("/logs/new")}> <Plus className="h-4 w-4 mr-2" /> Add Log </Button>
+                        <Button className="rounded-lg" onClick={() => navigate("/logs/new")}> <Plus className="h-4 w-4 mr-2" /> Add Log </Button>
                     )}
                 </div>
                 <PaginatedSupabaseTableWrapper

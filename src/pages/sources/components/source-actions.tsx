@@ -8,10 +8,10 @@ interface SourceActionsProps {
 export function SourceActions({ onUploadFiles, onAddLiveData }: SourceActionsProps) {
   return (
     <div className="flex gap-2">
-      <Button onClick={onAddLiveData} variant="outline">
+      <Button onClick={onAddLiveData} variant="outline" className="rounded-lg">
         Add Live Data
       </Button>
-      <Button onClick={onUploadFiles}>
+      <Button onClick={onUploadFiles} className="rounded-lg">
         Upload Files
       </Button>
     </div>

@@ -4,6 +4,7 @@ import { SourcePreview } from "./sources/source-preview"
 import { SourceActions } from "./sources/components/source-actions"
 import FilesModal from "./sources/files-modal"
 import { LiveDataModal } from "./sources/live-data-modal"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 
 export default function Sources() {
@@ -26,8 +27,8 @@ export default function Sources() {
     <div className="flex-1 p-8 pt-6 flex flex-col h-full">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sources</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Sources" className="text-4xl font-bold" /></h1>
+          <p className="text-lg text-gray-600 font-medium leading-relaxed">
             Manage your data sources and their content.
           </p>
         </div>

@@ -20,6 +20,7 @@ import { app } from "@/lib/app"
 import { useForceUpdate } from "@/lib/utils"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 import { AgentTemplateGenerator, GeneratedAgentTemplate } from "@/lib/services/agent-template-generator"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 export function AgentList() {
   const navigate = useNavigate()
@@ -694,6 +695,7 @@ export function AgentList() {
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button 
                 variant="outline" 
+                className="rounded-lg"
                 onClick={() => {
                   setGeneratedTemplate(null)
                   setAgentDescription("")
@@ -701,7 +703,7 @@ export function AgentList() {
               >
                 Start Over
               </Button>
-              <Button onClick={saveGeneratedAgent} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={saveGeneratedAgent} className="rounded-lg bg-blue-600 hover:bg-blue-700">
                 Create Agent
               </Button>
             </div>
@@ -713,18 +715,18 @@ export function AgentList() {
         <div className="flex-1 p-8 pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Agents</h1>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Agents" className="text-4xl font-bold" /></h1>
+              <p className="text-lg text-gray-600 font-medium leading-relaxed">
                 Manage your agents and their configurations.
               </p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Agent
-                </Button>
-              </DropdownMenuTrigger>
+                          <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="rounded-lg">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Agent
+                  </Button>
+                </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={() => navigate('/agent/new')}>
                   New Agent

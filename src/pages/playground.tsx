@@ -18,6 +18,7 @@ import { agentsModel } from "@/lib/data"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from '@/lib/data/db'
 import { useUser } from '@/lib/hooks/useUser'
+import { HighlightText } from '@/components/ui/shadcn-io/highlight-text'
 
 interface AgentEntry {
   id: string
@@ -476,12 +477,12 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
       <div className="flex flex-1 min-h-0">
         <div className="flex-1 flex flex-col">
           <div className="py-4 border-b flex justify-between items-center bg-white px-4 flex-shrink-0">
-            <h2 className="text-3xl font-bold tracking-tight">Playground</h2>
+                            <h2 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Playground" className="text-4xl font-bold" /></h2>
             <div className="flex items-center gap-2">
               <div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between" title="Select Agent">
+                    <Button variant="outline" className="w-full justify-between rounded-lg" title="Select Agent">
                       {label}
                     </Button>
                   </DropdownMenuTrigger>
@@ -511,7 +512,7 @@ const [showExecutionLogs, setShowExecutionLogs] = useState(false)
                 onClick={toggleSidebar}
                 size="sm"
                 variant="ghost"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 rounded-lg"
                 title="Chat History"
               >
                 <History className="h-5 w-5" />

@@ -201,7 +201,7 @@ export function TeamSettings() {
           </p>
         </div>
         {canCreate("teams") && (
-          <Button onClick={() => navigate("/settings/teams/new")}>Create Team</Button>
+                          <Button onClick={() => navigate("/settings/teams/new")} className="rounded-lg">Create Team</Button>
         )}
       </div>
       {isLoading ? (
@@ -214,7 +214,7 @@ export function TeamSettings() {
             <div key={team.id} className="space-y-4">
               <div className="flex items-center justify-between p-4 cursor-pointer">
                 <div className="flex items-center" onClick={() => toggleTeam(team.id)}>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="rounded-lg">
                     <ChevronDown
                       className={`h-4 w-4 transform transition-transform ${isTeamExpanded(team.id) ? "rotate-180" : ""}`}
                     />
@@ -230,6 +230,7 @@ export function TeamSettings() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="rounded-lg"
                         onClick={() => openEditDialog(team)}
                       >
                         Edit
@@ -237,6 +238,7 @@ export function TeamSettings() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="rounded-lg"
                         onClick={() => navigate(`/settings/teams/members/${team.id}`)}
                       >
                         <UserPlus className="h-4 w-4 mr-2" />
@@ -279,8 +281,8 @@ export function TeamSettings() {
               disabled={editLoading}
             />
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editLoading}>Cancel</Button>
-              <Button onClick={handleEditSubmit} disabled={editLoading}>Save</Button>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={editLoading} className="rounded-lg">Cancel</Button>
+              <Button onClick={handleEditSubmit} disabled={editLoading} className="rounded-lg">Save</Button>
             </div>
           </div>
         </DialogContent>

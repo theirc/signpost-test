@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { ColumnDef } from "@tanstack/react-table"
 import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
 import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
+import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 export function BotScoresTable() {
     const navigate = useNavigate()
@@ -35,13 +36,13 @@ export function BotScoresTable() {
             <div className="flex-1 p-8 pt-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Scores</h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Scores" className="text-4xl font-bold" /></h1>
+                        <p className="text-lg text-gray-600 font-medium leading-relaxed">
                             View and manage your bot evaluation scores.
                         </p>
                     </div>
                     {canCreate("scores") && (
-                        <Button onClick={() => navigate("/scores/new")}> <Plus className="h-4 w-4 mr-2" /> Add Score </Button>
+                        <Button className="rounded-lg" onClick={() => navigate("/scores/new")}> <Plus className="h-4 w-4 mr-2" /> Add Score </Button>
                     )}
                 </div>
                 <PaginatedSupabaseTableWrapper

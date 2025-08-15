@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Settings2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react"
+import { Settings2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Search, X, Filter } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -44,10 +44,10 @@ interface EnhancedDataTableProps<TData, TValue> {
 }
 
 // Draggable header component
-const DraggableTableHeader = ({ header, table }: { header: any, table: any }) => {
+const DraggableTableHeader = ({ header, table, className }: { header: any, table: any, className?: string }) => {
   if (!header || header.id === 'select') {
     return (
-      <TableHead key={header.id}>
+      <TableHead key={header.id} className={className}>
         {header.isPlaceholder
           ? null
           : flexRender(
@@ -63,7 +63,7 @@ const DraggableTableHeader = ({ header, table }: { header: any, table: any }) =>
   return (
     <TableHead
       key={header.id}
-      className={`relative overflow-hidden cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-80 z-[1]' : 'opacity-100 z-0'}`}
+      className={`relative overflow-hidden cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-80 z-[1]' : 'opacity-100 z-0'} ${className || ''}`}
       ref={setNodeRef}
       style={{
         transform: transform
@@ -303,33 +303,38 @@ export function EnhancedDataTable<TData, TValue>({
 
   return (
     <div className={className}>
-      {/* Search and Column Toggle */}
+      {/* Enhanced Search and Column Toggle */}
       <div className="flex items-center py-4">
         {searchKey && (
-          <Input
-            placeholder={searchPlaceholder}
-            value={searchValue}
-            onChange={(event) => {
-              setSearchValue(event.target.value)
-              if (onFilter) {
-                if (debounceRef.current) clearTimeout(debounceRef.current)
-                debounceRef.current = setTimeout(() => {
-                  onFilter([{ id: searchKey, value: event.target.value }])
-                }, 400)
-              } else {
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
-              }
-            }}
-            className="max-w-sm rounded-full"
-          />
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder={searchPlaceholder}
+              value={searchValue}
+              onChange={(event) => {
+                setSearchValue(event.target.value)
+                if (onFilter) {
+                  if (debounceRef.current) clearTimeout(debounceRef.current)
+                  debounceRef.current = setTimeout(() => {
+                    onFilter([{ id: searchKey, value: event.target.value }])
+                  }, 400)
+                } else {
+                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                }
+              }}
+              className="pl-10 pr-4 py-2 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+            />
+
+          </div>
         )}
+
         <div className="ml-auto flex items-center gap-2">
           {selectedRowCount > 0 && (
             <Button
               variant="outline"
               size="sm"
               onClick={exportToCSV}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 rounded-lg"
             >
               <Download className="h-4 w-4"/>
               Export ({selectedRowCount})
@@ -338,7 +343,7 @@ export function EnhancedDataTable<TData, TValue>({
           {showColumnToggle && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
+                <Button variant="outline" className="ml-auto rounded-lg">
                   <Settings2 className="mr-2 h-4 w-4"/>
                   View
                 </Button>
@@ -371,22 +376,27 @@ export function EnhancedDataTable<TData, TValue>({
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-lg border border-gray-200 overflow-hidden">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-          <Table>
+          <Table className="border-collapse w-full">
             <TableHeader>
               <SortableContext
                 items={table.getHeaderGroups()[0]?.headers.map(header => header.id) || []}
                 strategy={horizontalListSortingStrategy}
               >
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="h-12">
-                    {headerGroup.headers.map((header) => (
-                      <DraggableTableHeader key={header.id} header={header} table={table} />
+                  <TableRow key={headerGroup.id} className="h-12 border-b border-gray-200 bg-gray-50">
+                    {headerGroup.headers.map((header, index) => (
+                      <DraggableTableHeader 
+                        key={header.id} 
+                        header={header} 
+                        table={table}
+                        className={index === 0 ? "rounded-tl-lg" : index === headerGroup.headers.length - 1 ? "rounded-tr-lg" : ""}
+                      />
                     ))}
                   </TableRow>
                 ))}
@@ -394,12 +404,12 @@ export function EnhancedDataTable<TData, TValue>({
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+                table.getRowModel().rows.map((row, index) => (
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     onClick={() => onRowClick?.(row.original)}
-                    className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                    className={`h-12 ${onRowClick ? "cursor-pointer hover:bg-muted/50" : ""} ${index === table.getRowModel().rows.length - 1 ? "" : "border-b border-gray-200"} bg-white`}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="h-12 py-0">
@@ -412,7 +422,7 @@ export function EnhancedDataTable<TData, TValue>({
                   </TableRow>
                 ))
               ) : (
-                <TableRow className="h-12">
+                <TableRow className="h-12 bg-white">
                   <TableCell
                     colSpan={tableColumns.length}
                     className="h-24 text-center"
@@ -448,7 +458,7 @@ export function EnhancedDataTable<TData, TValue>({
                   table.setPageSize(Number(value))
                 }}
               >
-                <SelectTrigger className="h-8 w-[70px]">
+                <SelectTrigger className="h-8 w-[70px] rounded-lg">
                   <SelectValue placeholder={`${pageSize}`} />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -465,7 +475,7 @@ export function EnhancedDataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="icon"
-                className="hidden h-8 w-8 lg:flex"
+                className="hidden h-8 w-8 lg:flex rounded-lg"
                 onClick={() => onPageChange ? onPageChange(0) : setInternalPage(0)}
                 disabled={page === 0}
               >
@@ -475,7 +485,7 @@ export function EnhancedDataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 rounded-lg"
                 onClick={() => onPageChange ? onPageChange(page - 1) : setInternalPage(page - 1)}
                 disabled={page === 0}
               >
@@ -485,7 +495,7 @@ export function EnhancedDataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 rounded-lg"
                 onClick={() => onPageChange ? onPageChange(page + 1) : setInternalPage(page + 1)}
                 disabled={controlledPageCount ? page + 1 >= controlledPageCount : !table.getCanNextPage()}
               >
@@ -495,7 +505,7 @@ export function EnhancedDataTable<TData, TValue>({
               <Button
                 variant="outline"
                 size="icon"
-                className="hidden h-8 w-8 lg:flex"
+                className="hidden h-8 w-8 lg:flex rounded-lg"
                 onClick={() => onPageChange ? onPageChange((controlledPageCount ?? table.getPageCount()) - 1) : setInternalPage((controlledPageCount ?? table.getPageCount()) - 1)}
                 disabled={controlledPageCount ? page + 1 >= controlledPageCount : !table.getCanNextPage()}
               >
