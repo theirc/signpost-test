@@ -22,7 +22,7 @@
 // Takes as an input the content from similarity search if present ... selects the model and calls the AI API. NOTE: It only uses Claude models and the mappings aren't quite right. I'm waiting to see if we want to use a model gateway like the one in Databricks before finalizing this mapping and setting up the API routes for OpenAI and others.
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../src/lib/supabase-client';
 
 // Map of internal model IDs to Claude model identifiers
 const MODEL_MAPPING: Record<string, string> = {
@@ -117,7 +117,7 @@ export default async function handler(
       throw new Error('Missing Supabase configuration');
     }
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Use the shared Supabase client instance
     
     // Get minimal parameters from the request
     const { botId, userPrompt } = request.body;

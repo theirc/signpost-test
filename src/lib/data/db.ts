@@ -1,6 +1,3 @@
-import { createClient } from '@supabase/supabase-js'
-import { Database, Tables } from '../agents/supabase'
-import { env } from '../env'
-
-export const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
+import { supabase } from '../supabase-client'
+export { supabase }
 

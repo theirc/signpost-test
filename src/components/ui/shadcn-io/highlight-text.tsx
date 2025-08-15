@@ -28,7 +28,7 @@ function HighlightText({
   ...props
 }: HighlightTextProps) {
   const localRef = React.useRef<HTMLSpanElement>(null);
-  React.useImperativeHandle(ref, () => localRef.current as HTMLSpanElement);
+  React.useImperativeHandle(ref as any, () => localRef.current as HTMLSpanElement);
   
   const inViewResult = useInView(localRef, {
     once: inViewOnce,
