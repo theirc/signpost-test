@@ -9,6 +9,29 @@ import { ThreeDMarquee } from "@/components/ui/3d-marquee"
 import { supabase } from "@/lib/agents/db"
 import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
+// Screenshot assets for 3D marquee background - moved outside component to prevent recreation
+const screenshotAssets = [
+  "/screenshot1.jpg",
+  "/screenshot2.jpg",
+  "/screenshot3.jpg",
+  "/screenshot4.jpg",
+  "/screenshot5.jpg",
+  "/screenshot6.jpg",
+  "/screenshot7.jpg",
+  "/screenshot8.jpg",
+  "/screenshot9.jpg",
+  "/screenshot10.jpg",
+  "/screenshot11.jpg",
+  "/screenshot12.jpg",
+  "/screenshot13.jpg",
+  "/screenshot14.jpg",
+  "/screenshot15.jpg",
+  "/screenshot16.jpg",
+  "/screenshot17.jpg",
+  "/screenshot18.jpg",
+  "/screenshot19.jpg",
+]
+
 export function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -16,29 +39,6 @@ export function Login() {
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
-
-  // Screenshot assets for 3D marquee background
-  const screenshotAssets = [
-    "/screenshot1.jpg",
-    "/screenshot2.jpg",
-    "/screenshot3.jpg",
-    "/screenshot4.jpg",
-    "/screenshot5.jpg",
-    "/screenshot6.jpg",
-    "/screenshot7.jpg",
-    "/screenshot8.jpg",
-    "/screenshot9.jpg",
-    "/screenshot10.jpg",
-    "/screenshot11.jpg",
-    "/screenshot12.jpg",
-    "/screenshot13.jpg",
-    "/screenshot14.jpg",
-    "/screenshot15.jpg",
-    "/screenshot16.jpg",
-    "/screenshot17.jpg",
-    "/screenshot18.jpg",
-    "/screenshot19.jpg",
-  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
