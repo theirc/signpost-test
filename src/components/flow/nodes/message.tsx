@@ -1,34 +1,45 @@
 import { workerRegistry } from "@/lib/agents/registry"
 import { NodeProps } from '@xyflow/react'
-import { MessageSquare } from "lucide-react"
+import { MessageSquare, Settings } from "lucide-react"
 import { WorkerLabeledHandle } from "../handles"
 import { useWorker } from "../hooks"
 import { NodeLayout } from './node'
 import { ConditionHandler } from "../condition"
-import { Row, useForm } from "@/components/forms"
-import { Input } from "@/components/forms/input"
-import { InputTextArea } from "@/components/forms/textarea"
+import { Row, useForm, Select } from "@/components/forms"
+import { Input as FormInput } from "@/components/forms/input"
 import { createModel } from "@/lib/data/model"
-import { useEffect, useState } from "react"
+
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
+import { toast } from "sonner"
+import { TelerivetConfigDialog } from "@/components/ui/telerivet"
+
+import { MemoizedWorker } from "../memoizedworkers"
 
 const { message } = workerRegistry
 message.icon = MessageSquare
 
 const model = createModel({
   fields: {
-    integrationChannel: { title: "Integration Channel", type: "string", required: true },
-    telerivetApiKey: { title: "Telerivet API Key", type: "string", required: false },
-    telerivetProjectId: { title: "Telerivet Project ID", type: "string", required: false },
-    username: { title: "Username", type: "string", required: false },
-    defaultToNumber: { title: "Default To Number", type: "string", required: false },
-    defaultQuickReplies: { title: "Default Quick Replies", type: "string", required: false },
-    defaultRouteId: { title: "Default Route ID", type: "string", required: false },
+    integrationChannel: { 
+      title: "Integration Channel", 
+      type: "string", 
+      list: [
+        { value: "telerivet", label: "Telerivet" },
+        { value: "twilio", label: "Twilio (Coming Soon)" }
+      ]
+    },
+    telerivetApiKey: { title: "Telerivet API Key", type: "string" },
+    telerivetProjectId: { title: "Telerivet Project ID", type: "string" },
+    username: { title: "Username", type: "string" },
+    defaultToNumber: { title: "Default To Number", type: "string" },
+    defaultQuickReplies: { title: "Default Quick Replies", type: "string" },
+    defaultRouteId: { title: "Default Route ID", type: "string" },
   }
 })
 
 function Parameters({ worker }: { worker: MessageWorker }) {
-  const { form, watch, m } = useForm(model, {
-    doNotReset: true,
+  const { form, watch, m, setValue } = useForm(model, {
     values: {
       integrationChannel: worker.parameters.integrationChannel || "telerivet",
       telerivetApiKey: worker.parameters.telerivetApiKey || "",
@@ -40,112 +51,112 @@ function Parameters({ worker }: { worker: MessageWorker }) {
     }
   })
 
-  // Local state for integration channel to handle dropdown changes
-  const [localIntegrationChannel, setLocalIntegrationChannel] = useState(
-    worker.parameters.integrationChannel || "telerivet"
-  )
+  // Use form state for conditional rendering
+  const integrationChannel = watch("integrationChannel")
 
-  // Sync local state with worker parameter when it changes externally
-  useEffect(() => {
-    setLocalIntegrationChannel(worker.parameters.integrationChannel || "telerivet")
-  }, [worker.parameters.integrationChannel])
+  watch((value, { name }) => {
+    if (name === "integrationChannel") worker.parameters.integrationChannel = value.integrationChannel
+    if (name === "telerivetApiKey") worker.parameters.telerivetApiKey = value.telerivetApiKey
+    if (name === "telerivetProjectId") worker.parameters.telerivetProjectId = value.telerivetProjectId
+    if (name === "defaultToNumber") worker.parameters.defaultToNumber = value.defaultToNumber
+    if (name === "defaultQuickReplies") {
+      worker.parameters.defaultQuickReplies = value.defaultQuickReplies
+        .split(",")
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+    }
+    if (name === "defaultRouteId") worker.parameters.defaultRouteId = value.defaultRouteId
+  })
 
-  // Watch for form changes and update worker parameters
-  useEffect(() => {
-    const subscription = watch((value, { name }) => {
-      console.log(`[Message Node] Form field changed: ${name} = ${value[name as keyof typeof value]}`)
-      
-      if (name === "integrationChannel") {
-        worker.parameters.integrationChannel = value.integrationChannel
-        console.log(`[Message Node] Updated integrationChannel: ${worker.parameters.integrationChannel}`)
-      }
-      if (name === "telerivetApiKey") {
-        worker.parameters.telerivetApiKey = value.telerivetApiKey
-        console.log(`[Message Node] Updated telerivetApiKey: ${worker.parameters.telerivetApiKey}`)
-      }
-      if (name === "defaultToNumber") {
-        worker.parameters.defaultToNumber = value.defaultToNumber
-        console.log(`[Message Node] Updated defaultToNumber: ${worker.parameters.defaultToNumber}`)
-      }
-      if (name === "defaultQuickReplies") {
-        worker.parameters.defaultQuickReplies = value.defaultQuickReplies
-          .split(",")
-          .map(s => s.trim())
-          .filter(s => s.length > 0)
-        console.log(`[Message Node] Updated defaultQuickReplies:`, worker.parameters.defaultQuickReplies)
-      }
-      if (name === "defaultRouteId") {
-        worker.parameters.defaultRouteId = value.defaultRouteId
-        console.log(`[Message Node] Updated defaultRouteId: ${worker.parameters.defaultRouteId}`)
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [watch]) // Removed worker.parameters from dependencies to prevent infinite loop
+    const handleTelerivetSave = (values: any) => {
+    // Simply update form values
+    setValue("telerivetApiKey", values.telerivetApiKey)
+    setValue("telerivetProjectId", values.telerivetProjectId)
+    setValue("defaultRouteId", values.defaultRouteId)
+
+    // Update worker parameters
+    worker.parameters.telerivetApiKey = values.telerivetApiKey
+    worker.parameters.telerivetProjectId = values.telerivetProjectId
+    worker.parameters.defaultRouteId = values.defaultRouteId
+
+    toast.success('Telerivet configuration saved successfully!')
+  }
 
   return <form.context>
-    <div className="p-2 flex flex-col gap-2 w-full">
+    <div className="px-2 nodrag w-full flex-grow flex flex-col">
       {/* Integration Channel Selector */}
-      <div className="w-full">
-        <select 
-          value={localIntegrationChannel} 
-          onChange={(e) => {
-            const newValue = e.target.value;
-            setLocalIntegrationChannel(newValue);
-            // Update the worker parameter immediately for instant feedback
-            worker.parameters.integrationChannel = newValue;
-          }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="telerivet">Telerivet</option>
-          <option value="twilio">Twilio (Coming Soon)</option>
-        </select>
-      </div>
+      <Row className="py-2">
+        <Select field={m.integrationChannel} span={12} />
+      </Row>
 
-      {/* Telerivet-specific fields */}
-      {localIntegrationChannel === "telerivet" && (
-        <>
-          <div className="w-full">
-            <Input span={12} field={m.telerivetApiKey} hideLabel placeholder="Telerivet API Key" />
-          </div>
-          <div className="w-full">
-            <Input span={12} field={m.telerivetProjectId} hideLabel placeholder="Telerivet Project ID" />
-          </div>
-        </>
-      )}
+             {/* Telerivet-specific fields */}
+       {integrationChannel === "telerivet" && (
+         <>
+           <Row>
+             <FormInput span={12} field={m.telerivetProjectId} placeholder="Telerivet Project ID" />
+           </Row>
+         </>
+       )}
 
       {/* Twilio coming soon message */}
-      {localIntegrationChannel === "twilio" && (
-        <div className="w-full">
+      {integrationChannel === "twilio" && (
+        <Row>
           <div className="w-full px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 text-sm">
             🚧 Twilio integration is coming soon! For now, please select Telerivet.
           </div>
-        </div>
+        </Row>
       )}
 
-      {/* General fields */}
-      <div className="w-full">
-        <Input span={12} field={m.defaultToNumber} hideLabel placeholder="Default To Number" />
-      </div>
-      <div className="w-full">
-        <Input span={12} field={m.defaultQuickReplies} hideLabel placeholder="Default Quick Replies (comma-separated)" />
-      </div>
-      <div className="w-full">
-        <Input span={12} field={m.defaultRouteId} hideLabel placeholder="Default Route ID" />
-      </div>
-    </div>
-  </form.context>
-}
+             {/* General fields */}
+       <Row>
+         <FormInput span={12} field={m.defaultToNumber} placeholder="Default To Number" />
+       </Row>
+       <Row>
+         <FormInput span={12} field={m.defaultQuickReplies} placeholder="Default Quick Replies (comma-separated)" />
+       </Row>
+       <Row>
+         <FormInput span={12} field={m.defaultRouteId} placeholder="Default Route ID" />
+       </Row>
+
+       {/* Configure Telerivet Button - at the bottom of the form */}
+       {integrationChannel === "telerivet" && (
+         <div className="w-full pt-2">
+           <Dialog>
+             <DialogTrigger asChild>
+               <Button 
+                 variant="outline" 
+                 size="sm" 
+                 className="w-full gap-2"
+                 onClick={(e) => {
+                   e.stopPropagation()
+                 }}
+               >
+                 <Settings className="h-4 w-4" />
+                 Configure Telerivet
+               </Button>
+             </DialogTrigger>
+             <TelerivetConfigDialog 
+               worker={worker} 
+               onSave={handleTelerivetSave}
+             />
+           </Dialog>
+         </div>
+       )}
+     </div>
+   </form.context>
+ }
 
 export function MessageNode(props: NodeProps) {
   const worker = useWorker<MessageWorker>(props.id)
-  
   return <NodeLayout worker={worker} resizable className="flex flex-col h-full" minHeight={300} minWidth={300}>
     <WorkerLabeledHandle handler={worker.fields.content} />
     <WorkerLabeledHandle handler={worker.fields.toNumber} />
     <WorkerLabeledHandle handler={worker.fields.quickReplies} />
     <WorkerLabeledHandle handler={worker.fields.routeId} />
     <WorkerLabeledHandle handler={worker.fields.output} />
-    <Parameters worker={worker} />
+    <MemoizedWorker worker={worker} name="parameters">
+      <Parameters worker={worker} />
+    </MemoizedWorker>
     <ConditionHandler />
   </NodeLayout>
 } 
