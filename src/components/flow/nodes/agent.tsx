@@ -11,6 +11,7 @@ import { MemoizedWorker } from "../memoizedworkers"
 import { SwirlingEffectSpinner } from "../progress"
 import { useEffect, useRef, useState } from "react"
 import { agentsModel } from "@/lib/data"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 const { agentWorker } = workerRegistry
 agentWorker.icon = Brain
 
@@ -67,26 +68,60 @@ export function AgentNode(props: NodeProps) {
   const list = useRef<FieldList>([])
   const [isLoading, setLoading] = useState(true)
   const worker = useWorker<AgentWorker>(props.id)
+  const { selectedTeam } = useTeamStore()
 
   useEffect(() => {
-    agentsModel.data.select("*").then(({ data }) => {
-      // console.log("Agent List: ", data)
-      if (data) {
-        list.current = data.map((a) => {
-          return { value: a.id, label: a.title }
-        })
+    async function loadAgents() {
+      if (!selectedTeam?.id) {
+        setLoading(false)
+        list.current = []
+        return
       }
-      setLoading(false)
-    })
-  }, [])
+      
+      setLoading(true)
+      try {
+        const { data, error } = await agentsModel.data.select("*").eq('team_id', selectedTeam.id)
+        
+        if (error) {
+          console.error("Error loading agents:", error)
+          list.current = []
+        } else if (data) {
+          console.log(`Loaded ${data.length} agents for team:`, selectedTeam.id)
+          list.current = data.map((a) => {
+            return { value: a.id, label: a.title }
+          })
+        } else {
+          list.current = []
+        }
+      } catch (error) {
+        console.error("Error loading agents:", error)
+        list.current = []
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadAgents()
+  }, [selectedTeam?.id])
 
   async function onAgentChange(agentId: number) {
-    console.log("Agent Changed: ", agentId)
+    console.log("Agent Changed: ", agentId, "Team ID:", selectedTeam?.id)
 
     if (!agentId) return
+    if (!selectedTeam?.id) {
+      console.error("No team selected")
+      return
+    }
+    
     setLoading(true)
-    await worker.loadAgent()
-    setLoading(false)
+    try {
+      await worker.loadAgent(selectedTeam.id)
+      console.log("Agent loaded successfully")
+    } catch (error) {
+      console.error("Error loading agent:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
 
