@@ -15,6 +15,7 @@ documentGenerator.icon = FileText
 const docTypeOptions = [
   { value: "docx", label: "DOCX" },
   { value: "pdf", label: "PDF" },
+  { value: "csv", label: "CSV" },
 ]
 
 const model = createModel({
@@ -40,7 +41,7 @@ function Parameters({ worker }: { worker: DocumentGeneratorWorker }) {
         <div>
           <h3 className="font-semibold text-sm mb-2">Document Configuration</h3>
           <p className="text-xs text-muted-foreground mb-3">
-            Receives input from AI workers and generates files in the selected format
+            Receives input from AI workers and generates files in DOCX, PDF, or CSV format
           </p>
           <Row>
             <Select field={m.doc} span={12} />

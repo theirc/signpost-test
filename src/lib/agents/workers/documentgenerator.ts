@@ -54,6 +54,53 @@ function toSnakeCaseBase(name: string): string {
   return base || 'generated'
 }
 
+function generateCsv(content: string): Uint8Array {
+  const lines = content.split('\n').filter(line => line.trim())
+  
+  if (lines.length === 0) {
+    return new TextEncoder().encode('')
+  }
+  
+  const csvLines: string[] = []
+  
+  for (const line of lines) {
+    const trimmedLine = line.trim()
+    if (!trimmedLine) continue
+    
+    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+      const cells = trimmedLine
+        .slice(1, -1)
+        .split('|')
+        .map(cell => cell.trim())
+        .map(cell => {
+          if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+            return `"${cell.replace(/"/g, '""')}"`
+          }
+          return cell
+        })
+      csvLines.push(cells.join(','))
+    } else if (trimmedLine.startsWith('-')) {
+      continue
+    } else if (trimmedLine.startsWith('#')) {
+      const header = trimmedLine.replace(/^#+\s*/, '').trim()
+      csvLines.push(`"${header}"`)
+    } else if (trimmedLine.startsWith('- ') || trimmedLine.startsWith('* ')) {
+      const item = trimmedLine.replace(/^[-*]\s*/, '').trim()
+      csvLines.push(`"${item}"`)
+    } else if (trimmedLine.startsWith('> ')) {
+      const quote = trimmedLine.replace(/^>\s*/, '').trim()
+      csvLines.push(`"${quote}"`)
+    } else if (trimmedLine.startsWith('```')) {
+      continue
+    } else {
+      csvLines.push(`"${trimmedLine}"`)
+    }
+  }
+  
+  const csvContent = csvLines.join('\n')
+  return new TextEncoder().encode(csvContent)
+}
+
 async function generatePdf(content: string): Promise<Uint8Array> {
   const html = marked(content)
   const fullHtml = `
@@ -451,6 +498,7 @@ function parseMarkdownText(text: string): TextRun[] {
 }
 
 async function generateFile(content: string, type: string): Promise<Uint8Array> {
+  if (type === 'csv') return generateCsv(content)
   if (type === 'pdf') return await generatePdf(content)
   return await generateDocx(content)
 }
@@ -464,24 +512,36 @@ async function execute(worker: AIWorker) {
   try {
     const chosenTitle = extractTitle(inputValue)
     const base = toSnakeCaseBase(chosenTitle)
-    const ext = docType === 'pdf' ? 'pdf' : 'docx'
+    const ext = docType === 'pdf' ? 'pdf' : docType === 'csv' ? 'csv' : 'docx'
     const filename = `${base}.${ext}`
     
     const buffer = await generateFile(inputValue, docType)
+    
+    let mimeType: string
+    switch (docType) {
+      case 'pdf':
+        mimeType = 'application/pdf'
+        break
+      case 'csv':
+        mimeType = 'text/csv'
+        break
+      default:
+        mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    }
     
     worker.fields.output.value = {
       content: inputValue,
       type: docType,
       filename,
       buffer,
-      mimeType: docType === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      mimeType
     }
   } catch (error) {
     console.error('Document generation error:', error)
     worker.fields.output.value = {
       error: `Failed to generate ${docType}: ${error.message}`,
       type: docType,
-      filename: `error.${docType === 'pdf' ? 'pdf' : 'docx'}`
+      filename: `error.${docType === 'pdf' ? 'pdf' : docType === 'csv' ? 'csv' : 'docx'}`
     }
   }
 }
@@ -491,7 +551,7 @@ export const documentGenerator: WorkerRegistryItem = {
   execute,
   category: 'tool',
   type: 'documentGenerator',
-  description: 'Generates documents (DOCX or PDF) from AI worker input.',
+  description: 'Generates documents (DOCX, PDF, or CSV) from AI worker input.',
   create(agent: Agent) {
     return agent.initializeWorker(
       { type: 'documentGenerator' },

@@ -60,7 +60,7 @@ export function createAgent(config: AgentConfig) {
 
     edges,
     workers,
-    displayData: false,
+    displayData: true,
 
     type: "data" as AgentTypes,
     debuguuid: config.debuguuid || "",
