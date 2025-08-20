@@ -1,5 +1,5 @@
 export const TELERIVET_SCRIPT_TEMPLATE = `// --- Configuration Variables ---
-var SIGNPOST_AI_URL = "https://signpost-ia-app-qa.azurewebsites.net/agent";
+var SIGNPOST_AI_URL = "https://signpost-ia-app.azurewebsites.net/agent";
 var TEAM_ID = "{{TEAM_ID}}";
 var WHATSAPP_PHONE_NUMBER_ID = "XXX";
 var WHATSAPP_ACCESS_TOKEN = "XXX";
