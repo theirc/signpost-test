@@ -5,6 +5,7 @@ import { ulid } from 'ulid'
 import { ApiWorker } from "./workers/api"
 import { z } from "zod"
 
+type LogTypes = "execution" | "error" | "info" | "handoff" | "tool_start" | "tool_end"
 
 interface AgentConfig {
   edges?: object
@@ -17,6 +18,22 @@ interface AgentConfig {
   debuguuid?: string
   versions?: AgentVersion[]
 }
+
+interface AgentLog {
+  team_id?: string
+  type?: LogTypes
+  worker?: string
+  workerId?: string
+  session?: string
+  inputTokens?: number
+  outputTokens?: number
+  message?: string
+  handles?: any
+  parameters?: any
+
+
+}
+
 
 declare global {
   type AgentTypes = "conversational" | "data"
@@ -40,6 +57,7 @@ export function createAgent(config: AgentConfig) {
     set id(v: number) { config.id = v },
     get title() { return config.title },
     set title(v: string) { config.title = v },
+    state: {} as AgentParameters,
 
     versions: [] as AgentVersion[],
 
@@ -47,11 +65,8 @@ export function createAgent(config: AgentConfig) {
       const input = agent.getInputWorker()
       const response = agent.getResponseWorker()
       if (input && response) {
-
-        // const hasChatHandles = Object.values(input.handles).some((h) => h.direction === "output" && h.type === "chat" && h.name === "history")
         const hasMessageHandles = Object.values(input.handles).some((h) => h.direction === "output" && h.type === "string" && h.name === "message")
         const hasResponseHandles = Object.values(response.handles).some((h) => h.direction === "input" && h.type === "string" && h.name === "response")
-
         return hasMessageHandles && hasResponseHandles
       }
       return false
@@ -116,6 +131,7 @@ export function createAgent(config: AgentConfig) {
     },
 
     reset() {
+      agent.state = {}
       for (const key in workers) {
         const w = workers[key]
         w.executed = false
@@ -131,19 +147,20 @@ export function createAgent(config: AgentConfig) {
       agent.reset()
       p.input ||= {}
       p.output ||= {}
-      p.input ||= {}
-      p.output ||= {}
       p.apiKeys ||= {}
       p.state ||= {
         agent: {},
         workers: {}
       }
+      p.team = config.team_id || ""
       p.logWriter ||= () => { }
       p.agent = agent
 
       if (p.debug && agent.debuguuid && !p.uid) {
         p.uid = agent.debuguuid
       }
+
+      agent.state = p
 
       for (const key in agent.workers) {
         const w = agent.workers[key]
@@ -179,12 +196,26 @@ export function createAgent(config: AgentConfig) {
         if (hasUid) await supabase.from("states").upsert({ id: p.uid, state: p.state || {} })
 
       } catch (error) {
+        await agent.log({ type: "error", message: error?.toString() || "Unknown error" })
         console.error(error)
         p.error = error.toString()
       }
 
       agent.currentWorker = null
       agent.update()
+    },
+
+    async log(l: AgentLog) {
+      try {
+        await supabase.from("logs").insert({
+          ...l,
+          agent: agent.id as any,
+          team_id: agent.state.team,
+          session: agent.state.session,
+        } as any)
+      } catch (error) {
+        console.error("Error logging agent event:", error)
+      }
     },
 
     initializeWorker(config: WorkerConfig, handlers: NodeIO[], registry: WorkerRegistryItem, parameters: object = {}) {
