@@ -1,0 +1,69 @@
+---
+title: "Persist"
+description: "Store and manage conversation state and context for later use"
+---
+
+# Persist
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![State - Worker Configuration Interface](/images/screenshots/workers/state.png)
+*State - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The State Worker is a tool that allows you to persist data for later use. It is designed to store the state of a process, enabling you to retrieve and use the stored data at a later point in the execution flow. This is particularly useful in scenarios where you need to maintain the state of a process across different stages of execution.
+
+## 2. Configuration Parameters
+
+The State Worker does not require any specific configuration parameters. It uses the default configuration provided by the AIWorker interface.
+
+## 3. Input/Output Handles
+
+The State Worker has two handles:
+
+- `input`: This is where the data to be persisted is provided. The data provided here will be stored and can be retrieved later.
+
+- `output`: This is where the persisted data is retrieved from. The data stored from the `input` handle can be accessed here.
+
+## 4. Usage Examples with Code
+
+Here is a basic example of how to use the State Worker:
+
+```javascript
+const worker = agent.initializeWorker(
+  { type: "state" },
+  [
+    { type: "unknown", direction: "input", title: "Input", name: "input", system: true },
+    { type: "unknown", direction: "output", title: "Output", name: "output", system: true },
+  ],
+  state
+) as StateWorker
+
+// Persist data
+worker.fields.input.value = "Some data to persist"
+
+// Retrieve persisted data
+const persistedData = worker.fields.output.value
+```
+
+## 5. Integration Examples
+
+The State Worker can be integrated with other workers in a workflow. For example, you can use the State Worker to store the result of a computation performed by another worker, and then retrieve this result in a subsequent worker for further processing.
+
+## 6. Best Practices
+
+- Always check if the `input` value is not null before attempting to persist it. This ensures that you do not overwrite previously stored data with null values.
+
+- Use meaningful names for your State Workers, especially when you have multiple State Workers in a workflow. This makes it easier to identify which worker is responsible for storing which data.
+
+## 7. Troubleshooting Tips
+
+- If you are not able to retrieve the data you stored, ensure that you are accessing the correct `output` handle.
+
+- If the `output` value is not what you expected, check the `input` value to ensure that the correct data was provided for persistence.

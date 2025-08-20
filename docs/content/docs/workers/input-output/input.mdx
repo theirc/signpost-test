@@ -1,0 +1,61 @@
+---
+title: "Input"
+description: "A worker that serves as a schema of the request"
+---
+
+# Input
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Input - Worker Configuration Interface](/images/screenshots/workers/input.png)
+*Input - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Input Worker is a crucial component of the Signpost AI system. Its primary function is to serve as a schema for incoming requests. It is responsible for handling and managing the input parameters of the request, ensuring that the correct data is passed to the appropriate handlers.
+
+## 2. Configuration Parameters
+
+The Input Worker does not require any specific configuration parameters. It is initialized with a default 'request' type and an empty array for the handlers.
+
+## 3. Input/Output Handles
+
+The Input Worker iterates over all the handlers in the worker and assigns the corresponding input value from the AgentParameters to the handler's value. If the debug mode is enabled and the handler's value is not set, the mock value of the handler is used.
+
+## 4. Usage Examples with Code
+
+```javascript
+const agent = new Agent();
+const worker = create(agent);
+
+const parameters = {
+  input: {
+    name: 'John Doe',
+    email: 'john.doe@example.com'
+  },
+  debug: true
+};
+
+execute(worker, parameters);
+```
+
+In this example, the worker will assign the input values to the corresponding handlers. If a handler for 'name' and 'email' exists, their values will be 'John Doe' and 'john.doe@example.com' respectively.
+
+## 5. Integration Examples
+
+The Input Worker can be integrated with other workers in the system. For example, after the Input Worker has assigned the input values to the handlers, a Validation Worker can be used to validate the input values.
+
+## 6. Best Practices
+
+- Always ensure that the names of the input parameters match the names of the handlers in the worker.
+- Use the debug mode to test the worker with mock values.
+
+## 7. Troubleshooting Tips
+
+- If a handler's value is not being set, check if the name of the input parameter matches the name of the handler.
+- If a handler's value is still not being set in debug mode, check if the handler has a mock value.

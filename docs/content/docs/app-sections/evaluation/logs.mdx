@@ -1,0 +1,285 @@
+---
+title: "Evaluation Logs"
+description: "Complete guide to monitoring and analyzing agent conversation logs"
+---
+
+# Evaluation Logs
+
+## Overview
+
+The Evaluation Logs section provides detailed visibility into all agent interactions, allowing you to monitor conversations, debug issues, and identify improvement opportunities. This comprehensive guide covers everything from basic log viewing to advanced analysis and troubleshooting.
+
+## 1. Logs Dashboard
+
+![Evaluation Logs Interface](/images/screenshots/evaluation/evaluation-logs.png)
+*Evaluation Logs Interface - Monitor and analyze all agent interactions*
+
+The logs dashboard displays:
+- **Real-time Log Stream**: Live feed of agent interactions
+- **Log Filtering**: Filter by agent, time period, user, or status
+- **Search Functionality**: Find specific conversations or keywords
+- **Export Options**: Download logs for further analysis
+- **Quick Actions**: Jump to specific logs or related scores
+
+## 2. Types of Logs
+
+### Conversation Logs
+**Content Includes:**
+- **User Messages**: Complete user inputs and queries
+- **Agent Responses**: Full AI-generated responses
+- **Timestamps**: Exact timing of each interaction
+- **Session Information**: User sessions and conversation context
+- **Metadata**: Additional context and system information
+
+**Use Cases:**
+- Monitor conversation quality
+- Identify common user queries
+- Track agent response patterns
+- Analyze conversation flow
+
+### System Logs
+**Content Includes:**
+- **Processing Times**: How long each step takes
+- **Component Execution**: Which components ran and their outputs
+- **Error Messages**: Detailed error information
+- **Resource Usage**: CPU, memory, and API consumption
+- **External API Calls**: Requests to external services
+
+**Use Cases:**
+- Debug performance issues
+- Identify bottlenecks
+- Monitor system health
+- Optimize resource usage
+
+### Error Logs
+**Content Includes:**
+- **Error Types**: Classification of different errors
+- **Stack Traces**: Technical error details
+- **Context Information**: What led to the error
+- **Recovery Actions**: How the system handled errors
+- **Impact Assessment**: How errors affected users
+
+**Use Cases:**
+- Troubleshoot agent problems
+- Identify recurring issues
+- Improve error handling
+- Prevent future failures
+
+## 3. Log Analysis and Filtering
+
+### Advanced Filtering Options
+
+**Time-based Filtering:**
+- **Date Range**: Specific time periods
+- **Time of Day**: Peak vs. off-peak hours
+- **Day of Week**: Weekday vs. weekend patterns
+- **Custom Intervals**: Flexible time periods
+
+**Content Filtering:**
+- **Keywords**: Search for specific terms
+- **User Types**: Different user categories
+- **Agent Types**: Specific agents or agent versions
+- **Conversation Length**: Short vs. long conversations
+- **Success Status**: Successful vs. failed interactions
+
+**Performance Filtering:**
+- **Response Time**: Fast vs. slow responses
+- **Error Status**: Successful vs. failed requests
+- **Quality Scores**: High vs. low quality interactions
+- **User Satisfaction**: Positive vs. negative feedback
+
+### Search and Discovery
+
+**Powerful Search Features:**
+- **Full-text Search**: Search across all log content
+- **Regular Expressions**: Advanced pattern matching
+- **Boolean Operators**: Complex search queries
+- **Saved Searches**: Reuse common search patterns
+
+**Quick Discovery:**
+- **Recent Activity**: Latest interactions
+- **Popular Queries**: Most common user questions
+- **Error Hotspots**: Areas with frequent problems
+- **Trending Topics**: What users are asking about
+
+## 4. Log Details and Analysis
+
+### Conversation Flow Analysis
+
+**Step-by-step Breakdown:**
+1. **User Input Analysis**: Understanding user intent
+2. **Agent Processing**: How the agent interpreted the request
+3. **Component Execution**: Which components were used
+4. **Response Generation**: How the response was created
+5. **Delivery**: How the response was sent to the user
+
+**Flow Visualization:**
+- **Timeline View**: Chronological sequence of events
+- **Component Map**: Visual flow through agent components
+- **Decision Points**: Where the agent made choices
+- **Performance Metrics**: Timing for each step
+
+### Quality Assessment
+
+**Automated Quality Checks:**
+- **Response Relevance**: Does the response answer the question?
+- **Factual Accuracy**: Is the information correct?
+- **Completeness**: Does it fully address the user's needs?
+- **Tone Appropriateness**: Is the tone suitable?
+- **Grammar and Clarity**: Is the response well-written?
+
+**Manual Review Process:**
+- **Random Sampling**: Review representative conversations
+- **Targeted Review**: Focus on specific issues or patterns
+- **Expert Evaluation**: Have specialists review complex cases
+- **User Feedback Integration**: Incorporate user ratings and comments
+
+## 5. Performance Monitoring
+
+### Response Time Analysis
+
+**Timing Breakdown:**
+- **Total Response Time**: End-to-end conversation time
+- **Component Processing**: Time for each component
+- **External API Calls**: Time for external service calls
+- **Queue Time**: Time waiting in processing queue
+- **Network Latency**: Communication delays
+
+**Performance Optimization:**
+- **Bottleneck Identification**: Find slowest components
+- **Resource Allocation**: Optimize computational resources
+- **Caching Strategies**: Reduce repeated processing
+- **Load Balancing**: Distribute processing efficiently
+
+### Error Rate Monitoring
+
+**Error Classification:**
+- **User Errors**: Invalid inputs or requests
+- **System Errors**: Technical failures or bugs
+- **External Errors**: Third-party service failures
+- **Timeout Errors**: Requests that take too long
+- **Authentication Errors**: Access and permission issues
+
+**Error Impact Analysis:**
+- **User Experience Impact**: How errors affect users
+- **Frequency Trends**: Are errors increasing or decreasing?
+- **Resolution Time**: How quickly errors are fixed
+- **Prevention Strategies**: How to avoid similar errors
+
+## 6. Troubleshooting and Debugging
+
+### Common Issues and Solutions
+
+**Slow Response Times:**
+- **Check Component Performance**: Identify slow components
+- **Review External API Calls**: Optimize third-party integrations
+- **Analyze Query Complexity**: Simplify complex requests
+- **Resource Monitoring**: Ensure sufficient resources
+
+**Incorrect Responses:**
+- **Review Training Data**: Check knowledge base quality
+- **Analyze Prompt Engineering**: Improve agent instructions
+- **Validate Context**: Ensure proper context handling
+- **Test Edge Cases**: Handle unusual scenarios
+
+**Frequent Errors:**
+- **Error Pattern Analysis**: Identify common error causes
+- **Code Review**: Check for bugs in agent logic
+- **Input Validation**: Improve user input handling
+- **Fallback Mechanisms**: Better error recovery
+
+### Advanced Debugging Techniques
+
+**Log Correlation:**
+- **Cross-reference Logs**: Connect related log entries
+- **Session Tracking**: Follow complete user sessions
+- **Component Tracing**: Track data flow through components
+- **Timeline Analysis**: Understand sequence of events
+
+**Root Cause Analysis:**
+- **Systematic Investigation**: Follow debugging methodology
+- **Hypothesis Testing**: Test potential causes
+- **Evidence Collection**: Gather supporting data
+- **Solution Validation**: Confirm fixes work
+
+## 7. Log Management and Maintenance
+
+### Data Retention and Archiving
+
+**Retention Policies:**
+- **Active Logs**: Recent logs for immediate analysis
+- **Archived Logs**: Older logs for historical analysis
+- **Compressed Storage**: Efficient long-term storage
+- **Secure Deletion**: Proper data disposal
+
+**Compliance and Privacy:**
+- **Data Anonymization**: Remove sensitive information
+- **Regulatory Compliance**: Meet data protection requirements
+- **Access Controls**: Limit who can view logs
+- **Audit Trails**: Track who accessed what logs
+
+### Performance Optimization
+
+**Log Processing Efficiency:**
+- **Batch Processing**: Process logs in batches
+- **Indexing**: Fast log searching and retrieval
+- **Compression**: Reduce storage requirements
+- **Caching**: Speed up common queries
+
+## 8. Integration and Automation
+
+### Alert Systems
+
+**Automated Monitoring:**
+- **Error Rate Alerts**: Notify when errors spike
+- **Performance Alerts**: Warn about slow responses
+- **Quality Alerts**: Flag low-quality interactions
+- **Volume Alerts**: Monitor usage patterns
+
+**Notification Channels:**
+- **Email Alerts**: Send notifications via email
+- **Slack Integration**: Post alerts to team channels
+- **Dashboard Alerts**: Visual alerts in the interface
+- **Mobile Notifications**: Push notifications to phones
+
+### Reporting Integration
+
+**Automated Reports:**
+- **Daily Log Summaries**: Key metrics and highlights
+- **Weekly Trend Reports**: Performance over time
+- **Monthly Deep Dives**: Comprehensive analysis
+- **Custom Reports**: Tailored to specific needs
+
+## 9. Best Practices
+
+### Effective Log Monitoring
+
+**Regular Review Schedule:**
+- **Daily Monitoring**: Check for immediate issues
+- **Weekly Analysis**: Look for trends and patterns
+- **Monthly Reviews**: Deep dive into performance
+- **Quarterly Assessments**: Strategic evaluation
+
+**Proactive Issue Detection:**
+- **Baseline Establishment**: Know normal performance
+- **Trend Monitoring**: Spot changes early
+- **Anomaly Detection**: Identify unusual patterns
+- **Predictive Analysis**: Anticipate future issues
+
+### Data-Driven Improvements
+
+**Systematic Analysis:**
+- **Hypothesis Formation**: Develop improvement theories
+- **Data Collection**: Gather supporting evidence
+- **Testing**: Validate improvements
+- **Measurement**: Confirm positive results
+
+### Security and Privacy
+
+**Secure Log Handling:**
+- **Access Controls**: Limit log access appropriately
+- **Data Encryption**: Protect sensitive log data
+- **Audit Logging**: Track log access and modifications
+- **Privacy Protection**: Respect user privacy in logs
+
+The Evaluation Logs section is essential for maintaining high-quality AI agents. Use these tools regularly to monitor performance, identify issues early, and continuously improve your agents based on real usage data.

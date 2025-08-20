@@ -1,0 +1,71 @@
+---
+title: "Combine"
+description: "A worker that combines multiple inputs into one output based on specified mode"
+---
+
+# Combine
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Combine - Worker Configuration Interface](/images/screenshots/workers/combine.png)
+*Combine - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Combine Worker is a tool that allows you to combine multiple inputs into a single output. It supports two modes of operation: "concat" and "nonempty". In the "concat" mode, it concatenates all the input fields, while in the "nonempty" mode, it selects the first non-empty input field. This worker is useful in scenarios where you need to aggregate data from multiple sources or select non-empty data from a list of inputs.
+
+## 2. Configuration Parameters
+
+The Combine Worker accepts the following parameters:
+
+- `mode`: This parameter specifies the mode of operation. It can be either "concat" or "nonempty".
+- `inputCount`: This optional parameter specifies the number of input fields.
+
+## 3. Input/Output Handles
+
+The Combine Worker uses the following input and output handles:
+
+- `input1`, `input2`, ...: These are the input fields. The worker can handle any number of input fields.
+- `output`: This is the output field. The result of the combination operation is stored in this field.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Combine Worker:
+
+```javascript
+const worker = agent.initializeWorker(
+  { type: "combine" },
+  {
+    fields: {
+      input1: { direction: 'input', value: 'Hello' },
+      input2: { direction: 'input', value: 'World' },
+      output: { direction: 'output', value: '' }
+    },
+    parameters: {
+      mode: "concat"
+    }
+  }
+)
+execute(worker)
+```
+
+In this example, the worker concatenates the strings "Hello" and "World" to produce the output "HelloWorld".
+
+## 5. Integration Examples
+
+The Combine Worker can be integrated into a larger system where data from multiple sources need to be combined. For instance, in a data processing pipeline, you can use the Combine Worker to aggregate data from different stages of the pipeline.
+
+## 6. Best Practices
+
+- Always specify the mode of operation. If the mode is not specified, the worker may not behave as expected.
+- When using the "nonempty" mode, ensure that at least one of the input fields is not empty. If all input fields are empty, the worker will output an empty value.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not producing the expected output, check the input fields and the mode of operation. Ensure that the input fields are correctly set and the mode of operation is appropriate for your use case.
+- If the worker is not executing, check the worker initialization code. Ensure that the worker type is correctly set to "combine".

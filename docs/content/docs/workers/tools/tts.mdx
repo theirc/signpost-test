@@ -1,0 +1,52 @@
+---
+title: "TTS"
+description: "A worker that converts text to speech using Google's Text-to-Speech API"
+---
+
+# TTS
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Tts - Worker Configuration Interface](/images/screenshots/workers/tts.png)
+*Tts - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Tts Worker is designed to convert text into speech using Google's Text-to-Speech API. It detects the language of the input text, fetches available voices, and selects the best voice for the detected language. If no voice is available for the detected language, it falls back to English.
+
+## 2. Configuration Parameters
+
+The Tts Worker does not require any configuration parameters.
+
+## 3. Input/Output Handles
+
+The Tts Worker has two NodeIO fields: `input` and `output`. The `input` field accepts the text to be converted into speech, while the `output` field returns the speech data.
+
+## 4. Usage Examples with Code
+
+```typescript
+const ttsWorker = new TTSWorker();
+const text = "Hello, world!";
+ttsWorker.fields.input.write(text);
+await ttsWorker.run();
+const speech = ttsWorker.fields.output.read();
+```
+
+## 5. Integration Examples
+
+The Tts Worker can be integrated into any application that requires text-to-speech functionality. For example, it can be used in an e-learning platform to read out course content to users, or in a customer service chatbot to provide voice responses.
+
+## 6. Best Practices
+
+- Ensure that the input text is in a language supported by Google's Text-to-Speech API.
+- Handle any errors that may occur during the text-to-speech conversion process, such as network errors or API errors.
+
+## 7. Troubleshooting Tips
+
+- If the text-to-speech conversion fails, check the error message for details. It may be due to an unsupported language or a problem with the Google API.
+- If the detected language is not what you expected, check the input text for any errors or inconsistencies in language use.

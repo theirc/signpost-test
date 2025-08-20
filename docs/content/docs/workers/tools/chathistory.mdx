@@ -1,0 +1,95 @@
+---
+title: "Chat History"
+description: "A worker that manages and manipulates chat history in a Signpost AI application"
+---
+
+# Chat History
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Chathistory - Worker Configuration Interface](/images/screenshots/workers/chathistory.png)
+*Chathistory - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Chathistory Worker is a crucial component in the Signpost AI system. It is responsible for managing chat history, including retrieving, saving, and summarizing chat history. This worker helps to maintain a record of the conversation between the user and the AI agent, which can be useful for various purposes such as debugging, user experience improvement, and data analysis.
+
+## 2. Configuration Parameters
+
+The Chathistory Worker has several configuration parameters:
+
+- `history`: Specifies the type of history to be saved. Default is "full".
+- `keepLatest`: Specifies the number of latest chat messages to be kept. Default is 100.
+- `sumarizeWhen`: Specifies when to summarize the chat history.
+- `sumarizePrompt`: Specifies the prompt for summarization. Default is "Summarize the chat history and keep the most important points of the conversation, return only the summary."
+- `sumarizationModel`: Specifies the model to be used for summarization.
+
+## 3. Input/Output Handles
+
+The Chathistory Worker has one output field:
+
+- `output`: This field holds the chat history.
+
+The worker also has a `saveHistory` method that saves the chat history to the database.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Chathistory Worker:
+
+```javascript
+// Create a new instance of the worker
+const worker = new ChatHistoryWorker();
+
+// Set the parameters
+worker.parameters = {
+  history: 'full',
+  keepLatest: 100,
+  sumarizeWhen: 500,
+  sumarizePrompt: 'Summarize the chat history...',
+  sumarizationModel: 'model_name'
+};
+
+// Execute the worker
+worker.execute();
+```
+
+## 5. Integration Examples
+
+The Chathistory Worker can be integrated into the Signpost AI system as follows:
+
+```javascript
+// In your main application file
+import { ChatHistoryWorker } from './workers';
+
+// Create a new instance of the worker
+const worker = new ChatHistoryWorker();
+
+// Set the parameters
+worker.parameters = {
+  history: 'full',
+  keepLatest: 100,
+  sumarizeWhen: 500,
+  sumarizePrompt: 'Summarize the chat history...',
+  sumarizationModel: 'model_name'
+};
+
+// Add the worker to the system
+system.addWorker(worker);
+```
+
+## 6. Best Practices
+
+- Always provide a unique user ID (`uid`) when executing the worker. This is crucial for retrieving and saving the correct chat history.
+- Adjust the `keepLatest` parameter based on your application's needs. If you need to keep a longer history, increase this value.
+- Use the `sumarizeWhen` and `sumarizePrompt` parameters to control the summarization of chat history.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not returning any history, ensure that the `uid` is correctly set and that there is history associated with that `uid` in the database.
+- If the worker is not saving history, ensure that the `uid` is correctly set and that the database is accessible and writable.
+- If you encounter any errors, check the console log for any error messages. These messages can provide clues about what went wrong.

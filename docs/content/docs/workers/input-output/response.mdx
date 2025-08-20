@@ -1,0 +1,67 @@
+---
+title: "Response"
+description: "A worker that serves as a schema for the response"
+---
+
+# Response
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Response - Worker Configuration Interface](/images/screenshots/workers/response.png)
+*Response - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Response Worker is a crucial component in the Signpost AI system. It is responsible for structuring the responses from the AI system. It collects the values from the handlers and assigns them to the output parameters. This ensures that the output is formatted correctly and can be easily interpreted by other components or systems.
+
+## 2. Configuration Parameters
+
+The Response Worker does not require any configuration parameters. It is initialized with the type "response".
+
+## 3. Input/Output Handles
+
+The Response Worker iterates over the handlers of the AI worker, collecting the values of each handler and assigning them to the output parameters. The output is an object where the keys are the handler names and the values are the handler values.
+
+## 4. Usage Examples with Code
+
+Below is an example of how to use the Response Worker:
+
+```javascript
+import { Agent, AIWorker } from 'signpost-ai';
+
+const agent = new Agent();
+const worker = agent.initializeWorker(
+  { type: "response" },
+  [],
+  response
+);
+
+async function execute(worker: AIWorker, p: AgentParameters) {
+  const handlers = Object.values(worker.handles);
+  const values = {};
+  for (const h of handlers) {
+    if (!h.value) continue;
+    values[h.name] = h.value;
+  }
+  p.output = values;
+}
+```
+
+## 5. Integration Examples
+
+The Response Worker can be integrated into any AI system that requires structured responses. It can be used in conjunction with other workers to ensure that the output is formatted correctly.
+
+## 6. Best Practices
+
+- Always ensure that the Response Worker is initialized with the correct type ("response").
+- Always check that the handlers have values before assigning them to the output parameters.
+
+## 7. Troubleshooting Tips
+
+- If the output is not formatted correctly, check that the handlers have values. If a handler does not have a value, it will not be included in the output.
+- If the Response Worker is not working as expected, check that it has been initialized correctly. The type should be "response" and the worker registry should be provided.

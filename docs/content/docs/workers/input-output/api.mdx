@@ -1,0 +1,72 @@
+---
+title: "API Call"
+description: "Make external API calls and handle responses"
+---
+
+# API Call
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Api - Worker Configuration Interface](/images/screenshots/workers/api.png)
+*Api - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Api Worker is a critical component of the Signpost AI system, designed to handle API requests and responses. It is responsible for sending HTTP requests to specified endpoints and processing the responses. The worker can be configured with different parameters to handle various types of API requests.
+
+## 2. Configuration Parameters
+
+The Api Worker accepts the following configuration parameters:
+
+- `endpoint`: The default endpoint URL to which the API request will be sent.
+- `method`: The HTTP method to be used for the API request. Default is 'GET'.
+- `params`: The parameters to be sent with the API request.
+- `headers`: The headers to be included in the API request.
+- `timeout`: The maximum time to wait for the API request to complete. Default is 10000ms.
+- `authType`: The type of authentication to be used for the API request. Default is 'none'.
+- `username`: The username to be used for authentication, if required.
+- `selectedKeyName`: The key to be used for authentication, if required.
+
+## 3. Input/Output Handles
+
+The Api Worker has the following input/output handles:
+
+- `body`: The body of the API request.
+- `response`: The response from the API request.
+- `error`: Any errors that occur during the API request.
+- `endpointUrlInput`: The endpoint URL input field handle.
+
+## 4. Usage Examples with Code
+
+To create an Api Worker:
+
+```javascript
+const worker = create(agent);
+```
+
+To execute an Api Worker:
+
+```javascript
+execute(worker, agentParameters);
+```
+
+## 5. Integration Examples
+
+The Api Worker can be integrated into your application to handle API requests and responses. For example, you could use it to fetch data from a third-party API, or to send data to an external server.
+
+## 6. Best Practices
+
+- Always specify a timeout to prevent the API request from hanging indefinitely.
+- Use the `endpointUrlInput` handle to dynamically change the endpoint URL.
+- Handle errors gracefully using the `error` output handle.
+
+## 7. Troubleshooting Tips
+
+- If the API request is not completing, check the `timeout` parameter.
+- If the API request is returning an error, check the `error` output handle.
+- If the API request is not being sent to the correct endpoint, check the `endpoint` and `endpointUrlInput` parameters.

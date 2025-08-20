@@ -1,0 +1,71 @@
+---
+title: "Mock Data"
+description: "A debugging tool for mocking data in AI workflows"
+---
+
+# Mock Data
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Mock - Worker Configuration Interface](/images/screenshots/workers/mock.png)
+*Mock - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Mock Worker is a debugging tool that allows you to simulate or "mock" data for testing purposes in your AI workflows. It is designed to help developers test the integration and functionality of their AI workers by providing a mock input and output.
+
+## 2. Configuration Parameters
+
+The Mock Worker is configured with the following parameters:
+
+- `type`: This parameter should always be set to "mock".
+- `debug`: This is a boolean parameter. If set to false, the worker will simply pass the input to the output. If set to true, the worker will perform its mocking function.
+
+## 3. Input/Output Handles
+
+The Mock Worker has two handles:
+
+- `input`: This is where you provide the data that you want to mock.
+- `output`: This is where the Mock Worker will send the mocked data.
+
+## 4. Usage Examples with Code
+
+Here is a simple example of how to use the Mock Worker:
+
+```javascript
+const agent = new Agent();
+
+const mockWorker = agent.initializeWorker(
+  { type: "mock" },
+  [
+    { type: "unknown", direction: "input", title: "Input", name: "input" },
+    { type: "unknown", direction: "output", title: "Output", name: "output" },
+  ],
+  mock
+)
+
+mockWorker.fields.input.value = "Test data";
+await mockWorker.execute({ debug: false });
+console.log(mockWorker.fields.output.value);  // Outputs: "Test data"
+```
+
+In this example, we're simply passing "Test data" through the Mock Worker, which then outputs the same value.
+
+## 5. Integration Examples
+
+The Mock Worker can be integrated into any AI workflow where you need to simulate data for testing purposes. For example, you might use it when testing a new AI worker to ensure that it correctly processes input and produces the expected output.
+
+## 6. Best Practices
+
+- Always use the Mock Worker in a controlled testing environment. It is not designed for use in production workflows.
+- Be sure to thoroughly test all possible input values to ensure that your AI workers handle them correctly.
+
+## 7. Troubleshooting Tips
+
+- If the Mock Worker is not producing the expected output, check to make sure that the `debug` parameter is set correctly.
+- If you're still having trouble, try simplifying your input data to isolate the issue.

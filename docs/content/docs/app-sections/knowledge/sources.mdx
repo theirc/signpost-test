@@ -1,0 +1,181 @@
+---
+title: "Knowledge Sources"
+description: "Complete guide to adding files, live data, and external sources to your collections"
+---
+
+# Knowledge Sources
+
+## Overview
+
+Knowledge Sources are the foundation of your knowledge collections - they represent the actual data that your AI agents will search and reference. This comprehensive guide covers all methods of adding content to your collections, from simple file uploads to complex live data integrations.
+
+## 1. Sources Dashboard
+
+![Knowledge Sources Interface](/images/screenshots/knowledge/knowledge-sources.png)
+*Knowledge Sources Interface - Main dashboard showing all your data sources*
+
+The sources dashboard provides:
+- **Source List**: All your configured data sources with status indicators
+- **Source Types**: Different methods for adding data (files, URLs, APIs, etc.)
+- **Processing Status**: Real-time status of data ingestion and processing
+- **Source Management**: Edit, refresh, or remove existing sources
+- **Analytics**: Usage statistics and performance metrics
+
+## 2. File Upload Sources
+
+### Step 1: Basic File Upload
+
+![Knowledge Sources File Upload](/images/screenshots/knowledge/knowledge-sources-upload-files.png)
+*Knowledge Sources File Upload - Upload documents directly from your computer*
+
+1. **Select a Collection** where you want to add files
+2. **Click "Add Source"** and select "File Upload"
+3. **Choose Upload Method**:
+   - **Single File**: Upload one file at a time
+   - **Multiple Files**: Select multiple files simultaneously
+   - **Folder Upload**: Upload entire folder structures
+   - **Drag & Drop**: Drag files directly onto the upload area
+
+4. **Configure Upload Settings**:
+   - **File Processing**: Choose how to handle each file type
+   - **Metadata Extraction**: Automatically extract titles, authors, dates
+   - **Language Detection**: Auto-detect document language
+   - **Quality Filters**: Skip low-quality or duplicate content
+
+### Step 2: File Type Handling
+
+**Supported File Types:**
+- **PDF Files**: Extract text, preserve formatting, handle images
+- **Office Documents**: Process DOCX, XLSX, PPTX files
+- **Text Files**: Handle TXT, MD, CSV, JSON formats
+- **Web Files**: Process HTML, XML files
+- **Media Files**: Extract text from images (OCR), audio transcripts
+
+**Processing Options:**
+- **Chunk Strategy**: How to split large documents
+  - **By Paragraphs**: Natural language boundaries
+  - **By Pages**: Maintain page structure
+  - **By Sections**: Use document headings
+  - **Custom Size**: Specify token/character limits
+
+## 3. Live Data Sources
+
+### Step 1: Setting Up Live Data Integration
+
+![Knowledge Sources Live Data](/images/screenshots/knowledge/knowledge-sources-add-live-data.png)
+*Knowledge Sources Live Data - Configure real-time data feeds and API integrations*
+
+1. **Click "Add Source"** and select "Live Data"
+2. **Choose Integration Type**:
+   - **API Integration**: Connect to REST APIs
+   - **Database Connection**: Link to SQL databases
+   - **Cloud Storage**: Sync with Google Drive, OneDrive, etc.
+   - **Web Scraping**: Extract data from websites
+   - **RSS/Feed**: Monitor news feeds or blogs
+
+### Step 2: API Integration Setup
+
+**API Configuration:**
+1. **Enter API Details**:
+   - **Base URL**: The root API endpoint
+   - **Authentication**: API keys, OAuth, or basic auth
+   - **Rate Limits**: Respect API usage limits
+   - **Request Headers**: Required headers for API calls
+
+2. **Configure Data Extraction**:
+   - **Endpoint Paths**: Specific endpoints to monitor
+   - **Query Parameters**: Filter data at the source
+   - **Response Parsing**: How to extract content from responses
+   - **Field Mapping**: Map API fields to your metadata schema
+
+3. **Set Update Schedule**:
+   - **Real-time**: Process data as it arrives (webhooks)
+   - **Hourly**: Check for updates every hour
+   - **Daily**: Daily batch processing
+   - **Weekly**: Weekly comprehensive sync
+   - **Custom**: Define your own schedule
+
+## 4. Data Processing Pipeline
+
+### Processing Stages
+
+1. **Data Ingestion**: Raw data is retrieved from sources
+2. **Format Conversion**: Convert to standard formats
+3. **Text Extraction**: Extract readable text from documents
+4. **Metadata Enhancement**: Add titles, dates, categories
+5. **Content Chunking**: Split into searchable segments
+6. **Vector Generation**: Create embeddings for AI search
+7. **Index Update**: Add to searchable index
+
+### Quality Assurance
+
+**Automated Checks:**
+- **Format Validation**: Ensure data meets standards
+- **Content Quality**: Filter out poor-quality content
+- **Duplicate Detection**: Identify and merge duplicates
+- **Metadata Validation**: Verify metadata accuracy
+
+**Manual Review Process:**
+- **Sample Review**: Manually check random samples
+- **Error Investigation**: Review failed processing attempts
+- **Quality Feedback**: Improve processing rules
+- **User Feedback**: Incorporate user quality reports
+
+## 5. Source Management
+
+### Monitoring Source Health
+
+**Status Indicators:**
+- **Active**: Source is working normally
+- **Syncing**: Currently processing new data
+- **Error**: Source has encountered problems
+- **Paused**: Temporarily disabled
+- **Disconnected**: Connection issues
+
+**Performance Metrics:**
+- **Last Sync**: When data was last updated
+- **Document Count**: Number of documents from this source
+- **Success Rate**: Percentage of successful data retrievals
+- **Average Processing Time**: Time to process new content
+
+### Source Maintenance
+
+**Regular Tasks:**
+1. **Review Error Logs**: Identify and fix connection issues
+2. **Update Credentials**: Refresh expired API keys or passwords
+3. **Optimize Queries**: Improve performance of database queries
+4. **Manage Storage**: Archive or remove old data
+
+## 6. Best Practices
+
+### Source Organization
+- **Logical Grouping**: Group related sources together
+- **Naming Conventions**: Use clear, descriptive names
+- **Documentation**: Document source purposes and configurations
+- **Access Control**: Limit source management to authorized users
+
+### Performance Optimization
+- **Batch Processing**: Process multiple items together
+- **Incremental Updates**: Only sync changed data
+- **Caching**: Cache frequently accessed data
+- **Load Balancing**: Distribute processing across resources
+
+### Security Considerations
+- **Credential Management**: Securely store API keys and passwords
+- **Data Encryption**: Encrypt sensitive data in transit and at rest
+- **Access Logging**: Track who accesses what data
+- **Compliance**: Follow relevant data protection regulations
+
+## 7. Troubleshooting Common Issues
+
+### Connection Problems
+- **API Rate Limits**: Implement proper rate limiting
+- **Authentication Failures**: Verify credentials and permissions
+- **Network Issues**: Check connectivity and firewall settings
+- **Timeout Errors**: Adjust timeout settings for slow sources
+
+### Data Quality Issues
+- **Encoding Problems**: Handle different character encodings
+- **Format Errors**: Validate data formats before processing
+- **Incomplete Data**: Handle partial or corrupted data
+- **Content Duplication**: Implement deduplication strategies

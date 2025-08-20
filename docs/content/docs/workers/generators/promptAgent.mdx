@@ -1,0 +1,66 @@
+---
+title: "LLM Agent"
+description: "AI agent that manages and formats prompts for language models"
+---
+
+# LLM Agent
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Promptagent - Worker Configuration Interface](/images/screenshots/workers/promptAgent.png)
+*Promptagent - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The PromptAgent Worker is an AI worker that uses OpenAI models to generate responses based on user input and instructions. It can be connected to other workers, such as the HandoffAgent Worker, to handle specific tasks. The worker also allows for web searches to be incorporated into the response generation process.
+
+## 2. Configuration Parameters
+
+The worker has the following configuration parameters:
+
+- `model`: The AI model to be used for generating responses. By default, it uses the "openai/gpt-4.1" model.
+- `searchTheWeb`: A boolean parameter that determines whether to incorporate web search results into the response generation process. By default, it is set to false.
+
+## 3. Input/Output Handles
+
+The worker uses the following input/output handles:
+
+- `input`: The user input that the worker will use to generate a response.
+- `output`: The generated response from the worker.
+- `history`: The history of user inputs and worker responses.
+- `instructions`: Specific instructions for the worker on how to generate the response.
+- `handoff`: An optional handle that can be connected to a HandoffAgent Worker to handle specific tasks.
+- `tool`: An optional handle that can be connected to other tools.
+
+## 4. Usage Examples with Code
+
+```javascript
+const worker = new PromptAgentWorker();
+worker.parameters.model = "openai/gpt-4.1";
+worker.parameters.searchTheWeb = true;
+worker.fields.input.value = "What is the weather like today?";
+worker.fields.instructions.value = "Provide a detailed weather report";
+const response = await worker.execute();
+console.log(response.fields.output.value);
+```
+
+## 5. Integration Examples
+
+The PromptAgent Worker can be integrated with a HandoffAgent Worker to handle specific tasks. For example, if the user input is a request for customer support, the PromptAgent Worker can hand off the task to the HandoffAgent Worker.
+
+## 6. Best Practices
+
+- Always check if the model is set before executing the worker.
+- Use the `instructions` field to guide the AI model in generating the desired response.
+- If using the `handoff` handle, ensure that the connected worker has the necessary parameters set.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not generating a response, check if the `input` field has a value.
+- If the worker is returning an error, check the `error` property of the worker for more details.
+- If the worker is not handing off tasks correctly, check if the `handoff` handle is connected to a valid worker.

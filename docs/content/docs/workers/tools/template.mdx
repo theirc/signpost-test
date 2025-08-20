@@ -1,0 +1,59 @@
+---
+title: "Template"
+description: "A worker that creates templated text using dynamic input fields."
+---
+
+# Template
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Template - Worker Configuration Interface](/images/screenshots/workers/template.png)
+*Template - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Template Worker is designed to create templated text using dynamic input fields. It leverages the Handlebars library to compile templates and generate the desired output. This worker is particularly useful for generating dynamic content based on user input or other variable data.
+
+## 2. Configuration Parameters
+
+The Template Worker doesn't require any specific configuration parameters. It utilizes the standard worker parameters provided by the Agent.
+
+## 3. Input/Output Handles
+
+- **Input**: The worker accepts a string input named "template". This should be a Handlebars-compatible template string.
+- **Output**: The worker produces a string output named "output". This is the result of applying the input values to the template.
+
+## 4. Usage Examples with Code
+
+Here's an example of how you might use the Template Worker:
+
+```javascript
+const worker = agent.createWorker('template');
+worker.fields.template.value = "Hello, &#123;&#123;name&#125;&#125;!";
+worker.getUserHandlers()[0].value = "World";
+await worker.execute();
+console.log(worker.fields.output.value);  // Outputs: "Hello, World!"
+```
+
+In this example, the template string is "Hello, &#123;&#123;name&#125;&#125;!", and the value for "name" is set to "World". The worker then generates the string "Hello, World!".
+
+## 5. Integration Examples
+
+The Template Worker can be integrated into any workflow where dynamic text generation is required. For example, it could be used to generate personalized email content in a marketing automation system, or to create dynamic SQL queries in a data processing pipeline.
+
+## 6. Best Practices
+
+- Ensure that your template strings are valid Handlebars templates.
+- Be mindful of the data types of your input values. Handlebars will convert all values to strings, which may not be what you want in some cases.
+- Handlebars templates are HTML-escaped by default. If you need to generate unescaped HTML, use the triple-stash syntax (`&#123;&#123;&#123;value&#125;&#125;&#125;`).
+
+## 7. Troubleshooting Tips
+
+- If your output is not what you expect, check your template string for errors or typos.
+- If you're getting a Handlebars error, ensure that your input values are correctly set and that your template string is a valid Handlebars template.
+- If you're not getting any output, make sure that your input values are not null or undefined.

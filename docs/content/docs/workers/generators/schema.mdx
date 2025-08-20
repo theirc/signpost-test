@@ -1,0 +1,124 @@
+---
+title: "Schema"
+description: "Generate structured data based on a defined schema and input text"
+---
+
+# Schema
+
+## Screenshots
+
+![Schema Worker Interface](/images/screenshots/workers/schema.png)
+*Schema Worker Interface - Configure data extraction schema*
+
+## Overview
+
+The Schema worker generates structured data by extracting information from input text based on a predefined schema. It uses TypeChat and Zod validation to ensure the output conforms to the specified structure.
+
+## Key Features
+
+- **Dynamic Schema Definition**: Define custom data structures using connected handlers
+- **Type Safety**: Built-in validation using Zod schemas
+- **Flexible Field Types**: Support for strings, numbers, booleans, arrays, and enums
+- **AI-Powered Extraction**: Uses OpenAI models for intelligent data parsing
+
+## Configuration
+
+### Parameters
+- **Model**: OpenAI model to use (default: gpt-4o)
+
+### Input/Output
+- **Input**: Raw text content to extract data from
+- **JSON Output**: Structured JSON object matching the defined schema
+- **Dynamic Fields**: Additional output fields based on connected handlers
+
+## Use Cases
+
+### 1. Contact Information Extraction
+Extract structured contact details from unformatted text:
+- Name, email, phone number
+- Address components
+- Company information
+
+### 2. Product Data Parsing
+Structure product information from descriptions:
+- Price, features, specifications
+- Categories and tags
+- Availability status
+
+### 3. Event Information Processing
+Extract event details from text:
+- Date, time, location
+- Attendee information
+- Requirements and restrictions
+
+### 4. Document Analysis
+Parse structured data from documents:
+- Form field extraction
+- Data normalization
+- Content categorization
+
+## How It Works
+
+1. **Schema Definition**: Connected handlers define the output structure
+2. **Type Mapping**: Field types are converted to Zod validation schemas
+3. **AI Processing**: Input text is processed using the specified model
+4. **Validation**: Output is validated against the defined schema
+5. **Field Population**: Extracted data populates the connected output fields
+
+## Best Practices
+
+### Schema Design
+- Use descriptive field names that match expected content
+- Provide clear prompts for each field to guide extraction
+- Choose appropriate data types for validation
+
+### Input Preparation
+- Ensure input text contains the information you want to extract
+- Use consistent formatting when possible
+- Provide sufficient context for accurate extraction
+
+### Model Selection
+- Use gpt-4o for complex schema extraction
+- Consider gpt-3.5-turbo for simpler, faster processing
+- Test different models for optimal accuracy
+
+### Validation Handling
+- Design schemas to handle optional fields gracefully
+- Use enum types for fields with limited valid values
+- Consider array types for lists or multiple values
+
+## Example Schema
+
+```typescript
+// Example: Contact extraction schema
+{
+  name: string,           // Person's full name
+  email: string,          // Email address
+  phone: string,          // Phone number
+  company: string,        // Company name
+  role: string,           // Job title
+  tags: string[]          // Category tags
+}
+```
+
+## Integration Tips
+
+- **Chain with Text Workers**: Process raw content before schema extraction
+- **Combine with Display**: Show extracted data in formatted views
+- **Use with State**: Store extracted data for later use
+- **Connect to API**: Send structured data to external systems
+
+## Error Handling
+
+The worker includes built-in validation and will:
+- Skip extraction if input is empty
+- Handle partial matches gracefully
+- Provide structured error information
+- Maintain type safety throughout the process
+
+## Performance Considerations
+
+- Larger schemas may require more processing time
+- Complex nested structures need more capable models
+- Consider breaking large schemas into smaller, focused ones
+- Cache results when processing similar content repeatedly

@@ -1,0 +1,70 @@
+---
+title: "Selector"
+description: "Select and prioritize relevant documents based on questions and context"
+---
+
+# Selector
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Documentselector - Worker Configuration Interface](/images/screenshots/workers/documentselector.png)
+*Documentselector - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Documentselector Worker is an AI worker that uses a language model to select and prioritize relevant documents from a given set of documents based on a provided question and context. This worker is especially useful in applications where there is a need to filter and prioritize information from a large set of documents.
+
+## 2. Configuration Parameters
+
+The worker has the following configuration parameters:
+
+- `results`: An optional parameter that specifies the number of results to return. If not provided, the default value is 8.
+
+## 3. Input/Output Handles
+
+The worker has the following input/output fields:
+
+- `input`: The input question that will be used to search the documents.
+- `output`: The output field where the search results will be stored.
+- `prompt`: An optional prompt that can be used to guide the search.
+- `documents`: The documents that will be searched.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Documentselector Worker:
+
+```javascript
+const worker = new DocumentSelectorWorker();
+worker.fields.input.value = "What is the capital of France?";
+worker.fields.documents.value = [
+  {title: "France", body: "The capital of France is Paris."},
+  {title: "Germany", body: "The capital of Germany is Berlin."},
+  // More documents...
+];
+worker.parameters.results = 5;
+await worker.execute();
+console.log(worker.fields.output.value);
+```
+
+In this example, the worker will search the documents for the answer to the question "What is the capital of France?" and store the results in the output field.
+
+## 5. Integration Examples
+
+The Documentselector Worker can be integrated into any application that needs to filter and prioritize information from a large set of documents. For example, it can be used in a chatbot application to provide relevant answers to user questions based on a set of pre-defined documents.
+
+## 6. Best Practices
+
+- Ensure that the input question is clear and specific.
+- Provide a prompt if possible to guide the search.
+- Ensure that the documents are well-structured and contain relevant information.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not returning any results, check that the input question and documents are correctly set.
+- If the worker is returning too many or too few results, adjust the `results` parameter.
+- If the worker is not prioritizing the documents correctly, check the prompt and the structure of the documents.

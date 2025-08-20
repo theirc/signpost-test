@@ -1,0 +1,70 @@
+---
+title: "STT"
+description: "A worker that converts speech to text using OpenAI's Whisper engine"
+---
+
+# STT
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Stt - Worker Configuration Interface](/images/screenshots/workers/stt.png)
+*Stt - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Stt Worker is a tool that uses OpenAI's Whisper engine to convert speech to text. It is designed to take an audio file as input and produce a textual transcription as output. This worker is useful in a variety of applications, from transcription services to voice command interpretation.
+
+## 2. Configuration Parameters
+
+The Stt Worker has the following configuration parameters:
+
+- `engine`: This optional parameter specifies the engine to be used for the speech-to-text conversion. The default value is "whisper-1".
+
+## 3. Input/Output Handles
+
+The Stt Worker has the following input and output handles:
+
+- `input`: This is the input handle where the audio file to be transcribed is passed. The audio file should be in the format `{ audio: string, ext: string }`.
+
+- `output`: This is the output handle where the textual transcription of the audio file is returned.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Stt Worker:
+
+```javascript
+const worker = agent.initializeWorker(
+  {
+    type: "stt",
+    conditionable: true,
+  },
+  [
+    { type: "audio", direction: "input", title: "Input", name: "input" },
+    { type: "string", direction: "output", title: "Output", name: "output" },
+  ],
+  stt
+) as STTWorker;
+
+worker.fields.input.value = { audio: "base64 encoded audio", ext: "mp3" };
+await worker.execute();
+console.log(worker.fields.output.value); // Outputs the transcription of the audio
+```
+
+## 5. Integration Examples
+
+The Stt Worker can be integrated into a variety of applications. For example, it can be used in a voice command system to convert spoken commands into text that can be processed by the system. It can also be used in a transcription service to convert audio recordings into written text.
+
+## 6. Best Practices
+
+- Ensure that the audio file passed to the `input` handle is in a format that the Whisper engine can process.
+- Handle the output carefully as it is the transcription of the audio and may contain sensitive information.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not producing the expected output, ensure that the audio file is correctly formatted and that the Whisper engine is able to process it.
+- If the worker is not executing, ensure that the OpenAI API key is correctly configured.

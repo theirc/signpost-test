@@ -1,0 +1,81 @@
+---
+title: "Send Message"
+description: "Handle sending messages via different channels and communication platforms"
+---
+
+# Send Message
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Message - Worker Configuration Interface](/images/screenshots/workers/message.png)
+*Message - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Message Worker is a critical component of the Signpost AI system. It is responsible for managing the sending of messages through different channels. The worker uses various parameters and fields to customize the message content, recipient, quick replies, routing, and output.
+
+## 2. Configuration Parameters
+
+The Message Worker uses the following configuration parameters:
+
+- `integrationChannel`: The channel through which the message will be sent.
+- `telerivetApiKey`: The API key for Telerivet, if it is the chosen integration channel.
+- `telerivetProjectId`: The project ID for Telerivet, if it is the chosen integration channel.
+- `defaultToNumber`: The default recipient number to which the message will be sent.
+- `defaultQuickReplies`: The default quick replies that will be included in the message.
+- `defaultRouteId`: The default route ID for the message.
+- `username`: The username of the sender.
+
+## 3. Input/Output Handles
+
+The Message Worker uses the following fields:
+
+- `content`: The content of the message.
+- `toNumber`: The recipient's number.
+- `quickReplies`: The quick replies included in the message.
+- `routeId`: The route ID for the message.
+- `output`: The output of the worker after processing the message.
+
+## 4. Usage Examples with Code
+
+Here's an example of how to use the Message Worker:
+
+```javascript
+const worker = new MessageWorker({
+  integrationChannel: 'WhatsApp',
+  telerivetApiKey: 'YOUR_API_KEY',
+  telerivetProjectId: 'YOUR_PROJECT_ID',
+  defaultToNumber: '+1234567890',
+  defaultQuickReplies: ['Yes', 'No'],
+  defaultRouteId: 'route1',
+  username: 'user1'
+});
+
+worker.fields.content.write('Hello, world!');
+worker.fields.toNumber.write('+0987654321');
+worker.fields.quickReplies.write(['Maybe', 'Sure']);
+worker.fields.routeId.write('route2');
+```
+
+## 5. Integration Examples
+
+The Message Worker can be integrated with various messaging platforms. For example, to integrate with Telerivet, you would need to provide the `telerivetApiKey` and `telerivetProjectId` parameters.
+
+## 6. Best Practices
+
+- Always ensure that the `content` field does not exceed the maximum message length (1024 characters).
+- If the message length exceeds the maximum, use the `splitMessageForWhatsApp` function to split the message into smaller chunks.
+- Always clean the message content using the `cleanMessage` function to remove any unwanted characters or spaces.
+- Always ensure that the `quickReplies` do not exceed the maximum quick reply length (20 characters) and the maximum number of quick replies per message (3).
+
+## 7. Troubleshooting Tips
+
+- If the message is not being sent, check the `output` field for any error messages.
+- If the message is being sent to the wrong number, check the `toNumber` field.
+- If the quick replies are not being displayed correctly, check the `quickReplies` field.
+- If the message is being routed incorrectly, check the `routeId` field.

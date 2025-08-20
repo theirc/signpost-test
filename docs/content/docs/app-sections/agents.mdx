@@ -1,0 +1,233 @@
+---
+title: "Agents Section"
+description: "Complete guide to creating, configuring, and managing AI agents in Signpost AI"
+---
+
+# Agents Section
+
+## Overview
+
+The Agents section is the central hub for creating and managing AI agents in Signpost AI. This comprehensive guide covers everything from viewing existing agents to creating complex multi-worker agent flows.
+
+## 1. Agents Dashboard
+
+![Agents Main Interface](/images/screenshots/agents/agents-main.png)
+*Agents Main Interface - Overview of all your agents with management options*
+
+The main agents dashboard shows:
+- **Agent List**: All your created agents with status indicators
+- **Search and Filter**: Find specific agents quickly
+- **Create New Agent**: Primary button to start agent creation
+- **Agent Actions**: Edit, duplicate, delete, or deploy agents
+- **Performance Metrics**: Quick view of agent usage and success rates
+
+## 2. Creating a New Agent
+
+### Step 1: Initial Agent Setup
+
+![Agents Creation Interface](/images/screenshots/agents/agents-creation.png)
+*Agents Creation Interface - Initial setup screen for new agents*
+
+1. **Click "Create New Agent"** from the main dashboard
+2. **Enter Agent Details**:
+   - **Agent Name**: Choose a descriptive name (e.g., "Customer Support Bot")
+   - **Description**: Explain what the agent does
+   - **Category**: Select appropriate category for organization
+3. **Choose Creation Method**:
+   - **From Scratch**: Build a completely custom agent
+   - **From Template**: Start with a pre-built template
+   - **Import**: Import an existing agent configuration
+
+### Step 2: Flow Designer - Adding Workers
+
+The Flow Designer is where you build your agent's logic using workers (processing nodes).
+
+#### Input & Output
+
+![Agents Creation IO Workers](/images/screenshots/agents/agents-creation-io-workers.png)
+*Input & Output - Components for receiving input and sending responses*
+
+**Available Input & Output Components:**
+- **[Input](/docs/workers/input-output/input)**: Receives user messages and data
+- **[Response](/docs/workers/input-output/response)**: Sends responses back to users
+- **[API Call](/docs/workers/input-output/api)**: Make external API calls and integrations
+
+**How to Add Input & Output Components:**
+1. Drag the desired component from the left panel
+2. Drop it onto the canvas
+3. Configure the component properties in the right panel
+4. Connect components using the connection handles
+
+#### Generators (AI Processing)
+
+![Agents Creation AI Workers](/images/screenshots/agents/agents-creation-generators-workers.png)
+*Generators - Core AI processing and content generation components*
+
+**Available Generators:**
+- **[AI](/docs/workers/generators/ai)**: Core language model processing
+- **[Schema](/docs/workers/generators/schema)**: Define and validate data structures and schemas
+- **[Structured Output](/docs/workers/generators/structuredoutput)**: Ensures consistent response formatting with structured output
+- **[Agent](/docs/workers/generators/agent)**: Advanced AI agent with specialized capabilities
+- **[Content](/docs/workers/generators/text)**: Text generation and content creation
+- **[LLM Agent](/docs/workers/generators/promptAgent)**: Manages and formats prompts for language models
+- **[Handoff](/docs/workers/generators/handoffAgent)**: Transfer conversations between agents or humans
+
+**Configuration Steps:**
+1. **Select AI Model**: Choose GPT-4, Claude, or other available models
+2. **Set System Prompt**: Define the agent's personality and instructions
+3. **Configure Parameters**: Set temperature, max tokens, etc.
+4. **Define Output Format**: Specify response structure
+
+#### Tools
+
+![Agents Creation Tools Workers](/images/screenshots/agents/agents-creation-tools-workers.png)
+*Tools - Utility functions and data processing components*
+
+**Available Tools:**
+- **[Search](/docs/workers/tools/search)**: Perform semantic search operations in knowledge collections
+- **[Combine](/docs/workers/tools/combine)**: Merge data from multiple sources or previous steps
+- **[Document Selector](/docs/workers/tools/documentselector)**: Select and retrieve specific documents from collections
+- **[Document Generator](/docs/workers/tools/documentgenerator)**: Create documents, reports, and files
+- **[State](/docs/workers/tools/state)**: Store and manage conversation state and context
+- **[STT](/docs/workers/tools/stt)**: Speech-to-text conversion
+- **[TTS](/docs/workers/tools/tts)**: Text-to-speech conversion
+- **[Translate](/docs/workers/tools/translate)**: Language translation services
+- **[Template](/docs/workers/tools/template)**: Use predefined templates for content generation
+- **[Chat History](/docs/workers/tools/chathistory)**: Access and manage conversation history
+- **[Message](/docs/workers/tools/message)**: Handle message formatting and routing
+
+#### Debug
+
+![Agents Creation Debug Workers](/images/screenshots/agents/agents-creation-debug-workers.png)
+*Debug - Testing and monitoring components for development*
+
+**Available Debug Components:**
+- **[Mock Data](/docs/workers/debug/mock)**: Generate test data for development and testing
+- **[Display](/docs/workers/debug/display)**: Show intermediate results and debug information
+- **[Tooltip](/docs/workers/debug/tooltip)**: Add helpful information and guidance to the flow
+
+### Step 3: Connecting Components
+
+**Creating Connections:**
+1. **Hover over a component** to see connection handles
+2. **Click and drag** from an output handle to an input handle
+3. **Configure connection properties**:
+   - **Condition**: When this connection should activate
+   - **Data Mapping**: How data flows between components
+   - **Transformation**: Any data transformation needed
+
+**Connection Types:**
+- **Success Path**: When the component completes successfully
+- **Error Path**: When the component encounters an error
+- **Conditional Path**: Based on specific conditions or data values
+
+### Step 4: Component Configuration
+
+Each component has specific configuration options:
+
+**Common Settings:**
+- **Component Name**: Descriptive name for the component
+- **Description**: What this component does in your flow
+- **Timeout**: Maximum execution time
+- **Retry Logic**: How many times to retry on failure
+
+**AI Component Specific Settings:**
+- **Model Selection**: Choose the AI model to use
+- **System Prompt**: Core instructions for the AI
+- **Temperature**: Creativity level (0.1 for focused, 0.9 for creative)
+- **Max Tokens**: Maximum response length
+- **Stop Sequences**: When to stop generation
+
+**API Call Specific Settings:**
+- **Endpoint URL**: The API endpoint to call
+- **HTTP Method**: GET, POST, PUT, DELETE
+- **Headers**: Required API headers
+- **Authentication**: API keys or tokens
+- **Request Body**: Data to send with the request
+
+### Step 5: Testing Your Agent
+
+**Test Mode:**
+1. **Click "Test Agent"** in the flow designer
+2. **Enter test input** in the test panel
+3. **Watch the execution flow** as components process
+4. **Review outputs** at each step
+5. **Debug issues** using the debug components
+
+**Debug Features:**
+- **Step-by-step execution**: See each component's input and output
+- **Error tracking**: Identify where failures occur
+- **Performance monitoring**: Check execution times
+- **Log analysis**: Review detailed execution logs
+
+### Step 6: Deployment
+
+**Deployment Options:**
+1. **Save as Draft**: Keep working on the agent
+2. **Deploy to Staging**: Test in a production-like environment
+3. **Deploy to Production**: Make available for real users
+4. **Schedule Deployment**: Deploy at a specific time
+
+**Pre-deployment Checklist:**
+- ✅ All components properly configured
+- ✅ Error handling implemented
+- ✅ Test cases passing
+- ✅ Performance acceptable
+- ✅ Security settings reviewed
+
+## 3. Agent Management
+
+### Editing Existing Agents
+1. **Find your agent** in the agents list
+2. **Click "Edit"** to open the flow designer
+3. **Make your changes** to components or connections
+4. **Test the changes** before redeploying
+5. **Save and redeploy** when satisfied
+
+### Duplicating Agents
+1. **Select an agent** from the list
+2. **Click "Duplicate"** 
+3. **Rename the duplicate** to avoid confusion
+4. **Modify as needed** for your new use case
+
+### Agent Analytics
+- **Usage Statistics**: How often the agent is used
+- **Success Rates**: Percentage of successful interactions
+- **Average Response Time**: Performance metrics
+- **Error Rates**: Common failure points
+- **User Feedback**: Ratings and comments
+
+## 4. Best Practices
+
+### Design Principles
+- **Start Simple**: Begin with basic flows, add complexity gradually
+- **Error Handling**: Always include error handling workers
+- **Testing**: Thoroughly test before deployment
+- **Documentation**: Document your agent's purpose and logic
+- **Monitoring**: Set up analytics and monitoring
+
+### Performance Optimization
+- **Minimize Components**: Use only necessary components to reduce latency
+- **Parallel Processing**: Run independent tasks in parallel
+- **Caching**: Cache frequently used data
+- **Timeout Management**: Set appropriate timeouts for all components
+
+### Security Considerations
+- **Input Validation**: Validate all user inputs
+- **API Security**: Secure all external API calls
+- **Access Control**: Limit who can edit production agents
+- **Data Privacy**: Handle sensitive data appropriately
+
+## 5. Troubleshooting
+
+### Common Issues
+- **Component Timeout**: Increase timeout settings or optimize component logic
+- **Connection Errors**: Check API endpoints and authentication
+- **Invalid Responses**: Validate input data and response formats
+- **Performance Issues**: Review component efficiency and parallel processing
+
+### Getting Help
+- **Debug Logs**: Check detailed execution logs
+- **Test Mode**: Use step-by-step debugging
+- **Documentation**: Review component-specific documentation
+- **Support**: Contact support for complex issues
