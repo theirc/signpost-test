@@ -135,6 +135,7 @@ export default function ApiKeyView() {
                   <SelectItem value="googleTranslate">Google Translate</SelectItem>
                   <SelectItem value="exa">Exa</SelectItem>
                   <SelectItem value="perplexity">Perplexity</SelectItem>
+                  <SelectItem value="databricks">Databricks</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -150,7 +151,7 @@ export default function ApiKeyView() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="key">Key</Label>
-              <Input    
+              <Input
                 id="key"
                 value={apiKey.key}
                 onChange={(e) => setApiKey({ ...apiKey, key: e.target.value })}

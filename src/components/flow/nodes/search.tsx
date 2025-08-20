@@ -20,7 +20,8 @@ search.icon = Search
 const engineList = [
   { label: "Weaviate", value: "weaviate" },
   { label: "Exa", value: "exa" },
-  { label: "Supabase", value: "supabase" }
+  { label: "Supabase", value: "supabase" },
+  { label: "Databricks", value: "databricks" }
 ]
 
 const model = createModel({
@@ -30,7 +31,9 @@ const model = createModel({
     distance: { title: "Distance/Similarity Threshold", type: "number" },
     tooldescription: { title: "Tool Description", type: "string" },
     domain: { title: "Domain (for External Engines)", type: "string[]" },
-    collections: { title: "Collections (for Supabase Engine - Multi Needed)", type: "string" }
+    collections: { title: "Collections (for Supabase Engine - Multi Needed)", type: "string" },
+    databricksEndpoint: { title: "Databricks Endpoint", type: "string" },
+    databricksIndex: { title: "Databricks Index", type: "string" }
   }
 })
 
@@ -71,7 +74,9 @@ export function SearchNode(props: NodeProps) {
       distance: worker.parameters.distance ?? worker.fields.distance.default ?? 0.3,
       domain: Array.isArray(worker.parameters.domain) ? worker.parameters.domain : worker.parameters.domain ? [worker.parameters.domain] : worker.fields.domain.default || [],
       collections: initialCollectionsValue,
-      tooldescription: worker.parameters.toolDescription
+      tooldescription: worker.parameters.toolDescription,
+      databricksEndpoint: worker.parameters.databricksEndpoint || "",
+      databricksIndex: worker.parameters.databricksIndex || ""
     }
   })
 
@@ -107,6 +112,12 @@ export function SearchNode(props: NodeProps) {
     }
     if (name === "tooldescription") {
       worker.parameters.toolDescription = value.tooldescription
+    }
+    if (name === "databricksEndpoint") {
+      worker.parameters.databricksEndpoint = value.databricksEndpoint
+    }
+    if (name === "databricksIndex") {
+      worker.parameters.databricksIndex = value.databricksIndex
     }
   })
 
@@ -146,7 +157,7 @@ export function SearchNode(props: NodeProps) {
         <Input field={m.distance} type='number' span={12} hideLabel />
       </Row>
 
-      {selectedEngine !== 'supabase' && (
+      {selectedEngine !== 'supabase' && selectedEngine !== 'databricks' && (
         <>
           <WorkerLabeledHandle handler={worker.fields.domain} />
           <MemoizedWorker worker={worker}>
@@ -171,6 +182,17 @@ export function SearchNode(props: NodeProps) {
               />
             </Row>
           </MemoizedWorker>
+        </>
+      )}
+
+      {selectedEngine === 'databricks' && (
+        <>
+          <Row className='pb-2 px-2'>
+            <Input field={m.databricksEndpoint} span={12} required />
+          </Row>
+          <Row className='pb-2 px-2'>
+            <Input field={m.databricksIndex} span={12} required />
+          </Row>
         </>
       )}
 
