@@ -47,5 +47,4 @@ temp/
 .parcel-cache/
 
 # Documentation source (keep built files only)
-content/
 public/images/screenshots/README.md
