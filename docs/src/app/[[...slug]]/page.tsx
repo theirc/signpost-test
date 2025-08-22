@@ -2,8 +2,6 @@ import { source } from '@/lib/source';
 import {
   DocsPage,
   DocsBody,
-  DocsDescription,
-  DocsTitle,
 } from 'fumadocs-ui/page';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -14,8 +12,15 @@ export default async function Page(props: {
   params: Promise<{ slug?: string[] }>;
 }) {
   const params = await props.params;
-  const page = source.getPage(params.slug);
-  if (!page) notFound();
+  
+  // Handle both root case (when slug is undefined or empty) and other paths
+  const slug = params.slug || [];
+  
+  const page = source.getPage(slug);
+  
+  if (!page) {
+    notFound();
+  }
 
   const MDXContent = page.data.body;
 
@@ -41,7 +46,9 @@ export async function generateMetadata(props: {
   params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
   const params = await props.params;
-  const page = source.getPage(params.slug);
+  const slug = params.slug || [];
+  const page = source.getPage(slug);
+  
   if (!page) notFound();
 
   return {
