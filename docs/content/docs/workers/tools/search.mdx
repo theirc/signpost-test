@@ -1,0 +1,59 @@
+---
+title: "Search"
+description: "A worker that generates an embedding vector for a text string using OpenAI API"
+---
+
+# Search
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Search - Worker Configuration Interface](/images/screenshots/workers/search.png)
+*Search - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Search Worker is a crucial part of the Signpost AI system. It is responsible for generating an embedding vector for a given text string using the OpenAI API. This is essential for the system's ability to understand and process text data in an efficient and meaningful way.
+
+## 2. Configuration Parameters
+
+The worker requires the OpenAI API key as a configuration parameter. The API key is used to authenticate the requests made to the OpenAI API.
+
+## 3. Input/Output Handles
+
+- Input: A text string for which an embedding vector is to be generated.
+- Output: An embedding vector for the given text string, or an error message if the operation fails.
+
+## 4. Usage Examples with Code
+
+```javascript
+const text = "This is a sample text";
+const apiKeys = { openai: "your_openai_api_key" };
+
+generateEmbedding(text, apiKeys).then((result) => {
+  if (result.error) {
+    console.error("Error generating embedding:", result.error);
+  } else {
+    console.log("Generated embedding:", result.data);
+  }
+});
+```
+
+## 5. Integration Examples
+
+The Search Worker can be integrated into any system where text data needs to be processed and understood. For example, it can be used in a chatbot system to understand user inputs and generate appropriate responses.
+
+## 6. Best Practices
+
+- Always ensure that the OpenAI API key is correctly set in the environment variables.
+- Handle the error messages appropriately to understand what went wrong in case of a failure.
+
+## 7. Troubleshooting Tips
+
+- If the worker fails with a message about a missing OpenAI API key, ensure that the key is correctly set in the environment variables.
+- If the worker fails with an HTTP error, check the status code and the status text for more information about the error.
+- If the worker fails with a message about an invalid response structure from the OpenAI API, it might be due to changes in the API. Check the OpenAI API documentation for any changes.

@@ -1,0 +1,76 @@
+---
+title: "Display"
+description: "A debugging tool for displaying input data"
+---
+
+# Display
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Display - Worker Configuration Interface](/images/screenshots/workers/display.png)
+*Display - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Display Worker is a simple yet powerful debugging tool that allows you to display any input data for testing purposes. It is a part of the Signpost AI Worker framework and is primarily used for debugging and testing. It takes an input and directly outputs it without any modifications.
+
+## 2. Configuration Parameters
+
+The Display Worker is initialized with the following parameters:
+
+- `type`: The type of worker, which is "display" for the Display Worker.
+- `direction`: The direction of the data flow, which can be either "input" or "output".
+- `title`: The title of the data flow, which can be either "Input" or "Output".
+- `name`: The name of the data flow, which can be either "input" or "output".
+
+## 3. Input/Output Handles
+
+The Display Worker has two handles:
+
+- `input`: The input handle takes in any data that you want to display.
+- `output`: The output handle shows the same data that was inputted.
+
+## 4. Usage Examples with Code
+
+Here is a simple example of how to use the Display Worker:
+
+```typescript
+const worker = agent.initializeWorker(
+  { type: "display" },
+  [
+    { type: "unknown", direction: "input", title: "Input", name: "input" },
+    { type: "unknown", direction: "output", title: "Output", name: "output" },
+  ],
+  display
+)
+
+worker.fields.input.value = "Hello, World!"
+await worker.execute()
+console.log(worker.fields.output.value) // "Hello, World!"
+```
+
+## 5. Integration Examples
+
+The Display Worker can be integrated into any part of your data pipeline for debugging purposes. For example, you can use it to check the output of a previous worker:
+
+```typescript
+const previousWorker = ...
+previousWorker.fields.output.connect(display.fields.input)
+await display.execute()
+console.log(display.fields.output.value) // output of previousWorker
+```
+
+## 6. Best Practices
+
+- Use the Display Worker sparingly in production code. It is primarily a debugging tool.
+- Always disconnect the Display Worker from the data pipeline when you're done with it to prevent unnecessary data flow.
+
+## 7. Troubleshooting Tips
+
+- If the Display Worker is not showing any output, make sure that it is properly connected to the data pipeline.
+- If the output is not what you expected, check the output of the previous workers in the pipeline.

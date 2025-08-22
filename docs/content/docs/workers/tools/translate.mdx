@@ -1,0 +1,76 @@
+---
+title: "Translate"
+description: "A worker that translates text from one language to another using Google Translate API"
+---
+
+# Translate
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Translate - Worker Configuration Interface](/images/screenshots/workers/translate.png)
+*Translate - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Translate Worker is an AI worker that uses Google's Translate API to translate text from one language to another. It is designed to be used in scenarios where automatic translation of text is required, such as in multilingual chatbots, international customer support systems, or any application that needs to process text in multiple languages.
+
+## 2. Configuration Parameters
+
+The Translate Worker requires the following configuration parameters:
+
+- `googleTranslateApiKey`: The API key for Google Translate. This is required for the worker to interact with Google's Translate API.
+- `googleTranslateProjectId`: The project ID for Google Translate. This is also required for the worker to interact with Google's Translate API.
+
+## 3. Input/Output Handles
+
+The Translate Worker has the following input and output handles:
+
+- `input`: The text to be translated.
+- `language`: The target language to translate the text into.
+- `output`: The translated text.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Translate Worker:
+
+```javascript
+const worker = agent.initializeWorker(
+  {
+    type: "translate",
+    conditionable: true,
+  },
+  [
+    { type: "string", direction: "input", title: "Input", name: "input" },
+    { type: "string", direction: "output", title: "Output", name: "output" },
+    { type: "string", direction: "input", title: "Language", name: "language" },
+    { type: "unknown", direction: "input", title: "Condition", name: "condition", condition: true },
+  ],
+  translate,
+)
+
+worker.fields.input.value = "Hello, world!"
+worker.fields.language.value = "fr"
+await worker.execute()
+console.log(worker.fields.output.value)  // Outputs: "Bonjour, monde!"
+```
+
+## 5. Integration Examples
+
+The Translate Worker can be integrated into a chatbot to provide real-time translation of user inputs. For example, a chatbot could take user inputs, pass them to the Translate Worker to translate into a desired language, and then process the translated text to generate a response.
+
+## 6. Best Practices
+
+- Always check for the existence of the required API key and project ID before executing the worker.
+- Handle errors gracefully. If the translation fails for any reason, the worker should return a meaningful error message.
+- Be mindful of the limitations and costs associated with the Google Translate API. It is not free and has usage limits.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not translating text as expected, check the input text and target language code. Make sure they are correctly set.
+- If the worker is returning an error about missing API key or project ID, make sure these are correctly set in the agent parameters.
+- If the worker is returning other errors, check the Google Translate API documentation for more information about the error.

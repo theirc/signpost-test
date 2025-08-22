@@ -1,0 +1,88 @@
+---
+title: "AI"
+description: "A comprehensive guide to the Ai Worker, a bot that interacts with various AI models to generate text based on input prompts and documents."
+---
+
+# AI
+
+## 📸 Screenshots
+
+Here are visual examples of the AI worker:
+
+![AI Worker Interface](/images/screenshots/workers/ai.png)
+*AI Worker - AI model integration and processing*
+
+## 1. Overview and Purpose
+
+The Ai Worker is a bot designed to interact with various AI models to generate text based on given prompts and documents. It is capable of working with different AI providers such as OpenAI, Anthropic, Google Generative AI, DeepSeek, Groq, and Xai. The worker is designed to be flexible and adaptable, allowing for easy integration with different AI models and providers.
+
+## 2. Configuration Parameters
+
+The Ai Worker has two configurable parameters:
+
+- `temperature`: This parameter controls the randomness of the AI's output. A higher value results in more random outputs, while a lower value results in more deterministic outputs.
+
+- `model`: This parameter specifies the AI model to be used. It should be in the format `provider/modelID`, where `provider` is the name of the AI provider (e.g., "openai") and `modelID` is the ID of the specific model to be used.
+
+## 3. Input/Output Handles
+
+The Ai Worker has five input/output handles:
+
+- `prompt`: This input handle accepts a string that serves as the prompt for the AI model.
+
+- `input`: This input handle accepts a string that serves as additional input for the AI model.
+
+- `documents`: This input handle accepts a document that the AI model can use for reference.
+
+- `history`: This input handle accepts a chat history that the AI model can use for context.
+
+- `answer`: This output handle outputs the generated text from the AI model.
+
+## 4. Usage Examples with Code
+
+Here's an example of how to use the Ai Worker:
+
+```javascript
+const worker = create(agent)
+await worker.execute({
+  prompt: "What is the meaning of life?",
+  input: "42",
+  documents: ["The Hitchhiker's Guide to the Galaxy"],
+  history: [
+    { role: "user", content: "What is the meaning of life?" },
+    { role: "assistant", content: "42" },
+  ],
+  answer: "",
+})
+```
+
+## 5. Integration Examples
+
+The Ai Worker can be integrated into a chatbot application to provide intelligent responses to user queries. Here's an example:
+
+```javascript
+const chatbot = new Chatbot(agent)
+chatbot.onMessage(async (message) => {
+  const worker = create(agent)
+  const response = await worker.execute({
+    prompt: message.content,
+    input: "",
+    documents: [],
+    history: chatbot.history,
+    answer: "",
+  })
+  chatbot.sendMessage(response.answer)
+})
+```
+
+## 6. Best Practices
+
+- Always provide as much context as possible to the AI model through the `prompt`, `input`, `documents`, and `history` handles. This will help the model generate more accurate and relevant responses.
+
+- Be sure to handle errors properly. The Ai Worker will set the `error` property if something goes wrong, so always check this property after calling `execute()`.
+
+## 7. Troubleshooting Tips
+
+- If the Ai Worker is not generating any output, make sure that you have provided a valid `prompt` and `input`, and that the `model` parameter is correctly set.
+
+- If you're getting an error message saying "No model selected" or "No API key found", make sure that you have correctly set the `model` parameter and that you have provided a valid API key for the specified provider.

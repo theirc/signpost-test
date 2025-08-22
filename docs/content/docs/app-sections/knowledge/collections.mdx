@@ -1,0 +1,211 @@
+---
+title: "Knowledge Collections"
+description: "Complete guide to creating and managing document collections"
+---
+
+# Knowledge Collections
+
+## Overview
+
+Knowledge Collections allow you to organize documents, files, and data sources into logical groups that your AI agents can search and reference. This comprehensive guide covers everything from creating your first collection to managing large-scale document libraries.
+
+## 1. Collections Dashboard
+
+![Knowledge Collections Interface](/images/screenshots/knowledge/knowledge-collection.png)
+*Knowledge Collections Interface - Main dashboard showing all your collections*
+
+The collections dashboard displays:
+- **Collection List**: All your created collections with status indicators
+- **Collection Stats**: Number of documents, processing status, and usage metrics
+- **Search and Filter**: Find specific collections quickly
+- **Create New Collection**: Primary action button
+- **Collection Actions**: Edit, delete, export, or share collections
+
+## 2. Creating a New Collection
+
+### Step 1: Collection Setup
+
+![Knowledge Collection Creation](/images/screenshots/knowledge/knowledge-collection-creation.png)
+*Knowledge Collection Creation - Initial setup screen for new collections*
+
+1. **Click "Create New Collection"** from the main dashboard
+2. **Enter Collection Details**:
+   - **Collection Name**: Choose a descriptive name (e.g., "Product Documentation")
+   - **Description**: Explain what documents this collection contains
+   - **Category**: Select or create a category for organization
+   - **Access Level**: Set who can view and edit this collection
+
+3. **Configure Collection Settings**:
+   - **Language**: Primary language of documents (affects processing)
+   - **Processing Model**: Choose embedding model for vector generation
+   - **Chunk Size**: How to split large documents (default: 1000 tokens)
+   - **Overlap**: Overlap between chunks (default: 200 tokens)
+
+### Step 2: Collection Configuration
+
+**Advanced Settings:**
+- **Custom Metadata**: Define custom fields for documents
+- **Auto-Processing**: Enable automatic processing of new documents
+- **Version Control**: Track changes to documents over time
+- **Retention Policy**: Set how long to keep old document versions
+
+**Integration Settings:**
+- **Webhook URLs**: Notify external systems when collection updates
+- **API Access**: Generate API keys for programmatic access
+- **Sync Settings**: Configure automatic syncing with external sources
+
+## 3. Adding Documents to Collections
+
+### Method 1: File Upload
+1. **Open your collection** from the collections list
+2. **Click "Add Documents"** 
+3. **Select "Upload Files"**
+4. **Choose files** from your computer (supports PDF, DOCX, TXT, MD, CSV)
+5. **Configure upload settings**:
+   - **Processing Priority**: High, Normal, or Low
+   - **Auto-Extract Metadata**: Extract titles, authors, dates
+   - **Custom Tags**: Add organizational tags
+
+### Method 2: URL Import
+1. **Click "Add Documents"**
+2. **Select "Import from URL"**
+3. **Enter document URLs** (one per line)
+4. **Configure import settings**:
+   - **Crawl Depth**: How deep to follow links
+   - **File Types**: Which file types to include
+   - **Update Schedule**: How often to re-import
+
+### Method 3: API Integration
+1. **Click "Add Documents"**
+2. **Select "API Integration"**
+3. **Configure API connection**:
+   - **API Endpoint**: Source system URL
+   - **Authentication**: API keys or tokens
+   - **Query Parameters**: Filter which documents to import
+   - **Sync Schedule**: Automatic import frequency
+
+## 4. Collection Management
+
+### Document Processing Status
+- **Queued**: Document is waiting to be processed
+- **Processing**: Currently extracting text and generating embeddings
+- **Completed**: Ready for search and AI use
+- **Failed**: Processing encountered an error
+- **Updating**: Re-processing due to changes
+
+### Monitoring Collection Health
+- **Processing Queue**: See how many documents are waiting
+- **Error Reports**: Review and fix processing failures
+- **Usage Analytics**: Track which documents are accessed most
+- **Performance Metrics**: Processing speed and success rates
+
+### Collection Maintenance
+1. **Regular Cleanup**:
+   - Remove outdated documents
+   - Update changed documents
+   - Optimize collection structure
+
+2. **Performance Optimization**:
+   - Adjust chunk sizes for better search results
+   - Re-process with newer embedding models
+   - Remove duplicate documents
+
+3. **Quality Control**:
+   - Review auto-extracted metadata
+   - Validate document categorization
+   - Test search result quality
+
+## 5. Search and Retrieval
+
+### Basic Search
+1. **Open collection** from the dashboard
+2. **Use the search bar** to find documents
+3. **View search results** with relevance scores
+4. **Preview documents** before accessing full content
+
+### Advanced Search Features
+- **Semantic Search**: Find documents by meaning, not just keywords
+- **Metadata Filters**: Filter by date, author, document type, etc.
+- **Similarity Search**: Find documents similar to a selected one
+- **Full-Text Search**: Traditional keyword-based search
+
+### Search Configuration
+- **Search Models**: Choose embedding model for search
+- **Result Ranking**: Customize how results are scored
+- **Query Expansion**: Automatically expand search terms
+- **Result Limits**: Set maximum number of results
+
+## 6. Collection Sharing and Collaboration
+
+### Access Control
+1. **Open collection settings**
+2. **Navigate to "Access Control"**
+3. **Add team members**:
+   - **Viewer**: Can search and read documents
+   - **Contributor**: Can add and edit documents
+   - **Admin**: Full collection management access
+
+### Sharing Options
+- **Public Link**: Share read-only access via URL
+- **Embed Code**: Embed search in external websites
+- **API Access**: Provide programmatic access
+- **Export**: Download entire collection
+
+## 7. Integration with AI Agents
+
+### Connecting to Agents
+1. **Create or edit an agent**
+2. **Add a "Search Worker"** to your flow
+3. **Configure the search worker**:
+   - **Select Collection**: Choose which collection to search
+   - **Search Method**: Semantic, keyword, or hybrid
+   - **Result Count**: How many results to return
+   - **Confidence Threshold**: Minimum relevance score
+
+### Best Practices for Agent Integration
+- **Collection Focus**: Use specific collections for targeted knowledge
+- **Result Filtering**: Pre-filter results by relevance
+- **Context Preparation**: Format search results for AI consumption
+- **Fallback Handling**: Handle cases when no relevant documents found
+
+## 8. Analytics and Insights
+
+### Usage Analytics
+- **Search Frequency**: Most searched terms and documents
+- **User Activity**: Who is accessing the collection
+- **Performance Trends**: Search speed and accuracy over time
+- **Popular Content**: Most accessed documents
+
+### Collection Metrics
+- **Document Count**: Total number of processed documents
+- **Storage Usage**: Disk space consumed
+- **Processing Time**: Average time to process new documents
+- **Error Rates**: Failed processing attempts
+
+## 9. Troubleshooting
+
+### Common Issues
+- **Slow Processing**: Check document size and complexity
+- **Search Quality**: Review chunk size and embedding model
+- **Access Errors**: Verify permissions and authentication
+- **Sync Failures**: Check API connections and credentials
+
+### Optimization Tips
+- **Document Preparation**: Clean and format documents before upload
+- **Metadata Quality**: Provide rich, accurate metadata
+- **Regular Maintenance**: Keep collections updated and organized
+- **Performance Monitoring**: Track and address performance issues
+
+## 10. Best Practices
+
+### Collection Organization
+- **Logical Grouping**: Group related documents together
+- **Consistent Naming**: Use clear, descriptive names
+- **Metadata Standards**: Establish consistent metadata practices
+- **Regular Reviews**: Periodically review and clean collections
+
+### Security and Privacy
+- **Access Controls**: Limit access to sensitive collections
+- **Data Encryption**: Ensure sensitive data is encrypted
+- **Audit Logs**: Track who accesses what documents
+- **Compliance**: Follow relevant data protection regulations

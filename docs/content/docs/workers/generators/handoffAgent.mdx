@@ -1,0 +1,64 @@
+---
+title: "Handoff"
+description: "A worker that manages the handoff of tasks between different AI workers"
+---
+
+# Handoff
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Handoffagent - Worker Configuration Interface](/images/screenshots/workers/handoffAgent.png)
+*Handoffagent - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+The HandoffAgent Worker is designed to manage the handoff of tasks between different AI workers. It is responsible for executing the tasks of connected workers and handling the transition of tasks between them. This worker is essential for coordinating complex tasks that require the collaboration of multiple AI workers.
+
+## 2. Configuration Parameters
+The HandoffAgent Worker has the following configuration parameters:
+
+- `handoffDescription`: A string that describes the handoff process.
+- `model`: The AI model to be used. The default model is "openai/gpt-4.1".
+
+## 3. Input/Output Handles
+The worker has the following input/output fields:
+
+- `instructions`: Input field for instructions to the worker.
+- `handoff`: Output field for the results of the handoff process.
+- `tool`: Input field for the tool to be used by the worker.
+
+## 4. Usage Examples with Code
+Here is an example of how to use the HandoffAgent Worker:
+
+```javascript
+const worker = new HandoffAgentWorker({
+  parameters: {
+    handoffDescription: "Handoff from worker A to worker B",
+    model: "openai/gpt-4.1"
+  },
+  fields: {
+    instructions: { value: "Perform task X" },
+    tool: { value: "Tool Y" }
+  }
+});
+
+const result = await worker.execute({ apiKeys: "your-api-keys" });
+console.log(result.fields.handoff.value);
+```
+
+## 5. Integration Examples
+The HandoffAgent Worker can be integrated with other workers in a pipeline. For example, you can connect it with a TextProcessingWorker and a DataAnalysisWorker to create a pipeline that processes text data and analyzes it.
+
+## 6. Best Practices
+- Always provide clear and concise instructions to the worker.
+- Make sure to handle any errors that may occur during the handoff process.
+- Regularly update the AI model to ensure optimal performance.
+
+## 7. Troubleshooting Tips
+- If the worker is not executing tasks correctly, check the instructions and the tool provided.
+- If the handoff process is not working, check the `handoffDescription` parameter.
+- If you encounter any errors, make sure to log them for debugging purposes.

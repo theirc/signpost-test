@@ -1,0 +1,62 @@
+---
+title: "Agent"
+description: "A worker that encapsulates an agent to be executed in the Signpost AI system"
+---
+
+# Agent
+
+## 📸 Screenshots
+
+Here are visual examples of the Agent worker:
+
+![Agent Worker Interface](/images/screenshots/workers/agent.png)
+*Agent Worker - Core agent functionality and configuration*
+
+## 1. Overview and Purpose
+
+The Agent Worker is a specialized worker in the Signpost AI system. It encapsulates an agent to be executed as a worker. This allows for the execution of agent tasks within the worker context, providing a more flexible and modular approach to task management.
+
+## 2. Configuration Parameters
+
+The Agent Worker accepts the following configuration parameters:
+
+- `agent`: (Optional) The ID of the agent to be executed.
+
+## 3. Input/Output Handles
+
+The Agent Worker uses input and output handles to manage data flow. Input handles are used to pass data to the agent, while output handles are used to retrieve the results of the agent's execution.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Agent Worker:
+
+```javascript
+const agentWorker = require('agentWorker');
+
+// Initialize the agent worker with an agent ID
+const worker = agentWorker.create(123);
+
+// Set input parameters
+worker.parameters = {
+  agent: 123
+};
+
+// Execute the worker
+worker.execute();
+```
+
+## 5. Integration Examples
+
+The Agent Worker can be integrated into a larger system by using it in conjunction with other workers. For example, you might use a Data Fetching Worker to retrieve data, pass that data to an Agent Worker for processing, and then use a Data Writing Worker to save the results.
+
+## 6. Best Practices
+
+- Always check if the referenced agent exists before executing the worker.
+- Use meaningful names for input and output handles to make your code easier to understand.
+- Handle exceptions properly to prevent your application from crashing.
+
+## 7. Troubleshooting Tips
+
+- If the Agent Worker is not executing as expected, check the console logs for any error messages.
+- Make sure the agent ID passed to the worker is correct.
+- Ensure that the input and output handles are correctly set up.

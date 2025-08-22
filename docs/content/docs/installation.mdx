@@ -1,0 +1,195 @@
+---
+title: Installation
+description: How to install and set up Signpost AI in your environment
+---
+
+# Installation Guide
+
+This guide will walk you through installing Signpost AI on your system and setting up your development environment.
+
+## Prerequisites
+
+Before installing Signpost AI, make sure you have the following installed:
+
+- **Node.js** (v18 or higher)
+- **Yarn** (recommended) or npm
+- **Git** (for cloning the repository)
+- **PostgreSQL** (for the database)
+
+## Quick Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-org/signpost-ai.git
+cd signpost-ai
+```
+
+### 2. Install Dependencies
+
+```bash
+yarn install
+```
+
+### 3. Environment Setup
+
+Create a `.env.local` file in the root directory:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
+
+```bash
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/signpost_ai"
+
+# Authentication
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+
+# OpenAI
+OPENAI_API_KEY="your-openai-api-key"
+
+# Anthropic
+ANTHROPIC_API_KEY="your-anthropic-api-key"
+
+# Supabase (if using)
+NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-supabase-service-role-key"
+```
+
+### 4. Database Setup
+
+#### Option A: Local PostgreSQL
+
+```bash
+# Create database
+createdb signpost_ai
+
+# Run migrations
+yarn db:migrate
+```
+
+#### Option B: Supabase (Recommended for production)
+
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Get your project URL and API keys
+3. Update your `.env.local` file
+4. Run migrations: `yarn db:migrate`
+
+### 5. Start Development Server
+
+```bash
+yarn dev
+```
+
+Your Signpost AI instance should now be running at `http://localhost:3000`
+
+## Production Deployment
+
+### Docker Deployment
+
+```bash
+# Build the Docker image
+docker build -t signpost-ai .
+
+# Run the container
+docker run -p 3000:3000 \
+  -e DATABASE_URL="your-database-url" \
+  -e NEXTAUTH_SECRET="your-secret" \
+  signpost-ai
+```
+
+### Vercel Deployment
+
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Set environment variables in Vercel dashboard
+4. Deploy!
+
+### Railway Deployment
+
+1. Connect your GitHub repository to Railway
+2. Set environment variables
+3. Deploy automatically on every push
+
+## Configuration Options
+
+### API Keys
+
+Signpost AI supports multiple AI providers:
+
+- **OpenAI**: GPT-4, GPT-3.5-turbo
+- **Anthropic**: Claude 3.5 Sonnet, Claude 3 Haiku
+- **Google**: Gemini Pro
+- **DeepSeek**: DeepSeek Coder
+- **Groq**: Fast inference models
+
+### Database Configuration
+
+Supported databases:
+- **PostgreSQL** (recommended)
+- **Supabase** (hosted PostgreSQL)
+- **Neon** (serverless PostgreSQL)
+
+### Authentication
+
+Built-in authentication options:
+- **Email/Password**
+- **OAuth providers** (Google, GitHub)
+- **Custom authentication**
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Database Connection Errors
+
+```bash
+# Check if PostgreSQL is running
+brew services list | grep postgresql
+
+# Start PostgreSQL if stopped
+brew services start postgresql
+```
+
+#### 2. Port Already in Use
+
+```bash
+# Find process using port 3000
+lsof -ti:3000
+
+# Kill the process
+kill -9 <PID>
+```
+
+#### 3. API Key Issues
+
+Make sure your API keys are:
+- Correctly formatted
+- Have sufficient credits
+- Are not expired
+
+### Getting Help
+
+If you encounter issues:
+
+1. Check the [GitHub Issues](https://github.com/your-org/signpost-ai/issues)
+2. Join our [Discord community](https://discord.gg/signpost-ai)
+3. Review the [troubleshooting guide](/docs/troubleshooting)
+
+## Next Steps
+
+Now that you have Signpost AI installed:
+
+1. **Read the [Quick Start Guide](/docs/quick-start)** to build your first agent
+2. **Explore the [Core Concepts](/docs/core-concepts)** to understand the framework
+3. **Check out [Examples](/docs/examples)** to see what's possible
+4. **Join our community** to connect with other developers
+
+---
+
+*Need help? Don't hesitate to reach out to our community!*

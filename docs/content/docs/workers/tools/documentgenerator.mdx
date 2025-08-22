@@ -1,0 +1,66 @@
+---
+title: "Document Generator"
+description: "An AI worker that generates documents in various formats from given inputs."
+---
+
+# Document Generator
+
+## 📸 Screenshots
+
+Here are visual examples of the Document Generator worker:
+
+![Document Generator Worker Interface](/images/screenshots/workers/documentgenerator.png)
+*Document Generator Worker - Create and export documents in various formats*
+
+## 1. Overview and Purpose
+
+The Documentgenerator Worker is a specialized AI worker designed to generate documents in various formats such as PDF, DOCX, and CSV from given inputs. It uses libraries like jsPDF, html2canvas, marked, and docx to perform its tasks. It can be used in a variety of applications where dynamic document generation is required.
+
+## 2. Configuration Parameters
+
+The worker has one configuration parameter:
+
+- `doc`: This is a string parameter that represents the content of the document to be generated.
+
+## 3. Input/Output Handles
+
+The worker has two handles:
+
+- `input`: This is the input handle where the content of the document is provided.
+- `output`: This is the output handle where the generated document is returned.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Documentgenerator Worker:
+
+```javascript
+const worker = new DocumentGeneratorWorker();
+worker.fields.input.write('Hello, world!');
+const doc = worker.parameters.doc;
+console.log(doc); // 'Hello, world!'
+```
+
+## 5. Integration Examples
+
+The Documentgenerator Worker can be integrated into a web application to generate documents on the fly. Here is an example:
+
+```javascript
+app.post('/generate', (req, res) => {
+  const worker = new DocumentGeneratorWorker();
+  worker.fields.input.write(req.body.content);
+  const doc = worker.parameters.doc;
+  res.send(doc);
+});
+```
+
+## 6. Best Practices
+
+- Always check the input for validity before passing it to the worker.
+- Handle any errors that may occur during the document generation process.
+- Use appropriate content for the `doc` parameter based on the format of the document you want to generate.
+
+## 7. Troubleshooting Tips
+
+- If the worker is not generating the document as expected, check the input and the `doc` parameter for any issues.
+- If the worker is throwing an error, check the error message for clues about what might be going wrong.
+- If the worker is taking too long to generate the document, consider reducing the size or complexity of the input.

@@ -1,0 +1,63 @@
+---
+title: "Content"
+description: "Generate static content such as text, numbers, audio, images, and files"
+---
+
+# Content
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Text - Worker Configuration Interface](/images/screenshots/workers/text.png)
+*Text - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Text Worker is a versatile AI worker that is designed to generate static content. This content can be in various forms such as text, numbers, audio, images, and files. The worker can be used in a wide range of applications, including content generation, data processing, and more.
+
+## 2. Configuration Parameters
+
+The Text Worker accepts the following parameters:
+
+- `text`: A string that represents the text content to be generated.
+- `contentType`: A string that specifies the type of content to be generated. It can be "text", "number", "audio", "image", "file", or "Timestamp".
+- `contentUri`: A string that represents the URI of the content to be generated.
+- `numberValue`: A number that represents the numerical content to be generated.
+
+## 3. Input/Output Handles
+
+The Text Worker has one output handle:
+
+- `output`: This handle outputs the generated content.
+
+## 4. Usage Examples with Code
+
+Here's an example of how to use the Text Worker to generate text content:
+
+```javascript
+const worker = new TextWorker();
+worker.parameters.text = "Hello, world!";
+worker.parameters.contentType = "text";
+await worker.execute();
+console.log(worker.fields.output.value); // Outputs: "Hello, world!"
+```
+
+## 5. Integration Examples
+
+You can integrate the Text Worker into your application to generate dynamic content. For instance, you can use it in a content management system to generate placeholder text, images, or other types of content.
+
+## 6. Best Practices
+
+When using the Text Worker, it's important to specify the correct `contentType`. If you don't, the worker may not generate the content you expect. For instance, if you set `contentType` to "number" but don't provide a `numberValue`, the worker will output 0.
+
+## 7. Troubleshooting Tips
+
+If the Text Worker is not generating the content you expect, check the following:
+
+- Ensure that you've set the correct `contentType`.
+- If you're generating text or numerical content, ensure that you've provided a `text` or `numberValue`.
+- If you're generating audio, image, or file content, ensure that you've provided a valid `contentUri`.

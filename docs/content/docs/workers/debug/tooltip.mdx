@@ -1,0 +1,73 @@
+---
+title: "Tooltip"
+description: "A debug worker that allows adding notes and tooltips to your flow"
+---
+
+# Tooltip
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Tooltip - Worker Configuration Interface](/images/screenshots/workers/tooltip.png)
+*Tooltip - Worker Configuration Interface*
+
+
+
+
+## 1. Overview and Purpose
+
+The Tooltip Worker is a debug tool that allows developers to add notes and tooltips to their flow. It doesn't execute any actions but serves as a visual aid to provide additional information or context about the flow. This can be particularly useful during the development and debugging phases, helping to improve the readability and maintainability of the code.
+
+## 2. Configuration Parameters
+
+The Tooltip Worker accepts a single optional parameter:
+
+- `notes`: A string that contains the notes or tooltips to be added to the flow.
+
+## 3. Input/Output Handles
+
+The Tooltip Worker doesn't handle any inputs or outputs as it doesn't perform any actions. It only serves as a container for notes or tooltips.
+
+## 4. Usage Examples with Code
+
+Here's an example of how to use the Tooltip Worker:
+
+```javascript
+const agent = new Agent();
+
+agent.initializeWorker(
+  { type: "tooltip" },
+  [],
+  { notes: "This is a note for the tooltip worker" }
+);
+```
+
+In this example, a note is added to the Tooltip Worker during its initialization.
+
+## 5. Integration Examples
+
+The Tooltip Worker can be integrated into any part of your flow. For example, you might want to add a tooltip to a complex part of your flow to explain what it does:
+
+```javascript
+const agent = new Agent();
+
+// Some complex code here...
+
+agent.initializeWorker(
+  { type: "tooltip" },
+  [],
+  { notes: "This part of the flow does XYZ" }
+);
+
+// More complex code here...
+```
+
+## 6. Best Practices
+
+- Use the Tooltip Worker to add notes or tooltips to complex or critical parts of your flow. This can make your code easier to understand and maintain.
+- Keep your notes concise and clear. They should provide useful information without overwhelming the reader.
+
+## 7. Troubleshooting Tips
+
+Since the Tooltip Worker doesn't perform any actions, it's unlikely to cause any issues in your flow. If you encounter any problems, make sure that you're passing the `notes` parameter as a string during the worker's initialization.

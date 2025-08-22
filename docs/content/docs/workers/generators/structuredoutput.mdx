@@ -1,0 +1,68 @@
+---
+title: "Structured Output"
+description: "Structure AI responses into predefined formats with consistent output schemas"
+---
+
+# Structured Output
+
+## 📸 Screenshots
+
+Here are visual examples of this section:
+
+![Structured Output Worker Interface](/images/screenshots/workers/structuredoutput.png)
+*Structured Output Worker Interface - Configure AI response formatting*
+
+
+
+
+## 1. Overview and Purpose
+
+The Schema Worker is designed to validate and translate JSON data based on a defined schema. It uses the Zod library to create and validate schemas, and the Typechat library to translate JSON data. The worker is highly flexible and can handle a variety of data types, including booleans, numbers, strings, arrays, and enums.
+
+## 2. Configuration Parameters
+
+The Schema Worker accepts the following configuration parameters:
+
+- `model`: (Optional) The language model to use for translation. The default model is "gpt-4o".
+
+## 3. Input/Output Handles
+
+The Schema Worker has two handles:
+
+- `input`: (Input) The input data to be validated and translated.
+- `json`: (Output) The validated and translated JSON data.
+
+## 4. Usage Examples with Code
+
+Here is an example of how to use the Schema Worker:
+
+```javascript
+const worker = create(agent);
+worker.fields.input.value = { "key": "value" };
+await worker.execute();
+console.log(worker.fields.json.value); // Outputs the validated and translated JSON data
+```
+
+## 5. Integration Examples
+
+The Schema Worker can be integrated into a larger system to handle data validation and translation. For example, it could be used in a data pipeline to validate incoming data and translate it into a standardized format.
+
+```javascript
+const pipeline = [worker1, worker2, create(agent)];
+pipeline.forEach(worker => {
+  worker.fields.input.value = getData();
+  await worker.execute();
+  passData(worker.fields.json.value);
+});
+```
+
+## 6. Best Practices
+
+- Always provide a valid schema for the data you expect to handle. This will ensure that the data is correctly validated and translated.
+- Handle the case where the input data is null or undefined. The Schema Worker will not execute if the input data is null or undefined.
+
+## 7. Troubleshooting Tips
+
+- If the Schema Worker is not executing, check that the input data is not null or undefined.
+- If the output data is not as expected, check that the schema matches the structure of the input data.
+- If you are getting a validation error, check that the input data matches the schema.
