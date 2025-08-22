@@ -1,3 +1,48 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* Custom Fumadocs theme colors - Pure white for light mode */
+:root {
+  --color-fd-background: hsl(0, 0%, 100%);
+  --color-fd-foreground: hsl(222.2, 84%, 4.9%);
+  --color-fd-card: hsl(0, 0%, 100%);
+  --color-fd-card-foreground: hsl(222.2, 84%, 4.9%);
+  --color-fd-popover: hsl(0, 0%, 100%);
+  --color-fd-popover-foreground: hsl(222.2, 84%, 4.9%);
+  --color-fd-primary: hsl(222.2, 47.4%, 11.2%);
+  --color-fd-primary-foreground: hsl(210, 40%, 98%);
+  --color-fd-secondary: hsl(210, 40%, 96%);
+  --color-fd-secondary-foreground: hsl(222.2, 84%, 4.9%);
+  --color-fd-muted: hsl(0, 0%, 100%);
+  --color-fd-muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --color-fd-accent: hsl(210, 40%, 96%);
+  --color-fd-accent-foreground: hsl(222.2, 84%, 4.9%);
+  --color-fd-destructive: hsl(0, 84.2%, 60.2%);
+  --color-fd-destructive-foreground: hsl(210, 40%, 98%);
+  --color-fd-border: hsl(214.3, 31.8%, 91.4%);
+  --color-fd-input: hsl(214.3, 31.8%, 91.4%);
+  --color-fd-ring: hsl(222.2, 84%, 4.9%);
+}
+
+.dark {
+  --color-fd-background: hsl(222.2, 84%, 4.9%);
+  --color-fd-foreground: hsl(210, 40%, 98%);
+  --color-fd-card: hsl(222.2, 84%, 4.9%);
+  --color-fd-card-foreground: hsl(210, 40%, 98%);
+  --color-fd-popover: hsl(222.2, 84%, 4.9%);
+  --color-fd-popover-foreground: hsl(210, 40%, 98%);
+  --color-fd-primary: hsl(210, 40%, 98%);
+  --color-fd-primary-foreground: hsl(222.2, 84%, 4.9%);
+  --color-fd-secondary: hsl(217.2, 32.6%, 17.5%);
+  --color-fd-secondary-foreground: hsl(210, 40%, 98%);
+  --color-fd-muted: hsl(217.2, 32.6%, 17.5%);
+  --color-fd-muted-foreground: hsl(215, 20.2%, 65.1%);
+  --color-fd-accent: hsl(217.2, 32.6%, 17.5%);
+  --color-fd-accent-foreground: hsl(210, 40%, 98%);
+  --color-fd-destructive: hsl(0, 62.8%, 30.6%);
+  --color-fd-destructive-foreground: hsl(210, 40%, 98%);
+  --color-fd-border: hsl(217.2, 32.6%, 17.5%);
+  --color-fd-input: hsl(217.2, 32.6%, 17.5%);
+  --color-fd-ring: hsl(212.7, 26.8%, 83.9%);
+}
