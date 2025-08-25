@@ -358,7 +358,7 @@ export type Database = {
           knowledge_sources: Json | null
           last_run: string | null
           memory: boolean | null
-          model: string
+          model: string | null
           name: string
           system_prompt: string | null
           system_prompt_id: string | null
@@ -377,7 +377,7 @@ export type Database = {
           knowledge_sources?: Json | null
           last_run?: string | null
           memory?: boolean | null
-          model: string
+          model?: string | null
           name: string
           system_prompt?: string | null
           system_prompt_id?: string | null
@@ -396,7 +396,7 @@ export type Database = {
           knowledge_sources?: Json | null
           last_run?: string | null
           memory?: boolean | null
-          model?: string
+          model?: string | null
           name?: string
           system_prompt?: string | null
           system_prompt_id?: string | null
@@ -432,13 +432,6 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_bots_model"
-            columns: ["model"]
-            isOneToOne: false
-            referencedRelation: "models"
             referencedColumns: ["id"]
           },
         ]
@@ -563,6 +556,7 @@ export type Database = {
           searchContext: string | null
           session_id: string | null
           status: string | null
+          team: string | null
           type: string | null
           uid: string | null
           worker: string | null
@@ -581,6 +575,7 @@ export type Database = {
           searchContext?: string | null
           session_id?: string | null
           status?: string | null
+          team?: string | null
           type?: string | null
           uid?: string | null
           worker?: string | null
@@ -599,6 +594,7 @@ export type Database = {
           searchContext?: string | null
           session_id?: string | null
           status?: string | null
+          team?: string | null
           type?: string | null
           uid?: string | null
           worker?: string | null
@@ -667,7 +663,7 @@ export type Database = {
           agent: string | null
           created_at: string
           execution: string | null
-          handles: Json[] | null
+          handles: Json | null
           id: string
           inputTokens: number | null
           message: string | null
@@ -684,7 +680,7 @@ export type Database = {
           agent?: string | null
           created_at?: string
           execution?: string | null
-          handles?: Json[] | null
+          handles?: Json | null
           id?: string
           inputTokens?: number | null
           message?: string | null
@@ -701,7 +697,7 @@ export type Database = {
           agent?: string | null
           created_at?: string
           execution?: string | null
-          handles?: Json[] | null
+          handles?: Json | null
           id?: string
           inputTokens?: number | null
           message?: string | null
@@ -720,36 +716,25 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          model_id: string
-          name: string
+          model: string | null
           provider: string | null
-          team_id: string | null
+          title: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
-          model_id: string
-          name: string
+          model?: string | null
           provider?: string | null
-          team_id?: string | null
+          title?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
-          model_id?: string
-          name?: string
+          model?: string | null
           provider?: string | null
-          team_id?: string | null
+          title?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "models_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       projects: {
         Row: {

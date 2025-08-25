@@ -123,6 +123,7 @@ async function saveHistory(worker: ChatHistoryWorker, p: AgentParameters, histor
           type: "message",
           role: "system",
           content: [{ text }],
+          team: p.team,
           payload: { role: "system", type: "message", content: [{ text, type: "text" }] }
         } satisfies HistoryItem)
       }

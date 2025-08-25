@@ -51,6 +51,11 @@ export function SettingsLayout() {
                 Api Keys
               </TabsTrigger>
             )}
+            {canRead("models") && (
+              <TabsTrigger value="models" onClick={() => navigate("/settings/models")}>
+                Models
+              </TabsTrigger>
+            )}
             {canRead("roles") && (
               <TabsTrigger value="roles" onClick={() => navigate("/settings/roles")}>
                 Access Control
@@ -64,4 +69,4 @@ export function SettingsLayout() {
       </div>
     </div>
   )
-} 
+}
