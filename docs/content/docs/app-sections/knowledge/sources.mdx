@@ -7,175 +7,213 @@ description: "Complete guide to adding files, live data, and external sources to
 
 ## Overview
 
-Knowledge Sources are the foundation of your knowledge collections - they represent the actual data that your AI agents will search and reference. This comprehensive guide covers all methods of adding content to your collections, from simple file uploads to complex live data integrations.
+Knowledge Sources are the foundation of your knowledge system - they represent the actual data that your AI agents can search and reference through collections. Sources can be files uploaded from your computer or live data connections to external systems.
 
 ## 1. Sources Dashboard
 
 ![Knowledge Sources Interface](/images/screenshots/knowledge/knowledge-sources.png)
 *Knowledge Sources Interface - Main dashboard showing all your data sources*
 
-The sources dashboard provides:
-- **Source List**: All your configured data sources with status indicators
-- **Source Types**: Different methods for adding data (files, URLs, APIs, etc.)
-- **Processing Status**: Real-time status of data ingestion and processing
-- **Source Management**: Edit, refresh, or remove existing sources
-- **Analytics**: Usage statistics and performance metrics
+The sources dashboard (`SourcesTable` component) provides:
+- **Sources Table**: Paginated table showing source name, type, last updated date, tags, and vector status
+- **Inline Editing**: Click edit button to modify source names directly in the table
+- **Search Functionality**: Search sources by name
+- **Source Actions**: Upload Files and Add Live Data buttons in the header
+- **Row Actions**: View and Delete options in dropdown menu for each source
 
 ## 2. File Upload Sources
 
-### Step 1: Basic File Upload
+### File Upload Process
 
 ![Knowledge Sources File Upload](/images/screenshots/knowledge/knowledge-sources-upload-files.png)
 *Knowledge Sources File Upload - Upload documents directly from your computer*
 
-1. **Select a Collection** where you want to add files
-2. **Click "Add Source"** and select "File Upload"
+1. **Click "Upload Files"** from the sources dashboard
+2. **File Upload Modal**: Opens the `FilesModal` with tabbed interface
 3. **Choose Upload Method**:
-   - **Single File**: Upload one file at a time
-   - **Multiple Files**: Select multiple files simultaneously
-   - **Folder Upload**: Upload entire folder structures
-   - **Drag & Drop**: Drag files directly onto the upload area
+   - **File Upload Tab**: Individual file selection and upload
+   - **Folder Crawler Tab**: Upload multiple files from folder structure
 
-4. **Configure Upload Settings**:
-   - **File Processing**: Choose how to handle each file type
-   - **Metadata Extraction**: Automatically extract titles, authors, dates
-   - **Language Detection**: Auto-detect document language
-   - **Quality Filters**: Skip low-quality or duplicate content
+### File Upload Tab (`FileUploadTab`)
 
-### Step 2: File Type Handling
+**File Selection:**
+- **File Input**: Select multiple files using browser file picker
+- **File Parsing**: Uses `useFileParser` hook for content extraction
+- **Progress Tracking**: Shows upload progress percentage during processing
 
-**Supported File Types:**
-- **PDF Files**: Extract text, preserve formatting, handle images
-- **Office Documents**: Process DOCX, XLSX, PPTX files
-- **Text Files**: Handle TXT, MD, CSV, JSON formats
-- **Web Files**: Process HTML, XML files
-- **Media Files**: Extract text from images (OCR), audio transcripts
+**File Management:**
+- **File List**: Preview selected files with names and content
+- **Name Editing**: Customize source names before upload (defaults to filename)
+- **Custom Tags**: Add additional tags beyond default "File Upload" tag
+- **Tag Management**: Add/remove custom tags with tag input field
 
-**Processing Options:**
-- **Chunk Strategy**: How to split large documents
-  - **By Paragraphs**: Natural language boundaries
-  - **By Pages**: Maintain page structure
-  - **By Sections**: Use document headings
-  - **Custom Size**: Specify token/character limits
+**Upload Configuration:**
+- **Automatic Tags**: Files automatically get "File Upload" tag plus file extension
+- **Team Association**: Sources automatically associated with current team
+- **Database Storage**: Content stored in `sources` table with metadata
 
 ## 3. Live Data Sources
 
-### Step 1: Setting Up Live Data Integration
+### Live Data Integration Process
 
 ![Knowledge Sources Live Data](/images/screenshots/knowledge/knowledge-sources-add-live-data.png)
 *Knowledge Sources Live Data - Configure real-time data feeds and API integrations*
 
-1. **Click "Add Source"** and select "Live Data"
-2. **Choose Integration Type**:
-   - **API Integration**: Connect to REST APIs
-   - **Database Connection**: Link to SQL databases
-   - **Cloud Storage**: Sync with Google Drive, OneDrive, etc.
-   - **Web Scraping**: Extract data from websites
-   - **RSS/Feed**: Monitor news feeds or blogs
+1. **Click "Add Live Data"** from the sources dashboard
+2. **Live Data Modal**: Opens the `LiveDataModal` with form interface
+3. **Select Integration Type**: Choose from available live data source types
 
-### Step 2: API Integration Setup
+### Available Live Data Types
 
-**API Configuration:**
-1. **Enter API Details**:
-   - **Base URL**: The root API endpoint
-   - **Authentication**: API keys, OAuth, or basic auth
-   - **Rate Limits**: Respect API usage limits
-   - **Request Headers**: Required headers for API calls
+The system supports several live data integration types:
 
-2. **Configure Data Extraction**:
-   - **Endpoint Paths**: Specific endpoints to monitor
-   - **Query Parameters**: Filter data at the source
-   - **Response Parsing**: How to extract content from responses
-   - **Field Mapping**: Map API fields to your metadata schema
+**Support Desk Integration:**
+- **Subdomain**: Your support desk subdomain
+- **Email**: Support desk account email
+- **API Token**: Support desk API authentication token
+- **Locale**: Language setting (default: en-us)
 
-3. **Set Update Schedule**:
-   - **Real-time**: Process data as it arrives (webhooks)
-   - **Hourly**: Check for updates every hour
-   - **Daily**: Daily batch processing
-   - **Weekly**: Weekly comprehensive sync
-   - **Custom**: Define your own schedule
+**Web Scraping (`WebScrapingForm`):**
+- **URL**: Website URL to scrape
+- **Processing Options**: Text extraction settings
+- **Include URLs**: Option to include URL metadata
+- **Extract Media Content**: Process media elements
+- **Retrieve Links**: Extract link information
 
-## 4. Data Processing Pipeline
+**CMS Integration:**
+- **URL**: CMS instance URL
+- **API Token**: CMS API authentication
+- **Map Configuration**: Field mapping settings
 
-### Processing Stages
+**Prompt Integration (`PromptForm`):**
+- **Prompt**: Custom prompt for data generation
+- **Processing Configuration**: Token limits and chunk settings
 
-1. **Data Ingestion**: Raw data is retrieved from sources
-2. **Format Conversion**: Convert to standard formats
-3. **Text Extraction**: Extract readable text from documents
-4. **Metadata Enhancement**: Add titles, dates, categories
-5. **Content Chunking**: Split into searchable segments
-6. **Vector Generation**: Create embeddings for AI search
-7. **Index Update**: Add to searchable index
+**Bot Logs Integration (`BotLogsForm`):**
+- **Bot Log Configuration**: Integration with bot logging systems
+- **Data Extraction**: Automated log content processing
 
-### Quality Assurance
+## 4. Source Management Features
 
-**Automated Checks:**
-- **Format Validation**: Ensure data meets standards
-- **Content Quality**: Filter out poor-quality content
-- **Duplicate Detection**: Identify and merge duplicates
-- **Metadata Validation**: Verify metadata accuracy
+### Sources Table Interface
 
-**Manual Review Process:**
-- **Sample Review**: Manually check random samples
-- **Error Investigation**: Review failed processing attempts
-- **Quality Feedback**: Improve processing rules
-- **User Feedback**: Incorporate user quality reports
+**Table Columns:**
+- **Name**: Source name with inline editing capability (click edit icon)
+- **Type**: Source type (File, Support Desk, Web Scraping, etc.)
+- **Last Updated**: Date when source was last modified
+- **Tags**: Visual tags showing source category and metadata
+- **Vector**: Indicator showing if source has vector embeddings (Yes/No)
 
-## 5. Source Management
+### Inline Name Editing
 
-### Monitoring Source Health
+**Edit Process:**
+1. **Start Editing**: Click the edit icon next to any source name
+2. **Edit Mode**: Input field appears with current name
+3. **Save/Cancel**: Use checkmark to save or X to cancel
+4. **Keyboard Shortcuts**: Enter to save, Escape to cancel
+5. **Database Update**: Changes saved to `sources` table immediately
 
-**Status Indicators:**
-- **Active**: Source is working normally
-- **Syncing**: Currently processing new data
-- **Error**: Source has encountered problems
-- **Paused**: Temporarily disabled
-- **Disconnected**: Connection issues
+### Tag System
 
-**Performance Metrics:**
-- **Last Sync**: When data was last updated
-- **Document Count**: Number of documents from this source
-- **Success Rate**: Percentage of successful data retrievals
-- **Average Processing Time**: Time to process new content
+**Automatic Tags:**
+- **File Upload**: Added to all uploaded files
+- **Live Data**: Added to all live data integrations
+- **File Extensions**: File type extensions added automatically
+- **Custom Tags**: User-defined tags during upload
 
-### Source Maintenance
+**Tag Display:**
+- **Color Coding**: Blue for "File Upload", Purple for "Live Data"
+- **Visual Design**: Rounded pill-style tags with appropriate colors
+- **Tag Management**: Tags managed through upload/creation process
 
-**Regular Tasks:**
-1. **Review Error Logs**: Identify and fix connection issues
-2. **Update Credentials**: Refresh expired API keys or passwords
-3. **Optimize Queries**: Improve performance of database queries
-4. **Manage Storage**: Archive or remove old data
+## 5. Source Preview and Actions
 
-## 6. Best Practices
+### Source Preview Interface (`SourcePreview`)
 
-### Source Organization
-- **Logical Grouping**: Group related sources together
-- **Naming Conventions**: Use clear, descriptive names
-- **Documentation**: Document source purposes and configurations
-- **Access Control**: Limit source management to authorized users
+**Preview Features:**
+- **Source Details**: View complete source information and content
+- **Content Display**: Full text content of the source
+- **Metadata Viewing**: Creation date, last updated, tags, and type information
+- **Source Actions**: Edit, update, or manage source settings
 
-### Performance Optimization
-- **Batch Processing**: Process multiple items together
-- **Incremental Updates**: Only sync changed data
-- **Caching**: Cache frequently accessed data
-- **Load Balancing**: Distribute processing across resources
+**Access Method:**
+- **Table Click**: Click on any source name in the table to open preview
+- **Row Selection**: Preview opens in modal or side panel
+- **Source Management**: Update source information from preview interface
 
-### Security Considerations
-- **Credential Management**: Securely store API keys and passwords
-- **Data Encryption**: Encrypt sensitive data in transit and at rest
-- **Access Logging**: Track who accesses what data
-- **Compliance**: Follow relevant data protection regulations
+### Source Deletion
 
-## 7. Troubleshooting Common Issues
+**Delete Process:**
+1. **Actions Menu**: Click the three-dot menu for any source
+2. **Select Delete**: Choose delete option from dropdown
+3. **Confirmation Dialog**: `DeleteSourceDialog` confirms deletion intent
+4. **Database Cleanup**: Source removed from `sources` table
+5. **Collection Impact**: Source automatically removed from any collections
 
-### Connection Problems
-- **API Rate Limits**: Implement proper rate limiting
-- **Authentication Failures**: Verify credentials and permissions
-- **Network Issues**: Check connectivity and firewall settings
-- **Timeout Errors**: Adjust timeout settings for slow sources
+**Delete Confirmation:**
+- **Warning Message**: Clear indication of permanent deletion
+- **Confirmation Required**: User must explicitly confirm action
+- **Cascade Effects**: Automatic removal from collections and relationships
 
-### Data Quality Issues
-- **Encoding Problems**: Handle different character encodings
-- **Format Errors**: Validate data formats before processing
-- **Incomplete Data**: Handle partial or corrupted data
-- **Content Duplication**: Implement deduplication strategies
+### Database Structure
+
+**Sources Table Schema:**
+- **Primary Fields**: id, name, type, content, team_id
+- **Metadata Fields**: tags, created_at, last_updated, vector
+- **Team Isolation**: All sources filtered by current team
+- **Vector Storage**: Embeddings stored as JSON in vector field
+
+## 6. Processing Options and Configuration
+
+### Common Processing Options (`ProcessingOptions`)
+
+**Text Processing Settings:**
+- **Chunk Size**: Configure how content is split (default varies by source type)
+- **Chunk Overlap**: Set overlap between text chunks for better context
+- **Max Token Limit**: Maximum tokens per chunk for API compatibility
+- **Processing Quality**: Options for content extraction quality
+
+### Live Data Configuration (`CommonFields`)
+
+**Standard Configuration Fields:**
+- **Name**: Descriptive name for the data source
+- **Type**: Source type (automatically set based on integration)
+- **Enabled**: Toggle to enable/disable data source
+- **URL**: Primary endpoint or URL for data retrieval
+
+**Processing Configuration:**
+- **Advanced Options**: Chunk size, overlap, and token limit settings
+- **Content Extraction**: Options for media content and link extraction
+- **Update Frequency**: How often to check for new data
+
+{/* TODO: Document live data update scheduling and processing workflows */}
+
+## 7. Error Handling and User Feedback
+
+### Upload Process Feedback
+
+**File Upload Status:**
+- **Progress Tracking**: Real-time progress bar during file upload
+- **Success Indicators**: Confirmation when files are successfully added
+- **Error Messages**: Clear error reporting for failed uploads
+- **Validation Feedback**: Immediate feedback for missing required fields
+
+### Live Data Integration Feedback
+
+**Configuration Validation:**
+- **Field Validation**: Real-time validation of required fields
+- **Connection Testing**: Immediate feedback on API connectivity
+- **Configuration Errors**: Clear error messages for invalid settings
+- **Success Confirmation**: Confirmation when live data source is created
+
+### Database Integration
+
+**Team Isolation:**
+- **Automatic Team Assignment**: Sources automatically associated with current team
+- **Access Control**: Users can only see sources from their team
+- **Data Security**: Team-based filtering ensures data privacy
+
+**React Query Integration:**
+- **Cache Management**: Efficient data loading and cache invalidation
+- **Real-time Updates**: Automatic refresh when sources are modified
+- **Performance Optimization**: Paginated loading for large source lists

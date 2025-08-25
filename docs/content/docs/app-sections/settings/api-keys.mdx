@@ -13,7 +13,7 @@ To add screenshots:
 1. Navigate to the Settings section in your app
 2. Take screenshots of the relevant interfaces
 3. Save them in `docs/public/images/screenshots/settings/`
-4. Run `python3 scripts/integrate_screenshots.py` to automatically integrate them
+4. Run the screenshot integration script to automatically integrate them
 
 **Recommended screenshots:**
 - `api-keys-view.png` - API key management
@@ -24,48 +24,124 @@ To add screenshots:
 
 ## Overview
 
-The API Key Management sub-section is a crucial part of the Settings section in Signpost AI. It allows users to generate and manage API keys, set up integrations, and adjust security settings. This feature is typically used by developers and system administrators who need to connect Signpost AI to other systems or services. 
+The API Key Management section allows teams to store and manage API credentials for various external services and AI providers. API keys are team-scoped and used throughout the application for AI model integration, support system connections, and other third-party services. 
 
-## Key Features
+## Supported API Key Types
 
-### Key Generation
+The system supports integration with multiple external services organized by category:
 
-Users can generate new API keys from this section. To do this, navigate to the 'Generate New Key' button and click it. A new API key will be generated and displayed for the user.
+### AI/ML Services
+- **OpenAI**: OpenAI API integration for GPT models
+- **Anthropic**: Claude API access for Anthropic models
+- **Google**: Google AI services integration
+- **DeepSeek**: DeepSeek API integration
+- **Fast Inference**: High-speed API access for inference
+- **XAI**: XAI service integration
+- **Perplexity**: Perplexity API integration
+- **Data Platform**: Data platform integration
 
-### Key Management
+### Support and Translation Services
+- **Support System**: Support ticket system integration
+- **Google Translate**: Translation services API
 
-This feature allows users to view, delete, and regenerate existing API keys. Users can manage their keys by clicking on the 'Manage Keys' button.
+### Search and Discovery
+- **Exa**: Search API integration for web discovery
 
-### Integration Setup
+## API Key Management Features
 
-Users can set up integrations with other systems or services using the API keys generated. To set up an integration, users need to provide the API key to the system or service they want to integrate with.
+### Creating API Keys
 
-### Security Settings
+**Add New API Key Process:**
+1. **Click "Create API Key"** from the API Keys settings page
+2. **Select Type**: Choose from the dropdown of supported API providers
+3. **Add Description**: Provide a descriptive name for the API key
+4. **Enter Key**: Input the actual API credential
+5. **Save**: API key is stored securely and associated with your team
 
-Users can adjust the security settings related to their API keys. This includes setting permissions for each key, such as read, write, or admin access.
+### API Key Table Interface
 
-## User Interface
+**Table Columns:**
+- **Description**: User-defined description of the API key purpose
+- **Type**: API provider type (OpenAI, Anthropic, etc.)
+- **Key**: The API credential (displayed in the table)
+- **Created**: Creation date in readable format
 
-The API Key Management sub-section has a clean and intuitive layout. The main controls are the 'Generate New Key' and 'Manage Keys' buttons. The list of existing keys is displayed in a table format, with columns for the key, permissions, and actions (delete, regenerate).
+**Table Features:**
+- **Search**: Search API keys by description
+- **Pagination**: Paginated table using table wrapper component
+- **Row Actions**: Click any row to edit the API key (if permissions allow)
+- **Sorting**: Sortable columns for organization
 
-## How to Use
+### Editing API Keys
 
-To generate a new key, click on the 'Generate New Key' button. A new key will be displayed, which you can copy and use as needed. To manage existing keys, click on the 'Manage Keys' button. This will display a list of all your keys, along with their permissions and actions.
+**Edit API Key Form:**
+- **Type Selection**: Change API provider type from supported options
+- **Description Update**: Modify the descriptive name
+- **Key Update**: Change the API credential value
+- **Delete Option**: Remove API key with confirmation dialog
 
-## Configuration & Settings
+**Edit Process:**
+1. **Access Edit**: Click on any API key row in the table
+2. **Modify Fields**: Update type, description, or key value as needed
+3. **Save Changes**: Click "Update" to save modifications
+4. **Delete Key**: Use "Delete" button with confirmation dialog
+5. **Cancel**: Return to list without saving changes
 
-Users can customize the permissions for each key in the 'Manage Keys' section. To do this, click on the 'Edit' button next to the key you want to modify. You can then select the desired permissions and click 'Save'.
+## Team-Based Security
 
-## Integration
+### Access Control
 
-The API Key Management sub-section is primarily used to enable integrations with other systems or services. The API keys generated can be used to authenticate and authorize requests from these external systems.
+**Team Isolation:**
+- **Team Scoped**: All API keys are filtered by current team (`team_id`)
+- **Permission Based**: Access controlled by create and update permissions
+- **Secure Storage**: API keys stored securely in the database
+- **No Cross-Team Access**: Users can only see API keys for their assigned team
 
-## Troubleshooting
+### Permission Requirements
 
-If you encounter issues while using this sub-section, check the following:
+**Required Permissions:**
+- **Create API Keys**: Requires create permission for API keys
+- **View API Keys**: Requires read permission for API keys
+- **Edit API Keys**: Requires update permission for users (uses users permission for row actions)
+- **Tab Visibility**: API Keys tab only visible with read permission for API keys
 
-- Ensure the API key is correctly copied and pasted into the external system.
-- Check the permissions for the key. If the key does not have the necessary permissions, you may encounter authorization errors.
-- If you're experiencing performance issues, consider regenerating your keys or creating new ones.
+## Database Integration
 
-For further assistance, please contact our support team.
+### Data Storage
+
+**API Key Schema:**
+- **ID**: Unique identifier for each API key
+- **Key**: The actual API credential
+- **Type**: Provider type (AI services, support systems, etc.)
+- **Team ID**: Associates key with specific team
+- **Created At**: Timestamp of key creation
+- **Description**: User-defined description
+
+### Query Integration
+
+**Data Management:**
+- **React Query**: Uses `useQuery` for efficient data fetching and caching
+- **Real-Time Updates**: Automatic cache invalidation when keys are modified
+- **Error Handling**: Comprehensive error handling for API failures
+- **Loading States**: Loading indicators during async operations
+
+## Error Handling and User Feedback
+
+### Form Validation
+
+**Input Validation:**
+- **Required Fields**: Description and key are required
+- **Type Selection**: Must select a valid API provider type
+- **Real-Time Feedback**: Immediate validation feedback
+
+### User Notifications
+
+**Success Feedback:**
+- **Creation Success**: "API key created successfully" toast notification
+- **Update Success**: "API key updated successfully" toast notification
+- **Deletion Success**: "API key deleted successfully" toast notification
+
+**Error Handling:**
+- **API Errors**: User-friendly error messages for API failures
+- **Validation Errors**: Clear feedback for missing or invalid data
+- **Network Errors**: Graceful handling of connection issues

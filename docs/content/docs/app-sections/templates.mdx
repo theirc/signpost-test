@@ -7,123 +7,127 @@ description: "Complete guide to using pre-built agent templates and creating cus
 
 ## Overview
 
-The Templates section is your comprehensive library of pre-built agent configurations designed to accelerate agent development. This guide covers everything from browsing and using existing templates to creating and sharing your own custom templates.
+The Templates section provides access to reusable agent configurations that can accelerate agent development. Templates are agents with no team assignment (`team_id: null`) that can be accessed by all teams for creating new agents.
 
 ## 1. Templates Dashboard
 
 ![Templates Main Interface](/images/screenshots/templates/templates-main.png)
 *Templates Main Interface - Browse and manage agent templates*
 
-The templates dashboard provides:
-- **Template Library**: Comprehensive collection of pre-built agents
-- **Category Organization**: Templates organized by use case and industry
-- **Search and Filter**: Find templates that match your needs
-- **Template Preview**: See how templates work before using them
-- **Custom Templates**: Your own saved template configurations
-- **Community Templates**: Templates shared by other users
+The templates interface (`AgentList` component) provides:
+- **Template Table**: View all available templates with ID, title, and creation date
+- **Add Agent Button**: Create new agents (which can become templates)
+- **Template Actions**: Duplicate and delete templates (with permissions)
+- **Data Table Features**: Enhanced sorting, filtering, and search capabilities
+- **Permission-Based Access**: Create and delete actions based on user permissions
 
-## 2. Template Categories
+## 2. Creating Templates from Agents
 
-### Communication Templates
-**Customer Service Agents:**
-- **Support Assistant**: Handle customer inquiries and issues
-- **FAQ Bot**: Answer frequently asked questions
-- **Escalation Handler**: Route complex issues to human agents
-- **Multilingual Support**: Provide support in multiple languages
+### Saving an Agent as Template
 
-**Sales and Marketing:**
-- **Lead Qualifier**: Assess and qualify potential customers
-- **Product Recommender**: Suggest products based on preferences
-- **Email Responder**: Automated email responses
-- **Social Media Manager**: Handle social media interactions
+You can convert any existing agent into a reusable template:
 
-### Content Generation Templates
-**Writing Assistants:**
-- **Blog Writer**: Create blog posts and articles
-- **Email Composer**: Draft professional emails
-- **Report Generator**: Create business reports and summaries
-- **Social Media Content**: Generate posts and captions
+1. **Navigate to Agents**: Go to the agents list in your team
+2. **Select Agent**: Find the agent you want to save as a template
+3. **Save as Template**: Click the template action button
+4. **Template Creation**: The system creates a copy with:
+   - `team_id` set to `null` (making it globally accessible)
+   - Title appended with "(Template)"
+   - New unique ID generated
+   - All worker configurations and connections preserved
 
-**Creative Content:**
-- **Story Generator**: Create narratives and stories
-- **Marketing Copy**: Develop advertising and marketing content
-- **Technical Writer**: Create documentation and manuals
-- **Translator**: Translate content between languages
+### Template Auto-Generation
 
-### Data Processing Templates
-**Analysis and Research:**
-- **Data Analyzer**: Process and analyze datasets
-- **Research Assistant**: Gather and summarize information
-- **Document Processor**: Extract insights from documents
-- **Trend Analyzer**: Identify patterns and trends
+The system includes an `AgentTemplateGenerator` that can create templates from descriptions:
 
-**Information Management:**
-- **Knowledge Curator**: Organize and categorize information
-- **Content Summarizer**: Create summaries of long content
-- **Question Answerer**: Provide answers from knowledge bases
-- **Fact Checker**: Verify information accuracy
+**Automated Template Creation:**
+- **AI-Powered Generation**: Uses available AI models (GPT-4, Claude, etc.) to generate templates
+- **Description-Based**: Creates agents based on natural language descriptions
+- **Fallback System**: Uses specialized templates when AI generation isn't available
+- **Structured Output**: Generates proper agent configurations with workers and prompts
 
-### Workflow Automation Templates
-**Business Process Automation:**
-- **Task Orchestrator**: Coordinate multiple business tasks
-- **Approval Workflow**: Handle approval processes
-- **Notification Manager**: Send and manage notifications
-- **Data Integrator**: Connect and sync different systems
+**Generation Process:**
+1. **Model Selection**: System selects best available AI model from API keys
+2. **Prompt Building**: Constructs generation prompt from user description
+3. **Template Generation**: AI creates structured agent configuration
+4. **Response Parsing**: Converts AI output into valid agent template
+5. **Fallback Handling**: Uses pre-built specialized templates if generation fails
 
-**Administrative Assistants:**
-- **Calendar Manager**: Schedule and manage appointments
-- **Email Organizer**: Sort and prioritize emails
-- **Document Manager**: Organize and track documents
-- **Meeting Assistant**: Manage meetings and notes
+## 3. Template Management Interface
 
-## Key Features
+### Database Structure
 
-### Template Library
-- **Pre-built Templates**: Ready-to-use agent configurations
-- **Category Organization**: Templates organized by use case
-- **Template Preview**: See how templates work before using them
-- **Custom Templates**: Save your own agents as templates
+**Template Storage:**
+- Templates are stored in the `agents` table with `team_id: null`
+- Query: `SELECT id, title, description, type, created_at FROM agents WHERE team_id IS NULL`
+- Ordered by creation date (newest first)
 
-### Template Management
-- **Browse Templates**: Explore available templates by category
-- **Template Details**: View template specifications and capabilities
-- **Use Template**: Create new agents from templates
-- **Template Sharing**: Share templates with your team
+### Template Actions
 
-## Available Template Categories
+**Available Actions (Permission-Based):**
+- **Duplicate Template**: Creates a copy with "(copy)" suffix appended to title
+- **Delete Template**: Permanently removes template from database
+- **Create New Agent**: Navigate to agent creation (can later be saved as template)
 
-### Communication
-- Customer service agents
-- Chat assistants
-- Email responders
+**Permission System:**
+- **Create Templates**: Requires `canCreate("templates")` permission
+- **Delete Templates**: Requires `canDelete("templates")` permission
+- Actions are only visible/accessible based on user permissions
 
-### Content Generation
-- Document generators
-- Report creators
-- Content writers
+### Data Table Features
 
-### Data Processing
-- Data analyzers
-- Information extractors
-- Content summarizers
+**Enhanced Data Table (`EnhancedDataTable`):**
+- **Sortable Columns**: Sort by ID, title, or creation date
+- **Resizable Columns**: Adjust column widths as needed
+- **Row Selection**: Click rows to navigate to agent details
+- **Empty State**: Shows "No agent templates found." when no templates exist
+- **Loading State**: Displays spinner while fetching templates
 
-### Workflow Automation
-- Task orchestrators
-- Process managers
-- Integration handlers
+## 4. Using Templates
 
-## Getting Started
+### From Templates Page
 
-1. **Browse Templates**: Explore the template library
-2. **Select Template**: Choose a template that fits your needs
-3. **Preview Template**: Review the template configuration
-4. **Create Agent**: Use the template to create a new agent
-5. **Customize**: Modify the agent to fit your requirements
+1. **Access Templates**: Navigate to the templates section
+2. **Browse Available Templates**: View table of all templates with ID, title, and creation date
+3. **Select Template**: Click on a template row to view details
+4. **Duplicate for Use**: Use the duplicate action to create a copy you can modify
 
-## Best Practices
+### When Creating New Agents
 
-- Start with the closest matching template
-- Review template capabilities before use
-- Customize templates to fit your specific needs
-- Save successful customizations as new templates
-- Document template modifications for team reference
+{/* TODO: Document how templates integrate with agent creation flow */}
+
+### Template Worker
+
+The system includes a `template` worker type for Handlebars-based templating:
+
+**Template Worker Features:**
+- **Type**: `template` worker with conditional support
+- **Inputs**: Template string input
+- **Outputs**: Processed template output
+- **Processing**: Uses Handlebars templating for compilation and execution
+- **User Fields**: Supports custom user-defined template variables
+
+## 5. Error Handling and Notifications
+
+### Template Creation Feedback
+
+**Success Messages:**
+- **Save as Template**: "Agent saved as template - '[agent.title]' has been successfully saved as a template."
+- **Duplicate Template**: "Agent duplicated - A copy of '[template.title]' was created."
+- **Delete Template**: "Agent deleted - '[template.title]' has been deleted."
+
+**Error Handling:**
+- **Save Errors**: Shows "Error saving as template" with specific error details
+- **Duplicate Errors**: "Error duplicating agent" with error message
+- **Delete Errors**: "Error deleting agent" with error description
+- **Loading Errors**: Console logging of fetch errors with empty array fallback
+
+### Query Management
+
+**React Query Integration:**
+- **Templates Query**: `['agents-template']` for template list
+- **Cache Invalidation**: Automatically updates both agents and templates queries after operations
+- **Loading States**: Proper loading indicators during async operations
+- **Error Boundaries**: Graceful error handling with user feedback
+
+{/* TODO: Document integration with agent creation workflow and template selection process */}

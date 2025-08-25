@@ -7,7 +7,7 @@ description: "Complete guide to creating and managing document collections"
 
 ## Overview
 
-Knowledge Collections allow you to organize documents, files, and data sources into logical groups that your AI agents can search and reference. This comprehensive guide covers everything from creating your first collection to managing large-scale document libraries.
+Knowledge Collections allow you to organize sources into logical groups for your AI agents to search and reference. Collections group multiple sources together and provide vector generation capabilities for semantic search functionality.
 
 ## 1. Collections Dashboard
 
@@ -15,197 +15,243 @@ Knowledge Collections allow you to organize documents, files, and data sources i
 *Knowledge Collections Interface - Main dashboard showing all your collections*
 
 The collections dashboard displays:
-- **Collection List**: All your created collections with status indicators
-- **Collection Stats**: Number of documents, processing status, and usage metrics
-- **Search and Filter**: Find specific collections quickly
-- **Create New Collection**: Primary action button
-- **Collection Actions**: Edit, delete, export, or share collections
+- **Collections Table**: Paginated table showing collection name, creation date, source counts, and vector status
+- **Vector Status**: Progress bar showing vectorization percentage (vectorized sources / total sources)
+- **Search Functionality**: Built-in search by collection name
+- **Create Collection Button**: Primary action button in the top-right
+- **Actions Menu**: Dropdown with Edit, Download Sources, Delete, and Generate Vectors options
 
 ## 2. Creating a New Collection
 
-### Step 1: Collection Setup
+### Collection Creation Process
 
 ![Knowledge Collection Creation](/images/screenshots/knowledge/knowledge-collection-creation.png)
-*Knowledge Collection Creation - Initial setup screen for new collections*
+*Knowledge Collection Creation - Dialog for creating new collections*
 
-1. **Click "Create New Collection"** from the main dashboard
-2. **Enter Collection Details**:
-   - **Collection Name**: Choose a descriptive name (e.g., "Product Documentation")
-   - **Description**: Explain what documents this collection contains
-   - **Category**: Select or create a category for organization
-   - **Access Level**: Set who can view and edit this collection
+1. **Click "Create Collection"** from the main dashboard
+2. **Enter Collection Name**: Provide a descriptive name for your collection
+3. **Select Sources**: Choose which sources to include in the collection from the sources table
+4. **Source Selection Features**:
+   - **Search Sources**: Filter sources by name or content
+   - **Pagination**: Navigate through available sources (10 sources per page)
+   - **Select All**: Checkbox to select/deselect all sources on current page
+   - **Individual Selection**: Click checkboxes to select specific sources
 
-3. **Configure Collection Settings**:
-   - **Language**: Primary language of documents (affects processing)
-   - **Processing Model**: Choose embedding model for vector generation
-   - **Chunk Size**: How to split large documents (default: 1000 tokens)
-   - **Overlap**: Overlap between chunks (default: 200 tokens)
+### Collection Creation Dialog
 
-### Step 2: Collection Configuration
+**Required Fields:**
+- **Collection Name**: Must be non-empty and descriptive
+- **Sources**: At least one source must be selected
 
-**Advanced Settings:**
-- **Custom Metadata**: Define custom fields for documents
-- **Auto-Processing**: Enable automatic processing of new documents
-- **Version Control**: Track changes to documents over time
-- **Retention Policy**: Set how long to keep old document versions
+**Source Management:**
+- **Source Table**: Shows source name, type, last updated date, and tags
+- **Source Filtering**: Real-time search through source names and content
+- **Source Tags**: Visual indicators for "File Upload" and "Live Data" sources
+- **Dynamic Selection**: Add/remove sources during creation
 
-**Integration Settings:**
-- **Webhook URLs**: Notify external systems when collection updates
-- **API Access**: Generate API keys for programmatic access
-- **Sync Settings**: Configure automatic syncing with external sources
+**Validation:**
+- **Name Validation**: Collection name cannot be empty
+- **Source Validation**: At least one source must be selected before creation
+- **Team Association**: Collections are automatically associated with the current team
 
-## 3. Adding Documents to Collections
+## 3. Collection Management
 
-### Method 1: File Upload
-1. **Open your collection** from the collections list
-2. **Click "Add Documents"** 
-3. **Select "Upload Files"**
-4. **Choose files** from your computer (supports PDF, DOCX, TXT, MD, CSV)
-5. **Configure upload settings**:
-   - **Processing Priority**: High, Normal, or Low
-   - **Auto-Extract Metadata**: Extract titles, authors, dates
-   - **Custom Tags**: Add organizational tags
+### Editing Collections
 
-### Method 2: URL Import
-1. **Click "Add Documents"**
-2. **Select "Import from URL"**
-3. **Enter document URLs** (one per line)
-4. **Configure import settings**:
-   - **Crawl Depth**: How deep to follow links
-   - **File Types**: Which file types to include
-   - **Update Schedule**: How often to re-import
+Collections can be modified after creation using the same interface:
 
-### Method 3: API Integration
-1. **Click "Add Documents"**
-2. **Select "API Integration"**
-3. **Configure API connection**:
-   - **API Endpoint**: Source system URL
-   - **Authentication**: API keys or tokens
-   - **Query Parameters**: Filter which documents to import
-   - **Sync Schedule**: Automatic import frequency
+1. **Click the Actions Menu** (three dots) for any collection
+2. **Select "Edit"** from the dropdown menu
+3. **Modify Collection**: The same `EditCollectionDialog` opens
+4. **Update Name**: Change the collection name if needed
+5. **Modify Sources**: Add or remove sources from the collection
 
-## 4. Collection Management
+**Source Management During Edit:**
+- **Current Sources**: Pre-selected based on existing collection relationships
+- **Add Sources**: Select additional sources to include
+- **Remove Sources**: Deselect sources to remove from collection
+- **Batch Operations**: Select/deselect all sources at once
 
-### Document Processing Status
-- **Queued**: Document is waiting to be processed
-- **Processing**: Currently extracting text and generating embeddings
-- **Completed**: Ready for search and AI use
-- **Failed**: Processing encountered an error
-- **Updating**: Re-processing due to changes
+## 4. Vector Generation
 
-### Monitoring Collection Health
-- **Processing Queue**: See how many documents are waiting
-- **Error Reports**: Review and fix processing failures
-- **Usage Analytics**: Track which documents are accessed most
-- **Performance Metrics**: Processing speed and success rates
+### Vector Generation Process
 
-### Collection Maintenance
-1. **Regular Cleanup**:
-   - Remove outdated documents
-   - Update changed documents
-   - Optimize collection structure
+Collections support vector generation for semantic search capabilities:
 
-2. **Performance Optimization**:
-   - Adjust chunk sizes for better search results
-   - Re-process with newer embedding models
-   - Remove duplicate documents
+1. **Access Vector Generation**: Click the Actions menu for any collection
+2. **Select "Generate Vectors"**: Only enabled for collections with sources
+3. **Processing**: The system generates embeddings for sources without vectors
+4. **Progress Tracking**: Vector status shows completion percentage
 
-3. **Quality Control**:
-   - Review auto-extracted metadata
-   - Validate document categorization
-   - Test search result quality
+### Vector Generation Implementation
 
-## 5. Search and Retrieval
+**Processing Logic:**
+- **Source Filtering**: Only processes sources without existing vectors
+- **Content Validation**: Skips sources without content
+- **Embedding Generation**: Creates averaged embeddings from text chunks
+- **Database Updates**: Stores vector as JSON string in `sources.vector` field
 
-### Basic Search
-1. **Open collection** from the dashboard
-2. **Use the search bar** to find documents
-3. **View search results** with relevance scores
-4. **Preview documents** before accessing full content
+**Error Handling:**
+- **Token Limits**: Gracefully handles content too large for embedding models
+- **Network Issues**: Retries and reports failed source processing
+- **Partial Success**: Continues processing even if some sources fail
+- **Progress Reporting**: Tracks successful vs failed source processing
 
-### Advanced Search Features
-- **Semantic Search**: Find documents by meaning, not just keywords
-- **Metadata Filters**: Filter by date, author, document type, etc.
-- **Similarity Search**: Find documents similar to a selected one
-- **Full-Text Search**: Traditional keyword-based search
+### Vector Status Display
 
-### Search Configuration
-- **Search Models**: Choose embedding model for search
-- **Result Ranking**: Customize how results are scored
-- **Query Expansion**: Automatically expand search terms
-- **Result Limits**: Set maximum number of results
+**Visual Indicators:**
+- **Progress Bar**: Shows vectorized sources / total sources percentage
+- **Source Counts**: Displays "X / Y sources" format
+- **Color Coding**: Blue progress bar indicates completion status
+- **Real-time Updates**: Status updates after vector generation completes
 
-## 6. Collection Sharing and Collaboration
+## 5. Collection Download
 
-### Access Control
-1. **Open collection settings**
-2. **Navigate to "Access Control"**
-3. **Add team members**:
-   - **Viewer**: Can search and read documents
-   - **Contributor**: Can add and edit documents
-   - **Admin**: Full collection management access
+### Download Sources Feature
 
-### Sharing Options
-- **Public Link**: Share read-only access via URL
-- **Embed Code**: Embed search in external websites
-- **API Access**: Provide programmatic access
-- **Export**: Download entire collection
+Collections provide a download feature to export all source content as a ZIP file:
 
-## 7. Integration with AI Agents
+1. **Access Download**: Click the Actions menu for any collection
+2. **Select "Download Sources"**: Only enabled for collections with sources
+3. **ZIP Generation**: System creates a ZIP file with all source content
+4. **File Download**: Automatically downloads the generated ZIP file
 
-### Connecting to Agents
-1. **Create or edit an agent**
-2. **Add a "Search Worker"** to your flow
-3. **Configure the search worker**:
-   - **Select Collection**: Choose which collection to search
-   - **Search Method**: Semantic, keyword, or hybrid
-   - **Result Count**: How many results to return
-   - **Confidence Threshold**: Minimum relevance score
+### Download Implementation
 
-### Best Practices for Agent Integration
-- **Collection Focus**: Use specific collections for targeted knowledge
-- **Result Filtering**: Pre-filter results by relevance
-- **Context Preparation**: Format search results for AI consumption
-- **Fallback Handling**: Handle cases when no relevant documents found
+**Content Processing:**
+- **Source Retrieval**: Fetches all sources associated with the collection
+- **Content Filtering**: Only includes sources that have content
+- **File Generation**: Creates individual text files for each source
 
-## 8. Analytics and Insights
+**File Formatting:**
+- **Filename Safety**: Converts source names to safe filenames (replaces special characters with underscores)
+- **Duplicate Handling**: Appends numbers to duplicate filenames (`filename_2.txt`)
+- **Metadata Headers**: Each file includes source metadata (name, type, ID, generation date)
+- **Content Format**: Source content appended after metadata header
 
-### Usage Analytics
-- **Search Frequency**: Most searched terms and documents
-- **User Activity**: Who is accessing the collection
-- **Performance Trends**: Search speed and accuracy over time
-- **Popular Content**: Most accessed documents
+**ZIP File Structure:**
+```
+collection_name_sources.zip
+├── source_1_name.txt
+├── source_2_name.txt
+└── source_3_name_2.txt  (duplicate name handling)
+```
 
-### Collection Metrics
-- **Document Count**: Total number of processed documents
-- **Storage Usage**: Disk space consumed
-- **Processing Time**: Average time to process new documents
-- **Error Rates**: Failed processing attempts
+**Error Handling:**
+- **No Sources**: Graceful handling when collection has no sources
+- **No Content**: Handles sources without content
+- **Download Failures**: User feedback for download errors
 
-## 9. Troubleshooting
+## 6. Collection Deletion
 
-### Common Issues
-- **Slow Processing**: Check document size and complexity
-- **Search Quality**: Review chunk size and embedding model
-- **Access Errors**: Verify permissions and authentication
-- **Sync Failures**: Check API connections and credentials
+### Delete Collection Process
 
-### Optimization Tips
-- **Document Preparation**: Clean and format documents before upload
-- **Metadata Quality**: Provide rich, accurate metadata
-- **Regular Maintenance**: Keep collections updated and organized
-- **Performance Monitoring**: Track and address performance issues
+Collections can be permanently deleted with proper cleanup:
 
-## 10. Best Practices
+1. **Access Delete**: Click the Actions menu for any collection
+2. **Select "Delete"**: Opens confirmation dialog
+3. **Confirm Deletion**: Acknowledges permanent deletion warning
+4. **Cleanup Process**: System handles related data cleanup
 
-### Collection Organization
-- **Logical Grouping**: Group related documents together
-- **Consistent Naming**: Use clear, descriptive names
-- **Metadata Standards**: Establish consistent metadata practices
-- **Regular Reviews**: Periodically review and clean collections
+### Deletion Implementation (`deleteCollection`)
 
-### Security and Privacy
-- **Access Controls**: Limit access to sensitive collections
-- **Data Encryption**: Ensure sensitive data is encrypted
-- **Audit Logs**: Track who accesses what documents
-- **Compliance**: Follow relevant data protection regulations
+**Cleanup Sequence:**
+1. **Bot Unlinking**: Finds bots using this collection and sets their `collection` field to `null`
+2. **Relationship Cleanup**: Deletes all records from `collection_sources` table
+3. **Collection Removal**: Deletes the collection record from `collections` table
+4. **Team Validation**: Ensures only collections belonging to current team are deleted
+
+**Data Safety:**
+- **Cascade Cleanup**: Automatically handles dependent data
+- **Team Isolation**: Cannot delete collections from other teams
+- **Atomic Operations**: Deletion is transaction-safe
+- **Bot Preservation**: Bots are unlinked but not deleted
+
+### Delete Confirmation Dialog (`DeleteCollectionDialog`)
+
+**User Interface:**
+- **Confirmation Required**: User must explicitly confirm deletion
+- **Warning Message**: Clear indication that action cannot be undone
+- **Bot Impact Warning**: Notifies if bots will be unlinked
+- **Loading State**: Shows "Deleting..." during operation
+
+{/* TODO: Document integration with AI agents and search workers */}
+
+## 7. Database Structure and Relationships
+
+### Collections Table Structure
+
+**Primary Collection Data:**
+- **`collections` table**: Stores collection metadata (id, name, created_at, team_id)
+- **`collection_sources` table**: Junction table linking collections to sources
+- **`collections_with_counts` view**: Enhanced view showing source and vector counts
+
+### Real-time Updates
+
+**Subscription System:**
+- **PostgreSQL Changes**: Listens to changes on `collections` table
+- **Automatic Refresh**: UI automatically updates when collections change
+- **React Query Integration**: Efficient cache invalidation and data fetching
+
+### Team Isolation
+
+**Data Security:**
+- **Team Filtering**: All queries filter by current team's `team_id`
+- **Access Control**: Users can only see collections belonging to their team
+- **Cross-team Protection**: Cannot access or modify other teams' collections
+
+## 8. Error Handling and User Feedback
+
+### Success Messages
+
+**Operation Feedback:**
+- **Collection Created**: "Collection created successfully"
+- **Collection Updated**: "Collection updated successfully"
+- **Collection Deleted**: "Collection and all related data deleted successfully"
+- **Vector Generation**: "Successfully generated X vectors" or "Vector generation process has been completed successfully"
+- **Download Started**: "Preparing your collection sources for download..."
+- **Download Complete**: "Successfully downloaded sources from '[collection name]' collection"
+
+### Error Handling
+
+**Validation Errors:**
+- **Empty Name**: "Collection name is required"
+- **No Sources Selected**: "Please select at least one source"
+- **Creation Failures**: "Failed to create collection" or "Failed to add sources to collection"
+
+**Operation Errors:**
+- **Vector Generation Failures**: Detailed error messages with guidance for large sources
+- **Download Errors**: Specific error messages for no sources, no content, or technical failures
+- **Delete Failures**: Error messages with specific failure reasons
+
+### Loading States
+
+**User Experience:**
+- **Collection Loading**: Spinner while fetching collections
+- **Dialog Loading**: "Creating..." or "Updating..." during operations
+- **Vector Generation**: Background processing with progress tracking
+- **Download Processing**: "Preparing..." status during ZIP generation
+
+## 9. Performance and Optimization
+
+### Pagination and Search
+
+**Data Management:**
+- **Paginated Tables**: Uses paginated table wrapper for efficient data loading
+- **Search Integration**: Real-time collection name filtering
+- **Sortable Columns**: All columns support sorting (name, created date, source count, vector status)
+
+### Vector Generation Optimization
+
+**Efficiency Features:**
+- **Incremental Processing**: Only processes sources without existing vectors
+- **Batch Operations**: Processes multiple sources in sequence
+- **Error Recovery**: Continues processing even if individual sources fail
+- **Token Management**: Handles content too large for embedding models
+
+### Database Performance
+
+**Query Optimization:**
+- **Indexed Queries**: Efficient queries using indexes on team_id and foreign keys
+- **View Usage**: Uses `collections_with_counts` view for aggregated data
+- **Selective Loading**: Only loads necessary data fields
