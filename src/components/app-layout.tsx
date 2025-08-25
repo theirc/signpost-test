@@ -30,6 +30,8 @@ import { UsersSettings } from "@/pages/settings/users"
 import { AddTeamMembers } from "@/pages/settings/team-members"
 import { ApiKeysSettings } from "@/pages/settings/api-keys"
 import ApiKeyView from "@/pages/settings/api-key"
+import { ModelsSettings } from "@/pages/settings/models"
+import ModelView from "@/pages/settings/model"
 import { ProfileSettings } from "@/pages/settings/profile"
 import TestWebpage from "@/pages/webpage/test"
 import { useForceUpdate } from "@/lib/utils"
@@ -51,6 +53,7 @@ const routeNames: Record<string, string> = {
   '/settings/roles': 'Settings / Access Control',
   '/settings/users': 'Settings / Users',
   '/settings/apikeys': 'Settings / Api Keys',
+  '/settings/models': 'Settings / Models',
   '/settings/profile': 'Settings / Profile',
 }
 
@@ -72,7 +75,7 @@ export function AppLayout() {
   const currentName = routeNames[currentPath] || 'Unknown'
   const isAgentRoute = useMatch("/agent/:id")
   const { agent } = useAppStore()
-  
+
   const [editingTitle, setEditingTitle] = useState(agent?.title || '')
   React.useEffect(() => {
     if (agent?.title) {
@@ -119,6 +122,8 @@ export function AppLayout() {
       breadcrumbItems.push({ name: 'Users' })
     } else if (currentPath === '/settings/apikeys') {
       breadcrumbItems.push({ name: 'Api Keys' })
+    } else if (currentPath === '/settings/models') {
+      breadcrumbItems.push({ name: 'Models' })
     } else if (currentPath === '/settings/profile') {
       breadcrumbItems.push({ name: 'Profile' })
     }
@@ -297,6 +302,16 @@ export function AppLayout() {
               <Route path="apikeys/:id" element={
                 <ProtectedRoute resource="apikeys" action="read">
                   <ApiKeyView />
+                </ProtectedRoute>
+              } />
+              <Route path="models" element={
+                <ProtectedRoute resource="models" action="read">
+                  <ModelsSettings />
+                </ProtectedRoute>
+              } />
+              <Route path="models/:id" element={
+                <ProtectedRoute resource="models" action="read">
+                  <ModelView />
                 </ProtectedRoute>
               } />
               <Route path="profile" element={
