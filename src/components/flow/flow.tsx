@@ -5,6 +5,7 @@ import { toast, Toaster } from "sonner"
 import { app } from '@/lib/app'
 import { workerRegistry } from '@/lib/agents/registry'
 import { useTeamStore } from "@/lib/hooks/useTeam"
+import { switchWorkspaceToAgentTeam } from "@/lib/hooks/useTeam"
 
 import { ButtonEdge } from './edges'
 import { RequestNode } from './nodes/input'
@@ -641,10 +642,21 @@ export function FlowDesigner({ id }: { id?: string }) {
         app.state.agentLoading = false
         return
       }
-      agents.loadAgent(id as any, selectedTeam.id).then((a) => {
-        // console.log("Agent loaded:", a)
+      agents.loadAgent(id as any, selectedTeam.id).then(async (a) => {
         if (!a) {
           console.error(`Agent ${id} not found or not accessible for current team`)
+          const team = await switchWorkspaceToAgentTeam(Number(id))
+          if (team?.id) {
+            try {
+              const retry = await agents.loadAgent(id as any, team.id)
+              if (retry) {
+                app.agent = retry
+                setAgent(retry)
+              }
+            } catch (e) {
+              console.error("Retry load after workspace switch failed:", e)
+            }
+          }
           app.state.agentLoading = false
           return
         }
