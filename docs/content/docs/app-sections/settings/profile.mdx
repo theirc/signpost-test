@@ -1,0 +1,146 @@
+---
+title: "Profile Settings"
+description: "Manage your personal account settings, password, and view account information"
+---
+
+# Profile Settings
+
+## Overview
+
+Profile Settings allow you to manage your personal account information and security settings. This section is accessible to all users regardless of their role permissions and provides both read-only account information and password management capabilities.
+
+![Profile Settings](/images/screenshots/settings/settings-profile.png)
+*Profile Settings - Account information and password management interface*
+
+## Account Information
+
+### Personal Details (Read-Only)
+
+**User Information Display:**
+- **Name**: Your first and last name as stored in the user profile
+- **Email**: Your email address from the authentication system
+- **Role**: Your assigned role name, or "No role assigned" if no role is set
+- **Team**: Your team name, or "No team assigned" if you're not part of a team
+
+### Account Status
+
+The profile displays your current account status and organizational memberships:
+- **Role Assignment**: Shows your current role and associated permissions
+- **Team Membership**: Displays your primary team assignment
+- **Account Status**: Active/inactive status (managed by administrators)
+
+## Password Management
+
+### Change Password
+
+**Password Requirements:**
+- **Minimum Length**: Passwords must be at least 6 characters long
+- **Confirmation Required**: New password must be entered twice for verification
+- **Real-Time Validation**: Immediate feedback on password requirements and matching
+
+**Password Change Process:**
+1. **Enter New Password**: Input your desired new password
+2. **Confirm Password**: Re-enter the same password for verification
+3. **Validation**: System checks length requirements and password matching
+4. **Update**: Password is securely updated through the authentication service
+5. **Confirmation**: Success message displayed and form is reset
+
+### Security Features
+
+**Password Field Controls:**
+- **Show/Hide Toggle**: Click the eye icon to toggle password visibility
+- **Confirm Password Toggle**: Separate toggle for the confirmation field
+- **Visual Feedback**: Eye/EyeOff icons indicate current visibility state
+
+**Validation Feedback:**
+- **Length Validation**: Error message if password is less than 6 characters
+- **Match Validation**: Error message if passwords don't match
+- **Success Feedback**: Confirmation toast when password is successfully updated
+
+## User Interface Features
+
+### Form Controls
+
+**Password Input Fields:**
+- **New Password**: Primary password input with show/hide toggle
+- **Confirm Password**: Confirmation field with separate visibility toggle
+- **Keyboard Shortcuts**: Enter to submit, Escape to cancel inline editing
+
+**Form Submission:**
+- **Update Button**: Processes password change with loading state
+- **Loading Indicator**: Shows "Updating Password..." during processing
+- **Error Handling**: Displays specific error messages for failed updates
+
+### Responsive Design
+
+**Layout Structure:**
+- **Card-Based Layout**: Clean card interface for account information and password change
+- **Grid Layout**: Two-column grid for account details display
+- **Form Spacing**: Proper spacing and organization for form elements
+
+## Technical Implementation
+
+### Authentication Integration
+
+**Password Updates:**
+- **Service Integration**: Uses authentication service for secure password changes
+- **Error Handling**: Comprehensive error catching and user feedback
+- **Session Management**: Maintains user session during password updates
+
+### Data Loading
+
+**User Data Fetching:**
+- **Hook Integration**: Uses `useUser()` hook for current user data
+- **Loading States**: Displays loading spinner while fetching user information
+- **Error States**: Handles and displays data loading errors
+
+### Form State Management
+
+**State Handling:**
+- **Controlled Inputs**: All form fields are controlled components
+- **Validation State**: Real-time form validation with state updates
+- **Reset Functionality**: Form clears after successful password update
+
+## Error Handling
+
+### Validation Errors
+
+**Password Validation:**
+- **Length Check**: "Password must be at least 6 characters long"
+- **Match Check**: "New passwords do not match"
+- **Required Fields**: All fields are required for submission
+
+### System Errors
+
+**API Error Handling:**
+- **Network Errors**: Graceful handling of connection issues
+- **Authentication Errors**: Specific feedback for auth-related failures
+- **Generic Errors**: Fallback error messages for unexpected issues
+
+### User Feedback
+
+**Success States:**
+- **Success Toast**: "Password updated successfully" confirmation
+- **Form Reset**: Automatic clearing of password fields after success
+- **Visual Feedback**: Loading states and success indicators
+
+**Error States:**
+- **Destructive Toasts**: Error messages with red styling for failures
+- **Inline Validation**: Real-time validation feedback in form
+- **Persistent Errors**: Error messages remain until user takes corrective action
+
+## Security Considerations
+
+### Password Security
+
+**Secure Processing:**
+- **Client-Side Validation**: Basic validation before sending to server
+- **Server-Side Security**: All password updates processed through secure authentication service
+- **No Storage**: Passwords are not stored in local state or cache
+
+### Session Management
+
+**Authentication Flow:**
+- **Session Persistence**: User remains logged in during password changes
+- **Automatic Logout**: No forced logout after password change
+- **Session Security**: Secure session handling throughout password update process

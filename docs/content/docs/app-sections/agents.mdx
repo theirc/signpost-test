@@ -23,26 +23,115 @@ The main agents dashboard shows:
 
 ## 2. Creating a New Agent
 
-### Step 1: Initial Agent Setup
+Signpost AI offers multiple ways to create agents, from fully manual construction to AI-powered auto-generation.
+
+### Step 1: Choose Creation Method
 
 ![Agents Creation Interface](/images/screenshots/agents/agents-creation.png)
 *Agents Creation Interface - Initial setup screen for new agents*
 
 1. **Click "Create New Agent"** from the main dashboard
-2. **Enter Agent Details**:
+2. **Select Creation Method**:
+
+#### Option A: Auto-Generate (Recommended for Beginners)
+- **AI-Powered Generation**: Describe your agent in natural language and let AI build the complete flow
+- **Intelligent Templates**: Automatically selects appropriate workers and connections
+- **Best for**: Quick prototyping, learning the platform, or when you're not sure how to structure your agent
+
+#### Option B: From Scratch
+- **Manual Construction**: Build your agent step-by-step using the flow designer
+- **Full Control**: Complete customization of every component and connection
+- **Best for**: Complex custom logic, specific requirements, or experienced users
+
+#### Option C: From Template
+- **Pre-built Configurations**: Start with proven agent templates
+- **Industry-Specific**: Templates for common use cases like sentiment analysis, content generation
+- **Best for**: Standard workflows with minor customizations needed
+
+### Step 2A: Auto-Generation Workflow
+
+The auto-generation feature uses advanced AI to create complete agent flows based on your description.
+
+#### How Auto-Generation Works
+
+1. **Describe Your Agent**: Enter a natural language description of what you want your agent to do
+   ```
+   Example: "Create an agent that analyzes customer feedback and categorizes sentiment as positive, negative, or neutral"
+   ```
+
+2. **AI Analysis**: The system analyzes your description and:
+   - Identifies the required worker types
+   - Generates appropriate prompts and configurations
+   - Creates logical connections between components
+   - Positions workers optimally on the canvas
+
+3. **Review & Customize**: The generated template is fully editable:
+   - Modify worker configurations
+   - Adjust prompts and instructions
+   - Change connections and flow logic
+   - Add or remove workers as needed
+
+#### Specialized Auto-Generated Templates
+
+The system recognizes common patterns and creates optimized templates:
+
+**Sentiment Analysis Agents**
+- Input → Sentiment Analyzer (AI) → Structured Output → Response
+- Pre-configured with sentiment analysis prompts
+- JSON-formatted output with confidence scores
+
+**Research Paper Summarizers**
+- Input → Document Processor → Research Analyzer (AI) → Summary Formatter → Response
+- Specialized prompts for academic content
+- Structured output with key findings, methodology, conclusions
+
+**Content Generators**
+- Requirements Input → Creative AI → Content Formatter → Response
+- High creativity settings (temperature 0.8)
+- Prompts optimized for engaging content creation
+
+**API Integration Agents**
+- Input → External API Call → Response Processor (AI) → Formatted Output
+- Pre-configured error handling
+- Response analysis and data extraction
+
+**Search & Analysis Agents**
+- Query Input → Knowledge Search → Result Analyzer (AI) → Insights Output
+- Connected to your knowledge collections
+- Intelligent result summarization
+
+#### Auto-Generation Best Practices
+
+**Writing Effective Descriptions:**
+- Be specific about inputs and outputs
+- Mention the type of processing needed
+- Include any special requirements or constraints
+- Example: "Translate customer emails from multiple languages to English, detect urgent issues, and route to appropriate departments"
+
+**Common Description Patterns:**
+- **Analysis**: "Analyze [input type] and identify [patterns/insights]"
+- **Generation**: "Generate [content type] based on [requirements]"
+- **Processing**: "Process [data type] and extract [specific information]"
+- **Integration**: "Connect to [external service] and [action]"
+
+### Step 2B: Manual Agent Setup
+
+When building from scratch, start with basic agent details:
+
+1. **Enter Agent Details**:
    - **Agent Name**: Choose a descriptive name (e.g., "Customer Support Bot")
    - **Description**: Explain what the agent does
    - **Category**: Select appropriate category for organization
-3. **Choose Creation Method**:
-   - **From Scratch**: Build a completely custom agent
-   - **From Template**: Start with a pre-built template
-   - **Import**: Import an existing agent configuration
+2. **Configure Initial Settings**:
+   - **Agent Type**: Conversational, Data Processing, or API
+   - **Default Model**: Choose your preferred AI model
+   - **Team Access**: Set team-level permissions
 
-### Step 2: Flow Designer - Adding Workers
+### Step 3: Flow Designer - Adding Workers
 
-The Flow Designer is where you build your agent's logic using workers (processing nodes).
+The Flow Designer is where you build your agent's logic using workers (processing nodes). Whether you're starting from an auto-generated template or building from scratch, understanding workers is essential.
 
-#### Input & Output
+#### Input & Output Workers
 
 ![Agents Creation IO Workers](/images/screenshots/agents/agents-creation-io-workers.png)
 *Input & Output - Components for receiving input and sending responses*
@@ -66,7 +155,7 @@ The Flow Designer is where you build your agent's logic using workers (processin
 **Available Generators:**
 - **[AI](/workers/generators/ai)**: Core language model processing
 - **[Schema](/workers/generators/schema)**: Define and validate data structures and schemas
-- **[Structured Output](/workers/generators/structuredoutput)**: Ensures consistent response formatting with structured output
+- **[Structured Output](/workers/generators/structuredoutput)**: Ensures consistent response formatting with structured data output
 - **[Agent](/workers/generators/agent)**: Advanced AI agent with specialized capabilities
 - **[Content](/workers/generators/text)**: Text generation and content creation
 - **[LLM Agent](/workers/generators/promptAgent)**: Manages and formats prompts for language models
@@ -89,7 +178,7 @@ The Flow Designer is where you build your agent's logic using workers (processin
 - **[Document Selector](/workers/tools/documentselector)**: Select and retrieve specific documents from collections
 - **[Document Generator](/workers/tools/documentgenerator)**: Create documents, reports, and files
 - **[State](/workers/tools/state)**: Store and manage conversation state and context
-- **[STT](/workers/tools/stt)**: Speech-to-text conversion
+- **[Speech-to-Text](/workers/tools/stt)**: Speech-to-text conversion
 - **[TTS](/workers/tools/tts)**: Text-to-speech conversion
 - **[Translate](/workers/tools/translate)**: Language translation services
 - **[Template](/workers/tools/template)**: Use predefined templates for content generation
@@ -160,74 +249,702 @@ Each component has specific configuration options:
 - **Performance monitoring**: Check execution times
 - **Log analysis**: Review detailed execution logs
 
-### Step 6: Deployment
+### Step 6: Agent Versioning
 
-**Deployment Options:**
-1. **Save as Draft**: Keep working on the agent
-2. **Deploy to Staging**: Test in a production-like environment
-3. **Deploy to Production**: Make available for real users
-4. **Schedule Deployment**: Deploy at a specific time
+Signpost AI includes powerful versioning capabilities to help you manage agent iterations and maintain stable deployments.
 
-**Pre-deployment Checklist:**
+#### Creating Versions
+
+1. **Access Version Manager**: 
+   - Click the **Settings** button (gear icon) in the flow designer toolbar
+   - In the Agent Configuration modal, click the **"Versions"** tab
+2. **Create Version**: 
+   - Enter a descriptive version name (e.g., "v1.2-improved-accuracy") in the "Version Title" field
+   - Click **"Create Version"** button to save the current state
+3. **Version Metadata**: Each version stores:
+   - Complete agent configuration
+   - All worker settings and connections
+   - Creation timestamp
+   - Version description
+
+#### Managing Versions
+
+**Loading Previous Versions:**
+- In the Versions tab, you'll see a list of all saved versions
+- Click on any version name to load that version, or
+- Click the download icon (⬇) next to the version to load it
+- Your current work is preserved until you save over it
+
+**Version Best Practices:**
+- Create versions before major changes
+- Use descriptive names that indicate what changed
+- Keep important milestones (e.g., "pre-production", "stable-release")
+- Test thoroughly before creating production versions
+
+#### Version History
+
+The version manager interface shows:
+- **Version List**: All saved versions in chronological order
+- **Version Names**: Your custom descriptions for each version
+- **Load Actions**: Download icon (⬇) to load a specific version
+- **Delete Actions**: X icon to remove versions you no longer need
+- **Interactive Loading**: Click anywhere on a version name to load it immediately
+
+### Step 7: Deployment and Publishing
+
+Transform your agents into accessible applications with Signpost AI's deployment features.
+
+#### Deployment Options
+
+**1. Internal Testing**
+- **Save as Draft**: Continue development without affecting live systems
+- **Team Testing**: Share with team members for collaborative testing
+- **Debug Mode**: Enable detailed logging and step-by-step execution tracking
+
+**2. Staging Deployment**
+- **Pre-production Testing**: Test in a production-like environment
+- **Performance Monitoring**: Check response times and resource usage
+- **Integration Testing**: Verify external API connections and data flows
+
+**3. Production Deployment**
+- **Live Agent**: Make available for real users
+- **Web Interface**: Deploy as a standalone web application
+- **API Access**: Provide programmatic access to your agent
+- **Custom Domains**: Use your own domain for branding
+
+**4. Webpage Deployment**
+Create a beautiful, branded webpage for your agent:
+
+```javascript
+// Example deployment configuration
+{
+  "title": "Customer Support Assistant",
+  "description": "AI-powered support for your business",
+  "branding": {
+    "logo": "https://yourcompany.com/logo.png",
+    "primaryColor": "#3B82F6",
+    "theme": "modern"
+  },
+  "customDomain": "support.your-company.com"
+}
+```
+
+#### Deployment Features
+
+**Custom Branding:**
+- Upload your company logo
+- Set brand colors and themes
+- Customize the interface appearance
+- Add custom CSS for advanced styling
+
+**Access Control:**
+- Public access for general use
+- Team-only access for internal tools
+- API key authentication for secure integrations
+- Rate limiting and usage controls
+
+**Analytics Integration:**
+- Track user interactions and engagement
+- Monitor agent performance and accuracy
+- Identify common user patterns and needs
+- Export usage data for analysis
+
+#### Pre-deployment Checklist
+
+**Technical Requirements:**
 - ✅ All components properly configured
-- ✅ Error handling implemented
-- ✅ Test cases passing
-- ✅ Performance acceptable
-- ✅ Security settings reviewed
+- ✅ Error handling implemented for all failure scenarios
+- ✅ Test cases passing with various input types
+- ✅ Performance acceptable under expected load
+- ✅ Security settings reviewed and validated
 
-## 3. Agent Management
+**Content Requirements:**
+- ✅ Prompts tested and refined for accuracy
+- ✅ Response formatting consistent and user-friendly
+- ✅ Edge cases identified and handled
+- ✅ Fallback responses configured for errors
 
-### Editing Existing Agents
-1. **Find your agent** in the agents list
-2. **Click "Edit"** to open the flow designer
-3. **Make your changes** to components or connections
-4. **Test the changes** before redeploying
-5. **Save and redeploy** when satisfied
+**Operational Requirements:**
+- ✅ Monitoring and alerting configured
+- ✅ Backup and recovery procedures in place
+- ✅ Team members trained on agent management
+- ✅ Documentation updated for end users
 
-### Duplicating Agents
-1. **Select an agent** from the list
-2. **Click "Duplicate"** 
-3. **Rename the duplicate** to avoid confusion
-4. **Modify as needed** for your new use case
+## 3. Advanced Agent Management
 
-### Agent Analytics
-- **Usage Statistics**: How often the agent is used
-- **Success Rates**: Percentage of successful interactions
-- **Average Response Time**: Performance metrics
-- **Error Rates**: Common failure points
-- **User Feedback**: Ratings and comments
+### Template Management
 
-## 4. Best Practices
+#### Creating Templates from Existing Agents
+
+Transform your successful agents into reusable templates:
+
+1. **Save as Template**: Click the template icon next to any agent
+2. **Template Configuration**:
+   - Templates are team-independent (accessible to all teams)
+   - Automatic naming with "(Template)" suffix
+   - Preserves all worker configurations and connections
+3. **Template Library**: Access saved templates when creating new agents
+
+#### Using Templates Effectively
+
+**Template Categories:**
+- **Customer Service**: Pre-configured support agents with escalation logic
+- **Content Creation**: Agents optimized for different content types
+- **Data Analysis**: Templates for common analysis patterns
+- **Integration**: Pre-built API and external service connectors
+
+**Template Best Practices:**
+- Create templates only from thoroughly tested agents
+- Use generic prompts that can be easily customized
+- Include comprehensive documentation in descriptions
+- Test templates with different use cases before sharing
+
+### Agent Analytics and Monitoring
+
+#### Performance Metrics Dashboard
+
+**Core Metrics:**
+- **Usage Statistics**: Total interactions, daily/weekly usage patterns
+- **Success Rates**: Percentage of successful completions vs. errors
+- **Average Response Time**: Performance metrics across different worker types
+- **Token Usage**: AI model consumption and cost tracking
+- **User Satisfaction**: Feedback scores and ratings
+
+**Advanced Analytics:**
+- **Conversation Flow**: Most common paths through your agent
+- **Error Analysis**: Detailed breakdown of failure points
+- **Performance Trends**: Historical data showing improvement or degradation
+- **Resource Utilization**: Memory, processing time, and API call efficiency
+
+#### Monitoring and Alerts
+
+**Real-time Monitoring:**
+- Live usage dashboard with current active sessions
+- Error rate alerts when failures exceed thresholds
+- Performance degradation notifications
+- API quota and rate limit warnings
+
+**Historical Analysis:**
+- Usage pattern identification
+- Peak usage time analysis
+- Error trend analysis over time
+- Performance optimization recommendations
+
+### Multi-Agent Orchestration
+
+#### Agent Handoffs
+
+Configure sophisticated workflows where agents hand off conversations:
+
+1. **Handoff Triggers**: Define conditions for transferring conversations
+2. **Context Preservation**: Maintain conversation history across agents
+3. **Escalation Paths**: Route complex issues to specialized agents
+4. **Human Oversight**: Include human agents in the workflow
+
+#### Agent Collaboration
+
+**Parallel Processing:**
+- Multiple agents working on different aspects simultaneously
+- Result aggregation and synthesis
+- Conflict resolution when agents disagree
+
+**Sequential Processing:**
+- Agent pipelines for complex multi-step workflows
+- Data validation and quality checks between stages
+- Conditional routing based on intermediate results
+
+### Advanced Editing and Maintenance
+
+#### Bulk Operations
+
+**Multi-Agent Management:**
+- Update multiple agents simultaneously
+- Apply configuration changes across agent families
+- Bulk testing and validation
+- Coordinated deployments
+
+#### Configuration Management
+
+**Environment-Specific Settings:**
+- Development, staging, and production configurations
+- Environment variable management
+- API key rotation and security
+- Feature flag controls
+
+**Change Management:**
+- Automated backup before major changes
+- Rollback capabilities for failed deployments
+- Change approval workflows for production agents
+- Audit trails for all modifications
+
+### Agent Duplication and Variants
+
+#### Smart Duplication
+
+When duplicating agents, the system:
+1. **Copies Complete Configuration**: All workers, connections, and settings
+2. **Updates References**: Ensures all internal IDs are properly updated
+3. **Preserves Relationships**: Maintains worker connections and flow logic
+4. **Suggests Naming**: Automatic "(copy)" suffix with increment numbers
+
+#### Creating Agent Variants
+
+**A/B Testing Setup:**
+- Create multiple versions of the same agent
+- Route traffic between variants
+- Compare performance metrics
+- Gradual rollout of winning variants
+
+**Specialized Variants:**
+- Language-specific versions of the same agent
+- Industry-specific customizations
+- Feature-limited versions for different user tiers
+- Regional compliance variations
+
+## 4. Best Practices and Advanced Techniques
 
 ### Design Principles
-- **Start Simple**: Begin with basic flows, add complexity gradually
-- **Error Handling**: Always include error handling workers
-- **Testing**: Thoroughly test before deployment
-- **Documentation**: Document your agent's purpose and logic
-- **Monitoring**: Set up analytics and monitoring
+
+#### Agent Architecture Best Practices
+
+**Start Simple, Scale Smart:**
+- Begin with linear flows: Input → Process → Output
+- Add complexity gradually as requirements become clear
+- Use auto-generation for initial structure, then refine manually
+- Document decision points and branching logic clearly
+
+**Modular Design Patterns:**
+- **Single Responsibility**: Each worker should have one clear purpose
+- **Separation of Concerns**: Keep data processing separate from business logic
+- **Reusable Components**: Design workers that can be used in multiple contexts
+- **Error Boundaries**: Isolate potential failure points
+
+**Flow Design Strategies:**
+```
+Recommended Flow Patterns:
+
+1. Simple Linear Flow:
+   Input → AI Processing → Response
+
+2. Validation Flow:
+   Input → Validator → Processing → Error Handler → Response
+
+3. Multi-Step Analysis:
+   Input → Preprocessor → Analyzer → Aggregator → Response
+
+4. API Integration Flow:
+   Input → Data Formatter → API Call → Result Processor → Response
+
+5. Knowledge-Augmented Flow:
+   Input → Search → Context Merger → AI + Context → Response
+```
+
+#### Prompt Engineering Excellence
+
+**System Prompt Best Practices:**
+- Be specific about the agent's role and capabilities
+- Include examples of desired input/output formats
+- Set clear boundaries and limitations
+- Use consistent terminology throughout
+
+**Dynamic Prompt Construction:**
+```
+Example System Prompt Structure:
+
+You are a [ROLE] specialized in [DOMAIN].
+
+Your capabilities include:
+- [CAPABILITY 1]
+- [CAPABILITY 2]
+- [CAPABILITY 3]
+
+Input format: [DESCRIBE EXPECTED INPUT]
+Output format: [DESCRIBE REQUIRED OUTPUT]
+
+Guidelines:
+- [GUIDELINE 1]
+- [GUIDELINE 2]
+- [CONSTRAINT 1]
+
+Examples:
+Input: [EXAMPLE INPUT]
+Output: [EXAMPLE OUTPUT]
+```
 
 ### Performance Optimization
-- **Minimize Components**: Use only necessary components to reduce latency
-- **Parallel Processing**: Run independent tasks in parallel
-- **Caching**: Cache frequently used data
-- **Timeout Management**: Set appropriate timeouts for all components
 
-### Security Considerations
-- **Input Validation**: Validate all user inputs
-- **API Security**: Secure all external API calls
-- **Access Control**: Limit who can edit production agents
-- **Data Privacy**: Handle sensitive data appropriately
+#### Latency Reduction Strategies
 
-## 5. Troubleshooting
+**Component Optimization:**
+- **Minimize Worker Count**: Consolidate simple operations into single workers
+- **Parallel Execution**: Design independent operations to run simultaneously
+- **Efficient Routing**: Minimize unnecessary data transformations between workers
+- **Smart Caching**: Cache API responses and computation results
 
-### Common Issues
-- **Component Timeout**: Increase timeout settings or optimize component logic
-- **Connection Errors**: Check API endpoints and authentication
-- **Invalid Responses**: Validate input data and response formats
-- **Performance Issues**: Review component efficiency and parallel processing
+**Model Selection Guidelines:**
+- **Fast Models**: Use lighter models (GPT-3.5, Claude Haiku) for simple tasks
+- **Powerful Models**: Reserve GPT-4, Claude Sonnet for complex reasoning
+- **Specialized Models**: Use domain-specific models when available
+- **Cost vs. Speed**: Balance model capability with response time requirements
 
-### Getting Help
-- **Debug Logs**: Check detailed execution logs
-- **Test Mode**: Use step-by-step debugging
-- **Documentation**: Review component-specific documentation
-- **Support**: Contact support for complex issues
+#### Resource Management
+
+**Memory Optimization:**
+- Limit context window size for long conversations
+- Implement conversation summarization for history management
+- Use document chunking for large knowledge base queries
+- Clean up temporary data between worker executions
+
+**API Efficiency:**
+- Batch API calls when possible
+- Implement request queuing for high-volume scenarios
+- Use appropriate timeout values (5-30 seconds for most operations)
+- Monitor rate limits and implement exponential backoff
+
+### Security and Compliance
+
+#### Data Protection
+
+**Input Sanitization:**
+- Validate all user inputs against expected formats
+- Filter potentially malicious content before processing
+- Implement content type validation for file uploads
+- Use parameterized queries for database operations
+
+**Output Security:**
+- Sanitize AI-generated content before display
+- Prevent prompt injection attacks through input filtering
+- Validate external API responses before processing
+- Implement content moderation for public-facing agents
+
+#### Access Control Implementation
+
+**Team-Level Security:**
+- Implement role-based access control (RBAC)
+- Separate development, staging, and production environments
+- Audit agent modifications and deployments
+- Control API key access based on user roles
+
+**Agent-Level Security:**
+```
+Security Configuration Example:
+
+{
+  "accessControl": {
+    "teamOnly": true,
+    "allowedRoles": ["admin", "developer"],
+    "rateLimiting": {
+      "requestsPerMinute": 60,
+      "requestsPerHour": 1000
+    },
+    "contentFiltering": {
+      "enableProfanityFilter": true,
+      "enableSpamDetection": true,
+      "customRules": ["no-personal-info", "business-context-only"]
+    }
+  }
+}
+```
+
+### Advanced Integration Patterns
+
+#### Multi-Modal Agent Design
+
+**Text + Document Processing:**
+- Combine text input with document analysis
+- Use document selectors for relevant content retrieval
+- Implement document summarization before AI processing
+- Support multiple document formats (PDF, Word, text)
+
+**API Integration Patterns:**
+- **Web Hook Handlers**: Respond to external system events
+- **Data Synchronization**: Keep external systems updated
+- **Micro-service Architecture**: Agent as a service component
+- **Event-Driven Processing**: React to real-time data changes
+
+#### Error Handling and Resilience
+
+**Graceful Degradation:**
+- Implement fallback responses for AI failures
+- Provide alternative processing paths for API outages
+- Cache successful responses for offline scenarios
+- Design timeout-aware processing chains
+
+**Error Recovery Strategies:**
+```
+Error Handling Flow:
+
+Input → Primary Processor
+  ↓ (on error)
+Secondary Processor → Fallback Response
+  ↓ (on error)
+Default Error Handler → Standard Error Message
+```
+
+### Testing and Quality Assurance
+
+#### Comprehensive Testing Strategy
+
+**Unit Testing for Workers:**
+- Test each worker with various input types
+- Validate output formats and data types
+- Check error handling with invalid inputs
+- Verify timeout and retry behavior
+
+**Integration Testing:**
+- Test complete agent flows end-to-end
+- Validate data flow between connected workers
+- Check external API integration reliability
+- Verify error propagation and handling
+
+**Performance Testing:**
+- Load testing with expected user volumes
+- Stress testing to identify breaking points
+- Latency testing across different model configurations
+- Resource utilization monitoring under load
+
+#### Quality Metrics and Monitoring
+
+**Agent Quality Indicators:**
+- **Accuracy Rate**: Percentage of correct responses
+- **Completeness Score**: How fully requests are addressed
+- **User Satisfaction**: Feedback scores and ratings
+- **Task Completion Rate**: Successful end-to-end executions
+
+**Continuous Improvement Process:**
+1. **Baseline Measurement**: Establish initial performance metrics
+2. **Regular Review**: Weekly analysis of agent performance
+3. **Iterative Enhancement**: Gradual improvements based on data
+4. **A/B Testing**: Compare different configurations
+5. **User Feedback Integration**: Incorporate user suggestions systematically
+
+## 5. Troubleshooting and Debugging
+
+### Common Issues and Solutions
+
+#### Agent Execution Problems
+
+**Component Timeout Issues:**
+```
+Problem: Workers timing out during execution
+Symptoms: "Timeout error" messages, incomplete responses
+
+Solutions:
+- Increase timeout values in worker settings (try 30-60 seconds)
+- Optimize prompts to reduce AI processing time
+- Split complex operations into smaller workers
+- Check external API response times
+- Monitor system load and resource availability
+```
+
+**Connection and Flow Errors:**
+```
+Problem: Data not flowing between workers correctly
+Symptoms: Empty outputs, broken connections, execution stops
+
+Solutions:
+- Verify connection handles match (output → input)
+- Check worker execution order and dependencies
+- Validate data format compatibility between workers
+- Review conditional logic in connections
+- Test individual workers in isolation
+```
+
+**API Integration Issues:**
+```
+Problem: External API calls failing
+Symptoms: API errors, authentication failures, network timeouts
+
+Solutions:
+- Verify API endpoint URLs and methods
+- Check authentication credentials and API keys
+- Validate request headers and payload format
+- Test API endpoints independently
+- Implement retry logic and error handling
+- Check rate limiting and quotas
+```
+
+#### AI and Model Problems
+
+**Inconsistent AI Responses:**
+```
+Problem: AI workers producing unpredictable or low-quality outputs
+Symptoms: Varying response quality, format inconsistencies
+
+Solutions:
+- Lower temperature settings (0.1-0.3) for more consistent outputs
+- Improve system prompts with specific examples
+- Add response format validation
+- Use structured output workers for consistent formatting
+- Test with different models to find optimal performance
+```
+
+**Prompt Engineering Issues:**
+```
+Problem: AI not following instructions correctly
+Symptoms: Wrong response format, ignoring constraints, off-topic responses
+
+Solutions:
+- Make prompts more specific and detailed
+- Include explicit examples of desired outputs
+- Use clear, simple language in instructions
+- Add negative examples (what NOT to do)
+- Test prompts with various input types
+- Consider using prompt templates for consistency
+```
+
+#### Performance and Scaling Issues
+
+**Slow Response Times:**
+```
+Problem: Agents taking too long to respond
+Symptoms: High latency, user complaints, timeouts
+
+Solutions:
+- Profile worker execution times to identify bottlenecks
+- Optimize AI model selection (faster models for simple tasks)
+- Implement parallel processing where possible
+- Cache frequently requested data
+- Reduce context window size for AI workers
+- Use CDN for static assets and responses
+```
+
+**High Resource Usage:**
+```
+Problem: Agents consuming excessive resources
+Symptoms: High memory usage, API quota exhaustion, increased costs
+
+Solutions:
+- Implement conversation summarization for long chats
+- Optimize document processing (chunking, filtering)
+- Use appropriate model sizes for task complexity
+- Implement result caching strategies
+- Monitor and limit concurrent executions
+- Set up usage alerts and quotas
+```
+
+### Advanced Debugging Techniques
+
+#### Debug Mode and Logging
+
+**Enabling Debug Mode:**
+1. Open your agent in the flow designer
+2. Click "Test Agent" to enter debug mode
+3. Enable "Step-by-step execution" for detailed analysis
+4. Monitor real-time execution logs
+
+**Understanding Debug Output:**
+```
+Debug Log Format:
+
+[Timestamp] WORKER_ID: Worker Name
+Input: { "data": "user input" }
+Processing: [Model: GPT-4, Temperature: 0.7]
+Output: { "result": "processed output" }
+Execution Time: 1.2s
+Status: SUCCESS/ERROR
+```
+
+**Log Analysis:**
+- **Input/Output Flow**: Trace data transformation through the pipeline
+- **Execution Times**: Identify performance bottlenecks
+- **Error Messages**: Pinpoint exact failure points
+- **Resource Usage**: Monitor token consumption and API calls
+
+#### Testing Strategies
+
+**Isolation Testing:**
+```
+Worker-Level Testing:
+1. Test each worker independently with known inputs
+2. Verify outputs match expected formats
+3. Check error handling with invalid inputs
+4. Validate timeout and retry behavior
+
+Flow-Level Testing:
+1. Test complete agent flows with various scenarios
+2. Verify data flow between connected workers
+3. Check error propagation and recovery
+4. Validate conditional logic and branching
+```
+
+**Edge Case Testing:**
+- Empty or null inputs
+- Extremely long inputs (near token limits)
+- Special characters and encoding issues
+- Invalid data formats and types
+- Network failures and API outages
+- Concurrent execution scenarios
+
+### Monitoring and Alerting
+
+#### Real-Time Monitoring Setup
+
+**Key Metrics to Monitor:**
+- Response time percentiles (50th, 95th, 99th)
+- Error rates by worker type and agent
+- API quota usage and remaining limits
+- User satisfaction scores and feedback
+- Resource utilization (memory, CPU, tokens)
+
+**Alert Configuration:**
+```
+Alert Rules:
+- Error rate > 5% for 5 minutes
+- Response time > 10 seconds for 95th percentile
+- API quota usage > 80%
+- Worker timeout rate > 2%
+- User satisfaction score < 3.0/5.0
+```
+
+#### Health Checks and Diagnostics
+
+**Automated Health Checks:**
+1. **Connectivity Tests**: Verify all external API endpoints
+2. **Model Availability**: Check AI model accessibility
+3. **Data Pipeline Tests**: Validate knowledge base connections
+4. **Performance Baselines**: Monitor against established benchmarks
+
+**Diagnostic Tools:**
+- **Agent Performance Dashboard**: Real-time metrics visualization
+- **Error Analysis Reports**: Detailed failure pattern analysis
+- **Usage Analytics**: User interaction patterns and trends
+- **Resource Optimization Recommendations**: AI-powered suggestions
+
+### Getting Help and Support
+
+#### Self-Service Resources
+
+**Documentation Hierarchy:**
+1. **Worker-Specific Docs**: Detailed configuration guides for each worker type
+2. **Integration Guides**: Step-by-step external service setup
+3. **Best Practices**: Proven patterns and configurations
+4. **Troubleshooting Guides**: Common problems and solutions
+
+**Community Resources:**
+- **User Forums**: Community-driven problem solving
+- **Example Agents**: Pre-built agents for learning and inspiration
+- **Video Tutorials**: Visual guides for complex configurations
+- **Webinars**: Regular training sessions and Q&A
+
+#### Professional Support
+
+**Support Escalation Path:**
+1. **Self-Diagnosis**: Use built-in debugging tools and documentation
+2. **Community Support**: Post in user forums with detailed descriptions
+3. **Technical Support**: Contact support with specific error messages and logs
+4. **Engineering Escalation**: For complex system-level issues
+
+**When to Contact Support:**
+- Persistent system errors affecting multiple agents
+- Performance degradation without clear cause
+- Security concerns or potential vulnerabilities
+- Feature requests or integration needs
+- Training and best practices consulting
+
+**Support Request Best Practices:**
+- Include agent ID and detailed error messages
+- Provide steps to reproduce the issue
+- Share relevant debug logs and screenshots
+- Specify urgency level and business impact
+- Include environment details (team, region, etc.)
