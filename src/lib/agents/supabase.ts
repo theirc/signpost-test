@@ -547,6 +547,7 @@ export type Database = {
           arguments: Json | null
           content: Json | null
           created_at: string
+          execution: string | null
           id: number
           inputTokens: number | null
           name: string | null
@@ -566,6 +567,7 @@ export type Database = {
           arguments?: Json | null
           content?: Json | null
           created_at?: string
+          execution?: string | null
           id?: number
           inputTokens?: number | null
           name?: string | null
@@ -585,6 +587,7 @@ export type Database = {
           arguments?: Json | null
           content?: Json | null
           created_at?: string
+          execution?: string | null
           id?: number
           inputTokens?: number | null
           name?: string | null
@@ -673,6 +676,7 @@ export type Database = {
           state: Json | null
           team_id: string | null
           type: string | null
+          uid: string | null
           worker: string | null
           workerId: string | null
         }
@@ -690,6 +694,7 @@ export type Database = {
           state?: Json | null
           team_id?: string | null
           type?: string | null
+          uid?: string | null
           worker?: string | null
           workerId?: string | null
         }
@@ -707,6 +712,7 @@ export type Database = {
           state?: Json | null
           team_id?: string | null
           type?: string | null
+          uid?: string | null
           worker?: string | null
           workerId?: string | null
         }
