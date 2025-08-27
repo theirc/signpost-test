@@ -2,104 +2,38 @@ name: Update Documentation
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    branches:
+      - main
 
 jobs:
   update-docs:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'yarn'
-        cache-dependency-path: 'docs/yarn.lock'
-        
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-        
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests openai anthropic
-        
-    - name: Install Vercel CLI
-      run: npm install --global vercel@latest
-        
-    - name: Install Node.js dependencies
-      run: |
-        cd docs
-        yarn install --frozen-lockfile
-        
-    - name: Generate updated documentation
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        VITE_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      run: |
-        # Only generate docs if API key is available
-        if [ ! -z "$OPENAI_API_KEY" ]; then
-          echo "🤖 Generating AI documentation..."
-          python scripts/generate_docs.py --all
-          python scripts/generate_docs.py --app-sections
-        else
-          echo "⚠️ OpenAI API key not available, skipping AI generation"
-        fi
-        
-    - name: Pull Vercel Environment Information
-      run: |
-        cd docs
-        vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        
-    - name: Build Project Artifacts
-      run: |
-        cd docs
-        vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        
-    - name: Deploy to Vercel (Preview)
-      if: github.event_name == 'pull_request'
-      id: deploy-preview
-      run: |
-        cd docs
-        DEPLOYMENT_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-        echo "🚀 Preview deployment: $DEPLOYMENT_URL"
-        
-    - name: Deploy to Vercel (Production)
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-      run: |
-        cd docs
-        vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        echo "🎉 Production deployment complete!"
-        
-    - name: Comment PR with preview link
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const deploymentUrl = '${{ steps.deploy-preview.outputs.deployment_url }}';
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `📚 **Documentation Preview Ready!**
-            
-            🔗 **Preview URL**: ${deploymentUrl}
-            
-            This preview includes all your documentation changes and will be automatically updated if you push more commits to this PR.
-            
-            Once merged to main, the changes will be deployed to production.`
-          })
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install deps
+        run: npm install
+
+      - name: Generate docs
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npm run update-docs
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore(docs): update documentation"
+          title: "Update documentation"
+          body: "This PR updates the docs for changed files."
+          branch: auto-docs-update
+          base: main
