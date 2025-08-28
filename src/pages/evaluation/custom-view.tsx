@@ -125,7 +125,6 @@ export function CustomView() {
                 header: field.replace('_', ' ').toUpperCase(),
                 enableResizing: true,
                 enableHiding: true,
-                enableSorting: true,
             })
         })
 
@@ -136,7 +135,6 @@ export function CustomView() {
                 header: field.replace('_', ' ').toUpperCase(),
                 enableResizing: true,
                 enableHiding: true,
-                enableSorting: true,
             })
         })
 
