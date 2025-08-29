@@ -15,7 +15,7 @@ export function useAgents(teamId: string | undefined) {
         .order('title')
       
       if (error) throw error
-      return data || []
+      return (data || []).map(agent => ({ ...agent, id: String(agent.id) }))
     },
     enabled: !!teamId
   })

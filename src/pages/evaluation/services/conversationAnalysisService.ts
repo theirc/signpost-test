@@ -151,11 +151,37 @@ ${steps}
   }
 }
 
+// Default metadata fields that should be included in every analysis
+export const defaultMetadataFields: ConversationAnalysisField[] = [
+  {
+    name: "conversation_created",
+    type: "string",
+    prompt: "When was this conversation started? Extract from the conversation metadata."
+  },
+  {
+    name: "conversation_last_updated", 
+    type: "string",
+    prompt: "When was the last activity in this conversation? Extract from the conversation metadata."
+  },
+  {
+    name: "total_conversation_steps",
+    type: "number", 
+    prompt: "How many total steps/exchanges occurred in this conversation? Extract from the conversation metadata."
+  },
+  {
+    name: "conversation_duration_assessment",
+    type: "enum",
+    prompt: "Based on the timestamps and number of steps, how would you categorize the conversation duration?",
+    enum: ["very_short", "short", "medium", "long", "very_long"]
+  }
+]
+
 export const analysisTemplates: Partial<ConversationAnalysisConfig>[] = [
   {
     name: "Conversation Quality Analysis",
-    instructions: "Analyze the quality and effectiveness of this conversation. Consider user satisfaction, issue resolution, and agent performance.",
+    instructions: "Analyze the quality and effectiveness of this conversation. Consider user satisfaction, issue resolution, and agent performance. The conversation metadata (created time, last updated, total steps) is provided in the conversation context.",
     fields: [
+      ...defaultMetadataFields,
       {
         name: "sentiment",
         type: "enum",
@@ -183,6 +209,25 @@ export const analysisTemplates: Partial<ConversationAnalysisConfig>[] = [
         type: "enum",
         prompt: "Estimated user satisfaction level",
         enum: ["very_satisfied", "satisfied", "neutral", "dissatisfied", "very_dissatisfied"]
+      }
+    ]
+  },
+  {
+    name: "Basic Conversation Metadata",
+    instructions: "Extract basic metadata and timing information from the conversation. This template focuses on conversation structure and duration analysis.",
+    fields: [
+      ...defaultMetadataFields,
+      {
+        name: "conversation_complexity",
+        type: "enum",
+        prompt: "Based on the number of steps and content, how complex was this conversation?",
+        enum: ["very_simple", "simple", "moderate", "complex", "very_complex"]
+      },
+      {
+        name: "user_engagement_level",
+        type: "enum", 
+        prompt: "How engaged was the user throughout the conversation?",
+        enum: ["very_low", "low", "moderate", "high", "very_high"]
       }
     ]
   }

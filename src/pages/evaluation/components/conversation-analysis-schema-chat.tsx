@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Send, CheckCircle, ArrowUp, Copy, Check } from "lucide-react"
 import { ConversationAnalysisConfig } from "../types"
+import { defaultMetadataFields } from "../services/conversationAnalysisService"
 import { app } from "@/lib/app"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { createModel } from "@/lib/agents/utils"
@@ -39,7 +40,7 @@ export function ConversationAnalysisSchemChat({ onSchemaGenerated, onClose }: Sc
     {
       id: '1',
       role: 'assistant',
-      content: "Hi! I'll help you create a custom analysis schema for your conversations. Let's start by understanding what you want to analyze.\n\nWhat type of insights are you looking to extract from your conversations? For example:\n- Customer satisfaction and sentiment\n- Support ticket categorization\n- Sales lead qualification\n- Product feedback analysis\n\nTell me about your specific use case!",
+      content: "Hi! I'll help you create a custom analysis schema for your conversations. Let's start by understanding what you want to analyze.\n\nWhat type of insights are you looking to extract from your conversations? For example:\n- Crisis response effectiveness\n- Community needs assessment\n- Information accuracy and clarity\n- Resource request categorization\n- Beneficiary feedback analysis\n- Emergency response coordination\n\nTell me about your specific humanitarian use case!",
       timestamp: new Date()
     }
   ])
@@ -93,6 +94,13 @@ export function ConversationAnalysisSchemChat({ onSchemaGenerated, onClose }: Sc
 
     setMessages(prev => [...prev, userMessage])
     setInput("")
+    
+    // Reset textarea height to default
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"
+      textareaRef.current.style.height = "40px" // Reset to min-height
+    }
+    
     setExecuting(true)
 
     try {
@@ -187,6 +195,12 @@ Generate a schema that captures what the user wants to analyze. Include:
 - Specific fields with appropriate data types
 - Enum values for categorical fields where applicable
 
+IMPORTANT: Always include these default metadata fields in addition to user-requested fields:
+1. conversation_created (string) - When the conversation started
+2. conversation_last_updated (string) - Last activity timestamp  
+3. total_conversation_steps (number) - Total number of conversation steps
+4. conversation_duration_assessment (enum: very_short, short, medium, long, very_long) - Duration category
+
 Field types available: string, number, boolean, enum, string[], number[]`
 
       const { object } = await generateObject({
@@ -199,18 +213,20 @@ Field types available: string, number, boolean, enum, string[], number[]`
       })
 
       if (object && object.fields.length > 0) {
-        // Ensure all required fields are present
+        // Ensure all required fields are present and prepend default metadata fields
+        const userFields = object.fields.filter(field => 
+          field.name && field.type && field.prompt
+        ).map(field => ({
+          name: field.name!,
+          type: field.type!,
+          prompt: field.prompt!,
+          enum: field.enum
+        }))
+
         const validatedSchema: Partial<ConversationAnalysisConfig> = {
           name: object.name,
           instructions: object.instructions,
-          fields: object.fields.filter(field => 
-            field.name && field.type && field.prompt
-          ).map(field => ({
-            name: field.name!,
-            type: field.type!,
-            prompt: field.prompt!,
-            enum: field.enum
-          }))
+          fields: [...defaultMetadataFields, ...userFields]
         }
         
         if (validatedSchema.fields && validatedSchema.fields.length > 0) {
@@ -238,7 +254,8 @@ Field types available: string, number, boolean, enum, string[], number[]`
                 <div key={message.id} className="w-full message-fade-in" dir="auto">
                   <div className="flex flex-col items-end">
                     <div 
-                      className={`bg-blue-500 message-bubble shadow-sm text-white ${message.content.length < 50 ? 'single-line' : ''}`}
+                      className={`message-bubble shadow-sm text-white ${message.content.length < 50 ? 'single-line' : ''}`}
+                      style={{ backgroundColor: '#1d4ed8' }}
                       dir="auto"
                     >
                       <div
