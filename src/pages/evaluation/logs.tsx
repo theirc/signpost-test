@@ -4,6 +4,8 @@ import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 import { Button } from "@/components/ui/button"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Brain, Eye } from "lucide-react"
 
 import { LogsTabs } from "./components/logs-tabs"
 import { LogsFilters } from "./components/logs-filters"
@@ -99,7 +101,7 @@ export function BotLogsTable() {
           />
         ) : (
           <>
-            {!filters.selectedAgent || filters.selectedAgent === 'all' ? (
+            {!filters.selectedAgent ? (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="text-blue-600 mb-4">
@@ -109,22 +111,45 @@ export function BotLogsTable() {
                   </div>
                   <h3 className="text-lg font-medium text-blue-900 mb-2">Select an Agent</h3>
                   <p className="text-blue-700">
-                    Please select a specific agent from the filters above to view conversation logs and analysis tools.
+                    Please select an agent from the filters above to view conversation logs and analysis tools.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                <ConversationAnalysisManager
-                  conversations={conversationLogs || []}
-                  onAnalysisComplete={handleAnalysisComplete}
-                />
-                <ConversationLogsTable
-                  data={displayConversations}
-                  onViewConversation={handleViewConversation}
-                  onExport={handleExportConversations}
-                />
-              </div>
+              <Accordion type="multiple" defaultValue={[]} className="space-y-4">
+                <AccordionItem value="analysis" className="border rounded-lg">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <Brain className="h-5 w-5 text-purple-600" />
+                      <span className="text-lg font-semibold">Conversation Analysis</span>
+                      <span className="text-sm text-gray-500">• Analyze conversations with AI to extract insights and patterns</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <ConversationAnalysisManager
+                      conversations={conversationLogs || []}
+                      onAnalysisComplete={handleAnalysisComplete}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="logs" className="border rounded-lg">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <Eye className="h-5 w-5 text-blue-600" />
+                      <span className="text-lg font-semibold">Conversation Logs</span>
+                      <span className="text-sm text-gray-500">• Browse and analyze conversation history ({displayConversations.length} conversations)</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <ConversationLogsTable
+                      data={displayConversations}
+                      onViewConversation={handleViewConversation}
+                      onExport={handleExportConversations}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
           </>
         )}

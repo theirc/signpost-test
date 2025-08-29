@@ -83,21 +83,18 @@ export function ConversationLogsTable({ data, onViewConversation, onExport }: Co
   ]
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg border">
-          <h3 className="text-lg font-semibold text-gray-900">Conversation Logs</h3>
-          <Button variant="default" size="sm" onClick={onExport} className="bg-blue-600 hover:bg-blue-700">
-            <Download className="h-4 w-4 mr-2" />
-            Export Logs
-          </Button>
-        </div>
-        <EnhancedDataTable
-          data={data}
-          columns={columns}
-          placeholder="No conversations found"
-        />
+    <div className="space-y-4">
+      <div className="flex items-center justify-end">
+        <Button variant="default" size="sm" onClick={onExport} className="bg-blue-600 hover:bg-blue-700">
+          <Download className="h-4 w-4 mr-2" />
+          Export Logs
+        </Button>
       </div>
+      <EnhancedDataTable
+        data={data}
+        columns={columns}
+        placeholder="No conversations found"
+      />
     </div>
   )
 }

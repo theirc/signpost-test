@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Brain, Plus, Play, Edit, Trash2, Download, CheckCircle, AlertCircle, Upload, FileDown } from "lucide-react"
@@ -11,9 +11,17 @@ import { ConversationAnalysisConfigDialog as ConfigDialogComponent } from "./con
 import { ConversationAnalyzer } from "../conversation-analysis"
 import { useAnalysisConfigs } from "../hooks/useAnalysisConfigs"
 import { AnalysisResultExporter } from "../services/analysisResultExporter"
-import { ConfirmDialog } from "./ui/ConfirmDialog"
-import { ToastContainer } from "./ui/ToastContainer"
-import { useToast } from "../hooks/useToast"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 interface ConversationAnalysisManagerProps {
   conversations: ConversationLog[]
@@ -31,7 +39,7 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [configToDelete, setConfigToDelete] = useState<string | null>(null)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
-  const toast = useToast()
+  const { toast } = useToast()
 
   const handleSaveConfig = (config: AnalysisConfig) => {
     saveConfig(config)
@@ -47,7 +55,7 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
   const confirmDeleteConfig = () => {
     if (configToDelete) {
       deleteConfig(configToDelete)
-      toast.success('Analysis configuration deleted successfully')
+      toast({ title: "Success", description: "Analysis configuration deleted successfully" })
       setConfigToDelete(null)
     }
   }
@@ -58,10 +66,10 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
 
     try {
       await importConfigs(file)
-      toast.success('Analysis configurations imported successfully!')
+      toast({ title: "Success", description: "Analysis configurations imported successfully!" })
     } catch (error) {
       console.error('Import failed:', error)
-      toast.error('Failed to import configurations. Please check the file format.')
+      toast({ title: "Error", description: "Failed to import configurations. Please check the file format.", variant: "destructive" })
     } finally {
       e.target.value = ''
     }
@@ -77,7 +85,7 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
       const apiKeys = await app.fetchAPIkeys(selectedTeam?.id || '')
       
       if (!apiKeys.openai) {
-        toast.error('OpenAI API key not found. Please configure your API key to run analysis.')
+        toast({ title: "Error", description: "OpenAI API key not found. Please configure your API key to run analysis.", variant: "destructive" })
         setAnalyzing(false)
         return
       }
@@ -93,11 +101,11 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
 
       setAnalysisResults(results)
       onAnalysisComplete(results)
-      toast.success(`Analysis completed for ${results.length} conversations`)
+      toast({ title: "Success", description: `Analysis completed for ${results.length} conversations` })
       
     } catch (error) {
       console.error('Analysis failed:', error)
-      toast.error('Analysis failed. Please check your configuration and try again.')
+      toast({ title: "Error", description: "Analysis failed. Please check your configuration and try again.", variant: "destructive" })
     } finally {
       setAnalyzing(false)
     }
@@ -108,43 +116,36 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            Conversation Analysis
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button 
-              onClick={exportConfigs}
-              size="sm"
-              variant="ghost"
-              disabled={configs.length === 0}
-              title="Export configurations"
-            >
-              <FileDown className="h-4 w-4" />
-            </Button>
-            <Button 
-              onClick={() => fileInputRef.current?.click()}
-              size="sm"
-              variant="ghost"
-              title="Import configurations"
-            >
-              <Upload className="h-4 w-4" />
-            </Button>
-            <Button 
-              onClick={() => setShowConfigDialog(true)}
-              size="sm"
-              variant="outline"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Analysis
-            </Button>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-end">
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={exportConfigs}
+            size="sm"
+            variant="ghost"
+            disabled={configs.length === 0}
+            title="Export configurations"
+          >
+            <FileDown className="h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={() => fileInputRef.current?.click()}
+            size="sm"
+            variant="ghost"
+            title="Import configurations"
+          >
+            <Upload className="h-4 w-4" />
+          </Button>
+          <Button 
+            onClick={() => setShowConfigDialog(true)}
+            size="sm"
+            variant="outline"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Analysis
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
         {conversations.length === 0 && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -282,22 +283,26 @@ export function ConversationAnalysisManager({ conversations, onAnalysisComplete 
           className="hidden"
         />
 
-        <ConfirmDialog
-          open={showDeleteConfirm}
-          onOpenChange={setShowDeleteConfirm}
-          title="Delete Analysis Configuration"
-          description="Are you sure you want to delete this analysis configuration? This action cannot be undone."
-          confirmText="Delete"
-          cancelText="Cancel"
-          onConfirm={confirmDeleteConfig}
-          variant="destructive"
-        />
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Analysis Configuration</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this analysis configuration? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeleteConfig}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-        <ToastContainer 
-          toasts={toast.toasts} 
-          onRemoveToast={toast.removeToast} 
-        />
-      </CardContent>
-    </Card>
+    </div>
   )
 }

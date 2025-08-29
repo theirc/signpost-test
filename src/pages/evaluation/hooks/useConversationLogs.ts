@@ -21,7 +21,7 @@ export function useConversationLogs(
   const query = useQuery({
     queryKey: ['conversationLogs', teamId, debouncedFilters.selectedAgent, debouncedFilters.dateRange, debouncedFilters.searchQuery],
     queryFn: async (): Promise<ConversationLog[]> => {
-      if (!teamId || !debouncedFilters.selectedAgent || debouncedFilters.selectedAgent === 'all') {
+      if (!teamId) {
         return []
       }
       
@@ -34,10 +34,12 @@ export function useConversationLogs(
         .in('worker', conversationWorkers)
         .order('created_at', { ascending: true })
 
-      if (debouncedFilters.selectedAgent !== 'all') {
+      // Only filter by agent if a specific agent is selected
+      if (debouncedFilters.selectedAgent && debouncedFilters.selectedAgent !== 'all') {
         query = query.eq('agent', debouncedFilters.selectedAgent)
       }
 
+      // Apply date filters at database level for better performance
       if (debouncedFilters.dateRange.from) {
         query = query.gte('created_at', `${debouncedFilters.dateRange.from}T00:00:00.000Z`)
       }
@@ -53,9 +55,10 @@ export function useConversationLogs(
         agents
       )
       
+      // Apply client-side filters (search query and any additional filtering)
       return ConversationFilterService.filterConversations(conversations, debouncedFilters)
     },
-    enabled: !!teamId && !!debouncedFilters.selectedAgent && debouncedFilters.selectedAgent !== 'all'
+    enabled: !!teamId
   })
 
   const processedData = useMemo(() => {

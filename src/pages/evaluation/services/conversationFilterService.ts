@@ -8,6 +8,9 @@ export class ConversationFilterService {
   ): ConversationLog[] {
     let filteredConversations = [...conversations]
     
+    // Note: Agent filtering is handled at the database level in useConversationLogs
+    // This function focuses on client-side filtering (search, additional date filtering)
+    
     if (filters.dateRange.from || filters.dateRange.to) {
       filteredConversations = this.filterByDateRange(filteredConversations, filters.dateRange)
     }
