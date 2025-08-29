@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   update-docs:
@@ -23,12 +26,27 @@ jobs:
       - name: Install deps
         run: yarn install --frozen-lockfile
 
+      - name: Debug git status
+        run: |
+          echo "📊 Git status:"
+          git status
+          echo ""
+          echo "📝 Recent commits:"
+          git log --oneline -5
+          echo ""
+          echo "🌳 Current branch:"
+          git branch --show-current
+          echo ""
+          echo "🔗 Remote branches:"
+          git branch -r
+
       - name: Generate docs
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: yarn run update-docs
 
       - name: Create Pull Request
+        if: github.event_name == 'push'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
