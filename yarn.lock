@@ -922,10 +922,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@openai/agents-core@0.0.7":
-  version "0.0.7"
-  resolved "https://registry.npmjs.org/@openai/agents-core/-/agents-core-0.0.7.tgz"
-  integrity sha512-qbJ0w20hTMUJM97q9aGWchr7kyNo35emvjKiVjCW/grR4sMJo1fLia4bE52tjCQGo8EZJBJ9bkjXFSqETjdJYw==
+"@openai/agents-core@0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@openai/agents-core/-/agents-core-0.0.8.tgz#11807ea17715165a76bfc78beed1772d34d20be7"
+  integrity sha512-CMSq4iuvGaYkEAw0Z6oT+EDNgoCQF3YsYky29fbLDA6W3uuR53D2l6XzikAh0xwJUeuGZ7jQ1PsAxxg/hAW68A==
   dependencies:
     "@openai/zod" "npm:zod@^3.25.40"
     debug "^4.4.0"
@@ -943,35 +943,35 @@
     "@types/ws" "^8.18.1"
     debug "^4.4.0"
 
-"@openai/agents-openai@0.0.7":
-  version "0.0.7"
-  resolved "https://registry.npmjs.org/@openai/agents-openai/-/agents-openai-0.0.7.tgz"
-  integrity sha512-bWlJUZ6VutBnuESd74i9ttpIsfbw9kuH6mhHhN5bNgUjmbQfxM+2aUBfyxXGzr4mEvBkAuKiyAs3DX1shqOBdQ==
+"@openai/agents-openai@0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@openai/agents-openai/-/agents-openai-0.0.8.tgz#21cd30669b3170f09dbc473ffb5dff33d865c4b3"
+  integrity sha512-VUsUOXNkqsjQv1EwxyjYWoiACCsaQ8OlHtQAmw2jo6rNeHzEsGF7WLhqwDAzRDwZOVPwo4aF54iIcANeysywEg==
   dependencies:
-    "@openai/agents-core" "0.0.7"
+    "@openai/agents-core" "0.0.8"
     "@openai/zod" "npm:zod@^3.25.40"
     debug "^4.4.0"
     openai "^5.0.1"
 
-"@openai/agents-realtime@0.0.7":
-  version "0.0.7"
-  resolved "https://registry.npmjs.org/@openai/agents-realtime/-/agents-realtime-0.0.7.tgz"
-  integrity sha512-ndPVQpOIX0J+C5wYo+YUb68q4zrXTIbQH/VS24qSIo9fxJokSxwS5P5hNSxDrdQ3+UlYyx/s1Xu6zRCE11H63Q==
+"@openai/agents-realtime@0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@openai/agents-realtime/-/agents-realtime-0.0.8.tgz#fdd9e48ff21c0b6f7144da4541337c7c34f5dc9f"
+  integrity sha512-f+CxHICIFvCwbMCznop+bz+TTgnFfFpscN+9OTfiU5ITnaohRf+qbyU8PRgQZnSbsxRZyTOgqFoJ+2wWxM5tHA==
   dependencies:
-    "@openai/agents-core" "0.0.7"
+    "@openai/agents-core" "0.0.8"
     "@openai/zod" "npm:zod@^3.25.40"
     "@types/ws" "^8.18.1"
     debug "^4.4.0"
     ws "^8.18.1"
 
-"@openai/agents@^0.0.7":
-  version "0.0.7"
-  resolved "https://registry.npmjs.org/@openai/agents/-/agents-0.0.7.tgz"
-  integrity sha512-qDQn7f33fCySEuEVP+PIpBASmD5bjxhzSglzJ3Z21JcRbLq+hxyBz6hpJy6sa0XOSgHh50u2nlsz+rogTizdew==
+"@openai/agents@^0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@openai/agents/-/agents-0.0.8.tgz#60267ddba708a02ae1a699a6d6974213f7605980"
+  integrity sha512-HAPP4QM47kWeWw70uxCzr5zjqHuDIvQ8Obx+98J66lcEeIZzMChHN60k5ew8DITScmzDVAVuwdzfAImSyq002w==
   dependencies:
-    "@openai/agents-core" "0.0.7"
-    "@openai/agents-openai" "0.0.7"
-    "@openai/agents-realtime" "0.0.7"
+    "@openai/agents-core" "0.0.8"
+    "@openai/agents-openai" "0.0.8"
+    "@openai/agents-realtime" "0.0.8"
     debug "^4.4.0"
     openai "^5.0.1"
 
