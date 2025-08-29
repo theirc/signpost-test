@@ -1,111 +1,165 @@
-import React, { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import React, { useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { Loader2 } from "lucide-react"
-import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
-import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
-import { supabase } from "@/lib/agents/db"
-import PaginatedSupabaseTableWrapper from "@/components/ui/PaginatedSupabaseTableWrapper"
-import { useQuery } from "@tanstack/react-query"
 import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
+import { Button } from "@/components/ui/button"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Brain, Eye } from "lucide-react"
 
-type Log = {
-    id: string
-    bot: string
-    bot_name: string
-    category: string
-    category_name: string
-    detected_language: string
-    detected_location: string
-    search_term: string
-    user_message: string
-    answer: string
-    created_at: string
-}
+import { LogsTabs } from "./components/logs-tabs"
+import { LogsFilters } from "./components/logs-filters"
+import { ExecutionLogsTable } from "./components/execution-logs-table"
+import { ConversationLogsTable } from "./components/conversation-logs-table"
+import { ConversationDetailDialog } from "./components/conversation-detail-dialog"
+import { ConversationAnalysisManager } from "./components/conversation-analysis-manager"
+
+import { ConversationLog, LogFilters, ConversationAnalysisResult } from "./types"
+import { ConversationFilterService } from "./services/conversationFilterService"
+import { CSVExportService } from "./services/csvExportService"
+import { useAgents } from "./hooks/useAgents"
+import { useConversationLogs } from "./hooks/useConversationLogs"
 
 export function BotLogsTable() {
-    const navigate = useNavigate()
-    const { canCreate, canUpdate } = usePermissions()
-    const { selectedTeam } = useTeamStore()
+  const navigate = useNavigate()
+  const { canRead } = usePermissions()
+  const { selectedTeam } = useTeamStore()
+  
+  const [activeTab, setActiveTab] = useState<'execution' | 'conversation'>('conversation')
+  const [filters, setFilters] = useState<LogFilters>(ConversationFilterService.getDefaultFilters())
+  const [selectedConversation, setSelectedConversation] = useState<ConversationLog | null>(null)
+  const [showConversationDetail, setShowConversationDetail] = useState(false)
+  const [conversationsWithAnalysis, setConversationsWithAnalysis] = useState<ConversationLog[]>([])
+  const [hasAnalysisData, setHasAnalysisData] = useState(false)
 
-    const fetchLogs = async () => {
-        const { data, error } = await supabase.from('bot_logs')
-            .select(`
-              *,
-              bots (
-                name
-              ),
-              service_categories (
-                name
-              )
-            `)
-            .eq('team_id', selectedTeam.id)
-            .order('created_at', { ascending: false })
-        if (error) {
-            throw new Error(error.message)
-        }
-        return data.map(log => ({
-            ...log,
-            bot_name: log.bots?.name,
-            category_name: log.service_categories?.name,
-            created_at: log.created_at || new Date().toISOString()
-        }))
-    }
+  const { data: agents } = useAgents(selectedTeam?.id)
+  const { data: conversationLogs } = useConversationLogs(selectedTeam?.id, filters, agents || [])
 
-    const { data: logs, isLoading } = useQuery({
-        queryKey: ['botLogs', selectedTeam?.id],
-        queryFn: fetchLogs,
-        enabled: !!selectedTeam,
+  const handleViewConversation = useCallback((conversation: ConversationLog) => {
+    setSelectedConversation(conversation)
+    setShowConversationDetail(true)
+  }, [])
+
+  const handleAnalysisComplete = useCallback((results: ConversationAnalysisResult[]) => {
+    const updatedConversations = (conversationLogs || []).map(conversation => {
+      const analysisResult = results.find(r => r.conversationUid === conversation.uid)
+      return analysisResult ? { ...conversation, analysis: analysisResult } : conversation
     })
+    
+    setConversationsWithAnalysis(updatedConversations)
+    setHasAnalysisData(results.length > 0)
+  }, [conversationLogs])
 
-    const columns: ColumnDef<any>[] = [
-        { id: "id", accessorKey: "id", header: "ID", enableResizing: true, enableHiding: true, cell: (info) => info.getValue() },
-        { id: "bot", accessorKey: "bot_name", header: "Bot", enableResizing: true, enableHiding: true, enableSorting: true, cell: (info) => info.getValue() },
-        { id: "detectedLanguage", enableResizing: true, enableHiding: true, accessorKey: "detected_language", header: "Detected Language", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "detectedLocation", enableResizing: true, enableHiding: true, accessorKey: "detected_location", header: "Detected Location", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "searchTerm", enableResizing: true, enableHiding: true, accessorKey: "search_term", header: "Search Term", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "category", enableResizing: true, enableHiding: true, accessorKey: "category_name", header: "Category", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "userMessage", enableResizing: true, enableHiding: true, accessorKey: "user_message", header: "User Message", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "answer", enableResizing: true, enableHiding: true, accessorKey: "answer", header: "Answer", enableSorting: false, cell: (info) => info.getValue() },
-        { id: "created_at", enableResizing: true, enableHiding: true, accessorKey: "created_at", header: "Date Created", enableSorting: true, cell: (info) => format(new Date(info.getValue() as string), "MMM dd, yyyy") },
-    ]
+  const handleExportConversations = useCallback(() => {
+    const dataToExport = conversationsWithAnalysis.length > 0 ? conversationsWithAnalysis : (conversationLogs || [])
+    CSVExportService.exportConversationsToCSV(dataToExport, hasAnalysisData)
+  }, [conversationsWithAnalysis, conversationLogs, hasAnalysisData])
 
-    const handleEdit = (id: string) => {
-        navigate(`/logs/${id}`)
-    }
+  const handleExportExecution = useCallback(() => {
+    CSVExportService.exportExecutionLogsToCSV(selectedTeam?.id || '')
+  }, [selectedTeam?.id])
 
+  const displayConversations = conversationsWithAnalysis.length > 0 ? conversationsWithAnalysis : (conversationLogs || [])
+
+  if (!canRead("logs")) {
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex-1 p-8 pt-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3"><HighlightText text="Logs" className="text-4xl font-bold" /></h1>
-                        <p className="text-lg text-gray-600 font-medium leading-relaxed">
-                            View and manage your bot interaction logs.
-                        </p>
-                    </div>
-                    {canCreate("logs") && (
-                        <Button className="rounded-lg" onClick={() => navigate("/logs/new")}> <Plus className="h-4 w-4 mr-2" /> Add Log </Button>
-                    )}
-                </div>
-                <PaginatedSupabaseTableWrapper
-                    table="bot_logs"
-                    columns={columns}
-                    tableComponent={EnhancedDataTable}
-                    data={logs ?? []}
-                    isLoading={isLoading}
-                    filters={{ team_id: selectedTeam?.id }}
-                    searchKey="bot_name"
-                    onRowClick={(row) => {
-                        if (canUpdate("logs")) handleEdit(row.id)
-                    }}
-                    placeholder="No logs found"
-                />
-            </div>
+      <div className="flex-1 p-8 pt-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
+          <p className="text-gray-600">You don't have permission to view logs.</p>
         </div>
+      </div>
     )
-} 
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 p-8 pt-6">
+        <div className="mb-6">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-3">
+            <HighlightText text="Bot Logs" className="text-4xl font-bold" />
+          </h1>
+          <p className="text-lg text-gray-600 font-medium leading-relaxed">
+            Monitor and analyze agent execution logs and conversation flows.
+          </p>
+        </div>
+
+        <LogsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <LogsFilters
+          filters={filters}
+          onFilterChange={setFilters}
+          agents={agents || []}
+          hasActiveFilters={ConversationFilterService.hasActiveFilters(filters)}
+          onClearFilters={() => setFilters(ConversationFilterService.getDefaultFilters())}
+        />
+
+        {activeTab === 'execution' ? (
+          <ExecutionLogsTable 
+            filters={ConversationFilterService.buildSupabaseFilters(filters)} 
+            onExport={handleExportExecution}
+          />
+        ) : (
+          <>
+            {!filters.selectedAgent ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="text-blue-600 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-blue-900 mb-2">Select an Agent</h3>
+                  <p className="text-blue-700">
+                    Please select an agent from the filters above to view conversation logs and analysis tools.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <Accordion type="multiple" defaultValue={[]} className="space-y-4">
+                <AccordionItem value="analysis" className="border rounded-lg">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <Brain className="h-5 w-5 text-purple-600" />
+                      <span className="text-lg font-semibold">Conversation Analysis</span>
+                      <span className="text-sm text-gray-500">• Analyze conversations with AI to extract insights and patterns</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <ConversationAnalysisManager
+                      conversations={conversationLogs || []}
+                      onAnalysisComplete={handleAnalysisComplete}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="logs" className="border rounded-lg">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <Eye className="h-5 w-5 text-blue-600" />
+                      <span className="text-lg font-semibold">Conversation Logs</span>
+                      <span className="text-sm text-gray-500">• Browse and analyze conversation history ({displayConversations.length} conversations)</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <ConversationLogsTable
+                      data={displayConversations}
+                      onViewConversation={handleViewConversation}
+                      onExport={handleExportConversations}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+          </>
+        )}
+      </div>
+
+      <ConversationDetailDialog
+        conversation={selectedConversation}
+        open={showConversationDetail}
+        onOpenChange={setShowConversationDetail}
+      />
+    </div>
+  )
+}
