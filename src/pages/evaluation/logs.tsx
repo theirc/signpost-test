@@ -1,181 +1,63 @@
-import React, { useState } from "react"
+import React, { useState, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { useQuery } from "@tanstack/react-query"
 import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/agents/db"
 
-// Import new components
 import { LogsTabs } from "./components/logs-tabs"
 import { LogsFilters } from "./components/logs-filters"
 import { ExecutionLogsTable } from "./components/execution-logs-table"
 import { ConversationLogsTable } from "./components/conversation-logs-table"
 import { ConversationDetailDialog } from "./components/conversation-detail-dialog"
+import { ConversationAnalysisManager } from "./components/conversation-analysis-manager"
 
-// Import types and utils
-import { ConversationLog, LogFilters } from "./types"
-import { buildFilters, hasActiveFilters, clearFilters, exportToCSV, exportConversationsToCSV } from "./utils"
+import { ConversationLog, LogFilters, ConversationAnalysisResult } from "./types"
+import { ConversationFilterService } from "./services/conversationFilterService"
+import { CSVExportService } from "./services/csvExportService"
+import { useAgents } from "./hooks/useAgents"
+import { useConversationLogs } from "./hooks/useConversationLogs"
 
 export function BotLogsTable() {
   const navigate = useNavigate()
   const { canRead } = usePermissions()
   const { selectedTeam } = useTeamStore()
   
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'execution' | 'conversation'>('execution')
-  
-  // Filter states
-  const [filters, setFilters] = useState<LogFilters>({
-    selectedAgent: 'all',
-    selectedWorker: 'all',
-    selectedType: 'all',
-    searchQuery: '',
-    dateRange: { from: '', to: '' }
-  })
-
-  // Conversation detail dialog state
+  const [activeTab, setActiveTab] = useState<'execution' | 'conversation'>('conversation')
+  const [filters, setFilters] = useState<LogFilters>(ConversationFilterService.getDefaultFilters())
   const [selectedConversation, setSelectedConversation] = useState<ConversationLog | null>(null)
   const [showConversationDetail, setShowConversationDetail] = useState(false)
+  const [conversationsWithAnalysis, setConversationsWithAnalysis] = useState<ConversationLog[]>([])
+  const [hasAnalysisData, setHasAnalysisData] = useState(false)
 
-  // Fetch agents for filtering
-  const { data: agents } = useQuery({
-    queryKey: ['agents', selectedTeam?.id],
-    queryFn: async () => {
-      if (!selectedTeam?.id) return []
-      const { data, error } = await supabase
-        .from('agents')
-        .select('id, title')
-        .eq('team_id', selectedTeam.id)
-        .order('title')
-      
-      if (error) throw error
-      return data || []
-    },
-    enabled: !!selectedTeam?.id
-  })
+  const { data: agents } = useAgents(selectedTeam?.id)
+  const { data: conversationLogs } = useConversationLogs(selectedTeam?.id, filters, agents || [])
 
-  // Fetch unique workers for filtering
-  const { data: workers } = useQuery({
-    queryKey: ['workers', selectedTeam?.id],
-    queryFn: async () => {
-      if (!selectedTeam?.id) return []
-      const { data, error } = await supabase
-        .from('logs')
-        .select('worker')
-        .eq('team_id', selectedTeam.id)
-        .not('worker', 'is', null)
-      
-      if (error) throw error
-      const uniqueWorkers = [...new Set(data?.map(log => log.worker).filter(Boolean))]
-      return uniqueWorkers.sort()
-    },
-    enabled: !!selectedTeam?.id
-  })
-
-  // Fetch unique types for filtering
-  const { data: types } = useQuery({
-    queryKey: ['types', selectedTeam?.id],
-    queryFn: async () => {
-      if (!selectedTeam?.id) return []
-      const { data, error } = await supabase
-        .from('logs')
-        .select('type')
-        .eq('team_id', selectedTeam.id)
-        .not('type', 'is', null)
-      
-      if (error) throw error
-      const uniqueTypes = [...new Set(data?.map(log => log.type).filter(Boolean))]
-      return uniqueTypes.sort()
-    },
-    enabled: !!selectedTeam?.id
-  })
-
-  // Fetch conversation logs
-  const { data: conversationLogs } = useQuery({
-    queryKey: ['conversationLogs', selectedTeam?.id, filters.selectedAgent],
-    queryFn: async () => {
-      if (!selectedTeam?.id) return []
-      
-      // Only get logs for response and request workers
-      const conversationWorkers = ['response', 'request']
-      
-      let query = supabase
-        .from('logs')
-        .select('*')
-        .eq('team_id', selectedTeam.id)
-        .in('worker', conversationWorkers)
-        .order('created_at', { ascending: true })
-
-      if (filters.selectedAgent && filters.selectedAgent !== 'all') {
-        query = query.eq('agent', filters.selectedAgent)
-      }
-
-      const { data: logs, error } = await query
-      if (error) throw error
-
-      // Group logs by UID and agent
-      const conversations: { [key: string]: ConversationLog } = {}
-      
-      logs?.forEach((log: any) => {
-        const key = `${log.uid || 'no-uid'}_${log.agent}`
-        
-        if (!conversations[key]) {
-          const agentTitle = agents?.find((a: any) => a.id === log.agent)?.title || log.agent
-          conversations[key] = {
-            uid: log.uid || 'no-uid',
-            agent: log.agent,
-            agentTitle,
-            conversationSteps: [],
-            totalSteps: 0,
-            startedAt: log.created_at,
-            lastActivity: log.created_at
-          }
-        }
-        
-        // Convert handles from object to array format for easier processing
-        let processedHandles: any[] = []
-        if (log.handles && typeof log.handles === 'object') {
-          if (Array.isArray(log.handles)) {
-            processedHandles = log.handles
-          } else {
-            // Convert object format {handleId: handleData} to array format
-            processedHandles = Object.values(log.handles).map((handle: any) => ({
-              id: handle.id || 'unknown',
-              name: handle.name || 'unknown',
-              type: handle.type || 'unknown',
-              value: handle.value || null,
-              direction: handle.direction || 'unknown'
-            }))
-          }
-        }
-        
-        conversations[key].conversationSteps.push({
-          id: log.id,
-          worker: log.worker,
-          message: log.message || '',
-          created_at: log.created_at,
-          handles: processedHandles,
-          parameters: log.parameters || {},
-          state: log.state || {}
-        })
-        
-        conversations[key].totalSteps = conversations[key].conversationSteps.length
-        conversations[key].lastActivity = log.created_at
-      })
-
-      return Object.values(conversations)
-    },
-    enabled: !!selectedTeam?.id
-  })
-
-  const handleViewConversation = (conversation: ConversationLog) => {
+  const handleViewConversation = useCallback((conversation: ConversationLog) => {
     setSelectedConversation(conversation)
     setShowConversationDetail(true)
-  }
+  }, [])
 
+  const handleAnalysisComplete = useCallback((results: ConversationAnalysisResult[]) => {
+    const updatedConversations = (conversationLogs || []).map(conversation => {
+      const analysisResult = results.find(r => r.conversationUid === conversation.uid)
+      return analysisResult ? { ...conversation, analysis: analysisResult } : conversation
+    })
+    
+    setConversationsWithAnalysis(updatedConversations)
+    setHasAnalysisData(results.length > 0)
+  }, [conversationLogs])
 
+  const handleExportConversations = useCallback(() => {
+    const dataToExport = conversationsWithAnalysis.length > 0 ? conversationsWithAnalysis : (conversationLogs || [])
+    CSVExportService.exportConversationsToCSV(dataToExport, hasAnalysisData)
+  }, [conversationsWithAnalysis, conversationLogs, hasAnalysisData])
+
+  const handleExportExecution = useCallback(() => {
+    CSVExportService.exportExecutionLogsToCSV(selectedTeam?.id || '')
+  }, [selectedTeam?.id])
+
+  const displayConversations = conversationsWithAnalysis.length > 0 ? conversationsWithAnalysis : (conversationLogs || [])
 
   if (!canRead("logs")) {
     return (
@@ -200,36 +82,54 @@ export function BotLogsTable() {
           </p>
         </div>
 
-        {/* Tabs */}
         <LogsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* Filters Section */}
         <LogsFilters
           filters={filters}
           onFilterChange={setFilters}
           agents={agents || []}
-          workers={workers || []}
-          types={types || []}
-          hasActiveFilters={hasActiveFilters(filters)}
-          onClearFilters={() => clearFilters(setFilters)}
+          hasActiveFilters={ConversationFilterService.hasActiveFilters(filters)}
+          onClearFilters={() => setFilters(ConversationFilterService.getDefaultFilters())}
         />
 
-        {/* Content based on active tab */}
         {activeTab === 'execution' ? (
           <ExecutionLogsTable 
-            filters={buildFilters(filters)} 
-            onExport={() => exportToCSV(selectedTeam?.id || '')}
+            filters={ConversationFilterService.buildSupabaseFilters(filters)} 
+            onExport={handleExportExecution}
           />
         ) : (
-          <ConversationLogsTable
-            data={conversationLogs || []}
-            onViewConversation={handleViewConversation}
-            onExport={() => exportConversationsToCSV(conversationLogs || [])}
-          />
+          <>
+            {!filters.selectedAgent || filters.selectedAgent === 'all' ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="text-blue-600 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-blue-900 mb-2">Select an Agent</h3>
+                  <p className="text-blue-700">
+                    Please select a specific agent from the filters above to view conversation logs and analysis tools.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <ConversationAnalysisManager
+                  conversations={conversationLogs || []}
+                  onAnalysisComplete={handleAnalysisComplete}
+                />
+                <ConversationLogsTable
+                  data={displayConversations}
+                  onViewConversation={handleViewConversation}
+                  onExport={handleExportConversations}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Conversation Detail Dialog */}
       <ConversationDetailDialog
         conversation={selectedConversation}
         open={showConversationDetail}
@@ -237,4 +137,4 @@ export function BotLogsTable() {
       />
     </div>
   )
-} 
+}

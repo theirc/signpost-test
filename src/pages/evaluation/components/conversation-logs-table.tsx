@@ -8,9 +8,10 @@ import { EnhancedDataTable } from "@/components/ui/enhanced-data-table"
 interface ConversationLogsTableProps {
   data: ConversationLog[]
   onViewConversation: (conversation: ConversationLog) => void
+  onExport: () => void
 }
 
-export function ConversationLogsTable({ data, onViewConversation, onExport }: ConversationLogsTableProps & { onExport: () => void }) {
+export function ConversationLogsTable({ data, onViewConversation, onExport }: ConversationLogsTableProps) {
   const columns: ColumnDef<ConversationLog>[] = [
     {
       id: "startedAt",

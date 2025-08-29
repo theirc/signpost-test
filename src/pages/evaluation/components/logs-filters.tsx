@@ -8,8 +8,6 @@ interface LogsFiltersProps {
   filters: LogFilters
   onFilterChange: (filters: LogFilters) => void
   agents: any[]
-  workers: string[]
-  types: string[]
   hasActiveFilters: boolean
   onClearFilters: () => void
 }
@@ -18,8 +16,6 @@ export function LogsFilters({
   filters, 
   onFilterChange, 
   agents, 
-  workers, 
-  types, 
   hasActiveFilters, 
   onClearFilters 
 }: LogsFiltersProps) {
@@ -62,36 +58,22 @@ export function LogsFilters({
           </Select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Worker</label>
-          <Select value={filters.selectedWorker} onValueChange={(value) => updateFilter('selectedWorker', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Workers" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Workers</SelectItem>
-              {workers?.map((worker: string) => (
-                <SelectItem key={worker} value={worker}>
-                  {worker}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Started From</label>
+          <Input
+            type="date"
+            value={filters.dateRange.from}
+            onChange={(e) => updateFilter('dateRange', { ...filters.dateRange, from: e.target.value })}
+            className="w-full"
+          />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-          <Select value={filters.selectedType} onValueChange={(value) => updateFilter('selectedType', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {types?.map((type: string) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Started To</label>
+          <Input
+            type="date"
+            value={filters.dateRange.to}
+            onChange={(e) => updateFilter('dateRange', { ...filters.dateRange, to: e.target.value })}
+            className="w-full"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
