@@ -23,7 +23,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@hookform/resolvers": "^4.1.0",
     "@langchain/textsplitters": "^0.1.0",
-    "@openai/agents": "^0.0.7",
+    "@openai/agents": "^0.0.8",
     "@openai/agents-extensions": "^0.0.8",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
