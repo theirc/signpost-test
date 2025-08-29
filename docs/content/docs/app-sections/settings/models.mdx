@@ -1,0 +1,198 @@
+---
+title: "AI Models Management"
+description: "Configure and manage AI model integrations for your organization"
+---
+
+# AI Models Management
+
+## Overview
+
+The Models section allows you to configure and manage AI model integrations for your organization. Models define which AI providers and specific model versions your team can use throughout the application. This centralized management ensures consistent AI model usage across all agents and workflows.
+
+## Supported Providers
+
+The system supports four major AI providers with specific model configurations:
+
+### Provider Types
+
+**OpenAI:**
+- Provider ID: primary language model provider
+- Supported models include advanced language models and preview variants
+- Used for general language tasks and agent interactions
+
+**Anthropic:**
+- Provider ID: advanced reasoning provider
+- Supported models include latest reasoning models and analysis variants
+- Used for advanced reasoning and analysis tasks
+
+**Google:**
+- Provider ID: multimodal AI provider
+- Supported models include latest multimodal models and specialized variants
+- Used for multimodal and specialized AI tasks
+
+**High-Speed Inference:**
+- Provider ID: fast inference provider
+- Used for high-speed inference and real-time applications
+- Specific model variants depend on provider's available offerings
+
+## Models Management Interface
+
+### Models Table
+
+**Table Columns:**
+- **Title**: User-defined display name for the model configuration
+- **Provider**: AI provider (OpenAI, Anthropic, Google, Fast Inference)
+- **Model ID**: Specific model identifier (e.g., advanced language models)
+- **Created**: Date when the model configuration was added
+
+**Table Features:**
+- **Search**: Search models by title
+- **Pagination**: Paginated table using table wrapper component
+- **Row Actions**: Click any row to edit the model (if permissions allow)
+- **Sorting**: Sortable columns for organization
+
+### Creating Models
+
+**Add New Model Process:**
+1. **Click "Create Model"** from the Models settings page
+2. **Select Provider**: Choose from OpenAI, Anthropic, Google, or Fast Inference
+3. **Enter Title**: Provide a descriptive name for the model configuration
+4. **Specify Model ID**: Enter the exact model identifier for the selected provider
+5. **Save**: Model configuration is stored and available for use
+
+**Required Fields:**
+- **Provider**: Must select one of the four supported providers
+- **Title**: Required user-friendly name for the model
+- **Model ID**: Required technical identifier for the AI model
+
+### Editing Models
+
+**Edit Model Form:**
+- **Provider Selection**: Change AI provider from supported options
+- **Title Update**: Modify the display name
+- **Model ID Update**: Change the technical model identifier
+- **Delete Option**: Remove model configuration with confirmation dialog
+
+**Edit Process:**
+1. **Access Edit**: Click on any model row in the table
+2. **Modify Fields**: Update provider, title, or model ID as needed
+3. **Save Changes**: Click "Update" to save modifications
+4. **Delete Model**: Use "Delete" button with confirmation dialog
+5. **Cancel**: Return to list without saving changes
+
+## Access Control and Permissions
+
+### Permission Requirements
+
+**Required Permissions:**
+- **Create Models**: Requires create permission for models resource
+- **View Models**: Requires read permission for models resource
+- **Edit Models**: Requires update permission for models (`canUpdate("models")`)
+- **Tab Visibility**: Models tab only visible with read permission for models
+
+**Permission-Based UI:**
+- **Create Button**: Only visible to users with create permissions
+- **Row Click Actions**: Edit functionality only available with update permissions
+- **Table Access**: Full table visible to users with read permissions
+
+### Global Model Access
+
+**Organization-Wide Models:**
+- **No Team Filtering**: Models are not team-scoped, available organization-wide
+- **Shared Configuration**: All teams can use configured models
+- **Centralized Management**: Single point of control for AI model access
+
+## Database Integration
+
+### Model Schema
+
+**Model Data Structure:**
+- **ID**: Unique identifier for each model configuration
+- **Provider**: AI provider type (primary, reasoning, multimodal, fast inference)
+- **Title**: User-defined display name
+- **Model**: Technical model identifier
+- **Created At**: Timestamp of model creation
+
+### Query Integration
+
+**Data Management:**
+- **React Query**: Uses `useQuery` for efficient data fetching and caching
+- **Real-Time Updates**: Automatic cache invalidation when models are modified
+- **Error Handling**: Comprehensive error handling for API failures
+- **Loading States**: Loading indicators during async operations
+
+## Model Configuration Examples
+
+### Example Model Configurations
+
+**Primary Language Model:**
+- **Provider**: Primary AI provider
+- **Title**: "Advanced Language Model"
+- **Model ID**: Provider-specific model identifier
+
+**Reasoning Model:**
+- **Provider**: Advanced reasoning provider
+- **Title**: "Advanced Reasoning Model"
+- **Model ID**: Latest reasoning model variant
+
+**Multimodal Model:**
+- **Provider**: Multimodal AI provider
+- **Title**: "Multimodal AI Model"
+- **Model ID**: Latest multimodal variant
+
+**Fast Inference Model:**
+- **Provider**: Fast inference provider
+- **Title**: "High-Speed Inference"
+- **Model ID**: (varies by available fast inference models)
+
+## Error Handling and User Feedback
+
+### Form Validation
+
+**Input Validation:**
+- **Required Fields**: Provider, title, and model ID are required
+- **Provider Selection**: Must select a valid AI provider
+- **Real-Time Feedback**: Immediate validation feedback for form errors
+
+### User Notifications
+
+**Success Feedback:**
+- **Creation Success**: "Model created successfully" toast notification
+- **Update Success**: "Model updated successfully" toast notification
+- **Deletion Success**: "Model deleted successfully" toast notification
+
+**Error Handling:**
+- **API Errors**: User-friendly error messages for API failures
+- **Validation Errors**: Clear feedback for missing or invalid data
+- **Loading States**: Visual indicators during async operations
+- **Network Errors**: Graceful handling of connection issues
+
+### Deletion Confirmation
+
+**Safe Deletion Process:**
+- **Confirmation Dialog**: "Are you sure?" dialog before deletion
+- **Warning Message**: "This action cannot be undone. This will permanently delete the model."
+- **Cancel Option**: Users can cancel deletion at any time
+- **Permanent Action**: Clear indication that deletion is irreversible
+
+## Integration with AI System
+
+### Model Usage
+
+**Throughout Application:**
+- **Agent Configuration**: Models available for AI worker configuration
+- **Playground Testing**: Models selectable in playground environment
+- **Template Generation**: Models used for automated template creation
+- **Workflow Processing**: Models power AI-driven workflows
+
+### Model Selection
+
+**Dynamic Model Lists:**
+- **Provider-Based Filtering**: Models filtered by selected provider
+- **Availability Checking**: System validates model availability
+- **Fallback Handling**: Graceful degradation when models unavailable
+- **Performance Optimization**: Efficient model loading and caching
+
+{/* TODO: Document model performance monitoring and usage analytics */}
+{/* TODO: Document model cost tracking and quota management if implemented */}
+{/* TODO: Document model version management and deprecation handling */}

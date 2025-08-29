@@ -8,7 +8,8 @@
     "vercel-dev": "vercel dev --port 5173",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "update-docs": "node scripts/update-docs.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.5",
