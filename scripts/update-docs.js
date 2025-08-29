@@ -16,20 +16,61 @@ const openai = new OpenAI({
 
 async function getChangedFiles() {
   try {
-    const output = execSync('git diff --name-status origin/main...HEAD', {
-      encoding: 'utf-8',
-    });
+    // Try multiple git commands to handle different scenarios
+    let output = '';
 
-    return output
+    try {
+      // First try: origin/main...HEAD (works for pushes to main)
+      output = execSync('git diff --name-status origin/main...HEAD', {
+        encoding: 'utf-8',
+      });
+    } catch (e) {
+      try {
+        // Second try: HEAD~1...HEAD (works for recent commits)
+        output = execSync('git diff --name-status HEAD~1...HEAD', {
+          encoding: 'utf-8',
+        });
+      } catch (e2) {
+        try {
+          // Third try: --staged (for staged files)
+          output = execSync('git diff --name-status --staged', {
+            encoding: 'utf-8',
+          });
+        } catch (e3) {
+          // Fourth try: --cached (for staged files)
+          output = execSync('git diff --name-status --cached', {
+            encoding: 'utf-8',
+          });
+        }
+      }
+    }
+
+    console.log('🔍 Git diff output:', output || 'No output');
+
+    const files = output
       .split('\n')
       .filter(line => line.trim())
       .map(line => {
         const [status, path] = line.split('\t');
         return { path, status };
       })
-      .filter(file => file.path.endsWith('.ts') || file.path.endsWith('.tsx'));
+      .filter(file => file.path && (file.path.endsWith('.ts') || file.path.endsWith('.tsx')));
+
+    console.log('📋 Filtered TypeScript files:', files);
+    return files;
   } catch (error) {
-    console.error('Error getting changed files:', error);
+    console.error('❌ Error getting changed files:', error.message);
+
+    // Fallback: try to get recent commits
+    try {
+      const recentCommits = execSync('git log --oneline -5', {
+        encoding: 'utf-8',
+      });
+      console.log('📝 Recent commits:', recentCommits);
+    } catch (e) {
+      console.log('📝 Could not get recent commits');
+    }
+
     return [];
   }
 }
