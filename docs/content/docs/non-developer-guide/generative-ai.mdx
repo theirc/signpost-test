@@ -1,0 +1,383 @@
+---
+title: "Generative AI in Signpost AI"
+description: "How Signpost AI leverages generative AI models to create intelligent agents and workflows"
+---
+
+# Generative AI in Signpost AI
+
+Signpost AI is built around the power of generative AI - the technology that enables computers to create human-like text, understand context, and generate intelligent responses. This guide explains how generative AI works in Signpost AI and how you can harness its capabilities.
+
+## What is Generative AI?
+
+Generative AI refers to artificial intelligence systems that can create new content - text, images, audio, or other media - based on patterns they've learned from vast amounts of training data. In Signpost AI, we primarily use **Large Language Models (LLMs)** for text generation and understanding.
+
+### Key Capabilities in Signpost AI
+
+- **Text Generation**: Create human-like responses and content
+- **Context Understanding**: Process and understand conversation history
+- **Document Analysis**: Extract insights from uploaded documents
+- **Multi-modal Processing**: Handle text, images, and audio
+- **Structured Output**: Generate formatted data and responses
+
+## Supported AI Models
+
+Signpost AI integrates with multiple leading AI providers, giving you flexibility and choice:
+
+### 🤖 **OpenAI Models**
+
+**Provider**: OpenAI
+**Popular Models**:
+
+- **GPT-4**: Most capable model for complex reasoning
+- **GPT-4o**: Fast and efficient for most tasks
+- **GPT-3.5 Turbo**: Cost-effective for simple tasks
+- **GPT-4o Mini**: Lightweight option for basic interactions
+
+**Best For**: General conversation, complex reasoning, creative writing
+
+### 🧠 **Anthropic Models**
+
+**Provider**: Anthropic
+**Popular Models**:
+
+- **Claude 3.5 Sonnet**: Balanced performance and speed
+- **Claude 3.5 Haiku**: Fast and cost-effective
+- **Claude 3 Opus**: Most capable for complex tasks
+
+**Best For**: Analysis, safety-focused applications, detailed explanations
+
+### 🔍 **Google Models**
+
+**Provider**: Google
+**Popular Models**:
+
+- **Gemini 2.5 Pro**: Advanced reasoning capabilities
+- **Gemini 2.0 Flash**: Fast and efficient
+- **Gemini 1.5 Pro**: Good balance of capabilities
+
+**Best For**: Research, analysis, Google ecosystem integration
+
+### ⚡ **Groq Models**
+
+**Provider**: Groq
+**Popular Models**:
+
+- **Llama 3.1**: Fast inference speeds
+- **Mixtral**: High performance at lower cost
+
+**Best For**: High-speed applications, real-time responses
+
+## How Generative AI Works in Signpost AI
+
+### 1. **AI Worker Component**
+
+The core of generative AI in Signpost AI is the **AI Worker** - a building block that connects to any of the supported AI models.
+
+```javascript
+// Example AI Worker Configuration
+{
+  "model": "openai/gpt-4",
+  "temperature": 0.7,
+  "prompt": "You are a helpful customer service assistant...",
+  "input": "User's question or request",
+  "documents": "Relevant context from knowledge base",
+  "history": "Previous conversation context"
+}
+```
+
+### 2. **Input Processing**
+
+When a user sends a message, Signpost AI:
+
+1. **Receives the input** through various channels (web chat, WhatsApp, API)
+2. **Enriches with context** from your knowledge base
+3. **Adds conversation history** for continuity
+4. **Formats the prompt** with system instructions
+
+### 3. **AI Model Processing**
+
+The AI model then:
+
+1. **Analyzes the input** and context
+2. **Generates a response** based on its training
+3. **Considers conversation history** for consistency
+4. **Applies your instructions** and personality
+
+### 4. **Output Generation**
+
+Finally, Signpost AI:
+
+1. **Formats the response** according to your specifications
+2. **Sends it back** through the appropriate channel
+3. **Stores the interaction** for future reference
+4. **Updates conversation history** for continuity
+
+## Key Features of Generative AI in Signpost AI
+
+### 🎯 **Context-Aware Responses**
+
+Your AI agents remember conversation history and can reference previous interactions:
+
+```
+User: "What emergency services are available?"
+Agent: "Based on our current information, we have medical teams, food distribution, and shelter services available in your area."
+
+User: "Can you remind me what we discussed earlier?"
+Agent: "Earlier you asked about emergency services. I mentioned we have medical teams, food distribution, and shelter services available in your area."
+```
+
+### 📚 **Knowledge Base Integration**
+
+AI agents can access and reference your uploaded documents:
+
+```
+User: "What health services are available at the clinic?"
+Agent: "Based on our clinic information document, we provide vaccinations, basic medical care, maternal health services, and emergency treatment. The clinic is open Monday to Friday from 8 AM to 6 PM..."
+```
+
+### 🔧 **Structured Output**
+
+Generate formatted responses like JSON, tables, or specific formats:
+
+```json
+{
+  "response": "Here's your assistance request summary",
+  "request": {
+    "id": "AID-12345",
+    "status": "registered",
+    "services": ["Medical Care", "Food Assistance", "Shelter"],
+    "priority": "high"
+  }
+}
+```
+
+### 🎨 **Customizable Personality**
+
+Define how your AI agent behaves and responds:
+
+```
+System Prompt: "You are a compassionate, professional humanitarian aid worker.
+Always be helpful, patient, and culturally sensitive. Use a warm, supportive tone
+and prioritize the safety and dignity of those you're assisting."
+```
+
+## Practical Applications
+
+### 1. **Humanitarian Aid & Relief**
+
+**Use Case**: Emergency response and aid coordination
+**AI Models**: GPT-4, Claude 3.5 Sonnet
+**Capabilities**:
+
+- Provide emergency information to affected communities
+- Coordinate relief efforts and resource distribution
+- Answer questions about available services and support
+- Assist with registration and needs assessment
+
+### 2. **Education & Training**
+
+**Use Case**: Educational support and capacity building
+**AI Models**: GPT-4, Claude 3.5 Opus
+**Capabilities**:
+
+- Provide educational content and tutoring
+- Support teacher training and professional development
+- Create learning materials in multiple languages
+- Assist with curriculum development and assessment
+
+### 3. **Healthcare Support**
+
+**Use Case**: Health information and basic medical guidance
+**AI Models**: GPT-4, Claude 3.5 Sonnet
+**Capabilities**:
+
+- Provide health education and awareness
+- Answer basic medical questions
+- Support community health workers
+- Assist with health data collection and analysis
+
+### 4. **Community Development**
+
+**Use Case**: Community engagement and development programs
+**AI Models**: Claude 3.5 Opus, GPT-4
+**Capabilities**:
+
+- Facilitate community discussions and feedback
+- Support local governance and decision-making
+- Assist with project planning and monitoring
+- Provide information about community resources
+
+## Configuration Options
+
+### Temperature Control
+
+**Temperature** controls how creative or focused your AI responses are:
+
+- **0.0-0.3**: Very focused, consistent responses
+- **0.4-0.7**: Balanced creativity and consistency
+- **0.8-1.0**: Very creative, varied responses
+
+### Model Selection
+
+Choose the right model for your use case:
+
+- **Simple Q&A**: GPT-3.5 Turbo, Claude 3.5 Haiku
+- **Complex reasoning**: GPT-4, Claude 3.5 Opus
+- **Fast responses**: Groq models, GPT-4o
+- **Cost optimization**: GPT-3.5 Turbo, Claude 3.5 Haiku
+
+### Prompt Engineering
+
+Craft effective prompts to guide AI behavior:
+
+```
+Good Prompt:
+"You are a compassionate humanitarian aid worker. Always be helpful, culturally sensitive, and professional.
+If you don't know something, say so and offer to connect the person with a human aid worker."
+
+Poor Prompt:
+"Help people"
+```
+
+## Best Practices
+
+### 1. **Start with Clear Instructions**
+
+Define your AI agent's role and behavior clearly:
+
+```
+"You are a humanitarian aid worker supporting our community assistance program.
+Your job is to help people access available services and provide accurate information.
+Always ask clarifying questions if someone's needs aren't clear."
+```
+
+### 2. **Provide Context**
+
+Give your AI agents access to relevant information:
+
+- Upload service guides and resource directories
+- Include program policies and procedures
+- Add historical conversation data
+- Provide examples of good responses
+
+### 3. **Test and Iterate**
+
+Continuously improve your AI agents:
+
+- Test with real users
+- Monitor response quality
+- Adjust prompts based on feedback
+- Update knowledge base regularly
+
+### 4. **Set Appropriate Boundaries**
+
+Define what your AI agents can and cannot do:
+
+```
+"You can help with information about available services, program registration, and basic guidance.
+For medical emergencies, legal issues, or complex personal situations, transfer to a human aid worker."
+```
+
+## Advanced Features
+
+### Multi-Modal AI
+
+Some models can process different types of content:
+
+- **Text**: Written messages and documents
+- **Images**: Product photos, screenshots, diagrams
+- **Audio**: Voice messages (with transcription)
+
+### Conversation Memory
+
+AI agents maintain context across conversations:
+
+- Remember user preferences
+- Reference previous interactions
+- Build relationships over time
+- Provide personalized responses
+
+### Real-time Learning
+
+Some AI models can learn from interactions:
+
+- Adapt to user communication style
+- Improve response quality over time
+- Identify common patterns and questions
+- Suggest process improvements
+
+## Getting Started
+
+### 1. **Choose Your First Use Case**
+
+Start with a simple application:
+
+- Community information chatbot
+- Document summarization
+- Educational content generation
+- Basic needs assessment
+
+### 2. **Select an AI Model**
+
+For beginners, we recommend:
+
+- **OpenAI GPT-4o**: Good balance of capability and ease of use
+- **Claude 3.5 Sonnet**: Excellent for analysis and explanation
+- **GPT-3.5 Turbo**: Cost-effective for simple tasks
+
+### 3. **Create Your First AI Agent**
+
+1. Go to the **Agents** section
+2. Click **"Create New Agent"**
+3. Choose **"Auto-Generate"**
+4. Describe what you want your agent to do
+5. Let AI build the initial configuration
+
+### 4. **Test and Refine**
+
+1. Use the **Playground** to test your agent
+2. Try different types of questions
+3. Adjust the system prompt
+4. Fine-tune the temperature setting
+
+## Troubleshooting
+
+### Common Issues
+
+**AI responses are too generic**
+
+- Add more specific instructions to your prompt
+- Include examples of good responses
+- Provide more context from your knowledge base
+
+**AI doesn't follow instructions**
+
+- Make your system prompt more explicit
+- Use clear, direct language
+- Add examples of desired behavior
+
+**Responses are too long or short**
+
+- Adjust the max tokens setting
+- Modify your prompt to specify desired length
+- Use structured output for consistent formatting
+
+**AI makes up information**
+
+- Provide accurate information in your knowledge base
+- Add instructions to only use provided information
+- Set up fact-checking workflows
+
+## Future of Generative AI in Signpost AI
+
+We're constantly expanding our generative AI capabilities:
+
+- **New Model Support**: Adding more AI providers and models
+- **Enhanced Multimodal**: Better image and audio processing
+- **Improved Memory**: Longer conversation context
+- **Custom Training**: Fine-tune models for your specific use case
+- **Advanced Analytics**: Better insights into AI performance
+
+---
+
+**Ready to harness the power of generative AI? Start building your first AI agent today!**

@@ -1,0 +1,457 @@
+---
+title: "RAG & Knowledge Base"
+description: "How to use Retrieval-Augmented Generation to give your AI agents access to specific information and documents"
+---
+
+# RAG & Knowledge Base: Powering Your AI with Specific Information
+
+RAG (Retrieval-Augmented Generation) is what makes your AI agents truly powerful. Instead of relying on general knowledge, RAG allows your agents to access and reference specific documents, policies, and information that matter to your work.
+
+## What is RAG?
+
+RAG stands for **Retrieval-Augmented Generation**. It's a technique that combines:
+
+- **Retrieval**: Finding relevant information from your documents
+- **Augmentation**: Adding that information to the AI's context
+- **Generation**: Creating responses based on your specific information
+
+### Why RAG Matters
+
+Without RAG, AI agents rely only on their general training data. With RAG, they can:
+
+- Answer questions about your specific services and policies
+- Reference current information and procedures
+- Provide accurate, up-to-date responses
+- Access information that wasn't available when the AI was trained
+
+## How RAG Works in Signpost AI
+
+### The Process
+
+1. **User asks a question** → "What services are available for refugees?"
+2. **Search Worker finds relevant documents** → Searches your refugee services collection
+3. **AI receives context** → Gets information about available services
+4. **AI generates response** → Creates answer based on your specific information
+
+### Example: Refugee Services Assistant
+
+```
+User: "What housing assistance is available for asylum seekers?"
+
+1. Search Worker searches your "Refugee Services" collection
+2. Finds documents about housing programs, eligibility, and application processes
+3. AI receives this context: "Housing assistance includes temporary shelter,
+   rental assistance, and case management. Eligibility requires asylum application..."
+4. AI responds: "Based on our current programs, housing assistance for asylum
+   seekers includes temporary shelter, rental assistance, and case management
+   services. To be eligible, you must have filed an asylum application..."
+```
+
+## Creating Collections for Your Knowledge Base
+
+### What is a Collection?
+
+A **collection** is a group of related documents that your AI agent can search through. Think of it as a specialized library for a specific topic.
+
+### Example Collections for Refugee Services
+
+#### 1. **Legal Services Collection**
+
+**Documents to include:**
+
+- Asylum application procedures
+- Legal rights and responsibilities
+- Immigration court information
+- Pro bono legal service providers
+- Document requirements and deadlines
+
+#### 2. **Housing & Basic Needs Collection**
+
+**Documents to include:**
+
+- Housing assistance programs
+- Emergency shelter locations
+- Food assistance programs
+- Transportation services
+- Utility assistance programs
+
+#### 3. **Healthcare Services Collection**
+
+**Documents to include:**
+
+- Medical care access
+- Mental health services
+- Vaccination programs
+- Health insurance information
+- Clinic locations and hours
+
+#### 4. **Education & Employment Collection**
+
+**Documents to include:**
+
+- English language classes
+- Job training programs
+- School enrollment information
+- Employment rights
+- Professional certification programs
+
+#### 5. **Community Resources Collection**
+
+**Documents to include:**
+
+- Community organizations
+- Cultural support groups
+- Religious services
+- Social events and activities
+- Volunteer opportunities
+
+## How to Add Sources and Create Collections
+
+### Step 1: Plan Your Collections
+
+**Start with your most common questions:**
+
+- What services do people ask about most?
+- What information changes frequently?
+- What documents do your staff reference often?
+
+**Example Planning:**
+
+```
+Collection: "Refugee Legal Services"
+Purpose: Help with legal questions and procedures
+Common Questions:
+- How do I apply for asylum?
+- What documents do I need?
+- How long does the process take?
+- Can I get free legal help?
+```
+
+### Step 2: Gather Your Documents
+
+**Types of documents to include:**
+
+- **Policies and Procedures**: Official guidelines and processes
+- **FAQs**: Frequently asked questions and answers
+- **Forms and Applications**: Official documents and requirements
+- **Contact Information**: Phone numbers, addresses, office hours
+- **Eligibility Criteria**: Who qualifies for different services
+- **Timelines and Deadlines**: Important dates and timeframes
+
+**Document Formats Supported:**
+
+- PDF files
+- Word documents (.docx)
+- Text files (.txt)
+- Web pages (URLs)
+- Spreadsheets (.csv, .xlsx)
+
+### Step 3: Create Your Collection
+
+1. **Go to Knowledge → Collections**
+2. **Click "Create New Collection"**
+3. **Name your collection** (e.g., "Refugee Legal Services")
+4. **Add a description** (e.g., "Legal services, asylum procedures, and immigration support")
+5. **Upload your documents**
+
+### Step 4: Organize Your Information
+
+**Best Practices:**
+
+- **Use clear file names**: "Asylum_Application_Process_2024.pdf"
+- **Group related documents**: All housing info in one collection
+- **Keep information current**: Update documents regularly
+- **Include multiple languages**: If serving diverse communities
+
+## Real-World Example: Refugee Services Knowledge Base
+
+### Collection Structure
+
+```
+📁 Refugee Services Knowledge Base
+├── 📁 Legal Services
+│   ├── Asylum_Application_Guide.pdf
+│   ├── Legal_Rights_Handbook.pdf
+│   ├── Pro_Bono_Lawyers_List.pdf
+│   └── Court_Procedures.pdf
+├── 📁 Housing & Basic Needs
+│   ├── Housing_Assistance_Programs.pdf
+│   ├── Emergency_Shelter_Locations.pdf
+│   ├── Food_Assistance_Guide.pdf
+│   └── Transportation_Services.pdf
+├── 📁 Healthcare
+│   ├── Medical_Services_Guide.pdf
+│   ├── Mental_Health_Resources.pdf
+│   ├── Vaccination_Schedule.pdf
+│   └── Clinic_Locations.pdf
+└── 📁 Education & Employment
+    ├── English_Classes_Schedule.pdf
+    ├── Job_Training_Programs.pdf
+    ├── School_Enrollment_Guide.pdf
+    └── Employment_Rights.pdf
+```
+
+### Sample Documents for Refugee Services
+
+#### Asylum Application Guide
+
+```
+Title: "Asylum Application Process - 2024"
+Content includes:
+- Step-by-step application process
+- Required documents checklist
+- Filing deadlines and timelines
+- Common mistakes to avoid
+- Where to get help
+```
+
+#### Housing Assistance Programs
+
+```
+Title: "Housing Assistance for Refugees and Asylees"
+Content includes:
+- Available housing programs
+- Eligibility requirements
+- Application procedures
+- Required documentation
+- Contact information for housing agencies
+```
+
+## Using RAG in Your AI Agents
+
+### Connecting Collections to Your Agent
+
+1. **Add a Search Worker** to your agent flow
+2. **Configure the Search Worker**:
+   - Select your collection (e.g., "Refugee Legal Services")
+   - Set search parameters
+   - Connect to your AI Worker
+
+### Example Agent Flow
+
+```
+User Input → Search Worker → AI Worker → Response
+                ↓
+         Searches "Refugee Legal Services" collection
+                ↓
+         Finds relevant documents about asylum process
+                ↓
+         AI generates response using found information
+```
+
+### Search Worker Configuration
+
+**Search Parameters:**
+
+- **Collection**: Which collection to search
+- **Search Query**: What to look for (usually from user input)
+- **Number of Results**: How many documents to retrieve
+- **Similarity Threshold**: How closely documents must match
+
+**Example Configuration:**
+
+```
+Collection: "Refugee Legal Services"
+Search Query: "asylum application process"
+Number of Results: 3
+Similarity Threshold: 0.7
+```
+
+## Best Practices for RAG Implementation
+
+### 1. **Organize Information Logically**
+
+**Good Organization:**
+
+```
+📁 Legal Services
+├── 📄 Asylum Process
+├── 📄 Legal Rights
+└── 📄 Court Information
+
+📁 Housing Services
+├── 📄 Emergency Housing
+├── 📄 Long-term Housing
+└── 📄 Housing Rights
+```
+
+**Poor Organization:**
+
+```
+📁 All Documents
+├── 📄 Document1.pdf
+├── 📄 Document2.pdf
+└── 📄 Document3.pdf
+```
+
+### 2. **Keep Information Current**
+
+**Regular Updates:**
+
+- Review documents monthly
+- Update contact information
+- Remove outdated information
+- Add new services and programs
+
+### 3. **Use Clear, Searchable Content**
+
+**Good Document Content:**
+
+```
+"To apply for asylum, you must file Form I-589 within one year of arriving in the United States.
+Required documents include: passport, birth certificate, evidence of persecution, and supporting affidavits."
+```
+
+**Poor Document Content:**
+
+```
+"Apply for asylum using the form. Include documents."
+```
+
+### 4. **Test Your Knowledge Base**
+
+**Regular Testing:**
+
+- Ask common questions
+- Verify responses are accurate
+- Check that relevant documents are found
+- Update based on user feedback
+
+## Advanced RAG Features
+
+### Multi-Collection Search
+
+Search across multiple collections for comprehensive answers:
+
+```
+User: "What services are available for a family with children?"
+
+Search Worker searches:
+- Legal Services collection
+- Housing & Basic Needs collection
+- Healthcare collection
+- Education & Employment collection
+
+AI receives information from all collections and provides comprehensive response
+```
+
+### Context-Aware Search
+
+Use conversation history to improve search results:
+
+```
+User: "I need help with housing"
+AI: "I can help you with housing assistance. What type of housing do you need?"
+
+User: "I have children"
+AI: "For families with children, we have several housing options including family shelters,
+     transitional housing, and rental assistance programs. Let me search for specific details..."
+```
+
+### Language-Specific Collections
+
+Create collections in different languages:
+
+```
+📁 Refugee Services (English)
+📁 Refugee Services (Spanish)
+📁 Refugee Services (Arabic)
+📁 Refugee Services (French)
+```
+
+## Troubleshooting RAG Issues
+
+### Common Problems and Solutions
+
+#### 1. **AI Not Finding Relevant Information**
+
+**Problem:** Search worker returns irrelevant documents
+**Solutions:**
+
+- Improve document organization
+- Use more specific collection names
+- Add better document titles and descriptions
+- Adjust similarity threshold
+
+#### 2. **AI Ignoring Retrieved Information**
+
+**Problem:** AI generates responses without using found documents
+**Solutions:**
+
+- Improve your prompt to emphasize using provided information
+- Add instructions: "Only use information from the provided documents"
+- Check that Search Worker is properly connected to AI Worker
+
+#### 3. **Outdated Information**
+
+**Problem:** AI provides outdated information
+**Solutions:**
+
+- Regular document updates
+- Version control for important documents
+- Clear dates on all documents
+- Archive old versions
+
+#### 4. **Poor Search Results**
+
+**Problem:** Search worker doesn't find the right documents
+**Solutions:**
+
+- Improve document content quality
+- Use more descriptive file names
+- Add metadata and tags
+- Test different search queries
+
+## Success Stories
+
+### Refugee Support Organization
+
+**Challenge:** High volume of repetitive questions about services
+**Solution:** Created comprehensive knowledge base with 50+ documents
+**Results:** 80% reduction in staff time answering basic questions
+
+### Legal Aid Clinic
+
+**Challenge:** Complex legal information difficult to explain
+**Solution:** Organized legal documents into searchable collections
+**Results:** More accurate legal information provided to clients
+
+### Community Health Center
+
+**Challenge:** Healthcare information in multiple languages
+**Solution:** Created language-specific collections
+**Results:** Better access to health information for diverse communities
+
+## Getting Started with RAG
+
+### Week 1: Plan and Organize
+
+1. **Identify your most common questions**
+2. **Gather existing documents and information**
+3. **Plan your collection structure**
+4. **Create your first collection**
+
+### Week 2: Build Your Knowledge Base
+
+1. **Upload and organize documents**
+2. **Create multiple collections**
+3. **Test search functionality**
+4. **Refine organization**
+
+### Week 3: Integrate with Your Agent
+
+1. **Add Search Worker to your agent**
+2. **Configure search parameters**
+3. **Test with real questions**
+4. **Adjust and improve**
+
+### Week 4: Optimize and Expand
+
+1. **Monitor search performance**
+2. **Add more documents and collections**
+3. **Train staff on new capabilities**
+4. **Plan for ongoing maintenance**
+
+---
+
+**Ready to build your knowledge base? Start with your most common questions and build from there!**
