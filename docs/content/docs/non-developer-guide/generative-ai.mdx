@@ -1,383 +1,514 @@
 ---
-title: "Generative AI in Signpost AI"
-description: "How Signpost AI leverages generative AI models to create intelligent agents and workflows"
+title: "Agentic AI in Signpost AI"
+description: "How Signpost AI leverages agentic AI to create intelligent, autonomous agents and workflows"
 ---
 
-# Generative AI in Signpost AI
+# Agentic AI in Signpost AI
 
-Signpost AI is built around the power of generative AI - the technology that enables computers to create human-like text, understand context, and generate intelligent responses. This guide explains how generative AI works in Signpost AI and how you can harness its capabilities.
+Signpost AI is built around the power of agentic AI - intelligent systems that can autonomously reason, make decisions, and take actions to achieve specific goals. Unlike traditional AI that simply responds to prompts, agentic AI can plan, execute multi-step workflows, and adapt its behavior based on context and outcomes. This guide explains how agentic AI works in Signpost AI and how you can harness its capabilities.
 
-## What is Generative AI?
+## What is Agentic AI?
 
-Generative AI refers to artificial intelligence systems that can create new content - text, images, audio, or other media - based on patterns they've learned from vast amounts of training data. In Signpost AI, we primarily use **Large Language Models (LLMs)** for text generation and understanding.
+Agentic AI refers to artificial intelligence systems that can act autonomously to achieve goals, make decisions, and execute complex workflows without constant human intervention. In Signpost AI, we use **intelligent agents** that can understand context, reason through problems, and coordinate multiple actions to help users effectively.
 
 ### Key Capabilities in Signpost AI
 
-- **Text Generation**: Create human-like responses and content
-- **Context Understanding**: Process and understand conversation history
-- **Document Analysis**: Extract insights from uploaded documents
-- **Multi-modal Processing**: Handle text, images, and audio
-- **Structured Output**: Generate formatted data and responses
+- **Autonomous Decision Making**: Agents can choose the best course of action based on context
+- **Multi-Step Reasoning**: Break down complex problems into manageable steps
+- **Goal-Oriented Behavior**: Work towards specific outcomes and objectives
+- **Context Awareness**: Understand and remember conversation history and user needs
+- **Workflow Orchestration**: Coordinate multiple tools and resources to complete tasks
+- **Adaptive Learning**: Improve performance based on interactions and feedback
 
 ## Supported AI Models
 
-Signpost AI integrates with multiple leading AI providers, giving you flexibility and choice:
+Signpost AI integrates with multiple leading AI providers, giving you flexibility and choice for building intelligent agents:
 
 ### 🤖 **OpenAI Models**
 
 **Provider**: OpenAI
 **Popular Models**:
 
-- **GPT-4**: Most capable model for complex reasoning
-- **GPT-4o**: Fast and efficient for most tasks
-- **GPT-3.5 Turbo**: Cost-effective for simple tasks
-- **GPT-4o Mini**: Lightweight option for basic interactions
+- **GPT-4**: Most capable model for complex reasoning and planning
+- **GPT-4o**: Fast and efficient for most agentic tasks
+- **GPT-3.5 Turbo**: Cost-effective for simple autonomous workflows
+- **GPT-4o Mini**: Lightweight option for basic agent interactions
 
-**Best For**: General conversation, complex reasoning, creative writing
+**Best For**: Complex reasoning, multi-step planning, autonomous decision making
 
 ### 🧠 **Anthropic Models**
 
 **Provider**: Anthropic
 **Popular Models**:
 
-- **Claude 3.5 Sonnet**: Balanced performance and speed
-- **Claude 3.5 Haiku**: Fast and cost-effective
-- **Claude 3 Opus**: Most capable for complex tasks
+- **Claude 3.5 Sonnet**: Balanced performance for agentic workflows
+- **Claude 3.5 Haiku**: Fast and cost-effective for simple agents
+- **Claude 3 Opus**: Most capable for complex autonomous tasks
 
-**Best For**: Analysis, safety-focused applications, detailed explanations
+**Best For**: Safety-focused agents, detailed analysis, ethical decision making
 
 ### 🔍 **Google Models**
 
 **Provider**: Google
 **Popular Models**:
 
-- **Gemini 2.5 Pro**: Advanced reasoning capabilities
-- **Gemini 2.0 Flash**: Fast and efficient
-- **Gemini 1.5 Pro**: Good balance of capabilities
+- **Gemini 2.5 Pro**: Advanced reasoning for complex agent workflows
+- **Gemini 2.0 Flash**: Fast execution for real-time agent responses
+- **Gemini 1.5 Pro**: Good balance for general-purpose agents
 
-**Best For**: Research, analysis, Google ecosystem integration
+**Best For**: Research agents, analytical workflows, Google ecosystem integration
 
 ### ⚡ **Groq Models**
 
 **Provider**: Groq
 **Popular Models**:
 
-- **Llama 3.1**: Fast inference speeds
-- **Mixtral**: High performance at lower cost
+- **Llama 3.1**: Fast inference for real-time agent decisions
+- **Mixtral**: High performance agents at lower cost
 
-**Best For**: High-speed applications, real-time responses
+**Best For**: High-speed agent responses, real-time decision making
 
-## How Generative AI Works in Signpost AI
+## How Agentic AI Works in Signpost AI
 
-### 1. **AI Worker Component**
+### 1. **AI Agent Architecture**
 
-The core of generative AI in Signpost AI is the **AI Worker** - a building block that connects to any of the supported AI models.
+The core of agentic AI in Signpost AI is the **intelligent agent** - an autonomous system that can understand goals, plan actions, and execute workflows.
 
 ```javascript
-// Example AI Worker Configuration
+// Example Agent Configuration
 {
+  "agent_type": "humanitarian_assistant",
   "model": "openai/gpt-4",
-  "temperature": 0.7,
-  "prompt": "You are a helpful customer service assistant...",
-  "input": "User's question or request",
-  "documents": "Relevant context from knowledge base",
-  "history": "Previous conversation context"
+  "goals": ["Help users access services", "Provide accurate information", "Escalate when needed"],
+  "capabilities": ["document_search", "service_lookup", "appointment_booking"],
+  "decision_framework": "Always prioritize user safety and dignity",
+  "escalation_rules": "Transfer to human for medical emergencies or legal issues"
 }
 ```
 
-### 2. **Input Processing**
+### 2. **Autonomous Workflow Execution**
 
-When a user sends a message, Signpost AI:
+When a user interacts with an agent, the agentic AI system:
 
-1. **Receives the input** through various channels (web chat, WhatsApp, API)
-2. **Enriches with context** from your knowledge base
-3. **Adds conversation history** for continuity
-4. **Formats the prompt** with system instructions
+1. **Analyzes the request** and identifies the user's underlying goals
+2. **Plans a workflow** to achieve those goals effectively
+3. **Executes actions** such as searching knowledge bases, booking appointments, or gathering information
+4. **Monitors progress** and adapts the plan if needed
+5. **Delivers results** and follows up to ensure user satisfaction
 
-### 3. **AI Model Processing**
+### 3. **Intelligent Decision Making**
 
-The AI model then:
+Agentic AI agents can make autonomous decisions by:
 
-1. **Analyzes the input** and context
-2. **Generates a response** based on its training
-3. **Considers conversation history** for consistency
-4. **Applies your instructions** and personality
+1. **Evaluating options** based on available information and context
+2. **Considering consequences** of different actions
+3. **Applying ethical frameworks** and organizational policies
+4. **Choosing optimal paths** to achieve user goals
+5. **Learning from outcomes** to improve future decisions
 
-### 4. **Output Generation**
+### 4. **Multi-Agent Coordination**
 
-Finally, Signpost AI:
+Complex workflows can involve multiple specialized agents:
 
-1. **Formats the response** according to your specifications
-2. **Sends it back** through the appropriate channel
-3. **Stores the interaction** for future reference
-4. **Updates conversation history** for continuity
+1. **Intake Agent**: Understands user needs and routes requests
+2. **Information Agent**: Searches knowledge bases and provides answers
+3. **Service Agent**: Books appointments and coordinates services
+4. **Escalation Agent**: Handles complex cases requiring human intervention
 
-## Key Features of Generative AI in Signpost AI
+## Key Features of Agentic AI in Signpost AI
 
-### 🎯 **Context-Aware Responses**
+### 🎯 **Goal-Oriented Behavior**
 
-Your AI agents remember conversation history and can reference previous interactions:
-
-```
-User: "What emergency services are available?"
-Agent: "Based on our current information, we have medical teams, food distribution, and shelter services available in your area."
-
-User: "Can you remind me what we discussed earlier?"
-Agent: "Earlier you asked about emergency services. I mentioned we have medical teams, food distribution, and shelter services available in your area."
-```
-
-### 📚 **Knowledge Base Integration**
-
-AI agents can access and reference your uploaded documents:
+Agents work towards specific objectives and can adapt their approach:
 
 ```
-User: "What health services are available at the clinic?"
-Agent: "Based on our clinic information document, we provide vaccinations, basic medical care, maternal health services, and emergency treatment. The clinic is open Monday to Friday from 8 AM to 6 PM..."
+User: "I need help with housing"
+Agent Goal: Help user find appropriate housing assistance
+
+Agent Actions:
+1. Assess user's specific housing needs
+2. Search available housing programs
+3. Check eligibility requirements
+4. Provide application guidance
+5. Schedule follow-up to track progress
 ```
 
-### 🔧 **Structured Output**
+### 🧠 **Autonomous Problem Solving**
 
-Generate formatted responses like JSON, tables, or specific formats:
+Agents can break down complex problems and solve them step-by-step:
+
+```
+User: "My family needs emergency assistance"
+Agent Reasoning:
+1. Identify immediate needs (food, shelter, medical)
+2. Assess urgency and prioritize actions
+3. Search for available emergency services
+4. Coordinate multiple service providers
+5. Create action plan with timelines
+6. Monitor progress and adjust as needed
+```
+
+### 📚 **Intelligent Knowledge Integration**
+
+Agents can autonomously search, analyze, and synthesize information from multiple sources:
+
+```
+User: "What health services are available for pregnant women?"
+Agent Process:
+1. Search maternal health documents
+2. Cross-reference with current service availability
+3. Check geographic accessibility
+4. Identify any special requirements or restrictions
+5. Compile comprehensive, personalized response
+6. Offer to schedule appointments or provide referrals
+```
+
+### 🔧 **Adaptive Workflow Management**
+
+Agents can modify their approach based on context and outcomes:
 
 ```json
 {
-  "response": "Here's your assistance request summary",
-  "request": {
-    "id": "AID-12345",
-    "status": "registered",
-    "services": ["Medical Care", "Food Assistance", "Shelter"],
-    "priority": "high"
-  }
+  "initial_plan": ["search_services", "provide_information", "offer_assistance"],
+  "context_detected": "user_in_crisis",
+  "adapted_plan": ["assess_immediate_safety", "provide_emergency_contacts", "escalate_to_human", "follow_up_care"],
+  "reasoning": "Crisis situation requires immediate human intervention"
 }
 ```
 
-### 🎨 **Customizable Personality**
+### 🎨 **Personalized Interaction Style**
 
-Define how your AI agent behaves and responds:
+Agents adapt their communication style based on user needs and cultural context:
 
 ```
-System Prompt: "You are a compassionate, professional humanitarian aid worker.
-Always be helpful, patient, and culturally sensitive. Use a warm, supportive tone
-and prioritize the safety and dignity of those you're assisting."
+Agent Personality Framework:
+- Compassionate and empathetic for crisis situations
+- Professional and efficient for service requests
+- Educational and supportive for information seeking
+- Culturally sensitive based on user background
+- Trauma-informed for vulnerable populations
 ```
 
 ## Practical Applications
 
 ### 1. **Humanitarian Aid & Relief**
 
-**Use Case**: Emergency response and aid coordination
-**AI Models**: GPT-4, Claude 3.5 Sonnet
+**Agent Type**: Emergency Response Coordinator
 **Capabilities**:
 
-- Provide emergency information to affected communities
-- Coordinate relief efforts and resource distribution
-- Answer questions about available services and support
-- Assist with registration and needs assessment
+- Autonomously assess emergency situations and prioritize responses
+- Coordinate multiple relief services and resources
+- Monitor aid distribution and identify gaps
+- Escalate critical situations to human coordinators
+- Track outcomes and optimize future responses
+
+**Example Workflow**:
+```
+1. Receive emergency report
+2. Assess severity and immediate needs
+3. Activate appropriate response protocols
+4. Coordinate with field teams and partners
+5. Monitor situation and adjust response
+6. Document outcomes for learning
+```
 
 ### 2. **Education & Training**
 
-**Use Case**: Educational support and capacity building
-**AI Models**: GPT-4, Claude 3.5 Opus
+**Agent Type**: Adaptive Learning Assistant
 **Capabilities**:
 
-- Provide educational content and tutoring
-- Support teacher training and professional development
-- Create learning materials in multiple languages
-- Assist with curriculum development and assessment
+- Create personalized learning paths based on individual needs
+- Monitor progress and adjust teaching strategies
+- Identify knowledge gaps and provide targeted support
+- Coordinate with human educators for complex issues
+- Generate reports on learning outcomes
+
+**Example Workflow**:
+```
+1. Assess learner's current knowledge and goals
+2. Design customized curriculum
+3. Deliver interactive lessons and exercises
+4. Monitor comprehension and engagement
+5. Adapt content based on performance
+6. Provide progress reports and recommendations
+```
 
 ### 3. **Healthcare Support**
 
-**Use Case**: Health information and basic medical guidance
-**AI Models**: GPT-4, Claude 3.5 Sonnet
+**Agent Type**: Health Navigation Assistant
 **Capabilities**:
 
-- Provide health education and awareness
-- Answer basic medical questions
-- Support community health workers
-- Assist with health data collection and analysis
+- Guide users through complex healthcare systems
+- Coordinate appointments and referrals
+- Monitor health outcomes and follow-up care
+- Identify potential health risks and recommend interventions
+- Connect users with appropriate healthcare resources
+
+**Example Workflow**:
+```
+1. Understand user's health concerns and history
+2. Identify appropriate healthcare services
+3. Navigate insurance and eligibility requirements
+4. Schedule appointments and coordinate care
+5. Provide pre-visit preparation and post-visit follow-up
+6. Monitor health outcomes and adjust care plan
+```
 
 ### 4. **Community Development**
 
-**Use Case**: Community engagement and development programs
-**AI Models**: Claude 3.5 Opus, GPT-4
+**Agent Type**: Community Engagement Facilitator
 **Capabilities**:
 
-- Facilitate community discussions and feedback
-- Support local governance and decision-making
-- Assist with project planning and monitoring
-- Provide information about community resources
+- Facilitate community discussions and gather feedback
+- Identify community needs and priorities
+- Coordinate development projects and resources
+- Monitor project progress and impact
+- Connect community members with relevant opportunities
 
-## Configuration Options
-
-### Temperature Control
-
-**Temperature** controls how creative or focused your AI responses are:
-
-- **0.0-0.3**: Very focused, consistent responses
-- **0.4-0.7**: Balanced creativity and consistency
-- **0.8-1.0**: Very creative, varied responses
-
-### Model Selection
-
-Choose the right model for your use case:
-
-- **Simple Q&A**: GPT-3.5 Turbo, Claude 3.5 Haiku
-- **Complex reasoning**: GPT-4, Claude 3.5 Opus
-- **Fast responses**: Groq models, GPT-4o
-- **Cost optimization**: GPT-3.5 Turbo, Claude 3.5 Haiku
-
-### Prompt Engineering
-
-Craft effective prompts to guide AI behavior:
-
+**Example Workflow**:
 ```
-Good Prompt:
-"You are a compassionate humanitarian aid worker. Always be helpful, culturally sensitive, and professional.
-If you don't know something, say so and offer to connect the person with a human aid worker."
-
-Poor Prompt:
-"Help people"
+1. Engage community members and understand needs
+2. Facilitate participatory planning processes
+3. Connect communities with development resources
+4. Monitor project implementation and outcomes
+5. Gather feedback and lessons learned
+6. Scale successful interventions to other communities
 ```
 
-## Best Practices
+## Agent Configuration Options
 
-### 1. **Start with Clear Instructions**
+### Goal Definition
 
-Define your AI agent's role and behavior clearly:
-
-```
-"You are a humanitarian aid worker supporting our community assistance program.
-Your job is to help people access available services and provide accurate information.
-Always ask clarifying questions if someone's needs aren't clear."
-```
-
-### 2. **Provide Context**
-
-Give your AI agents access to relevant information:
-
-- Upload service guides and resource directories
-- Include program policies and procedures
-- Add historical conversation data
-- Provide examples of good responses
-
-### 3. **Test and Iterate**
-
-Continuously improve your AI agents:
-
-- Test with real users
-- Monitor response quality
-- Adjust prompts based on feedback
-- Update knowledge base regularly
-
-### 4. **Set Appropriate Boundaries**
-
-Define what your AI agents can and cannot do:
+Define clear objectives for your agents:
 
 ```
-"You can help with information about available services, program registration, and basic guidance.
-For medical emergencies, legal issues, or complex personal situations, transfer to a human aid worker."
+Primary Goals:
+- "Ensure user safety and well-being"
+- "Provide accurate, helpful information"
+- "Connect users with appropriate services"
+
+Success Metrics:
+- User satisfaction scores
+- Problem resolution rate
+- Time to resolution
+- Escalation frequency
 ```
 
-## Advanced Features
+### Decision Framework
 
-### Multi-Modal AI
+Establish ethical guidelines and decision-making principles:
 
-Some models can process different types of content:
+```
+Decision Principles:
+1. Always prioritize user safety and dignity
+2. Respect cultural differences and preferences
+3. Maintain confidentiality and privacy
+4. Provide accurate, evidence-based information
+5. Escalate when human expertise is needed
+```
 
-- **Text**: Written messages and documents
-- **Images**: Product photos, screenshots, diagrams
-- **Audio**: Voice messages (with transcription)
+### Capability Configuration
 
-### Conversation Memory
+Define what actions your agents can take:
 
-AI agents maintain context across conversations:
+```
+Allowed Actions:
+- Search knowledge base
+- Book appointments
+- Send notifications
+- Generate reports
+- Coordinate with other agents
 
-- Remember user preferences
-- Reference previous interactions
-- Build relationships over time
-- Provide personalized responses
+Restricted Actions:
+- Make medical diagnoses
+- Provide legal advice
+- Handle financial transactions
+- Make policy decisions
+```
 
-### Real-time Learning
+### Learning Parameters
 
-Some AI models can learn from interactions:
+Configure how agents learn and improve:
 
-- Adapt to user communication style
-- Improve response quality over time
-- Identify common patterns and questions
-- Suggest process improvements
+```
+Learning Settings:
+- Feedback integration: enabled
+- Performance monitoring: continuous
+- Adaptation frequency: daily
+- Human oversight: required for major changes
+```
 
-## Getting Started
+## Best Practices for Agentic AI
 
-### 1. **Choose Your First Use Case**
+### 1. **Define Clear Goals and Boundaries**
 
-Start with a simple application:
+Establish what your agents should achieve and what they cannot do:
 
-- Community information chatbot
-- Document summarization
-- Educational content generation
-- Basic needs assessment
+```
+Good Goal Definition:
+"Help refugees access essential services by providing information, coordinating appointments, and following up on outcomes while maintaining dignity and cultural sensitivity."
 
-### 2. **Select an AI Model**
+Clear Boundaries:
+"Cannot provide medical diagnoses, legal advice, or make decisions about eligibility for services."
+```
 
-For beginners, we recommend:
+### 2. **Design Robust Decision Frameworks**
 
-- **OpenAI GPT-4o**: Good balance of capability and ease of use
-- **Claude 3.5 Sonnet**: Excellent for analysis and explanation
-- **GPT-3.5 Turbo**: Cost-effective for simple tasks
+Create ethical guidelines for autonomous decision-making:
 
-### 3. **Create Your First AI Agent**
+```
+Decision Framework:
+1. Safety First: Always prioritize user safety and well-being
+2. Evidence-Based: Use verified information and established protocols
+3. Cultural Sensitivity: Respect diverse backgrounds and preferences
+4. Transparency: Explain decisions and reasoning when appropriate
+5. Human Oversight: Escalate complex or sensitive situations
+```
 
-1. Go to the **Agents** section
-2. Click **"Create New Agent"**
-3. Choose **"Auto-Generate"**
-4. Describe what you want your agent to do
-5. Let AI build the initial configuration
+### 3. **Implement Continuous Learning**
 
-### 4. **Test and Refine**
+Enable agents to improve through experience:
 
-1. Use the **Playground** to test your agent
-2. Try different types of questions
-3. Adjust the system prompt
-4. Fine-tune the temperature setting
+- Monitor agent performance and outcomes
+- Collect user feedback and satisfaction data
+- Analyze successful and unsuccessful interactions
+- Update agent knowledge and capabilities regularly
+- Conduct periodic reviews with human experts
 
-## Troubleshooting
+### 4. **Ensure Human-Agent Collaboration**
+
+Design workflows that combine agent efficiency with human expertise:
+
+```
+Collaboration Model:
+- Agents handle routine tasks and information gathering
+- Humans focus on complex decisions and relationship building
+- Seamless handoffs between agents and humans
+- Shared knowledge base and communication systems
+- Regular training and calibration sessions
+```
+
+## Advanced Agentic AI Features
+
+### Multi-Agent Systems
+
+Deploy specialized agents that work together:
+
+- **Coordinator Agent**: Manages overall workflow and agent interactions
+- **Specialist Agents**: Handle specific domains (health, education, legal)
+- **Quality Assurance Agent**: Monitors performance and ensures standards
+- **Learning Agent**: Analyzes patterns and suggests improvements
+
+### Predictive Capabilities
+
+Agents can anticipate needs and proactively offer assistance:
+
+- Identify users at risk based on interaction patterns
+- Predict service demand and resource needs
+- Recommend preventive interventions
+- Optimize resource allocation and scheduling
+
+### Emotional Intelligence
+
+Advanced agents can recognize and respond to emotional cues:
+
+- Detect stress, anxiety, or crisis situations
+- Adapt communication style to emotional state
+- Provide appropriate emotional support
+- Escalate to human counselors when needed
+
+### Cross-Cultural Competency
+
+Agents can adapt to different cultural contexts:
+
+- Understand cultural norms and preferences
+- Adapt communication styles appropriately
+- Respect religious and cultural practices
+- Provide culturally relevant resources and referrals
+
+## Getting Started with Agentic AI
+
+### 1. **Identify Your Use Case**
+
+Start with a specific problem that could benefit from autonomous assistance:
+
+- Repetitive tasks that require decision-making
+- Complex workflows with multiple steps
+- Situations requiring 24/7 availability
+- Processes that need personalization at scale
+
+### 2. **Design Your Agent**
+
+Define the agent's role, goals, and capabilities:
+
+1. **Purpose**: What problem will the agent solve?
+2. **Goals**: What outcomes should the agent achieve?
+3. **Capabilities**: What actions can the agent take?
+4. **Boundaries**: What should the agent not do?
+5. **Success Metrics**: How will you measure effectiveness?
+
+### 3. **Configure Decision-Making**
+
+Establish frameworks for autonomous decisions:
+
+- Define decision criteria and priorities
+- Create escalation rules for complex situations
+- Establish ethical guidelines and constraints
+- Set up monitoring and oversight mechanisms
+
+### 4. **Test and Iterate**
+
+Continuously improve your agent through testing:
+
+1. Start with simple scenarios and gradually increase complexity
+2. Monitor agent decisions and outcomes
+3. Collect user feedback and satisfaction data
+4. Adjust goals, capabilities, and decision frameworks
+5. Scale successful patterns to other use cases
+
+## Troubleshooting Agentic AI
 
 ### Common Issues
 
-**AI responses are too generic**
+**Agent makes poor decisions**
 
-- Add more specific instructions to your prompt
-- Include examples of good responses
-- Provide more context from your knowledge base
+- Review and refine decision frameworks
+- Provide more context and examples
+- Implement additional oversight mechanisms
+- Adjust goal priorities and success metrics
 
-**AI doesn't follow instructions**
+**Agent doesn't escalate appropriately**
 
-- Make your system prompt more explicit
-- Use clear, direct language
-- Add examples of desired behavior
+- Clarify escalation rules and criteria
+- Provide more examples of escalation scenarios
+- Implement safety checks and monitoring
+- Train agents to recognize their limitations
 
-**Responses are too long or short**
+**Agent responses lack empathy**
 
-- Adjust the max tokens setting
-- Modify your prompt to specify desired length
-- Use structured output for consistent formatting
+- Enhance emotional intelligence capabilities
+- Provide training on trauma-informed communication
+- Implement cultural competency frameworks
+- Add human oversight for sensitive interactions
 
-**AI makes up information**
+**Agent workflows are inefficient**
 
-- Provide accurate information in your knowledge base
-- Add instructions to only use provided information
-- Set up fact-checking workflows
+- Analyze workflow patterns and bottlenecks
+- Optimize decision trees and action sequences
+- Implement learning mechanisms for continuous improvement
+- Gather user feedback on experience quality
 
-## Future of Generative AI in Signpost AI
+## Future of Agentic AI in Signpost AI
 
-We're constantly expanding our generative AI capabilities:
+We're continuously advancing our agentic AI capabilities:
 
-- **New Model Support**: Adding more AI providers and models
-- **Enhanced Multimodal**: Better image and audio processing
-- **Improved Memory**: Longer conversation context
-- **Custom Training**: Fine-tune models for your specific use case
-- **Advanced Analytics**: Better insights into AI performance
+- **Enhanced Reasoning**: More sophisticated planning and decision-making
+- **Improved Collaboration**: Better human-agent and agent-agent coordination
+- **Predictive Analytics**: Proactive assistance and intervention capabilities
+- **Emotional AI**: Advanced emotional intelligence and cultural competency
+- **Autonomous Learning**: Self-improving agents that adapt without human intervention
+- **Ethical AI**: Enhanced frameworks for responsible autonomous decision-making
 
 ---
 
-**Ready to harness the power of generative AI? Start building your first AI agent today!**
+**Ready to harness the power of agentic AI? Start building your first intelligent agent today!**
