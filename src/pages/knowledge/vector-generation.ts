@@ -2,14 +2,23 @@ import { supabase } from "@/lib/agents/db"
 import { useSimilaritySearch } from "@/lib/fileUtilities/use-similarity-search"
 import { VectorGenerationResult } from "./types"
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
+import { app } from "@/lib/app"
 
-/**
- * Generate vectors for a collection's sources
- */
 export const generateCollectionVector = async (
-  id: string
+  id: string,
+  teamId: string
 ): Promise<VectorGenerationResult> => {
   const { generateEmbedding } = useSimilaritySearch()
+  
+  const apiKeys = await app.fetchAPIkeys(teamId)
+  const openaiApiKey = apiKeys.openai
+  
+  if (!openaiApiKey) {
+    return {
+      success: false,
+      error: new Error('OpenAI API key not found for this team. Please configure your API key in team settings.')
+    }
+  }
   try {
     console.log(`[generateCollectionVector] Starting vector generation for collection ${id}`)
 
@@ -84,7 +93,7 @@ export const generateCollectionVector = async (
         let embedding;
         try {
           const chunks = await textSplitter.splitText(cs.sources.content);
-          const embeddings = await Promise.all(chunks.map(chunk => generateEmbedding(chunk)));
+          const embeddings = await Promise.all(chunks.map(chunk => generateEmbedding(chunk, openaiApiKey)));
           embedding = embeddings.reduce((acc, emb) => acc.map((val, i) => val + emb[i]));
           embedding = embedding.map((val: number) => val / embeddings.length);
           

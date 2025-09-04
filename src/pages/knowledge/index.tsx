@@ -9,6 +9,7 @@ import { downloadCollectionSources } from "./download-utils"
 import { generateCollectionVector } from "./vector-generation"
 import { useQueryClient } from "@tanstack/react-query"
 import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
+import { useTeamStore } from "@/lib/hooks/useTeam"
 
 export default function Knowledge() {
   // State
@@ -20,6 +21,7 @@ export default function Knowledge() {
   // Hooks
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const { selectedTeam } = useTeamStore()
 
   // Handlers
 
@@ -39,6 +41,16 @@ export default function Knowledge() {
 
   const handleGenerateVector = async (collection: CollectionWithSourceCount) => {
     if (isGeneratingVector) return
+    
+    if (!selectedTeam) {
+      toast({
+        title: "Error",
+        description: "No team selected. Please select a team to generate vectors.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsGeneratingVector(true)
     try {
       toast({
@@ -46,7 +58,7 @@ export default function Knowledge() {
         description: "Vector generation is running in the background. This may take some time depending on the number of sources.",
         duration: 5000,
       })
-      const result = await generateCollectionVector(collection.id)
+      const result = await generateCollectionVector(collection.id, selectedTeam.id)
       if (result.success) {
         toast({
           title: "Vector Generation Complete",
