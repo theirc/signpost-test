@@ -19,21 +19,17 @@ export function useSimilaritySearch() {
     try {
       console.log('[useSimilaritySearch] Starting OpenAI embedding generation...');
       
-      // Use provided API key or fallback to environment variable
-      const openaiApiKey = apiKey || import.meta.env.VITE_OPENAI_API_KEY;
-      
-      if (!openaiApiKey) {
+      if (!apiKey) {
         throw new Error('No OpenAI API key provided. Please configure your API key.');
       }
       
-      // OpenAI recommends replacing newlines with spaces for best results
       const input = text.replace(/\n/g, ' ');
       
       const response = await fetch('https://api.openai.com/v1/embeddings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiApiKey}`
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           model: 'text-embedding-ada-002',
@@ -51,7 +47,6 @@ export function useSimilaritySearch() {
       
       console.log('[useSimilaritySearch] OpenAI embedding generated successfully');
       
-      // Verify the embedding is the correct size (1536 for text-embedding-ada-002)
       if (embedding.length !== 1536) {
         throw new Error(`Expected embedding dimension of 1536, but got ${embedding.length}`);
       }
@@ -67,10 +62,8 @@ export function useSimilaritySearch() {
     try {
       console.log('[useSimilaritySearch] Starting similarity search for:', text);
       
-      // Generate embedding for the search query
       const queryVector = await generateEmbedding(text, apiKey);
       
-      // Call the Supabase RPC function for similarity search
       const { data, error } = await supabase.rpc('similarity_search', {
         query_vector: queryVector as string,
         target_collection_id: '',

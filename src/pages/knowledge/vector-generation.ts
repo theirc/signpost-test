@@ -4,16 +4,12 @@ import { VectorGenerationResult } from "./types"
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters"
 import { app } from "@/lib/app"
 
-/**
- * Generate vectors for a collection's sources
- */
 export const generateCollectionVector = async (
   id: string,
   teamId: string
 ): Promise<VectorGenerationResult> => {
   const { generateEmbedding } = useSimilaritySearch()
   
-  // Fetch team-specific API keys
   const apiKeys = await app.fetchAPIkeys(teamId)
   const openaiApiKey = apiKeys.openai
   
