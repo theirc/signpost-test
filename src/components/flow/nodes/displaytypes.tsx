@@ -5,7 +5,8 @@ import remarkBreaks from "remark-breaks"
 import remarkGfm from "remark-gfm"
 import remarkImages from "remark-images"
 import { Button } from "@/components/ui/button"
-import { Download, File } from "lucide-react"
+import { Download, File, Copy, Check } from "lucide-react"
+import { useState } from "react"
 
 interface DisplayProps {
   type: IOTypes
@@ -49,6 +50,33 @@ const isBlobLike = (value: any): boolean => {
     (typeof value === 'string' && value.startsWith('data:')) ||
     (typeof value === 'object' && value.blob) ||
     (typeof value === 'object' && value.file)
+  )
+}
+
+// Copy button component
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy text:', err)
+    }
+  }
+
+  return (
+    <Button
+      onClick={handleCopy}
+      size="sm"
+      variant="ghost"
+      className="absolute top-1 right-1 h-6 w-6 p-0 opacity-70 hover:opacity-100"
+      title="Copy to clipboard"
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+    </Button>
   )
 }
 
@@ -157,8 +185,21 @@ ${doc.body}
 `}).join("\n\n")
   }
 
-  if (type == "boolean") return <div className={className}>{value ? "True" : "False"}</div>
-  if (type == "number") return <div className={className}>{Intl.NumberFormat().format(value || 0)}</div>
+  if (type == "boolean") {
+    const text = value ? "True" : "False"
+    return <div className={`${className} relative`}>
+      <CopyButton text={text} />
+      {text}
+    </div>
+  }
+  
+  if (type == "number") {
+    const text = Intl.NumberFormat().format(value || 0)
+    return <div className={`${className} relative`}>
+      <CopyButton text={text} />
+      {text}
+    </div>
+  }
 
 
   if (type == "number[]") {
@@ -258,7 +299,8 @@ ${doc.body}
   if (type == "string" && typeof value === "string") {
     const cleanedValue = cleanMarkdownUrls(value || "")
 
-    return <div className={className}>
+    return <div className={`${className} relative`}>
+      <CopyButton text={cleanedValue} />
       <Markdown
         components={{
           h1: ({ node, ...rest }) => <h1 className="font-semibold my-2" {...rest} />,
