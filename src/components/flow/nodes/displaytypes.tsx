@@ -72,7 +72,7 @@ const CopyButton = ({ text }: { text: string }) => {
       onClick={handleCopy}
       size="sm"
       variant="ghost"
-      className="absolute top-1 right-1 h-6 w-6 p-0 opacity-70 hover:opacity-100"
+      className="absolute top-1 right-1 h-6 w-6 p-0 opacity-30 hover:opacity-100"
       title="Copy to clipboard"
     >
       {copied ? <Check size={12} /> : <Copy size={12} />}
