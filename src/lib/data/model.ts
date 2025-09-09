@@ -10,9 +10,6 @@ type FieldsOfType<T> = {
 
 type TableKeys = keyof Database["public"]["Tables"]
 
-type UnpackedFields<T> = {
-  [P in keyof T]?: T[P] extends Field<infer U> ? Field<U> : never
-}
 
 type ConfigToType<T> = {
   [P in keyof T]?

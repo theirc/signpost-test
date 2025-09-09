@@ -1,15 +1,24 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { supabase } from '@/lib/agents/db'
+import { Database } from '@/lib/agents/supabase'
 
-export function usePaginatedSupabaseTable({
-  table,
-  page = 0,
-  pageSize = 10,
-  orderBy = 'created_at',
-  orderDirection = 'desc',
-  filters = {},
-}) {
+type OrderDirections = 'asc' | 'desc'
+
+type TableKeys = keyof Database["public"]["Tables"]
+
+interface SupabaseTableProps<TK extends TableKeys> {
+  table: TK
+  page?: number
+  pageSize?: number
+  orderBy?: string
+  orderDirection?: OrderDirections
+  filters?: any
+}
+
+export function usePaginatedSupabaseTable<TK extends TableKeys = any>({ table, page = 0, pageSize = 10, orderBy = 'created_at', orderDirection = 'desc' as OrderDirections, filters = {}, }: SupabaseTableProps<TK>) {
+
   return useQuery({
+
     queryKey: [
       'supabase-table',
       table,
@@ -19,11 +28,11 @@ export function usePaginatedSupabaseTable({
       orderDirection,
       JSON.stringify(filters)
     ],
+
+
     queryFn: async () => {
-      let query = supabase
-        .from(table)
-        .select('*', { count: 'exact' })
-        .order(orderBy, { ascending: orderDirection === 'asc' })
+
+      let query = supabase.from(table as any).select('*', { count: 'exact' }).order(orderBy, { ascending: orderDirection === 'asc' })
 
       Object.entries(filters).forEach(([key, value]) => {
         if (value === undefined || value === null || value === '') return
@@ -32,7 +41,7 @@ export function usePaginatedSupabaseTable({
         } else if (typeof value === 'object' && value !== null && 'cs' in value) {
           query = query.filter(key, 'cs', value.cs)
         } else {
-          query = query.eq(key, value)
+          query = (query as any).eq(key, value)
         }
       })
 
@@ -41,8 +50,11 @@ export function usePaginatedSupabaseTable({
       query = query.range(from, to)
 
       const { data, error, count } = await query
-      if (error) throw new Error(error.message)
-      return { data: data || [], total: count || 0 }
+      let result: Database["public"]["Tables"][TK]["Row"][] = (data || []) as any
+      let errorResult: string = null
+      if (error) errorResult = error.message
+
+      return ({ data: result || [], total: count || 0, error: errorResult })
     },
     placeholderData: keepPreviousData,
   })
