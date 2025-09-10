@@ -130,6 +130,11 @@ export function SearchNode(props: NodeProps) {
 
     <InlineHandles>
       <WorkerLabeledHandle handler={worker.fields.tool} />
+      <WorkerLabeledHandle handler={worker.fields.textOutput} />
+    </InlineHandles>
+
+    <InlineHandles>
+      <div></div>
       <WorkerLabeledHandle handler={worker.fields.references} />
     </InlineHandles>
 
