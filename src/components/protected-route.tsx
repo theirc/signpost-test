@@ -4,7 +4,7 @@ import { usePermissions } from "@/lib/hooks/usePermissions"
 import React from 'react'
 import { getCurrentUser, useUser } from "@/lib/hooks/useUser"
 
-type PermissionAction = 'create' | 'read' | 'update' | 'delete' | 'share'
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -13,11 +13,11 @@ interface ProtectedRouteProps {
   fallbackPath?: string
 }
 
-export function ProtectedRoute({ 
-  children, 
-  resource, 
-  action, 
-  fallbackPath = '/settings/roles' 
+export function ProtectedRoute({
+  children,
+  resource,
+  action,
+  fallbackPath = '/settings/roles'
 }: ProtectedRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const location = useLocation()

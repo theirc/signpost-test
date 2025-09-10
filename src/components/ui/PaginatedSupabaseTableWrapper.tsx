@@ -1,19 +1,19 @@
-import { useState, useCallback } from "react";
-import { usePaginatedSupabaseTable } from "@/hooks/usePaginatedSupabaseTable";
+import { useState, useCallback } from "react"
+import { usePaginatedSupabaseTable } from "@/hooks/usePaginatedSupabaseTable"
 
 function cleanFilters(filters, searchKey) {
-  if (!filters) return undefined;
-  const cleaned = {};
+  if (!filters) return undefined
+  const cleaned = {}
   Object.entries(filters).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== "") {
       if (searchKey && k === searchKey) {
-        cleaned[k] = `%${v}%`;
+        cleaned[k] = `%${v}%`
       } else {
-        cleaned[k] = v;
+        cleaned[k] = v
       }
     }
-  });
-  return Object.keys(cleaned).length ? cleaned : undefined;
+  })
+  return Object.keys(cleaned).length ? cleaned : undefined
 }
 
 export default function PaginatedSupabaseTableWrapper({
@@ -28,15 +28,15 @@ export default function PaginatedSupabaseTableWrapper({
   searchKey,
   ...tableProps
 }) {
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(initialPageSize);
-  const [localFilters, setLocalFilters] = useState(initialFilters);
-  const [sorting, setSorting] = useState([]);
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(initialPageSize)
+  const [localFilters, setLocalFilters] = useState(initialFilters)
+  const [sorting, setSorting] = useState([])
 
-  const mergedFilters = { ...(filters || {}), ...localFilters };
-  const effectiveFilters = cleanFilters(mergedFilters, searchKey);
-  const orderBy = sorting[0]?.id || initialOrderBy;
-  const orderDirection = sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : initialOrderDirection;
+  const mergedFilters = { ...(filters || {}), ...localFilters }
+  const effectiveFilters = cleanFilters(mergedFilters, searchKey)
+  const orderBy = sorting[0]?.id || initialOrderBy
+  const orderDirection: any = sorting[0] ? (sorting[0].desc ? 'desc' : 'asc') : initialOrderDirection
 
   const query = usePaginatedSupabaseTable({
     table,
@@ -45,33 +45,33 @@ export default function PaginatedSupabaseTableWrapper({
     orderBy,
     orderDirection,
     filters: effectiveFilters,
-  });
+  })
 
   const handleSort = useCallback((columnId, direction) => {
-    setSorting([{ id: columnId, desc: direction === 'desc' }]);
-  }, []);
+    setSorting([{ id: columnId, desc: direction === 'desc' }])
+  }, [])
 
   const handleFilter = useCallback((newFiltersArr) => {
-    const newFilters = {};
+    const newFilters = {}
     if (Array.isArray(newFiltersArr)) {
       newFiltersArr.forEach(f => {
         if (f.value !== undefined && f.value !== null && f.value !== "") {
-          newFilters[f.id] = f.value;
+          newFilters[f.id] = f.value
         }
-      });
+      })
     }
-    setLocalFilters(newFilters);
-    setPage(0);
-  }, []);
+    setLocalFilters(newFilters)
+    setPage(0)
+  }, [])
 
   const handlePageChange = useCallback((newPage) => {
-    setPage(newPage);
-  }, []);
+    setPage(newPage)
+  }, [])
 
   const handlePageSizeChange = useCallback((newSize) => {
-    setPageSize(newSize);
-    setPage(0);
-  }, []);
+    setPageSize(newSize)
+    setPage(0)
+  }, [])
 
   return (
     <TableComponent
@@ -90,5 +90,5 @@ export default function PaginatedSupabaseTableWrapper({
       searchKey={searchKey}
       {...tableProps}
     />
-  );
+  )
 } 

@@ -10,6 +10,7 @@ import { usePermissions } from "@/lib/hooks/usePermissions"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { Team, User } from "@/pages/settings/teams"
 import { useUser } from "@/lib/hooks/useUser"
+import { app } from "@/lib/app"
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -41,7 +42,29 @@ export function AppSidebar() {
     setSelectedTeam(team)
   }
 
-  const navItems = [
+  const pages = Object.values(app.pages).filter((page: PageConfig) => !page.group).map(page => ({
+    title: page.title,
+    url: page.url,
+    icon: page.icon,
+    isLink: true,
+    show: !permissionsLoading && canRead(page.resource)
+  })) as any[]
+
+  const groups = Object.entries(app.groups).map(([groupKey, group]: [string, Group]) => ({
+    title: group.title,
+    url: '#',
+    icon: group.icon,
+    items: Object.values(app.pages).filter((page: PageConfig) => page.group === groupKey).map(page => ({
+      title: page.title,
+      url: page.url,
+      icon: page.icon,
+      isLink: true,
+      show: !permissionsLoading && canRead(page.resource)
+    })),
+  })).filter(group => group.items.length > 0)
+
+
+  const prevNavItems = [
     {
       title: "Templates",
       url: "/templates",
@@ -91,7 +114,7 @@ export function AppSidebar() {
         { title: "Access Control", url: "/settings/roles", permission: "roles" },
       ],
       show: !permissionsLoading && (canRead("projects") || canRead("teams") || canRead('billing') || canRead('usage') || canRead("roles"))
-    }
+    },
   ].filter(item => {
     if (item.items) {
       item.items = item.items.filter(subItem => !permissionsLoading && canRead(subItem.permission))
@@ -100,7 +123,10 @@ export function AppSidebar() {
     return item.show
   })
 
-  const isLoading = userLoading || permissionsLoading;
+  const navItems = [...prevNavItems, ...pages, ...groups]
+
+
+  const isLoading = userLoading || permissionsLoading
 
   return (
     <>
