@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
 import { useEffect, useMemo, useState } from "react"
-import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, VisibilityState, ColumnFiltersState, useReactTable, } from "@tanstack/react-table"
+import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, VisibilityState, ColumnFiltersState, useReactTable, TableOptions, } from "@tanstack/react-table"
 import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon, ChevronsUpDownIcon, MoreHorizontal, ChevronFirstIcon, ChevronLeftIcon, ChevronRightIcon, ChevronLastIcon, Columns3, SearchIcon, RefreshCcw } from "lucide-react"
 import { CSSProperties, useId } from "react"
 import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, } from "@dnd-kit/core"
@@ -30,10 +30,11 @@ interface Props<T = any> extends Omit<React.HTMLAttributes<HTMLDivElement>, "onL
   hideActions?: boolean
   onRowClick?: (row: T) => void
   onLoad?: (state: PaginationState) => Promise<T[]>
-  onPaginationChange?: (state: PaginationState) => Promise<void>
+  onPaginationChange?: (state: PaginationState) => void
   showSearch?: boolean
   showColumnSelection?: boolean
   showPagination?: boolean
+  total?: number
 }
 
 export function DataTable(props: Props) {
@@ -72,16 +73,18 @@ export function DataTable(props: Props) {
 
   useEffect(() => {
     setData(props.data || [])
-    console.log(props.data)
-
   }, [props.data])
 
+  useEffect(() => {
+    props.onPaginationChange && (props.onPaginationChange(table.getState().pagination))
+  }, [pagination.pageIndex, pagination.pageSize])
+
   async function onPaginationChange(s: PaginationState) {
+    // props.onPaginationChange && (props.onPaginationChange(table.getState().pagination))
     setPagination(s)
-    props.onPaginationChange && (await props.onPaginationChange(s))
   }
 
-  const table = useReactTable({
+  const options: TableOptions<any> = {
     data: data || [],
     columns: cols,
     columnResizeMode: "onChange",
@@ -108,9 +111,15 @@ export function DataTable(props: Props) {
     getRowId: (row) => row.id || String(Math.random()),
     getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange,
-  })
+  }
 
+  if (props.total !== undefined) {
+    delete options.getPaginationRowModel
+    options.manualPagination = true
+    options.rowCount = props.total
+  }
 
+  const table = useReactTable(options)
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (active && over && active.id !== over.id) {

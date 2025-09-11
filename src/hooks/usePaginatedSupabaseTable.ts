@@ -29,7 +29,6 @@ export function usePaginatedSupabaseTable<TK extends TableKeys = any>({ table, p
       JSON.stringify(filters)
     ],
 
-
     queryFn: async () => {
 
       let query = supabase.from(table as any).select('*', { count: 'exact' }).order(orderBy, { ascending: orderDirection === 'asc' })
