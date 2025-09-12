@@ -16,14 +16,15 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { EmptyData } from "./empty"
 import React from "react"
+import { Skeleton } from "../skeleton"
+
 
 declare global {
   type Column<T, M> = ColumnDef<T, M>
   type Columns<T = any> = { [key in keyof T]?: Column<T, T[key]> }
   type PaginationData = PaginationState
 }
-
-interface Props<T = any> extends Omit<React.HTMLAttributes<HTMLDivElement>, "onLoad"> {
+export interface DataTableProps<T = any> extends Omit<React.HTMLAttributes<HTMLDivElement>, "onLoad"> {
   data?: T[]
   columns?: Columns<T>
   hideSelection?: boolean
@@ -35,18 +36,30 @@ interface Props<T = any> extends Omit<React.HTMLAttributes<HTMLDivElement>, "onL
   showColumnSelection?: boolean
   showPagination?: boolean
   total?: number
+  loading?: boolean
 }
 
-export function DataTable(props: Props) {
 
-  let { hideSelection, hideActions, columns, onRowClick, showSearch = true, showColumnSelection = true, showPagination = true } = props
+export function DataTable<T = any>(props: DataTableProps<T>) {
+
+  let {
+    hideSelection,
+    hideActions,
+    columns,
+    onRowClick,
+    loading,
+    showSearch = true,
+    showColumnSelection = true,
+    showPagination = true,
+  } = props
+
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20, })
-  const [data, setData] = useState<any[]>(props.data || [])
+  const [data, setData] = useState<any[]>(props.data)
 
   const cols = useMemo(() => {
     const gen: ColumnDef<any>[] = []
     Object.entries(columns).forEach(([k, v]) => {
-      const cd = { ...v } as ColumnDef<any>
+      const cd = { ...(v as any) } as ColumnDef<any>
       cd.id ||= k
       cd["accessorKey"] ||= cd.id
       gen.push(cd)
@@ -63,6 +76,7 @@ export function DataTable(props: Props) {
   const [rowSelection, setRowSelection] = useState({})
   const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}))
 
+
   useEffect(() => {
     async function loadData() {
       const data = await props.onLoad(pagination)
@@ -78,11 +92,6 @@ export function DataTable(props: Props) {
   useEffect(() => {
     props.onPaginationChange && (props.onPaginationChange(table.getState().pagination))
   }, [pagination.pageIndex, pagination.pageSize])
-
-  async function onPaginationChange(s: PaginationState) {
-    // props.onPaginationChange && (props.onPaginationChange(table.getState().pagination))
-    setPagination(s)
-  }
 
   const options: TableOptions<any> = {
     data: data || [],
@@ -110,7 +119,7 @@ export function DataTable(props: Props) {
     enableSortingRemoval: true,
     getRowId: (row) => row.id || String(Math.random()),
     getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange,
+    onPaginationChange: setPagination,
   }
 
   if (props.total !== undefined) {
@@ -140,7 +149,6 @@ export function DataTable(props: Props) {
     })
   }
 
-
   const selectionColumnWidth = !hideSelection ? 48 : 0 // 48px for w-12
   const actionsColumnWidth = !hideActions ? 48 : 0 // 48px for w-12
 
@@ -148,34 +156,48 @@ export function DataTable(props: Props) {
   const allCheckedStatus = table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false
   let tbody = Empty
 
-  if (rows.length > 0) {
+  if (loading) {
     tbody = <TableBody>
-      {rows.map((row) => (
-        <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} onClick={() => onRowClick?.(row.original)} className={onRowClick ? "cursor-pointer" : undefined}>
-
-          {!hideSelection && <TableCell className="p-0 pl-4 w-12 sticky left-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
-            <div className="absolute top-0 left-0 w-full h-full border-r text-center pt-2">
-              <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-            </div>
-          </TableCell>}
-
-          {row.getVisibleCells().map((cell) => (
-            <SortableContext key={cell.id} items={columnOrder} strategy={horizontalListSortingStrategy}>
-              <DragAlongCell key={cell.id} cell={cell} />
-            </SortableContext>
+      {Array.from({ length: pagination.pageSize }, (_, i) => i + 1).map((row, id) => (
+        <TableRow key={id}>
+          {table.getAllColumns().map((cell, i) => (
+            <TableCell key={i} className="truncate px-2 py-2" >
+              <Skeleton className="h-8 w-full rounded-md" />
+            </TableCell>
           ))}
-
-          {!hideActions && <TableCell className="p-0 pl-4 w-10 sticky right-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
-            <div className="absolute top-0 right-0 bottom-0 w-full h-full border-l pl-3 pt-2">
-              <Button size="icon" variant="ghost" className="size-6">
-                <MoreHorizontal size={16} />
-              </Button>
-            </div>
-          </TableCell>}
-
         </TableRow>
       ))}
     </TableBody>
+  } else {
+    if (rows.length > 0) {
+      tbody = <TableBody>
+        {rows.map((row) => (
+          <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} onClick={() => onRowClick?.(row.original)} className={onRowClick ? "cursor-pointer" : undefined}>
+
+            {!hideSelection && <TableCell className="p-0 pl-4 w-12 sticky left-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
+              <div className="absolute top-0 left-0 w-full h-full border-r text-center pt-2">
+                <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
+              </div>
+            </TableCell>}
+
+            {row.getVisibleCells().map((cell) => (
+              <SortableContext key={cell.id} items={columnOrder} strategy={horizontalListSortingStrategy}>
+                <DragAlongCell key={cell.id} cell={cell} />
+              </SortableContext>
+            ))}
+
+            {!hideActions && <TableCell className="p-0 pl-4 w-10 sticky right-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
+              <div className="absolute top-0 right-0 bottom-0 w-full h-full border-l pl-3 pt-2">
+                <Button size="icon" variant="ghost" className="size-6">
+                  <MoreHorizontal size={16} />
+                </Button>
+              </div>
+            </TableCell>}
+
+          </TableRow>
+        ))}
+      </TableBody>
+    }
   }
 
   return <div className="grid grid-rows-[auto,100fr,1fr] w-full h-full pb-4 min-h-0">
@@ -279,22 +301,22 @@ export function DataTable(props: Props) {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.firstPage()} disabled={!table.getCanPreviousPage()} aria-label="Go to first page">
+              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.firstPage()} disabled={!table.getCanPreviousPage() || loading} aria-label="Go to first page">
                 <ChevronFirstIcon size={16} aria-hidden="true" />
               </Button>
             </PaginationItem>
             <PaginationItem>
-              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} aria-label="Go to previous page">
+              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage() || loading} aria-label="Go to previous page">
                 <ChevronLeftIcon size={16} aria-hidden="true" />
               </Button>
             </PaginationItem>
             <PaginationItem>
-              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} aria-label="Go to next page">
+              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.nextPage()} disabled={!table.getCanNextPage() || loading} aria-label="Go to next page">
                 <ChevronRightIcon size={16} aria-hidden="true" />
               </Button>
             </PaginationItem>
             <PaginationItem>
-              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.lastPage()} disabled={!table.getCanNextPage()} aria-label="Go to last page">
+              <Button size="icon" variant="outline" className="disabled:pointer-events-none disabled:opacity-50" onClick={() => table.lastPage()} disabled={!table.getCanNextPage() || loading} aria-label="Go to last page">
                 <ChevronLastIcon size={16} aria-hidden="true" />
               </Button>
             </PaginationItem>
@@ -302,6 +324,7 @@ export function DataTable(props: Props) {
         </Pagination>
       </div>
     </div>}
+
   </div>
 
 
