@@ -90,7 +90,7 @@ export const DisplayContent = React.memo<DisplayProps>(({ type, value, className
   if (isBlobLike(value)) {
     let blob: Blob
     let filename = "download"
-    
+
     if (value instanceof Blob) {
       blob = value
       // Try to get filename from blob type or generate one
@@ -192,7 +192,7 @@ ${doc.body}
       {text}
     </div>
   }
-  
+
   if (type == "number") {
     const text = Intl.NumberFormat().format(value || 0)
     return <div className={`${className} relative`}>
@@ -230,6 +230,58 @@ ${doc.body}
     }).join("\n\n")
   }
 
+  if (type == "references") {
+    if (!Array.isArray(value)) value = []
+    const hasSupabaseRefs = (value as Array<{ link: string, title: string }>).some(ref =>
+      ref.link && ref.link.includes('supabase:')
+    )
+    if (hasSupabaseRefs) {
+      return (
+        <div className={className}>
+          <div className="space-y-2">
+            {((value || []) as Array<{ link: string, title: string }>).map((ref, i) => {
+              const sourceIdMatch = ref.link.match(/supabase:[^:]+:(.+)/)
+              if (sourceIdMatch) {
+                const sourceId = sourceIdMatch[1]
+                return (
+                  <div key={i}>
+                    <a
+                      href={`/sources/${sourceId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {ref.title}
+                    </a>
+                  </div>
+                )
+              }
+              return (
+                <div key={i}>
+                  <a
+                    href={ref.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {ref.title}
+                  </a>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <div className={className}>
+          <div className="text-muted-foreground">
+            References not available for this search engine
+          </div>
+        </div>
+      )
+    }
+  }
 
   if (type == "json") {
     type = "string"
@@ -245,12 +297,11 @@ ${doc.body}
     // Handle file type from document generators and other file outputs
     if (value && typeof value === 'object') {
       const { buffer, mimeType, filename, content, type: fileType } = value
-      
+
       if (buffer && mimeType) {
         // Create blob from buffer
         const blob = new Blob([buffer], { type: mimeType })
         const displayFilename = filename || `file.${mimeType.split('/')[1] || 'bin'}`
-        
         return (
           <div className={className}>
             <div className="flex items-center justify-between p-2 border border-gray-200 rounded bg-gray-100 my-2">
@@ -282,7 +333,7 @@ ${doc.body}
         )
       }
     }
-    
+
     return (
       <div className={className}>
         <div className="p-2 border border-gray-200 rounded bg-gray-100 my-2">
@@ -306,7 +357,7 @@ ${doc.body}
           h1: ({ node, ...rest }) => <h1 className="font-semibold my-2" {...rest} />,
           h2: ({ node, ...rest }) => <h2 className="font-semibold my-2" {...rest} />,
           h3: ({ node, ...rest }) => <h3 className="font-semibold my-2" {...rest} />,
-          a: ({ node, ...rest }) => <a className="text-blue-600 hover:underline" {...rest} />,
+          a: ({ node, target, rel, ...rest }) => <a className="text-blue-600 hover:underline" target={target} rel={rel} {...rest} />,
           hr: ({ node, ...rest }) => <hr className="my-2 border-t border-gray-300" {...rest} />,
           img: ({ node, ...props }) => (
             <img

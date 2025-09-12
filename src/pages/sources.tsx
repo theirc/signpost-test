@@ -1,6 +1,6 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { SourcesTable } from "./sources/sources-table"
-import { SourcePreview } from "./sources/source-preview"
 import { SourceActions } from "./sources/components/source-actions"
 import FilesModal from "./sources/files-modal"
 import { LiveDataModal } from "./sources/live-data-modal"
@@ -8,17 +8,16 @@ import { HighlightText } from "@/components/ui/shadcn-io/highlight-text"
 
 
 export default function Sources() {
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null)
+  const navigate = useNavigate()
   const [showFilesModal, setShowFilesModal] = useState(false)
   const [showLiveDataModal, setShowLiveDataModal] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handlePreview = (source: { id: string }) => {
-    setSelectedSourceId(source.id)
+    navigate(`/sources/${source.id}`)
   }
 
   const handleSourceUpdate = () => {
-    setSelectedSourceId(null)
     // Trigger table refresh
     setRefreshTrigger(prev => prev + 1)
   }
@@ -39,12 +38,6 @@ export default function Sources() {
       </div>
 
       <SourcesTable onRowClick={handlePreview} refreshTrigger={refreshTrigger} />
-
-      <SourcePreview
-        sourceId={selectedSourceId}
-        onClose={() => setSelectedSourceId(null)}
-        onSourceUpdate={handleSourceUpdate}
-      />
 
       <FilesModal
         open={showFilesModal}
