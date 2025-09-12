@@ -31,6 +31,7 @@ import { UsageSettings } from "@/pages/settings/usage"
 import { UserForm } from "@/pages/settings/user"
 import { UsersSettings } from "@/pages/settings/users"
 import Sources from "@/pages/sources"
+import { SourceDetail } from "@/pages/sources/source-detail"
 import { AgentList as TemplateList } from "@/pages/templates/agents"
 import TestWebpage from "@/pages/webpage/test"
 import { Edit } from "lucide-react"
@@ -42,6 +43,7 @@ const routeNames: Record<string, string> = {
   '/playground': 'Playground',
   '/collections': 'Collections',
   '/sources': 'Sources',
+  '/sources/:id': 'Source Details',
   '/evaluation/logs': 'Logs',
   '/evaluation/scores': 'Scores',
   '/agent/:id': 'Agent Details',
@@ -254,6 +256,11 @@ export function AppLayout() {
           <Route path="/sources" element={
             <ProtectedRoute resource="sources" action="read">
               <Sources />
+            </ProtectedRoute>
+          } />
+          <Route path="/sources/:id" element={
+            <ProtectedRoute resource="sources" action="read">
+              <SourceDetail />
             </ProtectedRoute>
           } />
           <Route path="/evaluation/logs" element={
