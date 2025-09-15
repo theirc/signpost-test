@@ -24,7 +24,11 @@ function component() {
           {/* ToDo */}
         </div>
       </div>
-      <DataTable onLoad={onLoad} columns={columns} />
+      <DataTable
+        onLoad={onLoad}
+        columns={columns}
+        sort={["name", "asc"]}
+      />
     </div>
   </Page>
 

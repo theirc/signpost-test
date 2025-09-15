@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
 import { useEffect, useMemo, useState } from "react"
-import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, VisibilityState, ColumnFiltersState, useReactTable, TableOptions, } from "@tanstack/react-table"
+import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, VisibilityState, ColumnFiltersState, useReactTable, TableOptions, ColumnSort, } from "@tanstack/react-table"
 import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon, ChevronsUpDownIcon, MoreHorizontal, ChevronFirstIcon, ChevronLeftIcon, ChevronRightIcon, ChevronLastIcon, Columns3, SearchIcon, RefreshCcw } from "lucide-react"
 import { CSSProperties, useId } from "react"
 import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors, type DragEndEvent, } from "@dnd-kit/core"
@@ -39,6 +39,7 @@ export interface DataTableProps<T = any> extends Omit<React.HTMLAttributes<HTMLD
   showPagination?: boolean
   total?: number
   loading?: boolean
+  sort?: [string, "asc" | "desc"]
 }
 
 
@@ -53,7 +54,10 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
     showSearch = true,
     showColumnSelection = true,
     showPagination = true,
+    sort,
   } = props
+
+  const sortingState: SortingState = sort ? [{ id: sort[0], desc: sort[1] == "desc" }] : []
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20, })
   const [data, setData] = useState<any[]>(props.data)
@@ -71,7 +75,7 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
 
   const [searchQuery, setSearchQuery] = useState<string>()
   const [globalFilter, setGlobalFilter] = useState<string>("")
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>(sortingState)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnOrder, setColumnOrder] = useState<string[]>(cols.map((column) => column.id as string))
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})

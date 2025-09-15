@@ -44,8 +44,8 @@ function component() {
         hideActions
         hideSelection
         table="logs"
-        orderBy={["created_at", "desc"]}
         realtime
+        sort={["created_at", "desc"]}
       // filter={(b) => b.eq("agent", 247)}
       // select={`
       //   *,
