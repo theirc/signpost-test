@@ -2,6 +2,7 @@ import { supabase } from "@/lib/agents/db"
 import { ParsedFile } from "@/lib/fileUtilities/use-file-parser"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { useState } from "react"
+import { useQueryClient } from '@tanstack/react-query'
 
 export interface FolderCrawlerState {
   isLoading: boolean
@@ -17,6 +18,7 @@ export interface FolderCrawlerActions {
   handleAddTag: (tag: string) => void
   handleRemoveTag: (tagToRemove: string) => void
   handleSubmit: () => Promise<void>
+  handleReset: () => void
 }
 
 export function useFolderCrawler(
@@ -30,6 +32,7 @@ export function useFolderCrawler(
   const [files, setFiles] = useState<ParsedFile[]>([])
   const [sourceNames, setSourceNames] = useState<Record<string, string>>({})
   const [currentTags, setCurrentTags] = useState<string[]>([])
+  const queryClient = useQueryClient()
 
   const handleFileChange = async (fileList: FileList | null) => {
     if (!fileList) return
@@ -64,6 +67,12 @@ export function useFolderCrawler(
 
   const handleRemoveTag = (tagToRemove: string) => {
     setCurrentTags(prev => prev.filter(tag => tag !== tagToRemove))
+  }
+
+  const handleReset = () => {
+    setFiles([])
+    setSourceNames({})
+    setCurrentTags([])
   }
 
   const handleSubmit = async () => {
@@ -117,6 +126,12 @@ export function useFolderCrawler(
       })
 
       await Promise.all(sourcePromises)
+      
+      queryClient.invalidateQueries({
+        queryKey: ['supabase-table', 'sources'],
+        exact: false
+      })
+      
       onSourcesUpdated()
       onOpenChange(false)
     } catch (error) {
@@ -129,6 +144,6 @@ export function useFolderCrawler(
 
   return [
     { isLoading, progress, files, sourceNames, currentTags },
-    { handleFileChange, handleNameChange, handleAddTag, handleRemoveTag, handleSubmit }
+    { handleFileChange, handleNameChange, handleAddTag, handleRemoveTag, handleSubmit, handleReset }
   ]
 } 

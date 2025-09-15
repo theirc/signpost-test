@@ -15,6 +15,7 @@ import {
 } from "./live_data_forms"
 import { handleZendeskImport } from "./live_data_forms/zendesk"
 import { supabase } from "@/lib/agents/db"
+import { useQueryClient } from '@tanstack/react-query'
 
 interface LiveDataModalProps {
   open: boolean
@@ -26,6 +27,7 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
   const [form, setForm] = useState<FormState>(DEFAULT_FORM_STATE)
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState<string>('')
+  const queryClient = useQueryClient()
 
   const handleSave = async () => {
     try {
@@ -184,6 +186,12 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
         
         // We've handled this case completely, so close the modal
         onOpenChange(false)
+        
+        queryClient.invalidateQueries({
+          queryKey: ['supabase-table', 'sources'],
+          exact: false
+        })
+        
         onSourcesUpdated()
         return
       } else if (form.type === 'zendesk') {
@@ -199,6 +207,12 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
             setProgress
           )
           await new Promise(resolve => setTimeout(resolve, 2000))
+          
+          queryClient.invalidateQueries({
+            queryKey: ['supabase-table', 'sources'],
+            exact: false
+          })
+          
           onOpenChange(false)
           onSourcesUpdated()
         } catch (error) {
@@ -238,6 +252,11 @@ export function LiveDataModal({ open, onOpenChange, onSourcesUpdated }: LiveData
 
         if (configError || !savedConfig) throw new Error('Failed to save source configuration')
       }
+
+      queryClient.invalidateQueries({
+        queryKey: ['supabase-table', 'sources'],
+        exact: false
+      })
 
       onOpenChange(false)
       onSourcesUpdated();

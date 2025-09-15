@@ -12,7 +12,7 @@ export function SourceActions({ onUploadFiles, onAddLiveData }: SourceActionsPro
         Add Live Data
       </Button>
       <Button onClick={onUploadFiles} className="rounded-lg">
-        Upload Files
+        Add Sources
       </Button>
     </div>
   )

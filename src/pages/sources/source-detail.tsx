@@ -451,47 +451,12 @@ export function SourceDetail() {
                           </p>
                         </div>
                       </div>
-
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <h5 className="font-semibold text-foreground">AI Vision Analysis</h5>
-                        </div>
-                        {textContent.trim() ? (
-                          <div className="prose prose-sm max-w-none">
-                            <div className="bg-background/80 rounded-lg p-4 border max-h-[250px] overflow-y-auto">
-                              <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">
-                                {textContent}
-                              </pre>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="bg-background/80 rounded-lg p-4 border text-center">
-                            <p className="text-sm text-muted-foreground italic">
-                              No AI analysis available for this image.
-                            </p>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   )
                 }
                 return null
               })()}
               
-              {!source.content.match(/Image URL: (https?:\/\/[^\s\n]+)/) && (
-                <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <h5 className="font-semibold text-foreground">Content</h5>
-                  </div>
-                  <div className="bg-background/80 rounded-lg p-4 border max-h-[300px] overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">
-                      {source.content}
-                    </pre>
-                  </div>
-                </div>
-              )}
               {editingStates.content.isEditing ? (
                 <div className="space-y-2">
                   <Textarea
