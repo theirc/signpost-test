@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input"
 import { EmptyData } from "./empty"
 import React from "react"
 import { Skeleton } from "../skeleton"
+import { format } from 'date-fns'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../accordion"
 
 
 declare global {
@@ -412,4 +414,28 @@ function DragAlongCell({ cell }: { cell: Cell<any, unknown> }) {
   return <TableCell ref={setNodeRef} className="truncate px-2 py-2" style={style}>
     {flexRender(cell.column.columnDef.cell, cell.getContext())}
   </TableCell>
+}
+
+
+
+const numberFormatter = new Intl.NumberFormat()
+
+DataTable.cellRender = {
+  date: ({ row, column }) => format(row.original[column.id], "MM/dd/yyyy hh:mm:ss"),
+  json: ({ row, column }) => {
+    const content = JSON.stringify(row.original[column.id], null, 2)
+    return <Accordion type="single" collapsible >
+      <AccordionItem value={column.id}>
+        <AccordionTrigger className="bg-slate-100 p-2 overflow-hidden rounded-md" >Data</AccordionTrigger>
+        <AccordionContent >
+          <pre className="bg-slate-100 p-2 overflow-hidden rounded-md">{content}</pre>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  },
+  number: ({ row, column }) => {
+    const value = Number(row.original[column.id]) || 0
+
+    return <div className=" text-right tabular-nums">{numberFormatter.format(value)}</div>
+  },
 }

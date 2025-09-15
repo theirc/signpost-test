@@ -2,6 +2,7 @@ import { Page, PageTitle } from "@/components/page"
 import { DataTableSupabase } from "@/components/ui/datatable/supadatatable"
 import { Table } from "lucide-react"
 import { format, formatDistance, formatRelative, subDays } from 'date-fns'
+import { DataTable } from "@/components/ui/datatable/datatable"
 
 export const dev_external_supa = {
   title: "Logs",
@@ -19,25 +20,16 @@ export const dev_external_supa = {
 const columns: Columns<Table<"logs">> = {
   id: { header: "ID", },
   uid: { header: "UID" },
-  created_at: {
-    header: "Created",
-    cell: ({ row }) => format(row.original.created_at, "MM/dd/yyyy hh:mm:ss"),
-  },
+  created_at: { header: "Created", cell: DataTable.cellRender.date, },
   agent: { header: "Agent" },
   team_id: { header: "Team" },
   type: { header: "Type" },
   worker: { header: "Worker" },
   message: { header: "Message" },
-  parameters: {
-    header: "Parameters",
-    cell: ({ row }) => <pre className="bg-slate-100 p-2 overflow-hidden rounded-md">{JSON.stringify(row.original.parameters, null, 2)}</pre>,
-  },
-  handles: {
-    header: "Handles",
-    cell: ({ row }) => <pre className="bg-slate-100 p-2 overflow-hidden rounded-md">{JSON.stringify(row.original.parameters, null, 2)}</pre>,
-  },
-  inputTokens: { header: "Input Tokens" },
-  outputTokens: { header: "Output Tokens" },
+  parameters: { header: "Parameters", cell: DataTable.cellRender.json },
+  handles: { header: "Handles", cell: DataTable.cellRender.json, },
+  inputTokens: { header: "Input Tokens", cell: DataTable.cellRender.number },
+  outputTokens: { header: "Output Tokens", cell: DataTable.cellRender.number },
   // execution: { header: "Execution" },
   // workerId: { header: "Worker ID" },
 }

@@ -4,11 +4,11 @@ import { dev_external } from "@/pages/dev/external"
 import { dev_external_supa } from "@/pages/dev/externalquery"
 import { Code, type LucideIcon } from "lucide-react"
 
-export const pages = {
-  agents,
-  dev_external,
-  dev_external_supa,
-  dev_dtprops,
+export const pages: Record<string, PageConfig> = {
+  // agents,
+  // dev_external,
+  // dev_external_supa,
+  // dev_dtprops,
 }
 
 export const groups = {
