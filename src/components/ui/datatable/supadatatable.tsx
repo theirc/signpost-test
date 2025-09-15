@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react"
 import { delay } from "@/lib/utils"
 import throttle from "lodash/throttle"
 import { PaginationState } from "@tanstack/react-table"
+import { data } from "react-router-dom"
 
 type TableKeys = keyof Database["public"]["Tables"]
 type SupabaseFilterBuilder<T extends TableKeys> = {
@@ -35,18 +36,19 @@ type SupabaseFilterBuilder<T extends TableKeys> = {
   filter: (column: keyof Database["public"]["Tables"][T]["Row"], operator: string, value: any) => SupabaseFilterBuilder<T>
 }
 
-interface Props<T = any, Q extends TableKeys = TableKeys> extends DataTableProps<T> {
+interface Props<T = any, Q extends TableKeys = TableKeys> extends Omit<DataTableProps<T>, "sort"> {
   table?: Q
   select?: string
   filter?: (builder: SupabaseFilterBuilder<this["table"]>) => SupabaseFilterBuilder<this["table"]>
-  orderBy?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
+  // orderBy?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
+  sort?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
   realtime?: boolean
   realtTimeThrottle?: number
 }
 
 async function readFromSupabase({ table, select, filter, orderBy, page, pageSize }: { table: string, select: string, filter: any, orderBy: any, page: number, pageSize: number }) {
   let sbq = supabase.from(table as any).select(select, { count: 'exact' })
-  if (orderBy) sbq = sbq.order(orderBy[0] as string, { ascending: orderBy[1] === 'asc' }).abortSignal(AbortSignal.timeout(10000 /* ms */))
+  if (orderBy) sbq = sbq.order(orderBy[0] as string, { ascending: orderBy[1] === 'asc' })
   sbq = filter(sbq as any) as any
   const from = page * pageSize
   const to = from + pageSize - 1
@@ -64,7 +66,7 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     table,
     select,
     filter = defaultFilter,
-    orderBy,
+    sort,
     realtime,
     realtTimeThrottle = 2000,
     ...rest
@@ -87,6 +89,7 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     let error = null
     let count = 0
     let d = 1000
+    let orderBy = sort ? sort : null
     for (let n = 0; n < 10; n++) {
       console.log(`Try ${n + 1}`)
       const { data: rData, error: rError, count: rCount } = await readFromSupabase({ table, select, filter, orderBy, page, pageSize })
@@ -161,7 +164,7 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
       state.current.readyForRealTime = true
       update()
     })
-  }, [table, select, filter, orderBy, page, pageSize])
+  }, [table, select, filter, sort, page, pageSize])
 
 
   useEffect(() => {
@@ -173,8 +176,14 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
       .on('postgres_changes', { event: '*', schema: 'public', table }, async payload => {
         console.log('Change received!', payload)
         if (payload.eventType == "INSERT" && state.current.data) {
-          state.current.data.push(payload.new)
+          state.current.data = [...state.current.data, payload.new]
+          // state.current.data.push(payload.new)
+          state.current.count++
           update()
+        } else if (payload.eventType == "DELETE") {
+          state.current.data = state.current.data.filter(d => d.id !== payload.old.id)
+        } else if (payload.eventType == "UPDATE") {
+          state.current.data = state.current.data.map(d => d.id == payload.new.id ? payload.new : d)
         } else {
           await uprt()
         }
@@ -189,10 +198,14 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     setPage(s)
   }
 
+  console.log(state.current.data.length, state.current.count)
+
+
   return <DataTable
     {...rest as any}
     loading={state.current.loading}
     data={state.current.data}
+    sort={sort}
     onPaginationChange={onPaginationChange}
     total={state.current.count}
   />
