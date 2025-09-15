@@ -42,7 +42,7 @@ export function AppSidebar() {
     setSelectedTeam(team)
   }
 
-  const pages = Object.values(app.pages).filter((page: PageConfig) => !page.group).map(page => ({
+  let pages = Object.values(app.pages).filter((page: PageConfig) => !page.group).map(page => ({
     title: page.title,
     url: page.url,
     icon: page.icon,
@@ -50,7 +50,7 @@ export function AppSidebar() {
     show: !permissionsLoading && canRead(page.resource)
   })) as any[]
 
-  const groups = Object.entries(app.groups).map(([groupKey, group]: [string, Group]) => ({
+  let groups = Object.entries(app.groups).map(([groupKey, group]: [string, Group]) => ({
     title: group.title,
     url: '#',
     icon: group.icon,
@@ -62,6 +62,11 @@ export function AppSidebar() {
       show: !permissionsLoading && canRead(page.resource)
     })),
   })).filter(group => group.items.length > 0)
+
+  if (permissionsLoading) {
+    pages = []
+    groups = []
+  }
 
 
   const prevNavItems = [
