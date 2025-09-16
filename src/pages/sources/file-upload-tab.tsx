@@ -8,6 +8,7 @@ import { SourceNameEditor } from "./components/source-name-editor"
 import { TagManager } from "./components/tag-manager"
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { supabase } from "@/lib/agents/db"
+import { useQueryClient } from '@tanstack/react-query'
 
 interface FileUploadTabProps {
   onSourcesUpdated: () => void
@@ -17,6 +18,7 @@ interface FileUploadTabProps {
 export function FileUploadTab({ onSourcesUpdated, onOpenChange }: FileUploadTabProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { selectedTeam } = useTeamStore()
+  const queryClient = useQueryClient()
   const { parseFiles, supportedTypes, isLoading: parsingFiles } = useFileParser(selectedTeam?.id)
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -111,6 +113,12 @@ export function FileUploadTab({ onSourcesUpdated, onOpenChange }: FileUploadTabP
       })
 
       await Promise.all(sourcePromises)
+      
+      queryClient.invalidateQueries({
+        queryKey: ['supabase-table', 'sources'],
+        exact: false
+      })
+      
       onSourcesUpdated()
       onOpenChange(false)
     } catch (error) {
