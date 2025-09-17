@@ -2,10 +2,10 @@ import { Page, PageTitle } from "@/components/page"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table } from "lucide-react"
 import { useEffect, useState } from "react"
-import { DataTable } from "../../components/ui/datatable/datatable"
+import { DataTable } from "../../components/datatable/datatable"
 import { columns, onLoad } from "./demodata"
 import { Label } from "@/components/ui/label"
-import { EmptyData } from "@/components/ui/datatable/empty"
+import { EmptyData } from "@/components/datatable/empty"
 
 export const dev_dtprops = {
   title: "DataTable Props",
@@ -46,7 +46,7 @@ function component() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <Checkbox checked={showSearch} onCheckedChange={(w) => setShowSearch(w == true)} />
-              <Label>Show Pagination</Label>
+              <Label>Show Search</Label>
             </div>
             <div className="flex items-center gap-3">
               <Checkbox checked={showColumnSelection} onCheckedChange={(w) => setShowColumnSelection(w == true)} />

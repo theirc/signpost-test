@@ -63,11 +63,13 @@ export function AppSidebar() {
     })),
   })).filter(group => group.items.length > 0)
 
-  if (permissionsLoading) {
+  const isDev = user?.role == "33225df5-cf9e-4400-ba9a-6f962be3741e"
+  console.log(isDev)
+
+  if (permissionsLoading || !isDev) {
     pages = []
     groups = []
   }
-
 
   const prevNavItems = [
     {

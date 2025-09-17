@@ -1,19 +1,18 @@
 import { Page, PageTitle } from "@/components/page"
-import { DataTableSupabase } from "@/components/ui/datatable/supadatatable"
+import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { Table } from "lucide-react"
-import { format, formatDistance, formatRelative, subDays } from 'date-fns'
-import { DataTable } from "@/components/ui/datatable/datatable"
+import { DataTable } from "@/components/datatable/datatable"
 
-export const dev_external_supa = {
+export const logsdev = {
   title: "Logs",
   description: "Log data.",
-  path: "/dev_external_supa",
-  url: "/dev_external_supa",
+  path: "/logsdev",
+  url: "/logsdev",
   icon: Table,
   component,
   resource: "agents",
   action: "read",
-  group: "dev",
+  group: "evaluation",
 } satisfies PageConfig
 
 
@@ -36,7 +35,7 @@ const columns: Columns<Table<"logs">> = {
 
 function component() {
 
-  return <Page config={dev_external_supa}>
+  return <Page config={logsdev}>
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
       <PageTitle />
       <DataTableSupabase
@@ -53,7 +52,8 @@ function component() {
       //     name
       //   )
       // `}
-      />
+      >
+      </DataTableSupabase>
     </div>
   </Page>
 
