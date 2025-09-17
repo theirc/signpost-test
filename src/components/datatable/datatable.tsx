@@ -16,9 +16,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { EmptyData } from "./empty"
 import React from "react"
-import { Skeleton } from "../skeleton"
+import { Skeleton } from "../ui/skeleton"
 import { format } from 'date-fns'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
+import { useNavigate } from "react-router-dom"
+import { ToolbarItem } from "./toolbaritem"
 
 
 declare global {
@@ -31,7 +33,7 @@ export interface DataTableProps<T = any> extends Omit<React.HTMLAttributes<HTMLD
   columns?: Columns<T>
   hideSelection?: boolean
   hideActions?: boolean
-  onRowClick?: (row: T) => void
+  onRowClick?: ((row: T) => void) | string
   onLoad?: (state: PaginationState) => Promise<T[]>
   onPaginationChange?: (state: PaginationState) => void
   showSearch?: boolean
@@ -40,6 +42,7 @@ export interface DataTableProps<T = any> extends Omit<React.HTMLAttributes<HTMLD
   total?: number
   loading?: boolean
   sort?: [string, "asc" | "desc"]
+  onSortingChange?: (field: string, direction: "asc" | "desc" | undefined) => void
 }
 
 
@@ -80,6 +83,7 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
   const [columnOrder, setColumnOrder] = useState<string[]>(cols.map((column) => column.id as string))
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
+  const navigate = useNavigate()
   const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}))
 
 
@@ -99,6 +103,20 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
     props.onPaginationChange && (props.onPaginationChange(table.getState().pagination))
   }, [pagination.pageIndex, pagination.pageSize])
 
+  function onSortingChange(v: SortingState) {
+    if (props.onSortingChange) {
+      const cn = (v as any)()
+      let dir = undefined
+      if (cn[0]) {
+        dir = cn[0].desc === true ? "desc" : "asc"
+        props.onSortingChange(cn[0].id, dir)
+      } else {
+        props.onSortingChange(undefined, undefined)
+      }
+    }
+    setSorting(v)
+  }
+
   const options: TableOptions<any> = {
     data: data || [],
     columns: cols,
@@ -106,7 +124,7 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
+    onSortingChange,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
@@ -135,6 +153,12 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
   }
 
   const table = useReactTable(options)
+  let Empty = <EmptyData />
+  const selectionColumnWidth = !hideSelection ? 48 : 0 // 48px for w-12
+  const actionsColumnWidth = !hideActions ? 48 : 0 // 48px for w-12
+  const rows = table.getRowModel().rows || []
+  const allCheckedStatus = table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false
+  let tbody = Empty
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (active && over && active.id !== over.id) {
@@ -146,21 +170,29 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
     }
   }
 
-  let Empty = <EmptyData />
+  function onRowClicked(v: any) {
+    if (onRowClick) {
+      if (typeof onRowClick === "string") {
+        let finalPath = onRowClick.trim()
+        if (!finalPath.endsWith("/")) finalPath = `${finalPath}/`
+        if (v["id"]) navigate(`${finalPath}${v["id"] || "new"}`)
+      } else {
+        onRowClick(v)
+      }
+    }
+  }
+
+  const tbitems = []
 
   if (props.children) {
     React.Children.forEach(props.children, (child) => {
       if (!React.isValidElement(child)) return
       if (child.type === EmptyData) Empty = child as any
+      if (child.type === ToolbarItem) tbitems.push(child)
     })
   }
 
-  const selectionColumnWidth = !hideSelection ? 48 : 0 // 48px for w-12
-  const actionsColumnWidth = !hideActions ? 48 : 0 // 48px for w-12
 
-  const rows = table.getRowModel().rows || []
-  const allCheckedStatus = table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false
-  let tbody = Empty
 
   if (loading) {
     tbody = <TableBody>
@@ -178,7 +210,7 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
     if (rows.length > 0) {
       tbody = <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} onClick={() => onRowClick?.(row.original)} className={onRowClick ? "cursor-pointer" : undefined}>
+          <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} onClick={() => onRowClicked(row.original)} className={onRowClick ? "cursor-pointer" : undefined}>
 
             {!hideSelection && <TableCell className="p-0 pl-4 w-12 sticky left-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
               <div className="absolute top-0 left-0 w-full h-full border-r text-center pt-2">
@@ -207,14 +239,20 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
   }
 
   return <div className="grid grid-rows-[auto,100fr,1fr] w-full h-full pb-4 min-h-0">
-    {(showSearch || showColumnSelection) && <div className="pb-2 flex items-center gap-2">
+
+    <div className="pb-2 flex items-center gap-2">
+
       {showSearch && <Input placeholder="Search..." value={globalFilter ?? ""} onChange={(event) => setGlobalFilter(event.target.value)} className="max-w-sm rounded-full h-8" />}
+
       <div className="grow"></div>
+
+      {React.Children.toArray(tbitems)}
+
+
       {showColumnSelection && <div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="ml-auto">
-              {/* <Columns3 />Columns<ChevronDownIcon /> */}
               <Columns3 /><ChevronDownIcon />
             </Button>
           </DropdownMenuTrigger>
@@ -246,7 +284,9 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>}
-    </div>}
+
+    </div>
+
 
     <DndContext id={useId()} collisionDetection={closestCenter} modifiers={[restrictToHorizontalAxis]} onDragEnd={handleDragEnd} sensors={sensors}>
       <Table className="table-fixed" style={{ width: table.getCenterTotalSize() + selectionColumnWidth + actionsColumnWidth }}>
@@ -414,6 +454,8 @@ function DragAlongCell({ cell }: { cell: Cell<any, unknown> }) {
     width: cell.column.getSize(),
     zIndex: isDragging ? 1 : 0,
   }
+  // console.log(cell.column.id, cell.column.getSize())
+
 
   return <TableCell ref={setNodeRef} className="truncate px-2 py-2" style={style}>
     {flexRender(cell.column.columnDef.cell, cell.getContext())}

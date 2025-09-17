@@ -1,13 +1,13 @@
 import { Database } from "@/lib/agents/supabase"
 import { DataTable, DataTableProps } from "./datatable"
-import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/data"
 import { useForceUpdate, useMultiState } from "@/hooks/use-multistate"
-import { useEffect, useRef } from "react"
-import { delay } from "@/lib/utils"
-import throttle from "lodash/throttle"
+import { useEffect, useRef, useState } from "react"
+import { cn, delay } from "@/lib/utils"
 import { PaginationState } from "@tanstack/react-table"
-import { data } from "react-router-dom"
+import { ToolbarItem } from "./toolbaritem"
+import { Clock } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 type TableKeys = keyof Database["public"]["Tables"]
 type SupabaseFilterBuilder<T extends TableKeys> = {
@@ -40,7 +40,6 @@ interface Props<T = any, Q extends TableKeys = TableKeys> extends Omit<DataTable
   table?: Q
   select?: string
   filter?: (builder: SupabaseFilterBuilder<this["table"]>) => SupabaseFilterBuilder<this["table"]>
-  // orderBy?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
   sort?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
   realtime?: boolean
   realtTimeThrottle?: number
@@ -72,7 +71,9 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     ...rest
   } = props
 
+  const [realTime, setRealTime] = useState(false)
   const [{ pageIndex: page, pageSize }, setPage] = useMultiState<PaginationData>({ pageIndex: 0, pageSize: 20 })
+  const [sortInfo, setSortInfo] = useState<[keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"] | null>(sort)
   const update = useForceUpdate()
 
   const state = useRef({
@@ -111,47 +112,6 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     return { data, count, error }
   }
 
-  // async function loadData() {
-  //   let sbq = supabase.from(table).select(select, { count: 'exact' })
-  //   if (orderBy) sbq = sbq.order(orderBy[0] as string, { ascending: orderBy[1] === 'asc' }).abortSignal(AbortSignal.timeout(10000 /* ms */))
-  //   sbq = filter(sbq as any) as any
-  //   const from = page * pageSize
-  //   const to = from + pageSize - 1
-  //   sbq = sbq.range(from, to)
-  //   let data = []
-  //   let error = null
-  //   let count = 0
-  //   let d = 1000
-  //   for (let n = 0; n < 10; n++) {
-  //     console.log(`Try ${n + 1}`)
-  //     const { data: rData, error: rError, count: rCount } = await sbq
-  //     if (!rError) {
-  //       console.log(`Data Ready`)
-  //       data = rData
-  //       count = rCount
-  //       error = null
-  //       break
-  //     }
-  //     console.log(`Awaiting delay ${d}ms`)
-  //     await delay(d)
-  //     console.log(`Retrying`)
-  //     d += 1000
-  //     error = rError
-  //   }
-  //   state.current.error = error
-  //   console.log("Supabase Data", data, error, count)
-  //   return { data, count, error }
-  // }
-
-  const uprt = throttle(async () => {
-    if (state.current.loading) return
-    const { data, count } = await loadData()
-    state.current.data = data
-    state.current.count = count
-    update()
-  }, realtTimeThrottle, { trailing: true })
-
-
   useEffect(() => {
     console.log(("Reload"))
     state.current.loading = true
@@ -164,33 +124,32 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
       state.current.readyForRealTime = true
       update()
     })
-  }, [table, select, filter, sort, page, pageSize])
+    // }, [table, select, filter, sort, page, pageSize])
+  }, [table, select, filter, sortInfo, page, pageSize])
 
 
   useEffect(() => {
     if (!realtime) return
     if (!state.current.readyForRealTime) return
     if (state.current.error) return
+    if (!realTime) return
     console.log("Realtime listening")
     const s = supabase.channel('realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table }, async payload => {
         console.log('Change received!', payload)
         if (payload.eventType == "INSERT" && state.current.data) {
           state.current.data = [...state.current.data, payload.new]
-          // state.current.data.push(payload.new)
           state.current.count++
           update()
         } else if (payload.eventType == "DELETE") {
           state.current.data = state.current.data.filter(d => d.id !== payload.old.id)
         } else if (payload.eventType == "UPDATE") {
           state.current.data = state.current.data.map(d => d.id == payload.new.id ? payload.new : d)
-        } else {
-          await uprt()
         }
       })
       .subscribe()
     return () => { s.unsubscribe() }
-  }, [table, state.current.readyForRealTime, state.current.error])
+  }, [table, state.current.readyForRealTime, state.current.error, realTime])
 
   function onPaginationChange(s: PaginationState) {
     state.current.loading = true
@@ -198,76 +157,32 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     setPage(s)
   }
 
-  console.log(state.current.data.length, state.current.count)
-
+  function onSortingChange(field: string, direction: "asc" | "desc" | undefined) {
+    setSortInfo((direction ? [field, direction] : null) as any)
+  }
 
   return <DataTable
     {...rest as any}
     loading={state.current.loading}
     data={state.current.data}
-    sort={sort}
+    sort={sortInfo}
     onPaginationChange={onPaginationChange}
+    onSortingChange={onSortingChange}
     total={state.current.count}
-  />
+  >
+    {props.children}
+    {realtime && <ToolbarItem>
+      <Tooltip>
+        <TooltipTrigger>
+          <Clock size={16} strokeWidth={4} onClick={() => setRealTime(!realTime)} className={cn("cursor-pointer stroke-2", { "text-red-500": realTime, "animate-pulse": realTime })} />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Realtime: {realTime ? "On" : "Off"}</p>
+        </TooltipContent>
+      </Tooltip>
+    </ToolbarItem>}
+
+  </DataTable>
 
 
 }
-
-// function DataTableSupabaseOLD<T = any, Q extends TableKeys = TableKeys>(props: Props<T, Q>) {
-
-//   const {
-//     table,
-//     select,
-//     filter = (q) => q,
-//     orderBy,
-//     staleTime,
-//     ...rest
-//   } = props
-
-//   const [{ pageIndex: page, pageSize }, setPage] = useMultiState<PaginationData>({ pageIndex: 0, pageSize: 20 })
-//   const countState = useRef(0)
-
-//   const { data: qd, status } = useQuery({
-//     queryKey: [
-//       'supabase-table',
-//       table,
-//       page,
-//       pageSize,
-//       select,
-//     ],
-//     queryFn: async () => {
-//       console.log("usequery")
-//       let sbq = supabase.from(table).select(select, { count: 'exact' })//.order()
-//       if (orderBy) sbq = sbq.order(orderBy[0] as string, { ascending: orderBy[1] === 'asc' })
-//       sbq = filter(sbq as any) as any
-//       const from = page * pageSize
-//       const to = from + pageSize - 1
-//       sbq = sbq.range(from, to)
-//       const { data, error, count } = await sbq
-//       console.log("Supa", data, error, count)
-//       return { data, count }
-//     },
-//     // staleTime,
-//     placeholderData: keepPreviousData,
-//   })
-
-//   const total = qd?.count || countState.current
-//   countState.current = total
-//   console.log(status)
-
-//   function onPaginationChange(p: PaginationData) {
-//     console.log("onPaginationChange", p)
-
-//     setPage(p)
-//   }
-
-//   return <DataTable
-//     {...rest as any}
-//     loading={status === "pending"}
-//     data={qd?.data || []}
-//     onPaginationChange={onPaginationChange}
-//     total={total}
-//   />
-
-
-// }
