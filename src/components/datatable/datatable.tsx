@@ -175,7 +175,7 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
       if (typeof onRowClick === "string") {
         let finalPath = onRowClick.trim()
         if (!finalPath.endsWith("/")) finalPath = `${finalPath}/`
-        if (v["id"]) navigate(`${finalPath}${v["id"] || "new"}`)
+        if (v["id"]) navigate(`${finalPath}${v["id"]}`)
       } else {
         onRowClick(v)
       }

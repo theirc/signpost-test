@@ -6,7 +6,7 @@ import { DataTable } from "@/components/datatable/datatable"
 export const logsdev = {
   title: "Logs",
   description: "Log data.",
-  path: "/logsdev",
+  route: "/logsdev",
   url: "/logsdev",
   icon: Table,
   component,
@@ -29,33 +29,15 @@ const columns: Columns<Table<"logs">> = {
   handles: { header: "Handles", cell: DataTable.cellRender.json, },
   inputTokens: { header: "Input Tokens", cell: DataTable.cellRender.number },
   outputTokens: { header: "Output Tokens", cell: DataTable.cellRender.number },
-  // execution: { header: "Execution" },
-  // workerId: { header: "Worker ID" },
 }
 
 function component() {
-
-  return <Page config={logsdev}>
+  return <Page >
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
       <PageTitle />
-      <DataTableSupabase
-        columns={columns}
-        hideActions
-        hideSelection
-        table="logs"
-        realtime
-        sort={["created_at", "desc"]}
-      // filter={(b) => b.eq("agent", 247)}
-      // select={`
-      //   *,
-      //   agent (
-      //     name
-      //   )
-      // `}
-      >
+      <DataTableSupabase columns={columns} hideActions hideSelection table="logs" realtime sort={["created_at", "desc"]}>
       </DataTableSupabase>
     </div>
   </Page>
-
 }
 
