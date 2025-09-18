@@ -1,9 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChatFlow } from './chat'
-import { X } from 'lucide-react'
+import { X, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ParameterInput } from './parameter-input'
+import { DeleteConversationDialog } from './delete-conversation-dialog'
 
 interface WorkerConfigPanelProps {
     selectedWorker: AIWorker | null
@@ -22,7 +23,15 @@ export function WorkerConfigPanel({
     chatHistory,
     onChatHistoryChange
 }: WorkerConfigPanelProps) {
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    
     if (!selectedWorker && !showChat) return null
+
+    const handleHistoryCleared = () => {
+        const emptyHistory: ChatHistory = []
+        onChatHistoryChange(emptyHistory)
+        setShowDeleteDialog(false)
+    }
 
     const inputsToRender = useMemo(() => {
         if (!selectedWorker) return [];
@@ -55,14 +64,26 @@ export function WorkerConfigPanel({
                 <h3 className="text-lg font-semibold text-gray-900">
                     {selectedWorker ? `${selectedWorker.registry.title} Configuration` : 'Chat'}
                 </h3>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClose}
-                    className="h-8 w-8 p-0"
-                >
-                    <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                    {chatHistory.length > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowDeleteDialog(true)}
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    )}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClose}
+                        className="h-8 w-8 p-0"
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-hidden">
@@ -111,6 +132,12 @@ export function WorkerConfigPanel({
                     </TabsContent>
                 </Tabs>
             </div>
+            
+            <DeleteConversationDialog
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                onHistoryCleared={handleHistoryCleared}
+            />
         </div>
     )
 } 

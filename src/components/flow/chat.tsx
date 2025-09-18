@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { app } from "@/lib/app"
 import { toast } from "sonner"
 import { useTeamStore } from "@/lib/hooks/useTeam"
-import { LoaderCircle, Sparkles, Copy, Check } from "lucide-react"
+import { LoaderCircle, Sparkles, Copy, Check, Trash2 } from "lucide-react"
 import { ToMarkdown } from "../ui/tomarkdown"
 import { Button } from "../ui/button"
 import { ArrowUp, FileText, FileJson, Type } from 'lucide-react'
@@ -146,6 +146,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
     })
   }
 
+
   function isJsonString(value: any): boolean {
     if (typeof value !== "string") return false
     const trimmed = value.trim()
@@ -172,7 +173,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
       return null
     }
 
-    const blob = new Blob([data], { type: mimeType || 'application/octet-stream' })
+    const blob = new Blob([new Uint8Array(data)], { type: mimeType || 'application/octet-stream' })
     const url = URL.createObjectURL(blob)
 
     return (
@@ -300,6 +301,7 @@ export function ChatFlow({ history: propHistory, onHistoryChange }: ChatFlowProp
 
   return <div className='border-l h-full border-r border-gray-200 flex flex-col resize-x'>
     <div className='grid grid-rows-[1fr_auto] flex-grow h-0 min-h-0'>
+      
       <div ref={scrollRef} className="overflow-y-auto p-4 space-y-4 text-sm">
         {history.map((message, index) => {
           if (message.role === "user") {
