@@ -684,10 +684,15 @@ export function FlowDesigner({ id }: { id?: string }) {
   }
 
   function onShowChat() {
-    // console.log("show chat", conversational)
-    setShowChat(s => !s)
-    setShowConfigPanel(true)
-    setSelectedWorker(null)
+    if (showChat) {
+      setShowChat(false)
+      setShowConfigPanel(false)
+      setSelectedWorker(null)
+    } else {
+      setShowChat(true)
+      setShowConfigPanel(true)
+      setSelectedWorker(null)
+    }
   }
 
   function onWorkerSelect(worker: AIWorker) {
