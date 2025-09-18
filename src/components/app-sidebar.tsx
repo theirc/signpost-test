@@ -42,7 +42,7 @@ export function AppSidebar() {
     setSelectedTeam(team)
   }
 
-  let pages = Object.values(app.pages).filter((page: PageConfig) => !page.group).map(page => ({
+  let pages = Object.values(app.pages).filter((page: PageConfig) => !page.group && page.url).map(page => ({
     title: page.title,
     url: page.url,
     icon: page.icon,
@@ -54,7 +54,7 @@ export function AppSidebar() {
     title: group.title,
     url: '#',
     icon: group.icon,
-    items: Object.values(app.pages).filter((page: PageConfig) => page.group === groupKey).map(page => ({
+    items: Object.values(app.pages).filter((page: PageConfig) => page.group === groupKey && page.url).map(page => ({
       title: page.title,
       url: page.url,
       icon: page.icon,
@@ -64,7 +64,6 @@ export function AppSidebar() {
   })).filter(group => group.items.length > 0)
 
   const isDev = user?.role == "33225df5-cf9e-4400-ba9a-6f962be3741e"
-  console.log(isDev)
 
   if (permissionsLoading || !isDev) {
     pages = []

@@ -92,28 +92,26 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     let d = 1000
     let orderBy = sort ? sort : null
     for (let n = 0; n < 10; n++) {
-      console.log(`Try ${n + 1}`)
       const { data: rData, error: rError, count: rCount } = await readFromSupabase({ table, select, filter, orderBy, page, pageSize })
       if (!rError) {
-        console.log(`Data Ready`)
         data = rData
         count = rCount
         error = null
         break
       }
-      console.log(`Awaiting delay ${d}ms`)
+      // console.log(`Awaiting delay ${d}ms`)
       await delay(d)
-      console.log(`Retrying`)
+      console.log(`Retrying ${n + 1}...`)
       d += 1000
       error = rError
     }
     state.current.error = error
-    console.log("Supabase Data", data, error, count)
+    // console.log("Supabase Data", data, error, count)
     return { data, count, error }
   }
 
   useEffect(() => {
-    console.log(("Reload"))
+    // console.log(("Reload"))
     state.current.loading = true
     update()
     loadData().then(d => {

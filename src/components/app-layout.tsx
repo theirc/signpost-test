@@ -37,6 +37,7 @@ import TestWebpage from "@/pages/webpage/test"
 import { Edit } from "lucide-react"
 import React, { useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom"
+import { ContextualPage } from "./page/pagecontext"
 
 const routeNames: Record<string, string> = {
   '/': 'Agents',
@@ -372,7 +373,10 @@ export function AppLayout() {
           </Route>
           <Route path="/webpage-test" element={<TestWebpage />} />
 
-          {Object.values(app.pages).map((page) => <Route key={page.path} path={page.path} element={<page.component />} />)}
+          {/* {Object.values(app.pages).filter((page) => page.route).map((page) => <Route key={page.route} path={page.route} element={<page.component />} />)} */}
+          {/* {Object.values(app.pages).filter((page) => page.route).map((page) => <Route key={page.route} path={page.route} element={page.component as any} />)} */}
+          {/* <ContextualPage config={page}><page.component /></ContextualPage> as any */}
+          {Object.values(app.pages).filter((page) => page.route).map((page) => <Route key={page.route} path={page.route} element={<ContextualPage config={page}><page.component /></ContextualPage>} />)}
 
         </Routes>
       </div>

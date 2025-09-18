@@ -114,6 +114,62 @@
   }
 }
 
+.row {
+  @apply grid grid-cols-12 gap-4;
+}
+
+.rgrid {
+  @apply flex flex-col gap-4;
+}
+
+.rc-1 {
+  @apply col-span-6 md:col-span-1;
+}
+
+.rc-2 {
+  @apply col-span-6 md:col-span-2;
+}
+
+.rc-3 {
+  @apply col-span-12 md:col-span-3;
+}
+
+.rc-4 {
+  @apply col-span-12 md:col-span-4;
+}
+
+.rc-5 {
+  @apply col-span-12 md:col-span-5;
+}
+
+.rc-6 {
+  @apply col-span-12 md:col-span-6;
+}
+
+.rc-7 {
+  @apply col-span-12 md:col-span-7;
+}
+
+.rc-8 {
+  @apply col-span-12 md:col-span-8;
+}
+
+.rc-9 {
+  @apply col-span-12 md:col-span-9;
+}
+
+.rc-10 {
+  @apply col-span-12 md:col-span-10;
+}
+
+.rc-11 {
+  @apply col-span-12 md:col-span-11;
+}
+
+.rc-12 {
+  @apply col-span-12;
+}
+
 .bot-message-content {
   font-family: 'Inter', sans-serif;
   color: #374151;
@@ -318,10 +374,13 @@
 
 /* Edge animation styles for running workers */
 @keyframes edgePulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.8;
     filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
   }
+
   50% {
     opacity: 1;
     filter: drop-shadow(0 0 12px rgba(139, 92, 246, 0.8));
@@ -329,10 +388,13 @@
 }
 
 @keyframes edgeGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.3;
     filter: blur(4px);
   }
+
   50% {
     opacity: 0.5;
     filter: blur(6px);
@@ -349,16 +411,19 @@
 
 /* Node animation styles for running workers */
 @keyframes nodePulse {
-  0%, 100% {
-    box-shadow: 
+
+  0%,
+  100% {
+    box-shadow:
       0 0 0 2px rgba(139, 92, 246, 0.3),
       0 0 0 4px rgba(139, 92, 246, 0.2),
       0 0 20px rgba(139, 92, 246, 0.4),
       0 0 40px rgba(139, 92, 246, 0.2);
     transform: scale(1);
   }
+
   50% {
-    box-shadow: 
+    box-shadow:
       0 0 0 3px rgba(139, 92, 246, 0.5),
       0 0 0 6px rgba(139, 92, 246, 0.3),
       0 0 30px rgba(139, 92, 246, 0.6),
@@ -368,10 +433,13 @@
 }
 
 @keyframes nodeGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
     border-color: rgba(139, 92, 246, 0.3);
   }
+
   50% {
     background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
     border-color: rgba(139, 92, 246, 0.6);
@@ -401,12 +469,12 @@
   border: 2px solid transparent;
   border-radius: inherit;
   background: linear-gradient(45deg, #8B5CF6, #A855F7, #C084FC, #8B5CF6) border-box;
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) padding-box, 
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: destination-out;
-  mask: 
-    linear-gradient(#fff 0 0) padding-box, 
+  mask:
+    linear-gradient(#fff 0 0) padding-box,
     linear-gradient(#fff 0 0);
   mask-composite: exclude;
   animation: nodePulse 1.5s ease-in-out infinite;

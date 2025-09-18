@@ -1,5 +1,5 @@
 import { Page, PageTitle } from "@/components/page"
-import { BrainIcon, Plus, Sparkles } from "lucide-react"
+import { Box, BrainIcon, Plus, Sparkles } from "lucide-react"
 import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { DataTable } from "@/components/datatable/datatable"
 import { useTeamStore } from "@/lib/hooks/useTeam"
@@ -7,27 +7,27 @@ import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { DeclarativeMenu } from "@/components/declarativemenu"
 
-export const agents = {
-  title: "Agents",
-  description: "Manage your agents and their configurations.",
-  route: "/agents",
-  url: "/agents",
-  icon: BrainIcon,
+export const models = {
+  title: "Models",
+  description: "Manage your organization's AI Models.",
+  route: "/settings/modelsd",
+  url: "/settings/modelsd",
+  icon: Box,
   component,
-  resource: "agents",
+  group: "settings",
+  resource: "models",
   action: "read",
 } satisfies PageConfig
 
-const columns: Columns<Table<"agents">> = {
-  id: { header: "ID", cell: DataTable.cellRender.number, size: 64 },
-  title: { header: "Title", size: 620 },
+const columns: Columns<Table<"models">> = {
+  title: { header: "Title", size: 600 },
+  model: { header: "Model", size: 340 },
+  provider: { header: "Provider", size: 120 },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
-  description: { header: "Description", size: 380 },
 }
 
 function component() {
 
-  const { selectedTeam } = useTeamStore()
   const navigate = useNavigate()
 
   const menu = [
@@ -43,25 +43,15 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <DeclarativeMenu menu={menu}>
-            <Button className="rounded-lg"><Plus className="h-4 w-4" />Create Agent</Button>
-          </DeclarativeMenu>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/modelsd/new')}><Plus className="h-4 w-4" />New Model</Button>
         </div>
       </div>
       <DataTableSupabase
-        table="agents"
-        hideSelection
-        hideActions
+        table="models"
         columns={columns}
-        onRowClick={"/agent"}
+        hideSelection
+        onRowClick={"/settings/modelsd"}
         sort={["created_at", "desc"]}
-        filter={q => q.eq("team_id", selectedTeam?.id)}
-      // select={`
-      //   *,
-      //   agent (
-      //     name
-      //   )
-      // `}
       />
     </div>
   </Page>

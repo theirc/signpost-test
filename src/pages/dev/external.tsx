@@ -6,7 +6,7 @@ import { columns, onLoad } from "./demodata"
 export const dev_external = {
   title: "External Data",
   description: "Demo DataTable usage with external data.",
-  path: "/dev_external",
+  route: "/dev_external",
   url: "/dev_external",
   icon: Table,
   component: ExternalData,
@@ -17,7 +17,7 @@ export const dev_external = {
 
 function ExternalData() {
 
-  return <Page config={dev_external}>
+  return <Page >
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
       <PageTitle />
       <DataTable onLoad={onLoad} columns={columns}>

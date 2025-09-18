@@ -10,7 +10,7 @@ import { EmptyData } from "@/components/datatable/empty"
 export const dev_dtprops = {
   title: "DataTable Props",
   description: "Demo DataTable Props.",
-  path: "/dev_dtprops",
+  route: "/dev_dtprops",
   url: "/dev_dtprops",
   icon: Table,
   component,
@@ -36,7 +36,7 @@ function component() {
     onLoad().then((data) => setData(data))
   }, [])
 
-  return <Page config={dev_dtprops}>
+  return <Page >
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
       <div className="flex">
         <PageTitle />
