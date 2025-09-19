@@ -4,22 +4,14 @@ import { supabase } from "@/lib/agents/db"
 import { LogFilters, ConversationLog, LogRawData, Agent } from "../types"
 import { ConversationLogProcessor } from "../services/conversationLogProcessor"
 import { ConversationFilterService } from "../services/conversationFilterService"
-import { useDebouncedValue } from "./useDebouncedValue"
 
 export function useConversationLogs(
   teamId: string | undefined,
   filters: LogFilters,
   agents: Agent[]
 ) {
-  const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300)
-  
-  const debouncedFilters = useMemo(() => ({
-    ...filters,
-    searchQuery: debouncedSearchQuery
-  }), [filters.selectedAgent, filters.dateRange, debouncedSearchQuery])
-
   const query = useQuery({
-    queryKey: ['conversationLogs', teamId, debouncedFilters.selectedAgent, debouncedFilters.dateRange, debouncedFilters.searchQuery],
+    queryKey: ['conversationLogs', teamId, filters.selectedAgent, filters.dateRange, filters.searchQuery],
     queryFn: async (): Promise<ConversationLog[]> => {
       if (!teamId) {
         return []
@@ -35,16 +27,16 @@ export function useConversationLogs(
         .order('created_at', { ascending: true })
 
       // Only filter by agent if a specific agent is selected
-      if (debouncedFilters.selectedAgent && debouncedFilters.selectedAgent !== 'all') {
-        query = query.eq('agent', debouncedFilters.selectedAgent)
+      if (filters.selectedAgent && filters.selectedAgent !== 'all') {
+        query = query.eq('agent', filters.selectedAgent)
       }
 
       // Apply date filters at database level for better performance
-      if (debouncedFilters.dateRange.from) {
-        query = query.gte('created_at', `${debouncedFilters.dateRange.from}T00:00:00.000Z`)
+      if (filters.dateRange.from) {
+        query = query.gte('created_at', `${filters.dateRange.from}T00:00:00.000Z`)
       }
-      if (debouncedFilters.dateRange.to) {
-        query = query.lte('created_at', `${debouncedFilters.dateRange.to}T23:59:59.999Z`)
+      if (filters.dateRange.to) {
+        query = query.lte('created_at', `${filters.dateRange.to}T23:59:59.999Z`)
       }
 
       const { data: logs, error } = await query
@@ -56,7 +48,7 @@ export function useConversationLogs(
       )
       
       // Apply client-side filters (search query and any additional filtering)
-      return ConversationFilterService.filterConversations(conversations, debouncedFilters)
+      return ConversationFilterService.filterConversations(conversations, filters)
     },
     enabled: !!teamId
   })
