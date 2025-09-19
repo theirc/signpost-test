@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { app, useAppStore } from "@/lib/app"
-import { LogForm } from "@/pages/evaluation/log"
 import { BotLogsTable } from "@/pages/evaluation/logs"
 import { ScoreForm } from "@/pages/evaluation/score"
 import { BotScoresTable } from "@/pages/evaluation/scores"
@@ -267,11 +266,6 @@ export function AppLayout() {
           <Route path="/evaluation/logs" element={
             <ProtectedRoute resource="logs" action="read">
               <BotLogsTable />
-            </ProtectedRoute>
-          } />
-          <Route path="/evaluation/logs/:id" element={
-            <ProtectedRoute resource="logs" action="read">
-              <LogForm />
             </ProtectedRoute>
           } />
           <Route path="/evaluation/scores" element={
