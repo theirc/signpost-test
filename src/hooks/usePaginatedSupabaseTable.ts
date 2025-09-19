@@ -15,7 +15,7 @@ interface SupabaseTableProps<TK extends TableKeys> {
   filters?: any
 }
 
-export function usePaginatedSupabaseTable<TK extends TableKeys = any>({ table, page = 0, pageSize = 10, orderBy = 'created_at', orderDirection = 'desc' as OrderDirections, filters = {}, }: SupabaseTableProps<TK>) {
+export function usePaginatedSupabaseTable<TK extends TableKeys = any>({ table, page = 0, pageSize = 10, orderBy = 'created_at', orderDirection = 'desc' as OrderDirections, filters = {} }: SupabaseTableProps<TK>) {
 
   return useQuery({
 
@@ -39,6 +39,16 @@ export function usePaginatedSupabaseTable<TK extends TableKeys = any>({ table, p
           query = query.ilike(key, value)
         } else if (typeof value === 'object' && value !== null && 'cs' in value) {
           query = query.filter(key, 'cs', value.cs)
+        } else if (Array.isArray(value)) {
+          query = query.in(key, value)
+        } else if (typeof value === 'object' && value !== null && ('gte' in value || 'lte' in value)) {
+          const dateRange = value as { gte?: string; lte?: string }
+          if (dateRange.gte) {
+            query = query.gte(key, dateRange.gte)
+          }
+          if (dateRange.lte) {
+            query = query.lte(key, dateRange.lte)
+          }
         } else {
           query = (query as any).eq(key, value)
         }

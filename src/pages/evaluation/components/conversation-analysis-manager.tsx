@@ -8,7 +8,7 @@ import { ConversationAnalysisConfig as AnalysisConfig, ConversationLog, Conversa
 import { useTeamStore } from "@/lib/hooks/useTeam"
 import { app } from "@/lib/app"
 import { ConversationAnalysisConfigDialog as ConfigDialogComponent } from "./conversation-analysis-config"
-import { ConversationAnalyzer } from "../conversation-analysis"
+import { ConversationAnalysisService as ConversationAnalyzer } from "../services/conversationAnalysisService"
 import { useAnalysisConfigs } from "../hooks/useAnalysisConfigs"
 import { AnalysisResultExporter } from "../services/analysisResultExporter"
 import {
