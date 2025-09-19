@@ -428,9 +428,8 @@ export function SourceDetail() {
                 const imageUrlMatch = source.content.match(/Image URL: (https?:\/\/[^\s\n]+)/)
                 if (imageUrlMatch) {
                   const imageUrl = imageUrlMatch[1]
-                  const textContent = source.content.replace(/Image URL: https?:\/\/[^\s\n]+\n\nVision Analysis:\n/, '')
                   return (
-                    <div className="space-y-6">
+                    <div className="mb-6">
                       <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl p-6 border">
                         <h5 className="font-semibold mb-4 text-center text-foreground">Image Preview</h5>
                         <div className="flex justify-center mb-4">
