@@ -405,21 +405,22 @@ export function SourceDetail() {
               </div>
             </div>
           ) : (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Content</h4>
+            <div className="bg-gradient-to-br from-muted/20 to-muted/40 rounded-xl p-6 border">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <h4 className="font-semibold text-foreground">Content</h4>
                 {!editingStates.content.isEditing && (
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={startEditingContent}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 ml-auto"
                   >
                     <Edit2 className="h-3 w-3" />
                   </Button>
                 )}
                 {editingStates.content.isEditing && (
-                  <span className="text-sm text-muted-foreground">Editing...</span>
+                  <span className="text-sm text-muted-foreground ml-auto">Editing...</span>
                 )}
               </div>
               
@@ -458,14 +459,14 @@ export function SourceDetail() {
               })()}
               
               {editingStates.content.isEditing ? (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Textarea
                     value={editingStates.content.value}
                     onChange={(e) => setEditingStates(prev => ({ 
                       ...prev, 
                       content: { ...prev.content, value: e.target.value } 
                     }))}
-                    className="min-h-[200px]"
+                    className="min-h-[500px] bg-background/80 border border-border"
                     disabled={uiState.saving}
                     onKeyDown={handleContentKeyDown}
                   />
@@ -494,7 +495,7 @@ export function SourceDetail() {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
+                <div className="p-6 bg-background/80 border border-border rounded-lg whitespace-pre-wrap min-h-[500px] max-h-[700px] overflow-auto">
                   {source.content}
                 </div>
               )}
@@ -540,7 +541,7 @@ export function SourceDetail() {
                   </p>
                 )}
               </div>
-              <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap max-h-[400px] overflow-auto">
+              <div className="p-6 bg-background/80 border border-border rounded-lg whitespace-pre-wrap min-h-[500px] max-h-[700px] overflow-auto">
                 {uiState.selectedElement.content}
               </div>
             </div>
