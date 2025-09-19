@@ -718,7 +718,7 @@ export function FlowDesigner({ id }: { id?: string }) {
         {showConfigPanel && (
           <>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30} minSize={10} maxSize={50}>
+            <ResizablePanel defaultSize={30} minSize={10} maxSize={85}>
               <WorkerConfigPanel
                 selectedWorker={selectedWorker}
                 onClose={onCloseWorkerPanel}
