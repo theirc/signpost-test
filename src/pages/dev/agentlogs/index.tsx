@@ -35,7 +35,7 @@ function component() {
   return <Page >
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
       <PageTitle />
-      <DataTableSupabase columns={columns} hideActions hideSelection table="logs" realtime sort={["created_at", "desc"]}>
+      <DataTableSupabase columns={columns} hideSelection table="logs" realtime sort={["created_at", "desc"]}>
       </DataTableSupabase>
     </div>
   </Page>

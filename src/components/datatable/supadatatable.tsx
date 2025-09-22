@@ -9,41 +9,59 @@ import { ToolbarItem } from "./toolbaritem"
 import { Clock } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
-type TableKeys = keyof Database["public"]["Tables"]
-type SupabaseFilterBuilder<T extends TableKeys> = {
-  eq: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  neq: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  gt: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  gte: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  lt: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  lte: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  like: (column: keyof Database["public"]["Tables"][T]["Row"], pattern: string) => SupabaseFilterBuilder<T>
-  ilike: (column: keyof Database["public"]["Tables"][T]["Row"], pattern: string) => SupabaseFilterBuilder<T>
-  is: (column: keyof Database["public"]["Tables"][T]["Row"], value: null | boolean) => SupabaseFilterBuilder<T>
-  in: (column: keyof Database["public"]["Tables"][T]["Row"], values: any[]) => SupabaseFilterBuilder<T>
-  contains: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  containedBy: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  rangeGt: (column: keyof Database["public"]["Tables"][T]["Row"], range: string) => SupabaseFilterBuilder<T>
-  rangeGte: (column: keyof Database["public"]["Tables"][T]["Row"], range: string) => SupabaseFilterBuilder<T>
-  rangeLt: (column: keyof Database["public"]["Tables"][T]["Row"], range: string) => SupabaseFilterBuilder<T>
-  rangeLte: (column: keyof Database["public"]["Tables"][T]["Row"], range: string) => SupabaseFilterBuilder<T>
-  rangeAdjacent: (column: keyof Database["public"]["Tables"][T]["Row"], range: string) => SupabaseFilterBuilder<T>
-  overlaps: (column: keyof Database["public"]["Tables"][T]["Row"], value: any) => SupabaseFilterBuilder<T>
-  textSearch: (column: keyof Database["public"]["Tables"][T]["Row"], query: string, options?: { type?: 'plain' | 'phrase' | 'websearch'; config?: string }) => SupabaseFilterBuilder<T>
-  match: (query: Partial<Database["public"]["Tables"][T]["Row"]>) => SupabaseFilterBuilder<T>
-  not: (column: keyof Database["public"]["Tables"][T]["Row"], operator: string, value: any) => SupabaseFilterBuilder<T>
-  or: (filters: string) => SupabaseFilterBuilder<T>
-  filter: (column: keyof Database["public"]["Tables"][T]["Row"], operator: string, value: any) => SupabaseFilterBuilder<T>
+type SupabaseFilterBuilder<T> = {
+  eq: (column: T, value: any) => SupabaseFilterBuilder<any>
+  neq: (column: T, value: any) => SupabaseFilterBuilder<any>
+  gt: (column: T, value: any) => SupabaseFilterBuilder<any>
+  gte: (column: T, value: any) => SupabaseFilterBuilder<any>
+  lt: (column: T, value: any) => SupabaseFilterBuilder<any>
+  lte: (column: T, value: any) => SupabaseFilterBuilder<any>
+  like: (column: T, pattern: string) => SupabaseFilterBuilder<any>
+  ilike: (column: T, pattern: string) => SupabaseFilterBuilder<any>
+  is: (column: T, value: null | boolean) => SupabaseFilterBuilder<any>
+  in: (column: T, values: any[]) => SupabaseFilterBuilder<any>
+  contains: (column: T, value: any) => SupabaseFilterBuilder<any>
+  containedBy: (column: T, value: any) => SupabaseFilterBuilder<any>
+  rangeGt: (column: T, range: string) => SupabaseFilterBuilder<any>
+  rangeGte: (column: T, range: string) => SupabaseFilterBuilder<any>
+  rangeLt: (column: T, range: string) => SupabaseFilterBuilder<any>
+  rangeLte: (column: T, range: string) => SupabaseFilterBuilder<any>
+  rangeAdjacent: (column: T, range: string) => SupabaseFilterBuilder<any>
+  overlaps: (column: T, value: any) => SupabaseFilterBuilder<any>
+  textSearch: (column: T, query: string, options?: { type?: 'plain' | 'phrase' | 'websearch'; config?: string }) => SupabaseFilterBuilder<any>
+  match: (query: T) => SupabaseFilterBuilder<any>
+  not: (column: T, operator: string, value: any) => SupabaseFilterBuilder<any>
+  or: (filters: string) => SupabaseFilterBuilder<any>
+  filter: (column: T, operator: string, value: any) => SupabaseFilterBuilder<any>
 }
 
-interface Props<T = any, Q extends TableKeys = TableKeys> extends Omit<DataTableProps<T>, "sort"> {
-  table?: Q
+type KeysOfTableOrView<T extends AllKeys> =
+  T extends keyof Database["public"]["Tables"]
+  ? keyof Database["public"]["Tables"][T]["Row"]
+  : T extends keyof Database["public"]["Views"]
+  ? keyof Database["public"]["Views"][T]["Row"]
+  : never
+
+type AllKeys = TableKeys | ViewKeys
+
+interface Props<Q extends AllKeys> extends Omit<DataTableProps, "sort"> {
+  table: Q
   select?: string
-  filter?: (builder: SupabaseFilterBuilder<this["table"]>) => SupabaseFilterBuilder<this["table"]>
-  sort?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
+  filter?: (builder: SupabaseFilterBuilder<KeysOfTableOrView<Q>>) => SupabaseFilterBuilder<any>
+  sort?: [KeysOfTableOrView<Q>, "asc" | "desc"]
   realtime?: boolean
   realtTimeThrottle?: number
 }
+
+// interface Props<T = any, Q extends TableKeys = TableKeys, V extends ViewKeys = ViewKeys> extends Omit<DataTableProps<T>, "sort"> {
+//   table?: Q
+//   select?: string
+//   filter?: (builder: SupabaseFilterBuilder<keyof Database["public"]["Tables"][Q]["Row"]>) => SupabaseFilterBuilder<any>
+//   // filter?: (builder: SupabaseFilterBuilder<this["table"]>) => SupabaseFilterBuilder<this["table"]>
+//   sort?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
+//   realtime?: boolean
+//   realtTimeThrottle?: number
+// }
 
 async function readFromSupabase({ table, select, filter, orderBy, page, pageSize }: { table: string, select: string, filter: any, orderBy: any, page: number, pageSize: number }) {
   let sbq = supabase.from(table as any).select(select, { count: 'exact' })
@@ -59,7 +77,7 @@ async function readFromSupabase({ table, select, filter, orderBy, page, pageSize
 
 function defaultFilter(q: any) { return q }
 
-export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(props: Props<T, Q>) {
+export function DataTableSupabase<Q extends AllKeys>(props: Props<Q>) {
 
   const {
     table,
@@ -68,12 +86,13 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     sort,
     realtime,
     realtTimeThrottle = 2000,
+    onActionExecuted,
     ...rest
   } = props
 
   const [realTime, setRealTime] = useState(false)
   const [{ pageIndex: page, pageSize }, setPage] = useMultiState<PaginationData>({ pageIndex: 0, pageSize: 20 })
-  const [sortInfo, setSortInfo] = useState<[keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"] | null>(sort)
+  const [sortInfo, setSortInfo] = useState<[any, "asc" | "desc"] | null>(sort)
   const update = useForceUpdate()
 
   const state = useRef({
@@ -83,6 +102,7 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     realTimeListening: false,
     readyForRealTime: false,
     error: "",
+    version: 0, //used to force a reload
   })
 
   async function loadData() {
@@ -99,7 +119,6 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
         error = null
         break
       }
-      // console.log(`Awaiting delay ${d}ms`)
       await delay(d)
       console.log(`Retrying ${n + 1}...`)
       d += 1000
@@ -122,8 +141,7 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
       state.current.readyForRealTime = true
       update()
     })
-    // }, [table, select, filter, sort, page, pageSize])
-  }, [table, select, filter, sortInfo, page, pageSize])
+  }, [table, select, filter, sortInfo, page, pageSize, state.current.version])
 
 
   useEffect(() => {
@@ -159,6 +177,11 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     setSortInfo((direction ? [field, direction] : null) as any)
   }
 
+  async function aexec() {
+    state.current.version++
+    update()
+  }
+
   return <DataTable
     {...rest as any}
     loading={state.current.loading}
@@ -167,6 +190,7 @@ export function DataTableSupabase<T = any, Q extends TableKeys = TableKeys>(prop
     onPaginationChange={onPaginationChange}
     onSortingChange={onSortingChange}
     total={state.current.count}
+    onActionExecuted={onActionExecuted || aexec}
   >
     {props.children}
     {realtime && <ToolbarItem>

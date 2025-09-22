@@ -3,25 +3,32 @@ import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { Page, PageTitle } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/data"
-import { Box, Plus, Trash2 } from "lucide-react"
+import { Key, Plus, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { Database } from "@/lib/agents/supabase"
 
-export const models = {
-  title: "Models",
-  description: "Manage your organization's AI Models.",
-  route: "/settings/modelsd",
-  url: "/settings/modelsd",
-  icon: Box,
+
+export const apikeys = {
+  title: "API Keys",
+  description: "Manage your organization's API Keys.",
+  route: "/settings/apikeysd",
+  url: "/settings/apikeysd",
+  icon: Key,
   component,
   group: "settings",
-  resource: "models",
+  resource: "apikeys",
   action: "read",
 } satisfies PageConfig
 
-const columns: Columns<Table<"models">> = {
-  title: { header: "Title", size: 600 },
-  model: { header: "Model", size: 340 },
-  provider: { header: "Provider", size: 120 },
+const columns: Columns<Table<"api_keys">> = {
+  type: { header: "Type", size: 150 },
+  description: { header: "Description", size: 500 },
+  key: {
+    header: "Key", size: 420, cell: ({ row }) => {
+      const value = row.original.key
+      return value ? "••••••••" + value.slice(-4) : "Not set"
+    }
+  },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
 }
 
@@ -32,10 +39,10 @@ function component() {
   const menu = [
     {
       title: "Delete", action: async (v) => {
-        await supabase.from("models").delete().eq("id", v.id)
+        await supabase.from("api_keys").delete().eq("id", v.id)
       },
       icon: <Trash2 />,
-      ask: "Are you sure you want to delete this model?",
+      ask: "Are you sure you want to delete this API key?",
     },
   ] satisfies DropdownMenuContents
 
@@ -46,14 +53,14 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/modelsd/new')}><Plus className="h-4 w-4" />New Model</Button>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/apikeysd/new')}><Plus className="h-4 w-4" />New API Key</Button>
         </div>
       </div>
       <DataTableSupabase
-        table="models"
+        table="api_keys"
         columns={columns}
         hideSelection
-        onRowClick={"/settings/modelsd"}
+        onRowClick={"/settings/apikeysd"}
         sort={["created_at", "desc"]}
         actions={menu}
       />
@@ -61,4 +68,3 @@ function component() {
   </Page>
 
 }
-

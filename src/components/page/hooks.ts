@@ -2,9 +2,9 @@ import { Database } from "@/lib/agents/supabase"
 import { supabase } from "@/lib/data"
 import { useForceUpdate } from "@/lib/utils"
 import { type Team } from "@/pages/settings/teams"
-import { useQuery } from "@tanstack/react-query"
 import { useContext, createContext, useRef, useEffect } from "react"
-import { type NavigateFunction } from "react-router-dom"
+import { useNavigate, type NavigateFunction } from "react-router-dom"
+import { toast } from "sonner"
 
 
 
@@ -50,24 +50,40 @@ declare global {
   }
 
 }
+
 export const PageContext = createContext(null)
 
 export function usePage() {
   return useContext<PageContextValues>(PageContext)
 }
 
-export function useDatabaseItem<T extends TableKeys>(table: T, id?: any): { data: Database["public"]["Tables"][T]["Row"], loading: boolean, error: Error, id: any } {
+interface DatabaseItemHook<T extends TableKeys> {
+  data: Database["public"]["Tables"][T]["Row"]
+  loading: boolean
+  error: Error
+  id: any
+  create: (item: Database["public"]["Tables"][T]["Insert"]) => Promise<Database["public"]["Tables"][T]["Row"]>
+  update: (item: Database["public"]["Tables"][T]["Update"]) => Promise<Database["public"]["Tables"][T]["Row"]>
+  submit: (item: Database["public"]["Tables"][T]["Update"]) => Promise<Database["public"]["Tables"][T]["Row"]>
+  remove: () => Promise<void>
+  toastSuccess: () => void
+  navigate: NavigateFunction
+}
+
+export function useDatabaseItem<T extends TableKeys>(table: T, id?: any): DatabaseItemHook<T> {
+
+  type ItemType = Database["public"]["Tables"][T]["Row"]
 
   const state = useRef({
-    data: null,
+    data: {} as any,
     loading: true,
     error: null,
   })
-  const update = useForceUpdate()
+  const forceUpdate = useForceUpdate()
+  const navigate = useNavigate()
 
-  const { id: ctxId } = usePage()
+  const { id: ctxId, config: { title } } = usePage()
   if (!id) id = ctxId
-  // if (!id) throw new Error("No ID provided to useDatabaseItem and no ID in PageContext")
 
   useEffect(() => {
     if (!id) {
@@ -78,28 +94,52 @@ export function useDatabaseItem<T extends TableKeys>(table: T, id?: any): { data
       state.current.data = data
       state.current.error = error
       state.current.loading = false
-      update()
+      forceUpdate()
     })
-
-    // const { data, error } = await supabase.from(table).select('*').eq('id', id).single()
-    // if (error) throw error
-    // return data as any
   }, [table, id])
 
 
-  // const { data, isLoading, error } = useQuery({
-  //   queryKey: [`${table}_item_data`],
-  //   queryFn: async () => {
-  //     if (!id) return null
-  //     const { data, error } = await supabase.from(table).select('*').eq('id', id).single()
-  //     if (error) throw error
-  //     return data as any
-  //   },
-  //   staleTime: 1000,
-  //   refetchOnWindowFocus: true,
-  //   refetchOnMount: true,
-  //   refetchOnReconnect: true,
-  // })
+  async function create(item: ItemType): Promise<any> {
+    const s = await supabase.from(table).insert(item as any).select()
+    return s
+  }
+  async function update(item: ItemType): Promise<any> {
+    const s = await supabase.from(table).update(item as any).eq('id', id).select()
+    return s
+  }
+  async function remove(): Promise<void> {
+    await supabase.from(table).delete().eq('id', id)
+  }
+  async function submit(item: ItemType): Promise<any> {
+    console.log("Submit: ", item)
 
-  return { data: state.current.data, loading: state.current.loading, error: state.current.error, id }
+    if (id) {
+      return update(item)
+    } else {
+      return create(item)
+    }
+  }
+
+  const toastSuccess = () => {
+    toast(`The ${title || "Item"} was ${id ? "updated" : "created"} successfully`, {
+      action: {
+        label: "Ok",
+        onClick: () => console.log("Ok"),
+      },
+    })
+  }
+
+
+  return {
+    data: state.current.data,
+    loading: state.current.loading,
+    error: state.current.error,
+    id,
+    create,
+    update,
+    remove,
+    toastSuccess,
+    navigate,
+    submit,
+  }
 }

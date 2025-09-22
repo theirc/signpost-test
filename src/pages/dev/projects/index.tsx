@@ -3,26 +3,27 @@ import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { Page, PageTitle } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/data"
-import { Box, Plus, Trash2 } from "lucide-react"
+import { Box, Folder, Plus, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-export const models = {
-  title: "Models",
-  description: "Manage your organization's AI Models.",
-  route: "/settings/modelsd",
-  url: "/settings/modelsd",
-  icon: Box,
+export const projects = {
+  title: "Projects",
+  description: "Manage your organization's projects and team assignments.",
+  route: "/settings/projectsd",
+  url: "/settings/projectsd",
+  icon: Folder,
   component,
   group: "settings",
-  resource: "models",
+  resource: "projects",
   action: "read",
 } satisfies PageConfig
 
-const columns: Columns<Table<"models">> = {
-  title: { header: "Title", size: 600 },
-  model: { header: "Model", size: 340 },
-  provider: { header: "Provider", size: 120 },
-  created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
+const columns: Columns<Table<"projects">> = {
+  name: { header: "Name", size: 200 },
+  description: { header: "Description", size: 550 },
+  status: { header: "Status", size: 100 },
+  team: { header: "Team", size: 200 },
+  created_at: { header: "Model", size: 200, cell: DataTable.cellRender.date, },
 }
 
 function component() {
@@ -32,10 +33,10 @@ function component() {
   const menu = [
     {
       title: "Delete", action: async (v) => {
-        await supabase.from("models").delete().eq("id", v.id)
+        await supabase.from("projects").delete().eq("id", v.id)
       },
       icon: <Trash2 />,
-      ask: "Are you sure you want to delete this model?",
+      ask: "Are you sure you want to delete this Project?",
     },
   ] satisfies DropdownMenuContents
 
@@ -46,14 +47,14 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/modelsd/new')}><Plus className="h-4 w-4" />New Model</Button>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/projectsd/new')}><Plus className="h-4 w-4" />New Project</Button>
         </div>
       </div>
       <DataTableSupabase
-        table="models"
+        table="projects"
         columns={columns}
         hideSelection
-        onRowClick={"/settings/modelsd"}
+        onRowClick={"/settings/projectsd"}
         sort={["created_at", "desc"]}
         actions={menu}
       />

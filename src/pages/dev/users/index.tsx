@@ -3,26 +3,33 @@ import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { Page, PageTitle } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/data"
-import { Box, Plus, Trash2 } from "lucide-react"
+import { Users, Plus, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-export const models = {
-  title: "Models",
-  description: "Manage your organization's AI Models.",
-  route: "/settings/modelsd",
-  url: "/settings/modelsd",
-  icon: Box,
+export const users = {
+  title: "Users",
+  description: "Manage your organization's users.",
+  route: "/settings/usersd",
+  url: "/settings/usersd",
+  icon: Users,
   component,
   group: "settings",
-  resource: "models",
+  resource: "users",
   action: "read",
 } satisfies PageConfig
 
-const columns: Columns<Table<"models">> = {
-  title: { header: "Title", size: 600 },
-  model: { header: "Model", size: 340 },
-  provider: { header: "Provider", size: 120 },
+const columns: Columns<Table<"users">> = {
+  first_name: { header: "First Name", size: 200 },
+  last_name: { header: "Last Name", size: 200 },
+  email: { header: "Email", size: 300 },
+  status: { header: "Status", size: 120 },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
+  role: { header: "Role", size: 120 },
+  team: { header: "Team", size: 200 },
+  // title: { header: "Title", size: 200 },
+  // description: { header: "Description", size: 400 },
+  // language: { header: "Language", size: 120 },
+  // location: { header: "Location", size: 120 },
 }
 
 function component() {
@@ -32,10 +39,10 @@ function component() {
   const menu = [
     {
       title: "Delete", action: async (v) => {
-        await supabase.from("models").delete().eq("id", v.id)
+        await supabase.from("users").delete().eq("id", v.id)
       },
       icon: <Trash2 />,
-      ask: "Are you sure you want to delete this model?",
+      ask: "Are you sure you want to delete this user?",
     },
   ] satisfies DropdownMenuContents
 
@@ -46,14 +53,14 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/modelsd/new')}><Plus className="h-4 w-4" />New Model</Button>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/usersd/new')}><Plus className="h-4 w-4" />New User</Button>
         </div>
       </div>
       <DataTableSupabase
-        table="models"
+        table="users"
         columns={columns}
         hideSelection
-        onRowClick={"/settings/modelsd"}
+        onRowClick={"/settings/usersd"}
         sort={["created_at", "desc"]}
         actions={menu}
       />
@@ -61,4 +68,3 @@ function component() {
   </Page>
 
 }
-

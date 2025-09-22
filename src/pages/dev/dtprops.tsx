@@ -36,7 +36,7 @@ function component() {
     onLoad().then((data) => setData(data))
   }, [])
 
-  return <Page >
+  return <Page>
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
       <div className="flex">
         <PageTitle />
@@ -89,7 +89,6 @@ function component() {
         showColumnSelection={showColumnSelection}
         showPagination={showPagination}
         hideSelection={hideSelection}
-        hideActions={hideActions}
         data={showEmptyState ? emptyData : data}
       >
         {showCustomEmpty && <EmptyData>

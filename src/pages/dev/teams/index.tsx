@@ -3,25 +3,25 @@ import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { Page, PageTitle } from "@/components/page"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/data"
-import { Box, Plus, Trash2 } from "lucide-react"
+import { Users, Plus, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-export const models = {
-  title: "Models",
-  description: "Manage your organization's AI Models.",
-  route: "/settings/modelsd",
-  url: "/settings/modelsd",
-  icon: Box,
+export const teams = {
+  title: "Teams",
+  description: "Manage your organization's teams.",
+  route: "/settings/teamsd",
+  url: "/settings/teamsd",
+  icon: Users,
   component,
   group: "settings",
-  resource: "models",
+  resource: "teams",
   action: "read",
 } satisfies PageConfig
 
-const columns: Columns<Table<"models">> = {
-  title: { header: "Title", size: 600 },
-  model: { header: "Model", size: 340 },
-  provider: { header: "Provider", size: 120 },
+const columns: Columns<Table<"teams">> = {
+  name: { header: "Name", size: 300 },
+  description: { header: "Description", size: 650 },
+  status: { header: "Status", size: 120 },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
 }
 
@@ -32,10 +32,10 @@ function component() {
   const menu = [
     {
       title: "Delete", action: async (v) => {
-        await supabase.from("models").delete().eq("id", v.id)
+        await supabase.from("teams").delete().eq("id", v.id)
       },
       icon: <Trash2 />,
-      ask: "Are you sure you want to delete this model?",
+      ask: "Are you sure you want to delete this team?",
     },
   ] satisfies DropdownMenuContents
 
@@ -46,14 +46,14 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/modelsd/new')}><Plus className="h-4 w-4" />New Model</Button>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/teamsd/new')}><Plus className="h-4 w-4" />New Team</Button>
         </div>
       </div>
       <DataTableSupabase
-        table="models"
+        table="teams"
         columns={columns}
         hideSelection
-        onRowClick={"/settings/modelsd"}
+        onRowClick={"/settings/teamsd"}
         sort={["created_at", "desc"]}
         actions={menu}
       />
@@ -61,4 +61,3 @@ function component() {
   </Page>
 
 }
-
