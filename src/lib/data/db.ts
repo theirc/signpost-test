@@ -7,7 +7,9 @@ export const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_AN
 declare global {
 
   type TableKeys = keyof Database["public"]["Tables"]
+  type ViewKeys = keyof Database["public"]["Views"]
   type Table<T extends TableKeys> = Database["public"]["Tables"][T]["Row"]
+  type View<T extends ViewKeys> = Database["public"]["Views"][T]["Row"]
 
 }
 

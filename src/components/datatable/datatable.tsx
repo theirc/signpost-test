@@ -21,6 +21,7 @@ import { format } from 'date-fns'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion"
 import { useNavigate } from "react-router-dom"
 import { ToolbarItem } from "./toolbaritem"
+import { DeclarativeMenu } from "../declarativemenu"
 
 
 declare global {
@@ -28,13 +29,12 @@ declare global {
   type Columns<T = any> = { [key in keyof T]?: Column<T, T[key]> }
   type PaginationData = PaginationState
 }
-export interface DataTableProps<T = any> extends Omit<React.HTMLAttributes<HTMLDivElement>, "onLoad"> {
-  data?: T[]
-  columns?: Columns<T>
+export interface DataTableProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onLoad"> {
+  data?: any[]
+  columns?: Columns<any>
   hideSelection?: boolean
-  hideActions?: boolean
-  onRowClick?: ((row: T) => void) | string
-  onLoad?: (state: PaginationState) => Promise<T[]>
+  onRowClick?: ((row: any) => void) | string
+  onLoad?: (state: PaginationState) => Promise<any[]>
   onPaginationChange?: (state: PaginationState) => void
   showSearch?: boolean
   showColumnSelection?: boolean
@@ -43,14 +43,15 @@ export interface DataTableProps<T = any> extends Omit<React.HTMLAttributes<HTMLD
   loading?: boolean
   sort?: [string, "asc" | "desc"]
   onSortingChange?: (field: string, direction: "asc" | "desc" | undefined) => void
+  actions?: DropdownMenuContents
+  onActionExecuted?: () => Promise<void>
 }
 
 
-export function DataTable<T = any>(props: DataTableProps<T>) {
+export function DataTable(props: DataTableProps) {
 
   let {
     hideSelection,
-    hideActions,
     columns,
     onRowClick,
     loading,
@@ -58,7 +59,12 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
     showColumnSelection = true,
     showPagination = true,
     sort,
+    actions,
+    onActionExecuted,
   } = props
+
+  let hideActions = !actions
+
 
   const sortingState: SortingState = sort ? [{ id: sort[0], desc: sort[1] == "desc" }] : []
 
@@ -153,6 +159,7 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
   }
 
   const table = useReactTable(options)
+
   let Empty = <EmptyData />
   const selectionColumnWidth = !hideSelection ? 48 : 0 // 48px for w-12
   const actionsColumnWidth = !hideActions ? 48 : 0 // 48px for w-12
@@ -226,12 +233,22 @@ export function DataTable<T = any>(props: DataTableProps<T>) {
 
             {!hideActions && <TableCell className="p-0 pl-4 w-10 sticky right-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
               <div className="absolute top-0 right-0 bottom-0 w-full h-full border-l pl-3 pt-2">
+                <DeclarativeMenu menu={actions} reference={row.original} onActionExecuted={onActionExecuted} >
+                  <Button size="icon" variant="ghost" className="size-6">
+                    <MoreHorizontal size={16} />
+                  </Button>
+                </DeclarativeMenu>
+              </div>
+            </TableCell>}
+
+            {/* {!hideActions && <TableCell className="p-0 pl-4 w-10 sticky right-0 bg-background z-10" onClick={(e) => e.stopPropagation()} >
+              <div className="absolute top-0 right-0 bottom-0 w-full h-full border-l pl-3 pt-2">
                 <Button size="icon" variant="ghost" className="size-6">
                   <MoreHorizontal size={16} />
                 </Button>
               </div>
             </TableCell>}
-
+ */}
           </TableRow>
         ))}
       </TableBody>

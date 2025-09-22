@@ -1,32 +1,40 @@
-import { PageContext } from "@/components/page/hooks"
-import { ContextualPage } from "@/components/page/pagecontext"
-import { agents } from "@/pages/agents"
+import { agents } from "@/pages/dev/agents"
+import { apikeys } from "@/pages/dev/apikeys"
 import { dev_dtprops } from "@/pages/dev/dtprops"
 import { dev_external } from "@/pages/dev/external"
-import { logsdev } from "@/pages/dev/logs"
+import { logsdev } from "@/pages/dev/agentlogs"
 import { models } from "@/pages/dev/models"
 import { models_crud } from "@/pages/dev/models/model"
-import { Code, Logs, Settings, Settings2, type LucideIcon } from "lucide-react"
+import { projects } from "@/pages/dev/projects"
+import { roles } from "@/pages/dev/roles"
+import { teams } from "@/pages/dev/teams"
+import { users } from "@/pages/dev/users"
+import { Book, Code, Logs, Settings2, type LucideIcon } from "lucide-react"
+import { templates } from "@/pages/dev/templates"
+import { collections } from "@/pages/dev/collections"
+import { sources } from "@/pages/dev/sources"
 
 export const pages: Record<string, PageConfig> = {
   agents,
+  templates,
   dev_external,
   logsdev,
   dev_dtprops,
+  projects,
+  teams,
+  apikeys,
   models,
   models_crud,
+  users,
+  roles,
+  collections,
+  sources,
 }
 
-// for (const key in pages) {
-//   const page = pages[key]
-//   page.component = <ContextualPage config={page}><page.component /></ContextualPage> as any
-// }
-
-
 export const groups = {
-  evaluation: { title: "Evaluation (Dev)", icon: Logs },
-  knowledge: { title: "Knowledge" },
-  settings: { title: "Settings (Dev)", icon: Settings2 },
+  evaluation: { title: "Evaluation 🧪", icon: Logs },
+  knowledge: { title: "Knowledge 🧪", icon: Book },
+  settings: { title: "Settings 🧪", icon: Settings2 },
   dev: { title: "Dev", icon: Code },
 } satisfies Record<string, Group>
 
@@ -52,4 +60,3 @@ declare global {
   }
 
 }
-
