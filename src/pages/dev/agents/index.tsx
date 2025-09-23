@@ -50,7 +50,6 @@ function component() {
       </div>
       <DataTableSupabase
         table="agents"
-        hideSelection
         columns={columns}
         onRowClick={"/agent"}
         sort={["created_at", "desc"]}

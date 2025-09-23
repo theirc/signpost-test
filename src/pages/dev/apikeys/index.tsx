@@ -59,7 +59,6 @@ function component() {
       <DataTableSupabase
         table="api_keys"
         columns={columns}
-        hideSelection
         onRowClick={"/settings/apikeysd"}
         sort={["created_at", "desc"]}
         actions={menu}

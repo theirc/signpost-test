@@ -72,13 +72,12 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/collectionsd/new')}><Plus className="h-4 w-4" />New Source</Button>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/collectionsd/new')}><Plus className="h-4 w-4" />New Collection</Button>
         </div>
       </div>
       <DataTableSupabase
         table="collections_with_counts"
         columns={columns}
-        hideSelection
         onRowClick={"/settings/collectionsd"}
         sort={["created_at", "desc"]}
         filter={q => q.eq("team_id", team?.id)}

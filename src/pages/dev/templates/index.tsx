@@ -27,12 +27,7 @@ const columns: Columns<Table<"agents">> = {
 
 function component() {
 
-  const { selectedTeam } = useTeamStore()
   const navigate = useNavigate()
-
-  const menu = [
-    { title: "New Agent", action: () => navigate('/agent/new'), icon: <Plus /> },
-  ] satisfies DropdownMenuContents
 
 
   return <Page>
@@ -46,17 +41,10 @@ function component() {
       </div>
       <DataTableSupabase
         table="agents"
-        hideSelection
         columns={columns}
         onRowClick={"/agent"}
         sort={["created_at", "desc"]}
         filter={q => q.is("team_id", null)}
-      // select={`
-      //   *,
-      //   agent (
-      //     name
-      //   )
-      // `}
       />
     </div>
   </Page>

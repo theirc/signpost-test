@@ -1,10 +1,10 @@
 import { DataTable } from "@/components/datatable/datatable"
 import { DataTableSupabase } from "@/components/datatable/supadatatable"
 import { Page, PageTitle } from "@/components/page"
+import { usePage } from "@/components/page/hooks"
 import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/data"
 import { Box, Plus, Trash2 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
 
 export const models = {
   title: "Models",
@@ -27,7 +27,7 @@ const columns: Columns<Table<"models">> = {
 
 function component() {
 
-  const navigate = useNavigate()
+  const { navigate } = usePage()
 
   const menu = [
     {
@@ -52,7 +52,6 @@ function component() {
       <DataTableSupabase
         table="models"
         columns={columns}
-        hideSelection
         onRowClick={"/settings/modelsd"}
         sort={["created_at", "desc"]}
         actions={menu}

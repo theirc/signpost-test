@@ -1,7 +1,6 @@
 import { agents } from "@/pages/dev/agents"
 import { apikeys } from "@/pages/dev/apikeys"
-import { dev_dtprops } from "@/pages/dev/dtprops"
-import { dev_external } from "@/pages/dev/external"
+import { dev_dtprops } from "@/pages/dev/demo/tabledemo"
 import { logsdev } from "@/pages/dev/agentlogs"
 import { models } from "@/pages/dev/models"
 import { models_crud } from "@/pages/dev/models/model"
@@ -13,11 +12,11 @@ import { Book, Code, Logs, Settings2, type LucideIcon } from "lucide-react"
 import { templates } from "@/pages/dev/templates"
 import { collections } from "@/pages/dev/collections"
 import { sources } from "@/pages/dev/sources"
+import { supademo } from "@/pages/dev/demo/supademo"
 
 export const pages: Record<string, PageConfig> = {
   agents,
   templates,
-  dev_external,
   logsdev,
   dev_dtprops,
   projects,
@@ -29,6 +28,7 @@ export const pages: Record<string, PageConfig> = {
   roles,
   collections,
   sources,
+  supademo,
 }
 
 export const groups = {

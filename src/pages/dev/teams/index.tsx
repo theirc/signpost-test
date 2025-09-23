@@ -52,7 +52,6 @@ function component() {
       <DataTableSupabase
         table="teams"
         columns={columns}
-        hideSelection
         onRowClick={"/settings/teamsd"}
         sort={["created_at", "desc"]}
         actions={menu}
