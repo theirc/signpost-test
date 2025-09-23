@@ -53,16 +53,6 @@ interface Props<Q extends AllKeys> extends Omit<DataTableProps, "sort"> {
   realtTimeThrottle?: number
 }
 
-// interface Props<T = any, Q extends TableKeys = TableKeys, V extends ViewKeys = ViewKeys> extends Omit<DataTableProps<T>, "sort"> {
-//   table?: Q
-//   select?: string
-//   filter?: (builder: SupabaseFilterBuilder<keyof Database["public"]["Tables"][Q]["Row"]>) => SupabaseFilterBuilder<any>
-//   // filter?: (builder: SupabaseFilterBuilder<this["table"]>) => SupabaseFilterBuilder<this["table"]>
-//   sort?: [keyof Database["public"]["Tables"][Q]["Row"], "asc" | "desc"]
-//   realtime?: boolean
-//   realtTimeThrottle?: number
-// }
-
 async function readFromSupabase({ table, select, filter, orderBy, page, pageSize }: { table: string, select: string, filter: any, orderBy: any, page: number, pageSize: number }) {
   let sbq = supabase.from(table as any).select(select, { count: 'exact' })
   if (orderBy) sbq = sbq.order(orderBy[0] as string, { ascending: orderBy[1] === 'asc' })
@@ -73,7 +63,6 @@ async function readFromSupabase({ table, select, filter, orderBy, page, pageSize
   const { data, error, count } = await sbq
   return { data, count, error }
 }
-
 
 function defaultFilter(q: any) { return q }
 
@@ -125,7 +114,6 @@ export function DataTableSupabase<Q extends AllKeys>(props: Props<Q>) {
       error = rError
     }
     state.current.error = error
-    // console.log("Supabase Data", data, error, count)
     return { data, count, error }
   }
 
@@ -178,6 +166,8 @@ export function DataTableSupabase<Q extends AllKeys>(props: Props<Q>) {
   }
 
   async function aexec() {
+    console.log("Action Executed")
+
     state.current.version++
     update()
   }

@@ -29,10 +29,11 @@ declare global {
   type Columns<T = any> = { [key in keyof T]?: Column<T, T[key]> }
   type PaginationData = PaginationState
 }
-export interface DataTableProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onLoad"> {
+export interface DataTableProps {
   data?: any[]
+  children?: any
   columns?: Columns<any>
-  hideSelection?: boolean
+  showSelection?: boolean
   onRowClick?: ((row: any) => void) | string
   onLoad?: (state: PaginationState) => Promise<any[]>
   onPaginationChange?: (state: PaginationState) => void
@@ -51,7 +52,6 @@ export interface DataTableProps extends Omit<React.HTMLAttributes<HTMLDivElement
 export function DataTable(props: DataTableProps) {
 
   let {
-    hideSelection,
     columns,
     onRowClick,
     loading,
@@ -64,6 +64,7 @@ export function DataTable(props: DataTableProps) {
   } = props
 
   let hideActions = !actions
+  let hideSelection = !props.showSelection
 
 
   const sortingState: SortingState = sort ? [{ id: sort[0], desc: sort[1] == "desc" }] : []
@@ -165,7 +166,6 @@ export function DataTable(props: DataTableProps) {
   const actionsColumnWidth = !hideActions ? 48 : 0 // 48px for w-12
   const rows = table.getRowModel().rows || []
   const allCheckedStatus = table.getIsAllPageRowsSelected() ? true : table.getIsSomePageRowsSelected() ? "indeterminate" : false
-  let tbody = Empty
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (active && over && active.id !== over.id) {
@@ -199,6 +199,7 @@ export function DataTable(props: DataTableProps) {
     })
   }
 
+  let tbody = Empty
 
 
   if (loading) {

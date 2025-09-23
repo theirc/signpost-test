@@ -68,8 +68,7 @@ const columns: Columns<Table<"sources">> = {
 
 function component() {
 
-  const navigate = useNavigate()
-  const { team } = usePage()
+  const { team, navigate } = usePage()
 
   return <Page>
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
@@ -83,7 +82,6 @@ function component() {
       <DataTableSupabase
         table="sources"
         columns={columns}
-        hideSelection
         onRowClick={"/settings/sourcesd"}
         sort={["created_at", "desc"]}
         filter={q => q.eq("team_id", team?.id)}
