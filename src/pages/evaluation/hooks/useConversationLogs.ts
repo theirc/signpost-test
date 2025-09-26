@@ -4,61 +4,157 @@ import { supabase } from "@/lib/agents/db"
 import { LogFilters, ConversationLog, LogRawData, Agent } from "../types"
 import { ConversationLogProcessor } from "../services/conversationLogProcessor"
 import { ConversationFilterService } from "../services/conversationFilterService"
-import { useDebouncedValue } from "./useDebouncedValue"
 
 export function useConversationLogs(
   teamId: string | undefined,
   filters: LogFilters,
   agents: Agent[]
 ) {
-  const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300)
-  
-  const debouncedFilters = useMemo(() => ({
-    ...filters,
-    searchQuery: debouncedSearchQuery
-  }), [filters.selectedAgent, filters.dateRange, debouncedSearchQuery])
-
   const query = useQuery({
-    queryKey: ['conversationLogs', teamId, debouncedFilters.selectedAgent, debouncedFilters.dateRange, debouncedFilters.searchQuery],
-    queryFn: async (): Promise<ConversationLog[]> => {
+    queryKey: ['conversationLogs', teamId, filters.selectedAgent, filters.dateRange, filters.searchQuery],
+    queryFn: async ({ signal }): Promise<ConversationLog[]> => {
       if (!teamId) {
         return []
       }
       
       const conversationWorkers = ConversationLogProcessor.getConversationWorkers()
+      const chunkSize = 500
+      const maxRecords = 50000
+      const totalChunks = Math.ceil(maxRecords / chunkSize)
       
-      let query = supabase
-        .from('logs')
-        .select('*')
-        .eq('team_id', teamId)
-        .in('worker', conversationWorkers)
-        .order('created_at', { ascending: true })
-
-      // Only filter by agent if a specific agent is selected
-      if (debouncedFilters.selectedAgent && debouncedFilters.selectedAgent !== 'all') {
-        query = query.eq('agent', debouncedFilters.selectedAgent)
-      }
-
-      // Apply date filters at database level for better performance
-      if (debouncedFilters.dateRange.from) {
-        query = query.gte('created_at', `${debouncedFilters.dateRange.from}T00:00:00.000Z`)
-      }
-      if (debouncedFilters.dateRange.to) {
-        query = query.lte('created_at', `${debouncedFilters.dateRange.to}T23:59:59.999Z`)
-      }
-
-      const { data: logs, error } = await query
-      if (error) throw error
-
-      const conversations = ConversationLogProcessor.groupLogsByConversation(
-        logs as LogRawData[], 
-        agents
-      )
+      const chunkPromises = []
       
-      // Apply client-side filters (search query and any additional filtering)
-      return ConversationFilterService.filterConversations(conversations, debouncedFilters)
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        const chunkOffset = chunkIndex * chunkSize
+        const chunkLimit = chunkSize
+        
+        const chunkPromise = (async () => {
+          try {
+            if (signal?.aborted) {
+              throw new Error('Query cancelled')
+            }
+            
+            let query = supabase
+              .from('logs')
+              .select('id, agent, worker, workerId, execution, session, type, message, parameters, state, handles, inputTokens, outputTokens, created_at, team_id, uid')
+              .eq('team_id', teamId)
+              .in('worker', conversationWorkers)
+              .not('uid', 'is', null)
+              .order('created_at', { ascending: true })
+              .range(chunkOffset, chunkOffset + chunkLimit - 1)
+            
+            if (filters.selectedAgent && filters.selectedAgent !== 'all') {
+              query = query.eq('agent', filters.selectedAgent)
+            }
+            
+            if (filters.dateRange.from) {
+              query = query.gte('created_at', `${filters.dateRange.from}T00:00:00.000Z`)
+            }
+            if (filters.dateRange.to) {
+              query = query.lte('created_at', `${filters.dateRange.to}T23:59:59.999Z`)
+            }
+            
+            const queryPromise = query
+            const cancellationPromise = new Promise((_, reject) => {
+              if (signal) {
+                signal.addEventListener('abort', () => {
+                  reject(new Error('Query cancelled'))
+                })
+              }
+            })
+            
+            const { data: logs, error } = await Promise.race([queryPromise, cancellationPromise]) as any
+            
+            if (error) {
+              if (error.code === '57014') {
+                return { logs: [], chunkIndex }
+              }
+              throw error
+            }
+            return { logs: logs || [], chunkIndex }
+          } catch (error) {
+            if (signal?.aborted) {
+              throw error
+            }
+            return { logs: [], chunkIndex }
+          }
+        })()
+        
+        chunkPromises.push(chunkPromise)
+      }
+      
+      try {
+        const chunkResults = await Promise.allSettled(chunkPromises)
+        
+        if (signal?.aborted) {
+          throw new Error('Query cancelled')
+        }
+        
+        const successfulChunks = chunkResults
+          .filter((result): result is PromiseFulfilledResult<{ logs: any[], chunkIndex: number }> => 
+            result.status === 'fulfilled')
+          .map(result => result.value)
+        
+        const allLogs = successfulChunks.flatMap(result => result.logs)
+
+        const conversations = ConversationLogProcessor.groupLogsByConversation(
+          allLogs as LogRawData[], 
+          agents
+        )
+        
+        return ConversationFilterService.filterConversations(conversations, filters)
+        
+      } catch (error) {
+        if (signal?.aborted) {
+          throw error
+        }
+        
+        const fallbackQuery = supabase
+          .from('logs')
+          .select('id, agent, worker, workerId, execution, session, type, message, parameters, state, handles, inputTokens, outputTokens, created_at, team_id, uid')
+          .eq('team_id', teamId)
+          .in('worker', conversationWorkers)
+          .not('uid', 'is', null)
+          .order('created_at', { ascending: true })
+          .limit(1000)
+        
+        if (filters.selectedAgent && filters.selectedAgent !== 'all') {
+          fallbackQuery.eq('agent', filters.selectedAgent)
+        }
+        
+        if (filters.dateRange.from) {
+          fallbackQuery.gte('created_at', `${filters.dateRange.from}T00:00:00.000Z`)
+        }
+        if (filters.dateRange.to) {
+          fallbackQuery.lte('created_at', `${filters.dateRange.to}T23:59:59.999Z`)
+        }
+        
+        const fallbackQueryPromise = fallbackQuery
+        const fallbackCancellationPromise = new Promise((_, reject) => {
+          if (signal) {
+            signal.addEventListener('abort', () => {
+              reject(new Error('Query cancelled'))
+            })
+          }
+        })
+        
+        const { data: fallbackLogs, error: fallbackError } = await Promise.race([fallbackQueryPromise, fallbackCancellationPromise]) as any
+        if (fallbackError) {
+          throw new Error(`Query failed: ${fallbackError.message}`)
+        }
+        
+        const fallbackConversations = ConversationLogProcessor.groupLogsByConversation(
+          fallbackLogs as LogRawData[], 
+          agents
+        )
+        
+        return ConversationFilterService.filterConversations(fallbackConversations, filters)
+      }
     },
-    enabled: !!teamId
+    enabled: !!teamId,
+    retry: 1,
+    retryDelay: 2000,
+    staleTime: 5 * 60 * 1000
   })
 
   const processedData = useMemo(() => {

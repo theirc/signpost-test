@@ -1,8 +1,9 @@
-import { Filter, X } from "lucide-react"
+import { Filter, X, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { LogFilters } from "../types"
+import { LogFilters } from "@/pages/evaluation/types"
+import { useState } from "react"
 
 interface LogsFiltersProps {
   filters: LogFilters
@@ -19,8 +20,24 @@ export function LogsFilters({
   hasActiveFilters, 
   onClearFilters 
 }: LogsFiltersProps) {
-  const updateFilter = (key: keyof LogFilters, value: any) => {
-    onFilterChange({ ...filters, [key]: value })
+  const [localFilters, setLocalFilters] = useState<LogFilters>(filters)
+
+  const updateLocalFilter = (key: keyof LogFilters, value: any) => {
+    setLocalFilters({ ...localFilters, [key]: value })
+  }
+
+  const handleApplyFilters = () => {
+    onFilterChange(localFilters)
+  }
+
+  const handleClearFilters = () => {
+    const defaultFilters = {
+      selectedAgent: 'all',
+      searchQuery: '',
+      dateRange: { from: '', to: '' }
+    }
+    setLocalFilters(defaultFilters)
+    onClearFilters()
   }
 
   return (
@@ -28,22 +45,33 @@ export function LogsFilters({
       <div className="flex items-center gap-2 mb-4">
         <Filter className="h-4 w-4 text-gray-600" />
         <h3 className="font-medium text-gray-900">Filters</h3>
-        {hasActiveFilters && (
+        <div className="ml-auto flex gap-2">
           <Button
-            variant="ghost"
+            variant="default"
             size="sm"
-            onClick={onClearFilters}
-            className="ml-auto text-gray-500 hover:text-gray-700"
+            onClick={handleApplyFilters}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
-            <X className="h-4 w-4 mr-1" />
-            Clear All
+            <Check className="h-4 w-4 mr-1" />
+            Apply Filters
           </Button>
-        )}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Clear All
+            </Button>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Agent</label>
-          <Select value={filters.selectedAgent} onValueChange={(value) => updateFilter('selectedAgent', value)}>
+          <Select value={localFilters.selectedAgent} onValueChange={(value) => updateLocalFilter('selectedAgent', value)}>
             <SelectTrigger>
               <SelectValue placeholder="All Agents" />
             </SelectTrigger>
@@ -51,7 +79,7 @@ export function LogsFilters({
               <SelectItem value="all">All Agents</SelectItem>
               {agents?.map((agent: any) => (
                 <SelectItem key={agent.id} value={agent.id}>
-                  {agent.title}
+                  {agent.title} ({agent.id})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -61,8 +89,8 @@ export function LogsFilters({
           <label className="block text-sm font-medium text-gray-700 mb-1">Started From</label>
           <Input
             type="date"
-            value={filters.dateRange.from}
-            onChange={(e) => updateFilter('dateRange', { ...filters.dateRange, from: e.target.value })}
+            value={localFilters.dateRange.from}
+            onChange={(e) => updateLocalFilter('dateRange', { ...localFilters.dateRange, from: e.target.value })}
             className="w-full"
           />
         </div>
@@ -70,8 +98,8 @@ export function LogsFilters({
           <label className="block text-sm font-medium text-gray-700 mb-1">Started To</label>
           <Input
             type="date"
-            value={filters.dateRange.to}
-            onChange={(e) => updateFilter('dateRange', { ...filters.dateRange, to: e.target.value })}
+            value={localFilters.dateRange.to}
+            onChange={(e) => updateLocalFilter('dateRange', { ...localFilters.dateRange, to: e.target.value })}
             className="w-full"
           />
         </div>
@@ -79,8 +107,8 @@ export function LogsFilters({
           <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
           <Input
             placeholder="Search logs..."
-            value={filters.searchQuery}
-            onChange={(e) => updateFilter('searchQuery', e.target.value)}
+            value={localFilters.searchQuery}
+            onChange={(e) => updateLocalFilter('searchQuery', e.target.value)}
             className="w-full"
           />
         </div>
