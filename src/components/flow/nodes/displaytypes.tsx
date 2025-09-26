@@ -294,36 +294,34 @@ ${doc.body}
   }
 
   if (type == "file") {
-    // Handle file type from document generators and other file outputs
-    if (value && typeof value === 'object') {
-      const { buffer, mimeType, filename, content, type: fileType } = value
-
-      if (buffer && mimeType) {
-        // Create blob from buffer
-        const blob = new Blob([buffer], { type: mimeType })
-        const displayFilename = filename || `file.${mimeType.split('/')[1] || 'bin'}`
+    // Handle file URLs (from document generators and text nodes)
+    if (value && typeof value === 'string') {
+      // Check if it's a URL
+      const isUrl = value.startsWith('http://') || value.startsWith('https://')
+      
+      if (isUrl) {
         return (
           <div className={className}>
-            <div className="flex items-center justify-between p-2 border border-gray-200 rounded bg-gray-100 my-2">
+            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50">
               <div className="flex items-center space-x-3">
-                <File className="h-6 w-6 text-gray-600" />
+                <File className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="font-medium text-gray-900">{displayFilename}</p>
-                  <p className="text-sm text-gray-600">
-                    {mimeType} • {(blob.size / 1024).toFixed(1)} KB
-                  </p>
-                  {content && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Content preview: {content.substring(0, 100)}...
-                    </p>
-                  )}
+                  <p className="font-medium text-gray-900">Generated File</p>
+                  <p className="text-sm text-gray-500">Click download to save file</p>
+                  <p className="text-xs text-gray-400 truncate max-w-xs">{value}</p>
                 </div>
               </div>
               <Button
-                onClick={() => downloadBlob(blob, displayFilename)}
+                onClick={() => {
+                  const link = document.createElement('a')
+                  link.href = value
+                  link.download = 'download'
+                  document.body.appendChild(link)
+                  link.click()
+                  document.body.removeChild(link)
+                }}
                 className="flex items-center space-x-2"
                 variant="outline"
-                size="sm"
               >
                 <Download className="h-4 w-4" />
                 <span>Download</span>
