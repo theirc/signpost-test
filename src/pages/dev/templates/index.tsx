@@ -29,6 +29,12 @@ function component() {
 
   const navigate = useNavigate()
 
+  const menu = [
+    { title: "New Agent", action: () => navigate('/agent/new'), icon: <Plus /> },
+    { title: "From Template", action: () => console.log("From Template") },
+    { title: "Auto-Generate", action: () => console.log("Auto-Generate"), icon: <Sparkles /> },
+  ] satisfies DropdownMenuContents
+
 
   return <Page>
     <div className="h-full grid grid-rows-[auto,1fr] gap-4">
@@ -36,7 +42,9 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/agent/new')}><Plus className="h-4 w-4" />New Agent</Button>
+          <DeclarativeMenu menu={menu}>
+            <Button className="rounded-lg"><Plus className="h-4 w-4" />Create Agent</Button>
+          </DeclarativeMenu>
         </div>
       </div>
       <DataTableSupabase

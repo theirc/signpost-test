@@ -20,9 +20,10 @@ export const agents = {
 
 const columns: Columns<Table<"agents">> = {
   id: { header: "ID", cell: DataTable.cellRender.number, size: 64 },
-  title: { header: "Title", size: 620 },
+  title: { header: "Title", size: 550 },
+  team_id: { header: "Team", size: 200, cell: ({ row }) => row.original.team_id?.["name"] },
+  description: { header: "Description", size: 300 },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
-  description: { header: "Description", size: 380 },
 }
 
 function component() {
@@ -54,12 +55,12 @@ function component() {
         onRowClick={"/agent"}
         sort={["created_at", "desc"]}
         filter={q => q.eq("team_id", selectedTeam?.id)}
-      // select={`
-      //   *,
-      //   agent (
-      //     name
-      //   )
-      // `}
+        select={`
+        *,
+        team_id (
+          name
+        )
+      `}
       />
     </div>
   </Page>

@@ -76,7 +76,7 @@ function component() {
         <PageTitle />
         <div className="grow"></div>
         <div>
-          <Button className="rounded-lg" onClick={() => navigate('/settings/sourcesd/new')}><Plus className="h-4 w-4" />New Model</Button>
+          <Button className="rounded-lg" onClick={() => navigate('/settings/sourcesd/new')}><Plus className="h-4 w-4" />New Source</Button>
         </div>
       </div>
       <DataTableSupabase

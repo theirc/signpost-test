@@ -22,7 +22,7 @@ const columns: Columns<Table<"projects">> = {
   name: { header: "Name", size: 200 },
   description: { header: "Description", size: 550 },
   status: { header: "Status", size: 100 },
-  team: { header: "Team", size: 200 },
+  team: { header: "Team", size: 200, cell: ({ row }) => row.original.team?.["name"] },
   created_at: { header: "Model", size: 200, cell: DataTable.cellRender.date, },
 }
 
@@ -56,6 +56,12 @@ function component() {
         onRowClick={"/settings/projectsd"}
         sort={["created_at", "desc"]}
         actions={menu}
+        select={`
+        *,
+        team (
+          name
+        )
+      `}
       />
     </div>
   </Page>

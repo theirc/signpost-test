@@ -23,7 +23,7 @@ export const roles = {
 const columns: Columns<Table<"roles">> = {
   name: { header: "Name", size: 300 },
   description: { header: "Description", size: 400 },
-  team_id: { header: "Team", size: 400 },
+  team_id: { header: "Team", size: 400, cell: ({ row }) => row.original.team_id?.["name"] },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
 }
 
@@ -57,6 +57,12 @@ function component() {
         onRowClick={"/settings/rolesd"}
         sort={["created_at", "desc"]}
         actions={menu}
+        select={`
+        *,
+        team_id (
+          name
+        )
+      `}
       />
     </div>
   </Page>
