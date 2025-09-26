@@ -22,9 +22,10 @@ export const apikeys = {
 
 const columns: Columns<Table<"api_keys">> = {
   type: { header: "Type", size: 150 },
-  description: { header: "Description", size: 500 },
+  description: { header: "Description", size: 420 },
+  team_id: { header: "Team", size: 200, cell: ({ row }) => row.original.team_id?.["name"] },
   key: {
-    header: "Key", size: 420, cell: ({ row }) => {
+    header: "Key", size: 300, cell: ({ row }) => {
       const value = row.original.key
       return value ? "••••••••" + value.slice(-4) : "Not set"
     }
@@ -62,6 +63,12 @@ function component() {
         onRowClick={"/settings/apikeysd"}
         sort={["created_at", "desc"]}
         actions={menu}
+        select={`
+        *,
+        team_id (
+          name
+        )
+      `}
       />
     </div>
   </Page>

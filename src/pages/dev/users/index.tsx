@@ -21,15 +21,11 @@ export const users = {
 const columns: Columns<Table<"users">> = {
   first_name: { header: "First Name", size: 200 },
   last_name: { header: "Last Name", size: 200 },
-  email: { header: "Email", size: 300 },
+  email: { header: "Email", size: 220 },
   status: { header: "Status", size: 120 },
+  role: { header: "Role", size: 120, cell: ({ row }) => row.original.role?.["name"] },
+  team: { header: "Team", size: 200, cell: ({ row }) => row.original.team?.["name"] },
   created_at: { header: "Created", cell: DataTable.cellRender.date, size: 166 },
-  role: { header: "Role", size: 120 },
-  team: { header: "Team", size: 200 },
-  // title: { header: "Title", size: 200 },
-  // description: { header: "Description", size: 400 },
-  // language: { header: "Language", size: 120 },
-  // location: { header: "Location", size: 120 },
 }
 
 function component() {
@@ -62,6 +58,16 @@ function component() {
         onRowClick={"/settings/usersd"}
         sort={["created_at", "desc"]}
         actions={menu}
+        select={`
+        *,
+        role (
+          name
+        ),
+        team (
+          name
+        )
+      `}
+
       />
     </div>
   </Page>
