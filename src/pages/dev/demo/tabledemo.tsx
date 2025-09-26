@@ -103,7 +103,6 @@ function component() {
 
     // The route identifier, if present.
     //  - Returns the ID as a string
-    //  - Returns "new" for new-item routes
     //  - Returns null if no ID is available or the id is "new" for new-item routes.
     id,
     // The user of the current session, including identity and profile data.
