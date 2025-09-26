@@ -26,6 +26,16 @@ const MESSAGE_SPLIT_THRESHOLD = 0.8;
 const MAX_QUICK_REPLY_LENGTH = 20;
 const MAX_QUICK_REPLIES_PER_MESSAGE = 3;
 
+// Helper function to detect if input is a URL
+function isUrl(input: string): boolean {
+  try {
+    const url = new URL(input);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 // Helper function to upload file attachment to temporary Supabase storage and get signed URL
 async function uploadFileAttachmentTemporarily(fileData: any): Promise<string | null> {
   if (!fileData || !fileData.buffer) {
@@ -328,13 +338,19 @@ async function execute(worker: MessageWorker) {
   const routeId = worker.fields.routeId?.value as string || worker.parameters.defaultRouteId || ""
   const fileAttachment = worker.fields.fileAttachment?.value || null
   
-  // Log all field values
+  // Log all field values with detailed file attachment info
   console.log(`${logPrefix} - Field Values:`, {
     content: content || 'NOT SET',
     toNumber: toNumber || 'NOT SET',
     quickReplies: quickReplies || [],
     routeId: routeId || 'NOT SET',
-    fileAttachment: fileAttachment ? `File: ${fileAttachment.filename || 'unnamed'}` : 'NOT SET'
+    fileAttachment: fileAttachment ? {
+      type: typeof fileAttachment,
+      value: fileAttachment,
+      isUrl: typeof fileAttachment === 'string' ? isUrl(fileAttachment) : false,
+      hasFilename: fileAttachment?.filename,
+      hasBuffer: !!fileAttachment?.buffer
+    } : 'NOT SET'
   })
   
   if (!content || !toNumber) {
@@ -364,14 +380,33 @@ async function execute(worker: MessageWorker) {
     // Handle file attachment if provided
     let fileAttachmentUrl: string | null = null
     if (fileAttachment) {
-      console.log(`${logPrefix} - Processing file attachment: ${fileAttachment.filename}`)
-      fileAttachmentUrl = await uploadFileAttachmentTemporarily(fileAttachment)
-      if (!fileAttachmentUrl) {
-        worker.fields.output.value = "Error: Failed to upload file attachment to temporary storage"
-        console.error(`${logPrefix} - File attachment upload failed`)
+      console.log(`${logPrefix} - Processing file attachment:`, typeof fileAttachment, fileAttachment)
+      
+      // Check if the file attachment is actually a URL string (from text node)
+      if (typeof fileAttachment === 'string') {
+        if (isUrl(fileAttachment)) {
+          console.log(`${logPrefix} - File attachment is a URL string, using directly`)
+          fileAttachmentUrl = fileAttachment
+        } else {
+          console.log(`${logPrefix} - File attachment is a string but not a URL:`, fileAttachment)
+          worker.fields.output.value = "Error: File attachment is a string but not a valid URL"
+          return
+        }
+      } else if (fileAttachment && typeof fileAttachment === 'object' && fileAttachment.buffer) {
+        // It's actual file data, upload it
+        console.log(`${logPrefix} - File attachment is file data, uploading...`)
+        fileAttachmentUrl = await uploadFileAttachmentTemporarily(fileAttachment)
+        if (!fileAttachmentUrl) {
+          worker.fields.output.value = "Error: Failed to upload file attachment to temporary storage"
+          console.error(`${logPrefix} - File attachment upload failed`)
+          return
+        }
+        console.log(`${logPrefix} - File attachment uploaded to temporary URL (expires in 60s)`)
+      } else {
+        worker.fields.output.value = "Error: Invalid file attachment format"
+        console.error(`${logPrefix} - Invalid file attachment format:`, fileAttachment)
         return
       }
-      console.log(`${logPrefix} - File attachment uploaded to temporary URL (expires in 60s)`)
     }
     
     // Combine media URLs from markdown images and file attachment

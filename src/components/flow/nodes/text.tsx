@@ -68,7 +68,7 @@ function Parameters({ worker }: { worker: TextWorker }) {
     } else if (contentType === "audio") {
       worker.fields.output.type = "audio"
     } else if (contentType === "image" || contentType === "file") {
-      worker.fields.output.type = "date"
+      worker.fields.output.type = "file"
     } else if (contentType === "Timestamp") {
       worker.fields.output.type = "date"
     } else {
