@@ -153,6 +153,7 @@ export function MessageNode(props: NodeProps) {
     <WorkerLabeledHandle handler={worker.fields.toNumber} />
     <WorkerLabeledHandle handler={worker.fields.quickReplies} />
     <WorkerLabeledHandle handler={worker.fields.routeId} />
+    <WorkerLabeledHandle handler={worker.fields.fileAttachment} />
     <WorkerLabeledHandle handler={worker.fields.output} />
     <MemoizedWorker worker={worker} name="parameters">
       <Parameters worker={worker} />
